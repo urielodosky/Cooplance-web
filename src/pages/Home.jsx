@@ -20,6 +20,9 @@ const Home = () => {
                     <Link to={user ? "/dashboard" : "/register"} className="btn-primary btn-hero-primary">
                         Comenzar ahora
                     </Link>
+                    <Link to="/help" className="btn-secondary btn-hero-secondary" style={{ marginLeft: '1rem' }}>
+                        Guía
+                    </Link>
                 </div>
             </header>
 

@@ -55,6 +55,39 @@ const HelpCenter = () => {
                     <li>Debes activarlo manualmente desde tu Panel de Control.</li>
                 </ul>
             </div>
+
+            <div className="help-section">
+                <h3>Ganancia de Experiencia (XP) y Ganancias</h3>
+                <p>Tu XP te permite subir de nivel. Toma en cuenta la siguiente estructura básica de ganancias de XP por trabajo completado:</p>
+                <ul>
+                    <li>Mayor a $140.000: <strong>80 XP</strong></li>
+                    <li>Mayor a $70.000: <strong>40 XP</strong></li>
+                    <li>Mayor a $28.000: <strong>30 XP</strong></li>
+                    <li>De $7.000 a $28.000: <strong>10 XP</strong></li>
+                </ul>
+                <p><em>* Nivel 1: Menos de $140.000 otorga 40 XP fijos.</em></p>
+            </div>
+
+            <div className="help-section">
+                <h3>¿Cómo Crear un Servicio?</h3>
+                <ol>
+                    <li>Dirígete a tu Panel de Control y luego a "Mis Servicios" o usa el acceso directo "Publicar Servicio".</li>
+                    <li>Rellena la información básica: título, descripción, etiquetas y modalidad (remoto o presencial).</li>
+                    <li>Configura tus precios, tiempos de entrega y revisiones (puedes activar paquetes).</li>
+                    <li>Carga tu imagen de portada y video de promoción.</li>
+                    <li>Publica el servicio.</li>
+                </ol>
+            </div>
+
+            <div className="help-section">
+                <h3>¿Cómo Postularse a Trabajos o Empresas?</h3>
+                <ol>
+                    <li>Navega a la sección <strong>Explorar Clientes</strong> (para trabajos puntuales) o <strong>Explorar Empresas</strong> (para trabajo a largo plazo).</li>
+                    <li>Haz clic en "Ver Detalles" del proyecto u oferta que te interese.</li>
+                    <li>Haz clic en el botón "Postularse".</li>
+                    <li>Envía tu propuesta explicando tu perfil, tu metodología de trabajo y el presupuesto/fecha de entrega propuesto.</li>
+                </ol>
+            </div>
         </div>
     );
 
@@ -100,6 +133,23 @@ const HelpCenter = () => {
                         </tbody>
                     </table>
                 </div>
+                <div className="help-section">
+                    <h3>Contratar Nuevos Talentos</h3>
+                    <p>Te animamos a contratar freelancers de niveles más bajos (Novatos). Muchas veces son talentos increíbles buscando sus primeros trabajos para conseguir reputación en la plataforma, y ​​pueden ofrecer presupuestos mucho más accesibles mientras demuestran de qué son capaces.</p>
+                    <p>Al completarse y calificar este trabajo exitosamente, <strong>los clientes reciben el doble de experiencia (XP)</strong> al comprar de freelancers novatos (Niveles 1 a 3).</p>
+                </div>
+
+                <div className="help-section">
+                    <h3>Ganancias y Experiencia (XP) al Contratar</h3>
+                    <p>Al igual que los freelancers, al contratar recurrentemente subes de nivel como cliente. La plataforma te brinda una guía de referencia de precios para ganar experiencia:</p>
+                    <ul>
+                        <li>Mayor a $140.000: <strong>80 XP</strong></li>
+                        <li>Mayor a $70.000: <strong>40 XP</strong></li>
+                        <li>Mayor a $28.000: <strong>30 XP</strong></li>
+                        <li>De $7.000 a $28.000: <strong>10 XP</strong></li>
+                    </ul>
+                    <p><em>* Contratar a niveles 1, 2 o 3 duplica estos valores.</em></p>
+                </div>
             </div>
         </div>
     );
@@ -120,8 +170,62 @@ const HelpCenter = () => {
             </div>
 
             <div className="help-section">
-                <h3>Reclutamiento</h3>
+                <h3>Reclutamiento y Ofertas</h3>
                 <p>Publica ofertas con detalles de "Puesto" en lugar de solo tareas puntuales. Atrae talento para relaciones a largo plazo definiendo condiciones claras de contrato.</p>
+            </div>
+
+            <div className="help-section">
+                <h3>Creación de Pedidos, Ofertas o Servicios</h3>
+                <ul>
+                    <li><strong>Para crear un Servicio:</strong> Se espera que la empresa brinde un paquete ya estructurado (como Software como Servicio o Planes Base); vas a la opción de vender y completas precios, entregables y título.</li>
+                    <li><strong>Para crear un Pedido:</strong> Como cualquier comprador, si necesitas algo externo o tercerizar, usa "Publicar Pedido" desde el navbar, fija tu presupuesto de referencia, y espera postulaciones.</li>
+                    <li><strong>Para publicar Ofertas de Trabajo (Vacantes):</strong> Utiliza el panel respectivo para definir el Puesto, cantidad de candidatos buscados, jornada, salarios, y contrata a largo plazo a tus talentos.</li>
+                </ul>
+            </div>
+
+            <div className="help-section">
+                <h3>Reputación de Empresas</h3>
+                <p>Las empresas no poseen Niveles de Experiencia (XP) como los freelancers o clientes, pero construyen su prestigio en la plataforma gracias a las valoraciones recibidas. Subir la reputación de tu empresa hace que los perfiles <strong>Experto, Diamante o Maestro</strong> quieran trabajar a largo plazo o aplicar a tus vacantes con mayor frecuencia y confianza.</p>
+            </div>
+        </div>
+    );
+
+    const renderCoopsGuide = () => (
+        <div className="help-content fade-in">
+            <h2>Guía de Coops (Agrupaciones / Equipos)</h2>
+            <p>Conviértete en mucho más que un freelancer solitario uniéndote a una "Cooperativa" digital.</p>
+
+            <div className="help-section">
+                <h3>¿Qué son las Coops?</h3>
+                <p>Las Coops son equipos conformados por diversos freelancers de la plataforma que se asocian de forma comunitaria para abordar grandes proyectos que un individuo no lograría abarcar con sus tiempos regulares por sí solo.</p>
+            </div>
+
+            <div className="help-section">
+                <h3>¿Cómo se abordan los trabajos y pagos?</h3>
+                <p>Cuando un cliente contrata a la Coop, las tareas se dividen entre los miembros del equipo que participen en ese proyecto. El sistema de Cooplance fomenta la colaboración justa recompensando el mérito directamente basado en el Nivel de los participantes involucrados en dicho trabajo.</p>
+                <p><strong>Ejemplo práctico de distribución de pagos:</strong></p>
+                <p>Al cobrar un proyecto de $100.000 ARS donde trabajaron un freelancer de Nivel 6, otro de Nivel 6, y un talento nuevo de Nivel 3. Se suman los niveles totales de los participantes: <code>6 + 6 + 3 = 15</code> "Partes" en las que se divide el pago total. Al dividir $100.000 ÷ 15, obtenemos <strong>~$6.666 ARS por "Parte"</strong>. Por la tanto:</p>
+                <ul>
+                    <li>El freelancer Nivel 3 obtendrá <strong>3 partes</strong> (~$20.000).</li>
+                    <li>Cada freelancer Nivel 6 obtendrá <strong>6 partes</strong> (~$40.000 a cada uno).</li>
+                </ul>
+                <p><em>* Este formato motiva increíblemente la contratación de talentos nuevos para escalar rápido y equilibrar los gastos operativos del equipo, sabiendo que el valor aportado escala equitativamente para todos de acuerdo a su progreso personal en la plataforma.</em></p>
+            </div>
+
+            <div className="help-section">
+                <h3>Roles Posibles</h3>
+                <ul>
+                    <li><strong>Administrador/Fundador:</strong> Control total, disuelve equipo a voluntad e invita usuarios.</li>
+                    <li><strong>Coordinador:</strong> Median las discusiones, dividen el trabajo de los proyectos, y aceptan proyectos de clientes en nombre de la Coop.</li>
+                    <li><strong>Tesorero:</strong> Administra las finanzas, distribuciones fijas del dinero ganado, manteniendo transparencia total.</li>
+                    <li><strong>Miembro Directo:</strong> Completa el trabajo a su nombre y recibe su porción según su carga de disciplina en el trabajo total.</li>
+                </ul>
+            </div>
+
+            <div className="help-section">
+                <h3>Experiencia (XP) de Coops en Trabajos Compartidos</h3>
+                <p>Cuando un proyecto colaborativo se completa exitosamente, la Coop como institución y equipo gana su recompensa para subir su influencia, de forma similar a los trabajos regulares para cuentas individuales.</p>
+                <p>A nivel <strong>individual</strong>, la cantidad de XP ganada es proporcional a tu participación en el servicio: si el trabajo por el que la Coop fue contratada recae en la categoría que tú trabajas personalmente como aportante al equipo obtienes el total de experiencia y recompensa habitual, pero <strong>si sólo brindaste apoyo en un trabajo que no corresponde a la categoría principal asignada por el cliente </strong> (por ejemplo como organizador secundario), la ganancia para tu perfil individual equivale sólo a una décima parte (10%) de esa experiencia total del proyecto, motivando al equipo a mantenerse en roles complementarios dentro de sus disciplinas registradas activas.</p>
             </div>
         </div>
     );
@@ -192,6 +296,12 @@ const HelpCenter = () => {
                     >
                         Empresas
                     </button>
+                    <button
+                        className={`help-nav-item ${activeTab === 'coops' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('coops')}
+                    >
+                        Coops (Equipos)
+                    </button>
 
                     <div className="separator"></div>
 
@@ -215,6 +325,7 @@ const HelpCenter = () => {
                 {activeTab === 'freelancers' && renderFreelancerGuide()}
                 {activeTab === 'clients' && renderClientGuide()}
                 {activeTab === 'companies' && renderCompanyGuide()}
+                {activeTab === 'coops' && renderCoopsGuide()}
                 {activeTab === 'terms' && renderTerms()}
                 {activeTab === 'privacy' && renderPrivacy()}
             </main>
