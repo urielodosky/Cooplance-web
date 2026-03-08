@@ -1,0 +1,176 @@
+/* ServiceCard.css - Premium Redesign */
+.service-card {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    /* For image */
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--bg-card);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+/* Image Section */
+.service-image-container {
+    width: 100%;
+    padding-top: 56.25%;
+    /* 16:9 Aspect Ratio */
+    position: relative;
+    background: #0f172a;
+}
+
+.service-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.service-card:hover .service-image {
+    transform: scale(1.05);
+}
+
+/* Content Section */
+.service-content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+/* Freelancer Info Row */
+.freelancer-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.freelancer-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border);
+}
+
+.freelancer-name {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.freelancer-level {
+    font-size: 0.7rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1px 6px;
+    border-radius: 10px;
+    color: var(--text-muted);
+}
+
+/* Title */
+.service-title {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
+
+/* Rating Row */
+.service-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    color: #fbbf24;
+    /* Star color */
+}
+
+.rating-count {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-left: 0.25rem;
+}
+
+/* Footer Section */
+.service-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Badges */
+.modality-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(6, 182, 212, 0.1);
+    color: var(--secondary);
+    font-weight: 500;
+}
+
+/* Price */
+.service-price-container {
+    text-align: right;
+}
+
+.price-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: block;
+    line-height: 1;
+}
+
+.service-price {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* Clickable */
+.clickable {
+    cursor: pointer;
+}
+
+/* Light Mode Overrides for ServiceCard */
+[data-theme="light"] .service-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .service-card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+    transform: translateY(-4px);
+}
+
+[data-theme="light"] .service-footer {
+    background: #f8fafc;
+    /* Slate 50 */
+    border-top: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .service-image-container {
+    background: #f1f5f9;
+}

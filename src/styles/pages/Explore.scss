@@ -1,0 +1,107 @@
+/* updated Explore.css for sidebar layout */
+.explore-page-layout {
+    display: flex;
+    gap: 2rem;
+    padding-top: 2rem;
+    align-items: flex-start;
+}
+
+.explore-sidebar {
+    flex: 0 0 280px;
+    /* Fixed width for sidebar */
+    position: sticky;
+    top: 5.5rem;
+    /* Adjust based on navbar height */
+}
+
+.explore-content {
+    flex: 1;
+    width: 100%;
+    /* Ensure it takes remaining space */
+}
+
+.explore-header {
+    margin-bottom: 1rem;
+}
+
+.explore-subtitle {
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Make grid responsive to remaining space */
+.services-grid-explore {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .explore-sidebar {
+        flex: 0 0 240px;
+    }
+}
+
+@media (max-width: 768px) {
+    .explore-page-layout {
+        flex-direction: column;
+    }
+
+    .explore-sidebar {
+        width: 100%;
+        position: static;
+        flex: none;
+    }
+}
+
+/* Subcategory Grid Bar */
+.subcategory-bar {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    animation: fadeIn 0.3s ease;
+    border: 1px solid var(--border);
+}
+
+.subcategory-grid-explore {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.subcat-chip {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.subcat-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.subcat-chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.no-results {
+    grid-column: 1 / -1;
+    /* SPAN FULL WIDTH */
+    padding: 3rem;
+    text-align: center;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}

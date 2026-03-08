@@ -1,0 +1,202 @@
+/* Global variables import */
+@import './variables.css';
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--bg-dark);
+    display: block;
+    /* Standard flow */
+}
+
+#root {
+    width: 100%;
+}
+
+main {
+    width: 100%;
+    /* The 3rem gap user liked */
+    padding-bottom: 3rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+input,
+textarea,
+select {
+    font-family: inherit;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.2s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+/* Overriding browser autofill styles to maintain glassmorphism */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+    border: 1px solid var(--border);
+    -webkit-text-fill-color: var(--text-primary);
+    -webkit-box-shadow: 0 0 0px 1000px #1e293b inset;
+    /* Match --bg-dark / --bg-card base */
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.glass {
+    background: var(--bg-card);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border);
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-full);
+    font-weight: 500;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-glow);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+/* Gender Selector Component */
+.gender-selector {
+    display: flex;
+    gap: 1rem;
+}
+
+.gender-btn {
+    flex: 1;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.gender-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--text-secondary);
+}
+
+.gender-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* UNIVERSAL TOOLTIP STYLES */
+.help-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+}
+
+.help-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #0f172a;
+    /* Make text dark so it contrasts with white background */
+    font-size: 0.75rem;
+    font-weight: bold;
+    border: 1px solid var(--border);
+}
+
+.help-tooltip {
+    visibility: hidden;
+    width: 250px;
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    text-align: left;
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    position: absolute;
+    z-index: 1000;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    line-height: 1.4;
+    white-space: normal;
+}
+
+.help-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--bg-card) transparent transparent transparent;
+}
+
+.help-icon-wrapper:hover .help-tooltip,
+.help-icon:hover+.help-tooltip {
+    visibility: visible;
+    opacity: 1;
+}

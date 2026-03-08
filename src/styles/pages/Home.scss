@@ -1,0 +1,84 @@
+.home-container {
+    padding: 4rem 1rem;
+}
+
+.hero-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.hero-title {
+    font-size: 4rem;
+    line-height: 1.1;
+    font-weight: 800;
+    /* Use variables for gradient so it adapts to light mode (Dark text) */
+    background: linear-gradient(to right, var(--text-primary), var(--text-secondary));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.highlight-text {
+    color: var(--primary);
+    -webkit-text-fill-color: var(--primary);
+}
+
+.hero-description {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn-hero-primary {
+    font-size: 1.1rem;
+    padding: 0.75rem 2rem;
+    text-decoration: none;
+}
+
+.btn-hero-secondary {
+    font-size: 1.1rem;
+    padding: 0.75rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.roles-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+.role-card {
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+}
+
+.role-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.role-description {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.role-link {
+    color: var(--secondary);
+    font-weight: 500;
+}

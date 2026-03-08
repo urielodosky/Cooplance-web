@@ -1,0 +1,326 @@
+.admin-auth-container {
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .admin-auth-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        padding: 3rem;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+
+            .lock-icon {
+                width: 48px;
+                height: 48px;
+                color: var(--primary);
+                margin-bottom: 1rem;
+            }
+
+            h2 {
+                color: var(--text-primary);
+                margin-bottom: 0.5rem;
+            }
+
+            p {
+                color: var(--text-secondary);
+                font-size: 0.9rem;
+            }
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+
+            .verification-notice {
+                background: rgba(99, 102, 241, 0.1);
+                border: 1px solid rgba(99, 102, 241, 0.2);
+                padding: 1rem;
+                border-radius: 12px;
+                text-align: center;
+                color: var(--text-primary);
+                font-size: 0.9rem;
+
+                strong {
+                    display: block;
+                    color: var(--primary);
+                    margin-top: 0.5rem;
+                    font-size: 1rem;
+                }
+            }
+
+            .input-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+
+                label {
+                    color: var(--text-primary);
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                }
+
+                input {
+                    padding: 1rem;
+                    border-radius: 12px;
+                    border: 2px solid var(--border);
+                    background: var(--bg-body);
+                    color: var(--text-primary);
+                    font-size: 1.1rem;
+                    text-align: center;
+                    letter-spacing: 2px;
+                    transition: border-color 0.2s;
+
+                    &:focus {
+                        border-color: var(--primary);
+                        outline: none;
+                    }
+                }
+            }
+
+            .auth-error {
+                color: #ef4444;
+                font-size: 0.9rem;
+                text-align: center;
+                background: rgba(239, 68, 68, 0.1);
+                padding: 0.5rem;
+                border-radius: 8px;
+            }
+
+            .auth-btn {
+                padding: 1rem;
+                font-size: 1.1rem;
+                border-radius: 12px;
+                margin-top: 0.5rem;
+            }
+        }
+    }
+}
+
+.admin-finance-dashboard {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    // Counteract main padding if needed, but not necessary here since it scrolls
+    padding-bottom: 5rem;
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 3rem;
+
+        .title-section {
+            h1 {
+                margin: 0 0 0.5rem 0;
+                color: var(--text-primary);
+                font-size: 2rem;
+            }
+
+            p {
+                margin: 0;
+                color: var(--text-secondary);
+            }
+        }
+
+        .badge-secure {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            &::before {
+                content: '';
+                display: block;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #10b981;
+            }
+        }
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+            box-shadow: var(--shadow-sm);
+
+            .icon-wrapper {
+                width: 56px;
+                height: 56px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+
+                svg {
+                    width: 28px;
+                    height: 28px;
+                }
+            }
+
+            .metric-content {
+                flex: 1;
+
+                h3 {
+                    margin: 0 0 0.5rem 0;
+                    color: var(--text-secondary);
+                    font-size: 1rem;
+                    font-weight: 500;
+                }
+
+                .value {
+                    font-size: 2.5rem;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    margin-bottom: 0.5rem;
+                    line-height: 1;
+
+                    &.success {
+                        color: #10b981;
+                    }
+
+                    &.danger {
+                        color: #ef4444;
+                    }
+                }
+
+                .subtitle {
+                    color: var(--text-muted);
+                    font-size: 0.85rem;
+                }
+
+                .tax-breakdown {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.3rem;
+                    margin-top: 1rem;
+                    padding-top: 1rem;
+                    border-top: 1px dashed var(--border);
+
+                    span {
+                        font-size: 0.85rem;
+                        color: var(--text-secondary);
+                        display: flex;
+                        justify-content: space-between;
+                    }
+                }
+            }
+
+            &.gross-card .icon-wrapper {
+                background: rgba(99, 102, 241, 0.1);
+                color: var(--primary);
+            }
+
+            &.tax-card .icon-wrapper {
+                background: rgba(239, 68, 68, 0.1);
+                color: #ef4444;
+            }
+
+            &.net-card .icon-wrapper {
+                background: rgba(16, 185, 129, 0.1);
+                color: #10b981;
+            }
+        }
+    }
+
+    .transactions-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 2rem;
+
+        h2 {
+            margin: 0 0 1.5rem 0;
+            color: var(--text-primary);
+            font-size: 1.3rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .finance-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+
+            th,
+            td {
+                padding: 1.2rem;
+                border-bottom: 1px solid var(--border);
+                color: var(--text-secondary);
+            }
+
+            th {
+                font-weight: 600;
+                color: var(--text-primary);
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+
+                &.highlight {
+                    color: var(--primary);
+                }
+            }
+
+            tr:last-child td {
+                border-bottom: none;
+            }
+
+            .bold-cell {
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+
+            .highlight-cell {
+                font-weight: 700;
+                background: rgba(99, 102, 241, 0.05);
+            }
+
+            .success-text {
+                color: #10b981;
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+    }
+}

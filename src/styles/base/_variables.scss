@@ -1,0 +1,70 @@
+:root {
+    /* Core Colors */
+    --bg-dark: #0f172a;
+    --bg-card: rgba(30, 41, 59, 0.7);
+    --bg-card-hover: rgba(51, 65, 85, 0.8);
+
+    --primary: #8b5cf6;
+    /* Violet 500 */
+    --primary-hover: #7c3aed;
+    /* Violet 600 */
+    --secondary: #06b6d4;
+    /* Cyan 500 */
+    --accent: #f43f5e;
+    /* Rose 500 */
+
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+
+    --border: rgba(255, 255, 255, 0.1);
+    --glass-blur: 12px;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    --gradient-bg: radial-gradient(circle at top right, rgba(139, 92, 246, 0.1), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.1), transparent 40%);
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+
+    /* Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="light"] {
+    --bg-dark: #b2ebf2;
+    /* Stronger Pastel Cyan (Material 100) */
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+
+    --text-primary: #1e293b;
+    /* Slate 800 */
+    --text-secondary: #475569;
+    /* Slate 600 */
+    --text-muted: #94a3b8;
+    /* Slate 400 */
+
+    --border: #80deea;
+    /* Cyan 200 for borders */
+
+    /* Lighter gradients */
+    --gradient-bg: radial-gradient(circle at top right, rgba(139, 92, 246, 0.05), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.08), transparent 40%);
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-glow: 0 0 15px rgba(6, 182, 212, 0.2);
+}
