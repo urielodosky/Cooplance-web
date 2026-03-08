@@ -60,6 +60,7 @@ const Navbar = () => {
         setIsMobileMenuOpen(false);
         if (action === 'logout') {
             logout();
+            navigate('/');
         } else if (path) {
             navigate(path);
         }

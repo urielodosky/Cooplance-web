@@ -32,6 +32,7 @@ import TeamList from './features/teams/pages/TeamList'
 import TeamPublicProfile from './features/teams/pages/TeamPublicProfile'
 import Wallet from './pages/Wallet'
 import AdminFinanceDashboard from './pages/AdminFinanceDashboard'
+import ProtectedRoute from './components/common/ProtectedRoute'
 import { ThemeProvider } from './context/ThemeContext'
 import { TeamProvider } from './context/TeamContext'
 import { ChatProvider } from './context/ChatContext'
@@ -60,8 +61,8 @@ function App() {
               <Route path="/info/:roleId" element={<RoleInfo />} />
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/create-service" element={<CreateService />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/create-service" element={<ProtectedRoute><CreateService /></ProtectedRoute>} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/companies" element={<Companies />} />
               <Route path="/company/:id" element={<CompanyDetail />} />
@@ -70,25 +71,25 @@ function App() {
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/community" element={<Community />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/badges" element={<Badges />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/service/:id" element={<ServiceDetail />} />
               <Route path="/explore-clients" element={<ExploreClients />} />
               <Route path="/project/:id" element={<ProjectDetail />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/create-project" element={<CreateProject />} />
-              <Route path="/create-team" element={<CreateTeam />} />
-              <Route path="/my-coops" element={<TeamList />} />
-              <Route path="/team/:teamId" element={<TeamDashboard />} />
+              <Route path="/create-project" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
+              <Route path="/create-team" element={<ProtectedRoute><CreateTeam /></ProtectedRoute>} />
+              <Route path="/my-coops" element={<ProtectedRoute><TeamList /></ProtectedRoute>} />
+              <Route path="/team/:teamId" element={<ProtectedRoute><TeamDashboard /></ProtectedRoute>} />
               <Route path="/team/:teamId/public" element={<TeamPublicProfile />} />
               <Route path="/profile/:id" element={<FreelancerDetail />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/chat/:chatId" element={<Chat />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+              <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
               <Route path="/events" element={<Events />} />
-              <Route path="/admin-cooplance-secret" element={<AdminFinanceDashboard />} />
+              <Route path="/admin-cooplance-secret" element={<ProtectedRoute><AdminFinanceDashboard /></ProtectedRoute>} />
             </Routes>
           </main>
           <SupportChatbot />
