@@ -38,8 +38,6 @@ const Register = () => {
         country: 'Argentina',
         currency: 'ARS',
         emailVerified: false,
-        currency: 'ARS',
-        emailVerified: false,
         phoneVerified: false,
         cvFile: '', // Base64 string for CV image
         profileImage: '', // Base64 string for Profile Image

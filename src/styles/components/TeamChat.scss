@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .team-chat-window {
     display: flex;
     flex-direction: column;
@@ -96,7 +98,7 @@
             }
 
             .message-bubble {
-                background: linear-gradient(135deg, var(--primary) 0%, darken(#6366f1, 10%) 100%);
+                background: linear-gradient(135deg, var(--primary) 0%, color.adjust(#6366f1, $lightness: -10%) 100%);
                 color: white;
                 border-radius: 12px 12px 2px 12px;
                 box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
@@ -390,7 +392,7 @@
 
             &:hover {
                 transform: scale(1.05);
-                background: lighten(#6366f1, 5%);
+                background: color.adjust(#6366f1, $lightness: 5%);
             }
 
             &:disabled {

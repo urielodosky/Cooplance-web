@@ -26,8 +26,6 @@ const ProjectCreateForm = () => {
         imageUrl: '',
         subcategories: [], // Array of selected subcategories
         vacancies: 1,
-        paymentFrequency: 'one-time',
-        vacancies: 1,
         paymentFrequency: 'unique',
         contractDuration: '',
         commissionPercentage: '',

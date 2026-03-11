@@ -27,10 +27,8 @@ const NotificationDropdown = () => {
 
     const handleNotificationClick = (notification) => {
         markAsRead(notification.id);
-        if (notification.link) {
-            navigate(notification.link);
-            setIsOpen(false);
-        }
+        navigate('/notifications', { state: { selectedNotificationId: notification.id } });
+        setIsOpen(false);
     };
 
     const toggleDropdown = () => setIsOpen(!isOpen);

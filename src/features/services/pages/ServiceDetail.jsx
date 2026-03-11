@@ -6,7 +6,9 @@ import { useJobs } from '../../../context/JobContext';
 import ServiceCreateForm from '../components/ServiceCreateForm';
 import { getProfilePicture } from '../../../utils/avatarUtils';
 import PaymentModal from '../../../components/common/PaymentModal';
+import { formatLocationDetail } from '../../../utils/locationFormat';
 import '../../../styles/pages/ServiceDetail.scss';
+
 
 const ServiceDetail = () => {
     const { id } = useParams();
@@ -175,6 +177,14 @@ const ServiceDetail = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                     <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600 }}>@{displayUsername}</h3>
                                     <span className="level-badge-lg" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Nivel {displayLevel}</span>
+                                    {freelancerUser.gamification?.vacation?.active && (() => {
+                                        const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - freelancerUser.gamification.vacation.startDate) / 86400000));
+                                        return (
+                                            <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.65rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                                                Vacaciones — {daysLeft}d
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.85rem' }}>
@@ -206,7 +216,15 @@ const ServiceDetail = () => {
                                 {service.workMode && service.workMode.includes('presential') ? (
                                     <>
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                                        {service.location || 'Presencial'}
+                                        <div style={{ marginLeft: '4px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            {(() => {
+                                                const details = formatLocationDetail(service.location);
+                                                if (Array.isArray(details)) {
+                                                    return details.map((line, idx) => <span key={idx}>{line}</span>);
+                                                }
+                                                return <span>{details || 'Presencial'}</span>;
+                                            })()}
+                                        </div>
                                     </>
                                 ) : (
                                     <>

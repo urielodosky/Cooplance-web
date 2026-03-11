@@ -220,6 +220,21 @@ const Chat = () => {
     // ... helper unchanged ...
     const getChatName = (chat) => { /* ... */ const myId = user.id || user.username; const otherId = chat.participants.find(p => p !== myId); return otherId || 'Chat'; };
 
+    // Helper: check if the other participant in a chat is on vacation, return days left or false
+    const getOtherUserVacation = (chat) => {
+        try {
+            if (chat.isTeam) return false;
+            const myId = user.id || user.username;
+            const otherId = chat.participants?.find(p => p !== myId);
+            if (!otherId) return false;
+            const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
+            const otherUser = allUsers.find(u => u.id == otherId);
+            if (!otherUser?.gamification?.vacation?.active) return false;
+            const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - otherUser.gamification.vacation.startDate) / 86400000));
+            return daysLeft;
+        } catch(e) { return false; }
+    };
+
     if (!user) return <div className="container" style={{ padding: '4rem' }}>Inicia sesión para ver tus mensajes.</div>;
 
     // Sidebar interaction
@@ -325,9 +340,10 @@ const Chat = () => {
                                     </div>
                                     <div className="chat-info">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div className="chat-name">
+                                            <div className="chat-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                 {getChatName(chat)}
-                                                {chat.contextTitle && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem', fontWeight: 'normal' }}>• {chat.contextTitle}</span>}
+                                                {chat.contextTitle && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>• {chat.contextTitle}</span>}
+                                                {getOtherUserVacation(chat) !== false && <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.6rem', fontWeight: '700', padding: '1px 6px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)', whiteSpace: 'nowrap' }}>Vacaciones</span>}
                                             </div>
                                             {chat.status === 'blocked' && <span style={{ fontSize: '10px', color: '#ef4444' }}>BLOQUEADO</span>}
                                         </div>
@@ -385,6 +401,11 @@ const Chat = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                                     <h3>{getChatName(activeChat)}</h3>
                                     {activeChat.contextTitle && <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>| {activeChat.contextTitle}</span>}
+                                    {getOtherUserVacation(activeChat) !== false && (
+                                        <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.7rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                                            De vacaciones — faltan {getOtherUserVacation(activeChat)} días
+                                        </span>
+                                    )}
                                 </div>
 
                                 {activeChat.type === 'order' && (

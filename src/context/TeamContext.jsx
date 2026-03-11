@@ -519,8 +519,6 @@ export const TeamProvider = ({ children }) => {
         addMemberToTeam,
         updateMemberRole,
         dissolveCoop,
-        updateMemberRole,
-        dissolveCoop,
         toggleService,
         addServiceToTeam,
         closeProject,

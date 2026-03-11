@@ -124,6 +124,25 @@ const FreelancerDetail = () => {
                                 borderRadius: '12px',
                                 letterSpacing: '0.5px'
                             }}>FREELANCER NIVEL {freelancer.level || 1}</span>
+                            {freelancer.gamification?.vacation?.active && (() => {
+                                const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - freelancer.gamification.vacation.startDate) / 86400000));
+                                return (
+                                    <span style={{
+                                        background: 'rgba(16, 185, 129, 0.15)',
+                                        color: '#10b981',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        padding: '4px 10px',
+                                        borderRadius: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        border: '1px solid rgba(16, 185, 129, 0.25)'
+                                    }}>
+                                        De vacaciones — faltan {daysLeft} días
+                                    </span>
+                                );
+                            })()}
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', alignItems: 'center' }}>

@@ -27,7 +27,7 @@ const TeamDashboard = () => {
     const fileInputRef = useRef(null);
 
     // React State
-    const [activeTab, setActiveTab] = useState('chat');
+    const [activeTab, setActiveTab] = useState('members');
     const [messageInput, setMessageInput] = useState('');
     const [attachment, setAttachment] = useState(null);
     const [simAmount, setSimAmount] = useState(1000);
@@ -559,6 +559,7 @@ const TeamDashboard = () => {
                                                     <div>
                                                         <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{displayName}{hasWarning && <span style={{ fontSize: '0.7rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>⚠ Expulsión en 2d</span>}</h4>
                                                         <span style={{ fontSize: '0.85rem', color: member.role === 'owner' ? '#fbbf24' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>{member.role === 'owner' ? 'Fundador' : (member.role === 'member' ? 'Miembro' : member.role.charAt(0).toUpperCase() + member.role.slice(1))} • {member.status || 'Activo'}</span>
+                                                        {(() => { try { const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]'); const u = allUsers.find(x => x.id == member.userId); if (u?.gamification?.vacation?.active) { const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - u.gamification.vacation.startDate) / 86400000)); return <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.65rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(16, 185, 129, 0.25)', marginTop: '4px' }}>De vacaciones — {daysLeft}d</span>; } return null; } catch(e) { return null; } })()}
                                                     </div>
                                                 </div>
                                                 <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative', zIndex: 101 }}>

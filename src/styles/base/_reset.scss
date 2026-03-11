@@ -33,3 +33,47 @@ a {
     text-decoration: none;
     color: inherit;
 }
+
+/* Custom Scrollbar for the entire application */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--primary, #8b5cf6);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--primary-hover, #7c3aed);
+}
+
+/* Explicit class for custom-scrollbar if needed */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--primary, #8b5cf6);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--primary-hover, #7c3aed);
+}
+
+/* Global Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary, #8b5cf6) transparent;
+}

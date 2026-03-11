@@ -18,8 +18,6 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
         paymentFrequency: '',
         durationMin: '',
         durationMax: '',
-        durationMin: '',
-        durationMax: '',
         durationUnit: 'months',
         commissionMin: '',
         commissionMax: ''
@@ -118,8 +116,6 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
             province: '',
             city: '',
             paymentFrequency: '',
-            durationMin: '',
-            durationMax: '',
             durationMin: '',
             durationMax: '',
             durationUnit: 'months',

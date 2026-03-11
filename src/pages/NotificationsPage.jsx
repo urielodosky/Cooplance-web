@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import '../styles/pages/NotificationsPage.scss';
@@ -8,16 +8,33 @@ const NotificationsPage = () => {
     const { user } = useAuth();
     const { notifications, markAsRead, markAllAsRead } = useNotifications();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [selectedNotification, setSelectedNotification] = useState(null);
 
-    // Auto-select the first unread or the first notification if none selected
+    // Block full page scroll when on the notifications page
     useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
+    // Auto-select based on passed state, unread, or first notification
+    useEffect(() => {
+        if (location.state?.selectedNotificationId) {
+            const passedNotification = notifications.find(n => n.id === location.state.selectedNotificationId);
+            if (passedNotification) {
+                setSelectedNotification(passedNotification);
+                return; // Stop here if we found the specific one
+            }
+        }
+
         if (!selectedNotification && notifications.length > 0) {
             const firstUnread = notifications.find(n => !n.read);
             setSelectedNotification(firstUnread || notifications[0]);
         }
-    }, [notifications, selectedNotification]);
+    }, [notifications, selectedNotification, location.state]);
 
     useEffect(() => {
         if (selectedNotification && !selectedNotification.read) {

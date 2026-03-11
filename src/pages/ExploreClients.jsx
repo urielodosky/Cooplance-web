@@ -23,7 +23,6 @@ const ExploreClients = () => {
         priceMax: '',
         rating: 0,
         workMode: [],
-        workMode: [],
         level: '',
         location: '',
         experience: []

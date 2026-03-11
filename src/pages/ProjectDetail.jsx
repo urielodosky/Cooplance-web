@@ -4,8 +4,10 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { registerActivity } from '../utils/gamification';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
+import { formatLocationDetail } from '../utils/locationFormat';
 import '../styles/pages/ServiceDetail.scss';
 import '../styles/pages/ProjectDetail.scss';
+
 
 const ProjectDetail = () => {
     const { id } = useParams();
@@ -126,8 +128,21 @@ const ProjectDetail = () => {
                                         {tag}
                                     </span>
                                 ))}
-                                <span className={`detail-tag work-mode-tag ${project.workMode === 'presential' ? 'presential' : ''}`}>
-                                    {project.workMode === 'presential' ? `Presencial (${project.location})` : 'Remoto'}
+                                <span className={`detail-tag work-mode-tag ${project.workMode === 'presential' ? 'presential' : ''}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem' }}>
+                                    {project.workMode === 'presential' ? (
+                                        <>
+                                            <span>Presencial:</span>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                {(() => {
+                                                    const details = formatLocationDetail(project.location);
+                                                    if (Array.isArray(details)) {
+                                                        return details.map((line, idx) => <span key={idx} style={{ fontWeight: 'normal' }}>{line}</span>);
+                                                    }
+                                                    return <span style={{ fontWeight: 'normal' }}>{details}</span>;
+                                                })()}
+                                            </div>
+                                        </>
+                                    ) : 'Remoto'}
                                 </span>
                             </div>
                         </div>

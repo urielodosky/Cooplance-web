@@ -100,7 +100,6 @@ export const AuthProvider = ({ children }) => {
             id: Date.now(),
             xp: 0,
             level: 1,
-            level: 1,
             balance: 1000, // Initial Mock Balance
             gamification: {
                 lastDecayCheck: Date.now(),

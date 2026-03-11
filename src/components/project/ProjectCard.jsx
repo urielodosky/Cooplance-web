@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProfilePicture } from '../../utils/avatarUtils';
 import '../../styles/components/ProjectCard.scss';
+import { formatLocation } from '../../utils/locationFormat';
 
 // Helper for time ago
 const getTimeAgo = (timestamp) => {
@@ -118,12 +119,62 @@ const ProjectCard = ({ project, onApply }) => {
                         background: project.workMode === 'presential' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(6, 182, 212, 0.1)',
                         color: project.workMode === 'presential' ? '#8b5cf6' : 'var(--secondary)'
                     }}>
-                        {project.workMode === 'presential' ? (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                                {project.location || 'Presencial'}
-                            </span>
-                        ) : (
+                        {project.workMode === 'presential' ? (() => {
+                            const locationText = project.location || '';
+                            const { display, tooltip } = formatLocation(locationText);
+                            
+                            if (tooltip.length > 0) {
+                                return (
+                                    <div className="help-icon-wrapper" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', position: 'relative' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                                            {display}
+                                        </span>
+                                        <div className="help-tooltip location-tooltip" style={{
+                                            width: 'auto',
+                                            minWidth: tooltip.length === 1 ? '140px' : '220px',
+                                            maxWidth: tooltip.length >= 3 ? '380px' : '300px',
+                                            bottom: '100%',
+                                            marginBottom: '8px',
+                                            left: '0',
+                                            right: 'auto',
+                                            transform: 'none',
+                                            zIndex: 100,
+                                            padding: '10px 14px',
+                                            borderRadius: '10px',
+                                            background: 'rgba(15, 15, 25, 0.95)',
+                                            backdropFilter: 'blur(12px)',
+                                            border: '1px solid rgba(99, 102, 241, 0.25)',
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                                        }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: '600', marginBottom: '8px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ubicaciones</div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(tooltip.length, 3)}, 1fr)`, gap: '12px' }}>
+                                                {tooltip.map((group, i) => (
+                                                    <div key={i} style={{ borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.08)' : 'none', paddingLeft: i > 0 ? '12px' : '0' }}>
+                                                        <div style={{ fontSize: '0.78rem', fontWeight: '700', color: '#818cf8', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                                                            {group.province}
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
+                                                            {group.cities.map((city, j) => (
+                                                                <span key={j} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', lineHeight: '1.4' }}>{city}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                                    {display || locationText || 'Presencial'}
+                                </span>
+                            );
+                        })() : (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="12" x="3" y="4" rx="2" ry="2" /><line x1="2" x2="22" y1="20" y2="20" /></svg>
                                 Remoto

@@ -1,11 +1,7 @@
-import malePlaceholder from '../assets/placeholders/male-placeholder.png';
-import femalePlaceholder from '../assets/placeholders/female-placeholder.png';
-import otherPlaceholder from '../assets/placeholders/other-placeholder.png';
-
 export const GENDER_PLACEHOLDERS = {
-    male: malePlaceholder,
-    female: femalePlaceholder,
-    other: otherPlaceholder
+    male: 'https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff&size=256',
+    female: 'https://ui-avatars.com/api/?name=User&background=ec4899&color=fff&size=256',
+    other: 'https://ui-avatars.com/api/?name=User&background=6b7280&color=fff&size=256'
 };
 
 export const getProfilePicture = (user) => {
@@ -22,3 +18,4 @@ export const getProfilePicture = (user) => {
 
     return GENDER_PLACEHOLDERS[user.gender] || GENDER_PLACEHOLDERS.other;
 };
+
