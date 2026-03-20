@@ -25,6 +25,8 @@ const Dashboard = () => {
     const [showLevelUpModal, setShowLevelUpModal] = useState(false);
     const [myPublishedProjects, setMyPublishedProjects] = useState([]);
     const [myProposals, setMyProposals] = useState([]);
+    const [activeProposalTab, setActiveProposalTab] = useState('active'); // 'active' or 'history'
+    const [openMenuId, setOpenMenuId] = useState(null);
 
     // Load Projects & Proposals Logic
     useEffect(() => {
@@ -171,86 +173,93 @@ const Dashboard = () => {
     const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null); // { id, title }
 
     const handleAcceptProposal = (proposal) => {
-        // Find necessary details
-        // Proposal has: projectId, freelancerId, freelancerName, etc.
+        // ... (existing logic)
         const project = myPublishedProjects.find(p => p.id === proposal.projectId);
         if (!project) return;
 
-        // 1. Create Job (using JobContext logic manually for now to include stored data logic)
-        // Ideally reuse createJob but we need specific fields from proposal
         const newJob = {
             id: Date.now(),
-            serviceId: 'project_' + project.id, // Using project ID as pseudo service ID
+            serviceId: 'project_' + project.id,
             serviceTitle: project.title,
             freelancerName: proposal.freelancerName,
-
-            // Buyer is current user
             buyerId: user.id,
             buyerName: user.role === 'company' ? user.companyName : (user.firstName + ' ' + user.lastName),
             buyerRole: user.role,
             buyerAvatar: user.avatar || null,
-
-            amount: project.budgetMin, // Default to min budget or negotiated price? user didn't specify.
+            amount: project.budgetMin,
             tier: 'Project',
-            status: 'active', // Skip approval for direct hire? or pending? Let's say active for simplicity.
+            status: 'active',
             createdAt: new Date().toISOString(),
-            duration: 7, // Default
+            duration: 7,
             deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         };
 
-        // Add to Jobs
-        // accessing jobs from context doesn't give us setJobs directly usually, only createJob.
-        // We really should expose a robust createJob in context or modify it. 
-        // But let's check createJob in JobContext again... it takes (service, buyer).
-        // It constructs the job based on service object.
-        // We can mock a service object from the proposal/project to reuse createJob!
-
-        const mockService = {
-            id: project.id,
-            title: project.title,
-            freelancerName: proposal.freelancerName,
-            price: project.budgetMin, // Using min budget as price
-            deliveryTime: 7
-        };
-
-        // We need to pass the BUYER (us).
-        // But wait, createJob assumes the BUYER is calling it to buy a service.
-        // HERE, the Client (Buyer) is calling it to HIRE a Freelancer.
-        // The JobContext `createJob` logic sets `buyerId` from the passed buyer object.
-        // And it sets `freelancerName` from `service.freelancerName`.
-        // So yes, passing `mockService` with `freelancerName` and `user` as buyer works!
-
-        // However, we also need to update the PROPOSAL status to 'accepted'.
         const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
         const updatedProposals = storedProposals.map(p =>
             p.id === proposal.id ? { ...p, status: 'accepted' } : p
         );
         localStorage.setItem('cooplance_db_proposals', JSON.stringify(updatedProposals));
-
-        // Update local state to reflect change immediately in UI (remove from pending list visual if we wanted, or just status update)
-        setMyProposals(updatedProposals.filter(p => p.freelancerId === user.id).reverse());
-
-        // Close modal
-        setSelectedProjectForProposals(null);
-
-        // Call Context to create job
-        // Note: We need to import createJob from context. We have `jobs` and `updateJobStatus` from `useJobs`.
-        // We need to destructure `createJob` from `useJobs` in the component definition first.
-        // ... I will add that in a separate replacement or assume I can add it here if I replace the hook call.
-
-        // I will use a separate replacement to add `createJob` to the destructuring.
-        // Here I will just Alert for now as a placeholder for the context call, or try to call it if I can access it.
-        // I'll emit a custom event or let the next tool call fix the context destructuring.
-        // actually, let's just create the job properly manually here or invoke a helper. 
-        // I will assume createJob is available (will fix in next step).
-        // createJob(mockService, user); // Will uncomment after fixing destructure.
-
-        // Manual Job Creation for now to ensure it works without breaking due to missing 'createJob'
+        
         const storedJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
         storedJobs.push(newJob);
         localStorage.setItem('cooplance_db_jobs', JSON.stringify(storedJobs));
-        window.location.reload(); // Brute force refresh to show new job and close modal
+        window.location.reload();
     };
+
+    const handleCancelProposal = (e, proposalId) => {
+        e.stopPropagation();
+        if (!window.confirm('¿Estás seguro de que deseas cancelar esta postulación?')) return;
+
+        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
+        const updated = storedProposals.map(p => 
+            p.id === proposalId ? { ...p, status: 'canceled' } : p
+        );
+        localStorage.setItem('cooplance_db_proposals', JSON.stringify(updated));
+        
+        // Update local state
+        const myProps = updated.filter(p => p.freelancerId === user.id);
+        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
+        const enriched = myProps.map(prop => ({
+            ...prop,
+            clientRole: storedProjects.find(proj => proj.id == prop.projectId)?.clientRole || 'buyer'
+        }));
+        setMyProposals(enriched.reverse());
+        setOpenMenuId(null);
+    };
+
+    const handleDeleteProposal = (e, proposalId) => {
+        e.stopPropagation();
+        if (!window.confirm('¿Borrar esta postulación de tu historial?')) return;
+
+        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
+        const updated = storedProposals.filter(p => p.id !== proposalId);
+        localStorage.setItem('cooplance_db_proposals', JSON.stringify(updated));
+        
+        const myProps = updated.filter(p => p.freelancerId === user.id);
+        setMyProposals(myProps.reverse());
+        setOpenMenuId(null);
+    };
+
+    const getTimeAgo = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return `Hace ${Math.floor(interval)} años`;
+        interval = seconds / 2592000;
+        if (interval > 1) return `Hace ${Math.floor(interval)} meses`;
+        interval = seconds / 86400;
+        if (interval > 1) return `Hace ${Math.floor(interval)} días`;
+        interval = seconds / 3600;
+        if (interval > 1) return `Hace ${Math.floor(interval)} horas`;
+        interval = seconds / 60;
+        if (interval > 1) return `Hace ${Math.floor(interval)} minutos`;
+        return 'Hace instantes';
+    };
+
+    const filteredProposals = myProposals.filter(p => {
+        const status = (p.status || '').toLowerCase();
+        if (activeProposalTab === 'active') return status === 'pending';
+        return ['accepted', 'rejected', 'canceled', 'completed'].includes(status);
+    });
 
     return (
         <div className="dashboard-container">
@@ -561,56 +570,118 @@ const Dashboard = () => {
                             )}
                         </div>
 
-                        <h3 className="section-title">Mis Postulaciones</h3>
+                        <div className="proposal-section-header">
+                            <h3 className="section-title">Mis Postulaciones</h3>
+                            <div className="proposal-tabs">
+                                <button 
+                                    className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`}
+                                    onClick={() => setActiveProposalTab('active')}
+                                >
+                                    Activas 
+                                    <span className="tab-count">
+                                        {myProposals.filter(p => p.status === 'pending').length}
+                                    </span>
+                                </button>
+                                <button 
+                                    className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`}
+                                    onClick={() => setActiveProposalTab('history')}
+                                >
+                                    Historial
+                                    <span className="tab-count">
+                                        {myProposals.filter(p => p.status !== 'pending').length}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="jobs-list">
-                            {myProposals.length > 0 ? myProposals.map(proposal => (
+                            {filteredProposals.length > 0 ? filteredProposals.map(proposal => (
                                 <div
                                     key={proposal.id}
-                                    className="glass job-card clickable"
-                                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', cursor: 'pointer' }}
+                                    className={`proposal-card status-${proposal.status}`}
                                     onClick={() => navigate(`/project/${proposal.projectId}`)}
                                 >
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{proposal.projectTitle}</h4>
+                                    <div className="proposal-card-info">
+                                        <div className="proposal-card-title">
+                                            <h4>{proposal.projectTitle}</h4>
                                             {proposal.clientRole && (
                                                 <span style={{
-                                                    fontSize: '0.7rem',
+                                                    fontSize: '0.65rem',
                                                     padding: '1px 6px',
                                                     borderRadius: '4px',
-                                                    background: proposal.clientRole === 'company' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(139, 92, 246, 0.2)',
-                                                    color: proposal.clientRole === 'company' ? 'var(--secondary)' : 'var(--primary)',
+                                                    background: proposal.clientRole === 'company' ? 'rgba(6, 182, 212, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                                                    color: proposal.clientRole === 'company' ? '#06b6d4' : '#8b5cf6',
                                                     border: '1px solid currentColor'
                                                 }}>
                                                     {proposal.clientRole === 'company' ? 'Empresa' : 'Particular'}
                                                 </span>
                                             )}
                                         </div>
-                                        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                            Enviado el: {new Date(proposal.createdAt).toLocaleDateString()}
-                                        </p>
+                                        <div className="proposal-card-meta">
+                                            <span className="proposal-time-ago">
+                                                <svg style={{width:'12px', height:'12px', marginRight:'4px', verticalAlign:'middle'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                                {getTimeAgo(proposal.createdAt)}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span className={`status-badge ${proposal.status === 'pending' ? 'active' : proposal.status}`}
-                                            style={{
-                                                background: proposal.status === 'pending' ? 'rgba(234, 179, 8, 0.2)' : undefined,
-                                                color: proposal.status === 'pending' ? '#eab308' : undefined,
-                                                border: proposal.status === 'pending' ? '1px solid rgba(234, 179, 8, 0.3)' : undefined
-                                            }}>
-                                            {proposal.status === 'pending' ? 'Pendiente' : proposal.status}
+
+                                    <div className="proposal-card-right">
+                                        <span className={`status-badge ${(proposal.status || '').toLowerCase()}`}>
+                                            {(() => {
+                                                const s = (proposal.status || '').toLowerCase();
+                                                if (s === 'pending') return 'Pendiente';
+                                                if (s === 'accepted') return 'Aceptado';
+                                                if (s === 'canceled') return 'Cancelado';
+                                                if (s === 'rejected') return 'Rechazado';
+                                                if (s === 'completed') return 'Completado';
+                                                return proposal.status;
+                                            })()}
                                         </span>
+
+                                        <div className="proposal-dots-wrapper" onClick={e => e.stopPropagation()}>
+                                            <button 
+                                                className="proposal-dots-btn"
+                                                onClick={() => setOpenMenuId(openMenuId === proposal.id ? null : proposal.id)}
+                                            >
+                                                ⋮
+                                            </button>
+                                            
+                                            {openMenuId === proposal.id && (
+                                                <div className="proposal-dots-menu">
+                                                    <button onClick={() => navigate(`/project/${proposal.projectId}`)}>
+                                                        <svg style={{width:'14px'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                                        Ver Detalles / Entrevista
+                                                    </button>
+                                                                      {((proposal.status || '').toLowerCase()) === 'pending' ? (
+                                                        <button 
+                                                            className="danger" 
+                                                            onClick={(e) => handleCancelProposal(e, proposal.id)}
+                                                        >
+                                                            <svg style={{width:'14px'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                                            Cancelar Postulación
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            className="danger" 
+                                                            onClick={(e) => handleDeleteProposal(e, proposal.id)}
+                                                        >
+                                                            <svg style={{width:'14px'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"></path><path d="M19 6 v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                            Borrar del Historial
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )) : (
-                                <div className="glass" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                    <p>No te has postulado a ningún proyecto.</p>
-                                    <button
-                                        className="btn-primary"
-                                        style={{ marginTop: '1rem', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
-                                        onClick={() => navigate('/explore-clients')}
-                                    >
-                                        Explorar Proyectos Disponibles
-                                    </button>
+                                <div className="proposal-empty">
+                                    <p>{activeProposalTab === 'active' ? 'No tienes postulaciones activas.' : 'Tu historial está vacío.'}</p>
+                                    {activeProposalTab === 'active' && (
+                                        <button className="btn-primary" onClick={() => navigate('/explore-clients')}>
+                                            Explorar Proyectos
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
