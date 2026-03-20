@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useChat } from '../context/ChatContext';
@@ -481,18 +482,43 @@ const Chat = () => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Media Modal */}
-                            {selectedMedia && (
+                            {/* Media Modal - rendered via Portal to bypass .glass backdrop-filter */}
+                            {selectedMedia && ReactDOM.createPortal(
                                 <div className="media-modal-overlay" onClick={() => setSelectedMedia(null)}>
+                                    <button
+                                        onClick={() => setSelectedMedia(null)}
+                                        style={{
+                                            position: 'fixed',
+                                            top: '1.5rem',
+                                            right: '1.5rem',
+                                            zIndex: 1002,
+                                            background: 'rgba(255,255,255,0.15)',
+                                            border: 'none',
+                                            color: 'white',
+                                            cursor: 'pointer',
+                                            width: '44px',
+                                            height: '44px',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: 0,
+                                        }}
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}>
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
                                     <div className="media-modal-content" onClick={e => e.stopPropagation()}>
-                                        <button className="close-modal" onClick={() => setSelectedMedia(null)}>×</button>
                                         {selectedMedia.type === 'image' ? (
                                             <img src={selectedMedia.url} alt="Full view" className="media-modal-image" />
                                         ) : (
                                             <video src={selectedMedia.url} controls autoPlay className="media-modal-video" />
                                         )}
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* Extension Modal */}

@@ -16,9 +16,8 @@
 
 .media-modal-content {
     position: relative;
-    max-width: 95vw;
+    max-width: 90vw;
     max-height: 90vh;
-    /* Maximized vertical space with slight buffer */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -31,13 +30,11 @@
 .media-modal-image,
 .media-modal-video {
     display: block;
-    max-width: 100%;
-    max-height: 90vh;
-    /* Match container limit */
+    max-width: 90vw;
+    max-height: 85vh;
     width: auto;
     height: auto;
     object-fit: contain;
-    /* Ensure full visibility without crop */
     border-radius: 4px;
 }
 
@@ -493,10 +490,8 @@
 
 .media-modal-content {
     position: relative;
-    max-width: 85vw;
-    /* Slightly stricter width */
-    max-height: 70vh;
-    /* Aggressively reduced for clear fit */
+    max-width: 90vw;
+    max-height: 90vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -509,13 +504,11 @@
 .media-modal-image,
 .media-modal-video {
     display: block;
-    max-width: 100%;
-    max-height: 70vh;
-    /* Match container strict limit */
+    max-width: 90vw;
+    max-height: 85vh;
     width: auto;
     height: auto;
     object-fit: contain;
-    /* Guarantee full image visibility */
     border-radius: 4px;
 }
 
@@ -999,7 +992,23 @@
     position: relative;
     max-width: 90vw;
     max-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border-radius: 8px;
     animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.media-modal-image,
+.media-modal-video {
+    display: block;
+    max-width: 90vw;
+    max-height: 85vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
 }
 
 .close-modal {
