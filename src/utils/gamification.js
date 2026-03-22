@@ -18,6 +18,19 @@ export const calculateNextLevelXP = (currentLevel) => {
     return XP_TABLE[currentLevel] || 10000;
 };
 
+export const getLevelFromXP = (xp) => {
+    if (xp >= XP_TABLE[9]) return 10;
+    if (xp >= XP_TABLE[8]) return 9;
+    if (xp >= XP_TABLE[7]) return 8;
+    if (xp >= XP_TABLE[6]) return 7;
+    if (xp >= XP_TABLE[5]) return 6;
+    if (xp >= XP_TABLE[4]) return 5;
+    if (xp >= XP_TABLE[3]) return 4;
+    if (xp >= XP_TABLE[2]) return 3;
+    if (xp >= XP_TABLE[1]) return 2;
+    return 1;
+};
+
 export const calculateCommission = (level) => {
     if (level >= 10) return 6;
     if (level === 9) return 8;
@@ -138,15 +151,18 @@ export const processGamificationRules = (user) => {
                 const penaltyPerPeriod = Math.floor(xpReq * 0.05);
                 const totalPenalty = penaltyPerPeriod * periods;
 
+                // Ensure XP doesn't go below 0
                 updatedUser.xp = Math.max(0, (updatedUser.xp || 0) - totalPenalty);
+
+                // Recalculate level based on new XP (Level drops if XP falls below threshold)
+                const properLevel = getLevelFromXP(updatedUser.xp);
+                if (properLevel < updatedUser.level) {
+                    updatedUser.level = properLevel;
+                }
 
                 // Update check time
                 g.lastDecayCheck = now;
                 hasChanges = true;
-
-                // Note: Decay doesn't explicitly say it drops level immediately, usually just reduces XP.
-                // But if XP drops below 0? Usually handled by level down logic, 
-                // but simpler model: XP stays >= 0. User just has to work harder.
             }
         }
     }
@@ -168,10 +184,10 @@ export const processGamificationRules = (user) => {
                 const oldLevel = updatedUser.level;
                 updatedUser.level = Math.max(5, oldLevel - 1);
 
-                // Reset XP for the new (lower) level? Or keep current?
-                // Usually standardizing XP is safer. Let's say you start fresh at new level or keep ratio.
-                // Simplest: keep XP but clamp to new level cap?
-                // Let's just keep XP.
+                // Sync XP to the minimum required for the new lower level
+                // (e.g., if dropping to level 5, set XP to level 4's requirement which is the start of level 5)
+                const startOfNewLevelXP = updatedUser.level > 1 ? XP_TABLE[updatedUser.level - 1] : 0;
+                updatedUser.xp = startOfNewLevelXP;
 
                 g.lastInactivityPenalty = now;
                 hasChanges = true;

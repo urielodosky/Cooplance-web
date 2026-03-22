@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { processGamificationRules } from '../../../utils/gamification';
+import { syncUserGamificationData } from '../../../utils/syncUtils';
 
 const AuthContext = createContext();
 
@@ -12,8 +13,18 @@ export const AuthProvider = ({ children }) => {
             if (savedUser) {
                 let parsedUser = JSON.parse(savedUser);
                 // Run gamification rules on load
-                parsedUser = processGamificationRules(parsedUser);
-                return parsedUser;
+                const processed = processGamificationRules(parsedUser);
+                if (JSON.stringify(parsedUser) !== JSON.stringify(processed)) {
+                    localStorage.setItem('cooplance_user', JSON.stringify(processed));
+                    const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
+                    const userIndex = storedUsers.findIndex(u => u.id == processed.id);
+                    if (userIndex !== -1) {
+                        storedUsers[userIndex] = processed;
+                        localStorage.setItem('cooplance_db_users', JSON.stringify(storedUsers));
+                    }
+                    syncUserGamificationData(processed);
+                }
+                return processed;
             }
             return null;
         } catch (error) {
@@ -142,6 +153,9 @@ export const AuthProvider = ({ children }) => {
             storedUsers.push(processed);
         }
         localStorage.setItem('cooplance_db_users', JSON.stringify(storedUsers));
+        
+        // Sync these changes to denormalized locations
+        syncUserGamificationData(processed);
     };
 
     const updateBalance = (amount, type = 'credit') => {

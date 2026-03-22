@@ -6,6 +6,7 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
     const { user, updateUser } = useAuth();
     const [answers, setAnswers] = useState({});
     const [coverLetter, setCoverLetter] = useState('');
+    const [expirationDays, setExpirationDays] = useState('');
     const [error, setError] = useState('');
 
     const questions = project.questions || [];
@@ -35,6 +36,11 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
             answer: answers[q.id]
         }));
 
+        let expirationDate = null;
+        if (expirationDays && !isNaN(parseInt(expirationDays))) {
+             expirationDate = new Date(Date.now() + parseInt(expirationDays) * 24 * 60 * 60 * 1000).toISOString();
+        }
+
         const newProposal = {
             id: Date.now(),
             projectId: project.id,
@@ -45,6 +51,7 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
             freelancerLevel: user.level || 1,
             status: 'pending',
             createdAt: new Date().toISOString(),
+            expirationDate,
             coverLetter: coverLetter || 'Hola, estoy interesado en tu proyecto.',
             answers: formattedAnswers
         };
@@ -135,6 +142,21 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
                             placeholder={questions.length > 0 ? "Añade cualquier otro detalle relevante..." : "Explica por qué eres el mejor candidato para este proyecto..."}
                             style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', minHeight: '100px', resize: 'vertical' }}
                             required={questions.length === 0}
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>
+                            Validez de esta postulación en días <span style={{ opacity: 0.7, fontSize: '0.8rem', fontWeight: 'normal' }}>(Opcional, por defecto 30)</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            min="1" 
+                            max="180" 
+                            value={expirationDays} 
+                            onChange={e => setExpirationDays(e.target.value)} 
+                            placeholder="Ej: 15"
+                            style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)' }}
                         />
                     </div>
 

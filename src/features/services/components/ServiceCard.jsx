@@ -1,3 +1,8 @@
+
+
+
+
+
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/context/AuthContext';
 import { getProfilePicture } from '../../../utils/avatarUtils'; // Make sure this util exists or create mocked
@@ -10,10 +15,23 @@ const ServiceCard = ({ service }) => {
     // Mock data if missing
     const rating = service.rating || 0;
     const reviewCount = service.reviewCount || 0;
-    const avatar = service.freelancerAvatar; // Logic to get actual avatar if available
 
-    const isTopLevel = service.level >= 10;
-    const isNewTalent = service.level <= 2;
+    // Fetch fresh user data to ensure latest gamification (and username) is displayed
+    const getFreelancerDetails = () => {
+        try {
+            const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
+            return allUsers.find(u => u.id === service.freelancerId) || {};
+        } catch (e) {
+            return {};
+        }
+    };
+    const fUser = getFreelancerDetails();
+    const displayUsername = fUser.username || service.freelancerName?.replace(/\s+/g, '_').toLowerCase();
+    const displayLevel = Math.min(10, Math.max(1, fUser.level || service.level || 1));
+    const avatar = fUser.avatar || service.freelancerAvatar;
+
+    const isTopLevel = displayLevel >= 10;
+    const isNewTalent = displayLevel <= 2;
 
     const getCardStyle = () => {
         if (isTopLevel) return { border: '1px solid #fbbf24', boxShadow: '0 0 10px rgba(251, 191, 36, 0.1)' };
@@ -48,8 +66,8 @@ const ServiceCard = ({ service }) => {
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <span className="freelancer-name" style={highlightColor ? { color: highlightColor } : {}}>
-                                {service.freelancerName}
+                            <span className="freelancer-username" style={{ fontSize: '1rem', fontWeight: 'bold', ...(highlightColor ? { color: highlightColor } : {}) }}>
+                                {displayUsername}
                             </span>
                             {(rating > 0) ? (
                                 <div className="service-rating" style={{ fontSize: '0.8rem', marginLeft: '0' }}>
@@ -61,11 +79,14 @@ const ServiceCard = ({ service }) => {
                                 <span style={{ fontSize: '0.7rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '1px 4px', borderRadius: '3px', fontWeight: '500' }}>Vendedor Nuevo</span>
                             )}
                         </div>
-                        <span className="freelancer-level" style={highlightColor ? { color: highlightColor, display: 'flex', alignItems: 'center', gap: '3px' } : {}}>
+                        <span className="freelancer-realname" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {service.freelancerName}
+                        </span>
+                        <span className="freelancer-level" style={{ ...(highlightColor ? { color: highlightColor } : {}), display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
                             {isTopLevel && (
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
                             )}
-                            Nivel {service.level}
+                            Nivel {displayLevel}
                         </span>
                     </div>
                 </div>
@@ -115,7 +136,7 @@ const ServiceCard = ({ service }) => {
                         {service.workMode && service.workMode.includes('presential') ? (() => {
                             const locationText = service.location || '';
                             const { display, tooltip } = formatLocation(locationText);
-                            
+
                             if (tooltip.length > 0) {
                                 return (
                                     <div className="help-icon-wrapper" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', position: 'relative' }}>

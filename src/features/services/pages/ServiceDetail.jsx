@@ -47,7 +47,7 @@ const ServiceDetail = () => {
     const freelancerUser = getFreelancerDetails();
     const displayUsername = freelancerUser.username || service.freelancerName?.replace(/\s+/g, '_').toLowerCase();
     const displayRealName = service.freelancerName;
-    const displayLevel = Math.max(1, service.level || freelancerUser.level || 1);
+    const displayLevel = Math.min(10, Math.max(1, freelancerUser.level || service.level || 1));
     const displayAvatar = getProfilePicture({
         role: 'freelancer',
         avatar: freelancerUser.avatar || service.freelancerAvatar,
@@ -175,7 +175,7 @@ const ServiceDetail = () => {
                             />
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600 }}>@{displayUsername}</h3>
+                                    <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600 }}>{displayUsername}</h3>
                                     <span className="level-badge-lg" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Nivel {displayLevel}</span>
                                     {freelancerUser.gamification?.vacation?.active && (() => {
                                         const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - freelancerUser.gamification.vacation.startDate) / 86400000));

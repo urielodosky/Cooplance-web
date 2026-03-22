@@ -21,6 +21,18 @@ const ProjectCard = ({ project, onApply }) => {
     const navigate = useNavigate();
     // Only use image if explicitly provided by user
     const hasImage = !!project.imageUrl;
+    // Fetch fresh user data
+    const getClientDetails = () => {
+        try {
+            const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
+            return allUsers.find(u => u.id === (project.clientId || project.authorId)) || {};
+        } catch (e) {
+            return {};
+        }
+    };
+    const cUser = getClientDetails();
+    const displayUsername = cUser.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
+    const avatar = cUser.avatar || project.clientAvatar;
 
     const handleClick = () => {
         navigate(`/project/${project.id}`);
@@ -38,7 +50,7 @@ const ProjectCard = ({ project, onApply }) => {
             <div className="project-content">
                 <div className="client-info">
                     <img
-                        src={getProfilePicture({ role: project.clientRole || 'client', avatar: project.clientAvatar })}
+                        src={getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })}
                         alt={project.clientName}
                         className="client-avatar clickable"
                         onClick={(e) => {
@@ -53,8 +65,8 @@ const ProjectCard = ({ project, onApply }) => {
                     <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                             <span
-                                className="client-name clickable"
-                                style={{ cursor: 'pointer' }}
+                                className="client-username clickable"
+                                style={{ cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (project.clientRole === 'company') {
@@ -64,7 +76,7 @@ const ProjectCard = ({ project, onApply }) => {
                                     }
                                 }}
                             >
-                                {project.clientName || 'Usuario'}
+                                {displayUsername}
                             </span>
                             {project.clientRating > 0 ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.8rem' }}>
@@ -76,7 +88,10 @@ const ProjectCard = ({ project, onApply }) => {
                                 <span style={{ fontSize: '0.7rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '1px 4px', borderRadius: '3px' }}>Nuevo</span>
                             )}
                         </div>
-                        <span className="project-time-ago">{getTimeAgo(project.createdAt)}</span>
+                        <span className="client-realname" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {project.clientName || 'Usuario'}
+                        </span>
+                        <span className="project-time-ago" style={{ marginTop: '2px' }}>{getTimeAgo(project.createdAt)}</span>
                     </div>
                 </div>
 

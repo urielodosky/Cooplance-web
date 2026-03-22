@@ -57,79 +57,79 @@ const Badges = () => {
     const freelancerFamilies = [
         {
             familyId: 'sales',
-            title: 'Imperio de Ventas',
-            description: 'Vende tus servicios y completa proyectos.',
+            title: 'Trayectoria Comercial',
+            description: 'Volumen y éxito en la venta de servicios.',
             icon: Icons.Sales,
             badges: [
-                { title: 'Primera Venta', desc: '¡Rompiste el hielo!', required: 1 },
-                { title: '10 Ventas', desc: 'Negocio en marcha.', required: 10 },
-                { title: '100 Ventas', desc: 'Vendedor consolidado.', required: 100 },
-                { title: '1,000 Ventas', desc: 'Una verdadera máquina.', required: 1000 },
-                { title: '10,000 Ventas', desc: 'Líder del mercado global.', required: 10000 },
+                { title: 'Iniciación Comercial', desc: 'Registro de la primera venta.', required: 1 },
+                { title: 'Consolidación', desc: '10 ventas completadas con éxito.', required: 10 },
+                { title: 'Alto Volumen', desc: 'Alcanza las 100 ventas concretadas.', required: 100 },
+                { title: 'Rendimiento Superior', desc: 'Hito de 1,000 ventas alcanzado.', required: 1000 },
+                { title: 'Líder de Mercado', desc: 'Referente global con 10,000 ventas.', required: 10000 },
             ],
             currentProgress: mySales.length
         },
         {
             familyId: 'levels',
-            title: 'Ascenso de Poder',
-            description: 'Sube de nivel ganando experiencia (XP).',
+            title: 'Desarrollo Profesional',
+            description: 'Mide tu crecimiento y nivel de experiencia.',
             icon: Icons.Level,
             badges: [
-                { title: 'Aspirante', desc: 'Alcanza el Nivel 2.', required: 2 },
-                { title: 'Profesional', desc: 'Alcanza el Nivel 6.', required: 6 },
-                { title: 'Experto', desc: 'Alcanza el Nivel 8.', required: 8 },
-                { title: 'Maestro', desc: 'Alcanza el Nivel 9.', required: 9 },
-                { title: 'Leyenda Viva', desc: 'Alcanza el máximo Nivel 10.', required: 10 },
+                { title: 'Profesional Junior', desc: 'Alcanza el Nivel 2.', required: 2 },
+                { title: 'Profesional Pleno', desc: 'Alcanza el Nivel 6.', required: 6 },
+                { title: 'Especialista Senior', desc: 'Alcanza el Nivel 8.', required: 8 },
+                { title: 'Consultor Principal', desc: 'Alcanza el Nivel 9.', required: 9 },
+                { title: 'Referente de Industria', desc: 'Alcanza el nivel máximo de experiencia (10).', required: 10 },
             ],
             currentProgress: user.level || 1
         },
         {
             familyId: 'services',
-            title: 'Expansión de Ofertas',
-            description: 'Crea nuevos servicios para tus clientes.',
+            title: 'Portafolio de Servicios',
+            description: 'Diversificación de la oferta profesional.',
             icon: Icons.Service,
             badges: [
-                { title: 'El Pionero', desc: 'Crea tu primer servicio.', required: 1 },
-                { title: 'Emprendedor', desc: 'Crea 3 servicios distintos.', required: 3 },
-                { title: 'Agencia', desc: 'Ofrece 5 servicios increíbles.', required: 5 },
+                { title: 'Primer Servicio', desc: 'Publicación de la primera oferta de servicio.', required: 1 },
+                { title: 'Portafolio en Crecimiento', desc: 'Oferta diversificada de 3 servicios.', required: 3 },
+                { title: 'Proveedor Integral', desc: 'Portafolio completo de 5 servicios activos.', required: 5 },
             ],
             currentProgress: myServices.length
         },
         {
             familyId: 'loyalty',
-            title: 'Vínculos Eternos',
-            description: 'Logra que el mismo cliente vuelva por más.',
+            title: 'Fidelización de Clientes',
+            description: 'Métricas de retención y recurrencia.',
             icon: Icons.Loyalty,
             badges: [
-                { title: 'Cliente Frecuente', desc: 'Un cliente te compró por 2da vez.', required: 2 },
-                { title: 'Lealtad Pura', desc: 'El mismo cliente volvió 5 veces.', required: 5 },
-                { title: 'Amigos Por Siempre', desc: 'Hiciste 10 trabajos al mismo cliente.', required: 10 },
+                { title: 'Retención Inicial', desc: 'Un cliente ha vuelto a contratar tus servicios.', required: 2 },
+                { title: 'Socio Estratégico', desc: 'Relación continua con 5 contratos recurrentes.', required: 5 },
+                { title: 'Proveedor de Confianza', desc: 'Alianza a largo plazo con 10 contratos del mismo cliente.', required: 10 },
             ],
             currentProgress: maxLoyalty
         },
         {
             familyId: 'speed',
-            title: 'Flash Digital',
-            description: 'Entrega trabajos antes de la fecha límite.',
+            title: 'Eficiencia Operativa',
+            description: 'Métricas de cumplimiento de plazos de entrega.',
             icon: Icons.Speed,
             badges: [
-                { title: 'Acelerador', desc: '1 entrega anticipada.', required: 1 },
-                { title: 'Turbo', desc: '5 entregas veloces.', required: 5 },
-                { title: 'Rayo', desc: '10 entregas relámpago.', required: 10 },
-                { title: 'Viajero en el Tiempo', desc: '100 entregas antes de tiempo.', required: 100 },
+                { title: 'Entrega Eficiente', desc: 'Primera entrega anticipada.', required: 1 },
+                { title: 'Gestión de Tiempos', desc: '5 entregas antes de la fecha límite.', required: 5 },
+                { title: 'Optimización de Plazos', desc: '10 entregas anticipadas confirmadas.', required: 10 },
+                { title: 'Excelencia Operativa', desc: 'Historial de 100 entregas puntuales y anticipadas.', required: 100 },
             ],
             currentProgress: Math.floor(mySales.length / 3) // Mock calculation for demo
         },
         {
             familyId: 'reviews',
-            title: 'Aclamación Pública',
-            description: 'Obtén valoraciones positivas (5 estrellas).',
+            title: 'Satisfacción del Cliente',
+            description: 'Evaluaciones y control de calidad percibida.',
             icon: Icons.Review,
             badges: [
-                { title: 'Buen Comienzo', desc: 'Tu primera reseña positiva.', required: 1 },
-                { title: 'Aprobado', desc: '5 reseñas de cinco estrellas.', required: 5 },
-                { title: 'Famoso', desc: '10 valoraciones perfectas.', required: 10 },
-                { title: 'Ídolo de Masas', desc: '100 reseñas estelares.', required: 100 },
+                { title: 'Primera Evaluación', desc: 'Primera reseña con máxima calificación.', required: 1 },
+                { title: 'Calidad Consistente', desc: '5 reseñas consecutivas de excelencia.', required: 5 },
+                { title: 'Alta Recomendación', desc: '10 valoraciones perfectas documentadas.', required: 10 },
+                { title: 'Excelencia Reconocida', desc: 'Logro de 100 reseñas estelares verificadas.', required: 100 },
             ],
             currentProgress: user.reviewsCount || 0
         }
@@ -138,37 +138,37 @@ const Badges = () => {
     const clientFamilies = [
         {
             familyId: 'purchases',
-            title: 'Motor de la Economía',
-            description: 'Invierte en proyectos y servicios.',
+            title: 'Inversión en Talento',
+            description: 'Historial de contrataciones corporativas y adjudicación de proyectos.',
             icon: Icons.Sales,
             badges: [
-                { title: 'Primer Paso', desc: 'Realiza tu primera compra.', required: 1 },
-                { title: 'Inversor', desc: '10 compras realizadas.', required: 10 },
-                { title: 'Magnate', desc: '100 compras impulsando talento.', required: 100 },
+                { title: 'Primera Contratación', desc: 'Gestión de la primera contratación.', required: 1 },
+                { title: 'Cliente Recurrente', desc: 'Registros de 10 contrataciones realizadas.', required: 10 },
+                { title: 'Inversor Corporativo', desc: 'Asignación de 100 contratos de proyecto.', required: 100 },
             ],
             currentProgress: myOrders.length
         },
         {
             familyId: 'talent',
-            title: 'Cazatalentos',
-            description: 'Contrata a diferentes freelancers.',
+            title: 'Diversificación de Recursos Humanos',
+            description: 'Capacidad para expandir la red de talento y formar equipos multidisciplinarios.',
             icon: Icons.Handshake,
             badges: [
-                { title: 'Ojo Crítico', desc: 'Trabaja con 2 freelancers distintos.', required: 2 },
-                { title: 'Director de Casting', desc: 'Contrata a 5 expertos diferentes.', required: 5 },
-                { title: 'Red Global', desc: 'Trabaja con 10 talentos únicos.', required: 10 },
+                { title: 'Explorador de Talento', desc: 'Colaboración documentada con 2 profesionales distintos.', required: 2 },
+                { title: 'Gestor de Contrataciones', desc: 'Asignaciones diversificadas con 5 perfiles.', required: 5 },
+                { title: 'Desarrollador de Redes', desc: 'Consolidación de una red de 10 profesionales.', required: 10 },
             ],
             currentProgress: uniqueFreelancersHired
         },
         {
             familyId: 'projects',
-            title: 'Mente Visionaria',
-            description: 'Publica proyectos personalizados.',
+            title: 'Gestión de Proyectos',
+            description: 'Estructuración y publicación de iniciativas profesionales.',
             icon: Icons.Eye,
             badges: [
-                { title: 'Primera Idea', desc: 'Publica 1 proyecto.', required: 1 },
-                { title: 'Arquitecto', desc: 'Crea 3 proyectos.', required: 3 },
-                { title: 'Visionario', desc: 'Da vida a 5 proyectos distintos.', required: 5 },
+                { title: 'Planeación Inicial', desc: 'Estructuración del primer proyecto.', required: 1 },
+                { title: 'Administrador de Proyectos', desc: 'Planificación documentada de 3 iniciativas.', required: 3 },
+                { title: 'Director de Iniciativas', desc: 'Gestión simultánea o histórica de 5 grandes proyectos.', required: 5 },
             ],
             currentProgress: myProjects.length
         }

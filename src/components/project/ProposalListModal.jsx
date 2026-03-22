@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getProfilePicture } from '../../utils/avatarUtils';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/context/AuthContext';
+import { autoExpireProposals } from '../../utils/proposalUtils';
 import PaymentModal from '../common/PaymentModal';
 import '../../styles/components/ProposalListModal.scss';
 
@@ -13,6 +14,7 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
 
     useEffect(() => {
         if (isOpen && projectId) {
+            autoExpireProposals();
             const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
             const projectProposals = storedProposals.filter(p => p.projectId === projectId);
             setProposals(projectProposals);

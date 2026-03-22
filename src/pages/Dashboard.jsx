@@ -9,7 +9,8 @@ import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal'; // New Import
-import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, registerActivity } from '../utils/gamification';
+import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, registerActivity, XP_TABLE } from '../utils/gamification';
+import { autoExpireProposals } from '../utils/proposalUtils';
 import { getProfilePicture } from '../utils/avatarUtils';
 import '../styles/pages/Dashboard.scss';
 // Assuming Dashboard might have inline styles per original file, or use global CSS.
@@ -30,6 +31,9 @@ const Dashboard = () => {
 
     // Load Projects & Proposals Logic
     useEffect(() => {
+        // Auto-expire old proposals first
+        autoExpireProposals();
+
         const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
         const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
 
@@ -124,9 +128,9 @@ const Dashboard = () => {
         const currentLevel = user.level || 1;
         if (currentLevel <= 1) return;
         const newLevel = currentLevel - 1;
-        // Set XP to start of that level, which is calculated by recursive check or just 0 for now?
-        // Simply setting XP to 0 for simplicity.
-        updateUser({ ...user, level: newLevel, xp: 0 });
+        // set XP to minimum required for `newLevel`
+        const newXp = newLevel > 1 ? XP_TABLE[newLevel - 1] : 0;
+        updateUser({ ...user, level: newLevel, xp: newXp });
     };
 
     const handleVacationClick = () => {
