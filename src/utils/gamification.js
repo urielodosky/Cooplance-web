@@ -153,6 +153,7 @@ export const processGamificationRules = (user) => {
 
                 // Ensure XP doesn't go below 0
                 updatedUser.xp = Math.max(0, (updatedUser.xp || 0) - totalPenalty);
+                updatedUser.points = updatedUser.xp;
 
                 // Recalculate level based on new XP (Level drops if XP falls below threshold)
                 const properLevel = getLevelFromXP(updatedUser.xp);

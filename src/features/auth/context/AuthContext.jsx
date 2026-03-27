@@ -142,6 +142,8 @@ export const AuthProvider = ({ children }) => {
             throw error;
         }
 
+        console.log('Profile updated successfully in DB:', profileUpdate);
+
         // Fetch latest profile from DB to ensure state consistency
         await fetchProfile(user.id);
     };

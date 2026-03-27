@@ -35,7 +35,7 @@ create policy "Users can update their own profile." on public.profiles for updat
 create table if not exists public.services (
     id uuid primary key default gen_random_uuid(),
     owner_id uuid references public.profiles(id) on delete cascade not null,
-    team_id uuid, -- nullable, only if it belongs to a team
+    team_id uuid references public.teams(id) on delete set null, -- nullable, only if it belongs to a team
     title text not null,
     description text,
     category text,
