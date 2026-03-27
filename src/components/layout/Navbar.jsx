@@ -78,6 +78,20 @@ const Navbar = () => {
                         COOPLANCE
                     </div>
                 </Link>
+                {user?.isMock && (
+                    <div className="local-mode-badge" style={{ 
+                        background: '#f59e0b', 
+                        color: '#000', 
+                        fontSize: '0.7rem', 
+                        padding: '2px 8px', 
+                        borderRadius: '10px', 
+                        fontWeight: 'bold',
+                        marginLeft: '8px',
+                        animation: 'pulse 2s infinite'
+                    }}>
+                        MODO LOCAL
+                    </div>
+                )}
             </div>
 
             {/* DESKTOP LINKS */}

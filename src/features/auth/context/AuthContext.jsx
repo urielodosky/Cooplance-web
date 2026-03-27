@@ -16,6 +16,25 @@ export const AuthProvider = ({ children }) => {
             if (session) {
                 fetchProfile(session.user.id);
             } else {
+                // Try to load mock user from local storage for development/testing
+                const savedMock = localStorage.getItem('cooplance_mock_user');
+                if (savedMock) {
+                    setUser(JSON.parse(savedMock));
+                } else {
+                    // Provide a default mock user so the app is always usable
+                    setUser({
+                        id: 'mock-id-123',
+                        username: 'usuario_invitado',
+                        firstName: 'Invitado',
+                        lastName: 'Local',
+                        role: 'freelancer',
+                        isMock: true,
+                        xp: 100,
+                        level: 1,
+                        balance: 0,
+                        bio: 'Modo local activo para pruebas.'
+                    });
+                }
                 setLoading(false);
             }
         });
@@ -105,6 +124,15 @@ export const AuthProvider = ({ children }) => {
 
     // ─── UPDATE USER PROFILE ─────────────────────────────────────────────────────
     const updateUser = async (updatedData) => {
+        // Handle Mock User (Local Storage Fallback)
+        if (user?.isMock) {
+            console.log('Using Mock User - Saving to Local Storage:', updatedData);
+            const mockData = { ...updatedData, lastUpdated: new Date().toISOString() };
+            localStorage.setItem('cooplance_mock_user', JSON.stringify(mockData));
+            setUser(mockData);
+            return;
+        }
+
         if (!user) return;
 
         const processed = processGamificationRules(updatedData);
@@ -122,11 +150,11 @@ export const AuthProvider = ({ children }) => {
             location: processed.location,
             country: processed.country,
             work_hours: processed.workHours !== undefined ? processed.workHours : processed.work_hours,
-            payment_methods: processed.paymentMethods !== undefined ? processed.paymentMethods : processed.payment_methods,
+            payment_methods: processed.paymentMethods !== undefined ? processed.payment_methods : processed.payment_methods,
             vacancies: parseInt(processed.vacancies) || 0,
             cv_url: processed.cvUrl !== undefined ? processed.cvUrl : processed.cv_url,
             level: processed.level,
-            points: processed.points
+            points: processed.points !== undefined ? processed.points : processed.xp
         };
 
         // Remove undefined fields

@@ -62,7 +62,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/create-service" element={<ProtectedRoute><CreateService /></ProtectedRoute>} />
+              <Route path="/create-service" element={<CreateService />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/companies" element={<Companies />} />
               <Route path="/company/:id" element={<CompanyDetail />} />
@@ -72,7 +72,7 @@ function App() {
               <Route path="/community" element={<Community />} />
               <Route path="/login" element={<Login />} />
               <Route path="/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/service/:id" element={<ServiceDetail />} />
               <Route path="/explore-clients" element={<ExploreClients />} />
               <Route path="/project/:id" element={<ProjectDetail />} />
