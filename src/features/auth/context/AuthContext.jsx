@@ -109,22 +109,22 @@ export const AuthProvider = ({ children }) => {
 
         const processed = processGamificationRules(updatedData);
 
-        // Map frontend camelCase to database snake_case
+        // Map frontend camelCase to database snake_case strictly
         const profileUpdate = {
             username: processed.username?.toLowerCase(),
-            first_name: processed.firstName || processed.first_name,
-            last_name: processed.lastName || processed.last_name,
-            avatar_url: processed.avatarUrl || processed.avatar_url,
+            first_name: processed.firstName !== undefined ? processed.firstName : processed.first_name,
+            last_name: processed.lastName !== undefined ? processed.lastName : processed.last_name,
+            avatar_url: processed.avatarUrl !== undefined ? processed.avatarUrl : processed.avatar_url,
             bio: processed.bio,
             gender: processed.gender,
-            company_name: processed.companyName || processed.company_name,
-            responsible_name: processed.responsibleName || processed.responsible_name,
+            company_name: processed.companyName !== undefined ? processed.companyName : processed.company_name,
+            responsible_name: processed.responsibleName !== undefined ? processed.responsibleName : processed.responsible_name,
             location: processed.location,
             country: processed.country,
-            work_hours: processed.workHours || processed.work_hours,
-            payment_methods: processed.paymentMethods || processed.payment_methods,
+            work_hours: processed.workHours !== undefined ? processed.workHours : processed.work_hours,
+            payment_methods: processed.paymentMethods !== undefined ? processed.paymentMethods : processed.payment_methods,
             vacancies: parseInt(processed.vacancies) || 0,
-            cv_url: processed.cvUrl || processed.cv_url,
+            cv_url: processed.cvUrl !== undefined ? processed.cvUrl : processed.cv_url,
             level: processed.level,
             points: processed.points
         };

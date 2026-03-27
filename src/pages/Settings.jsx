@@ -27,6 +27,24 @@ const Settings = () => {
     const cvInputRef = useRef(null);
     const [cvFile, setCvFile] = useState(user?.cvFile || '');
 
+    // Sync state with user object when it changes (e.g. after update or load)
+    React.useEffect(() => {
+        if (user) {
+            setUsername(user.username || '');
+            setFirstName(user.firstName || '');
+            setLastName(user.lastName || '');
+            setCompanyName(user.companyName || '');
+            setResponsibleName(user.responsibleName || '');
+            setBio(user.bio || '');
+            setLocation(user.location || '');
+            setCountry(user.country || 'Argentina');
+            setWorkHours(user.workHours || '');
+            setPaymentMethods(user.paymentMethods || '');
+            setVacancies(user.vacancies || '');
+            setGender(user.gender || 'male');
+        }
+    }, [user]);
+
     if (!user) {
         return <div className="container" style={{ padding: '8rem 2rem', textAlign: 'center' }}>Por favor inicia sesión para ver los ajustes.</div>;
     }
