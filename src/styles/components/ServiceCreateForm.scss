@@ -797,3 +797,98 @@
 [data-theme="light"] .service-form-container textarea::placeholder {
     color: #94a3b8;
 }
+
+/* SESSION-BASED / TUTORING STYLES */
+.form-row-pricing {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+}
+
+.tutoring-plans-section {
+    margin-bottom: 2rem;
+    animation: fadeIn 0.4s ease;
+}
+
+.package-column.relative {
+    position: relative;
+    padding-top: 1.5rem;
+}
+
+.remove-plan-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    z-index: 5;
+    transition: all 0.2s;
+
+    &:hover {
+        transform: scale(1.1);
+        background: #dc2626;
+    }
+}
+
+.plan-name-input {
+    width: 100%;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+    text-align: center;
+    font-size: 1.1rem;
+
+    &:focus {
+        border-bottom-color: var(--primary) !important;
+        box-shadow: none !important;
+    }
+}
+
+.add-package-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 200px;
+    gap: 0.5rem;
+    color: var(--text-muted);
+
+    span {
+        font-size: 3rem;
+        line-height: 1;
+        font-weight: 200;
+    }
+
+    p {
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+}

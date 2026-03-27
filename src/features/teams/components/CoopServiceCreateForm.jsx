@@ -134,9 +134,21 @@ const handleLocationChange = (e) => {
 const getProvinces = () => formData.country && locations[formData.country] ? Object.keys(locations[formData.country]) : [];
 const getCities = () => formData.country && formData.province && locations[formData.country][formData.province] ? locations[formData.country][formData.province] : [];
 
-const categorySupportsBooking = bookingCategories.includes(formData.category) ||
-    bookingCategories.includes(formData.subcategory) ||
-    (Array.isArray(formData.specialties) && formData.specialties.some(s => bookingCategories.includes(s)));
+    const isSessionBased = ['Educación y Estilo de Vida', 'Profesionales Matriculados', 'Negocios y Administración'].includes(formData.category) ||
+        bookingCategories.includes(formData.category) ||
+        (typeof formData.subcategory === 'string' && (
+            formData.subcategory.toLowerCase().includes('tutoría') ||
+            formData.subcategory.toLowerCase().includes('coaching')
+        ));
+
+    const [tutoringPlans, setTutoringPlans] = useState(initialData?.tutoringPlans || [
+        { name: 'Plan Inicial', sessions: 2, price: '', description: '' },
+        { name: 'Plan Intermedio', sessions: 3, price: '', description: '' }
+    ]);
+
+    const categorySupportsBooking = bookingCategories.includes(formData.category) ||
+        bookingCategories.includes(formData.subcategory) ||
+        (Array.isArray(formData.specialties) && formData.specialties.some(s => bookingCategories.includes(s)));
 
 const prevCategorySupportsBooking = React.useRef(categorySupportsBooking);
 
@@ -196,22 +208,34 @@ const handleChange = (e, type = 'text') => {
     }
 };
 
-const handlePackageChange = (tier, field, value) => {
-    if (field === 'price') {
-        const val = parseFloat(value);
-        if (val < 0) {
-            setPackages(prev => ({
-                ...prev,
-                [tier]: { ...prev[tier], [field]: '0' }
-            }));
-            return;
+    const handlePackageChange = (tier, field, value) => {
+        if (field === 'price' || field === 'sessions') {
+            const val = parseFloat(value);
+            if (val < 0) return;
         }
-    }
-    setPackages(prev => ({
-        ...prev,
-        [tier]: { ...prev[tier], [field]: value }
-    }));
-};
+        setPackages(prev => ({
+            ...prev,
+            [tier]: { ...prev[tier], [field]: value }
+        }));
+    };
+
+    const handleTutoringPlanChange = (index, field, value) => {
+        const newPlans = [...tutoringPlans];
+        newPlans[index][field] = value;
+        setTutoringPlans(newPlans);
+    };
+
+    const addTutoringPlan = () => {
+        if (tutoringPlans.length < 5) {
+            setTutoringPlans([...tutoringPlans, { name: `Plan ${tutoringPlans.length + 1}`, sessions: 1, price: '', description: '' }]);
+        }
+    };
+
+    const removeTutoringPlan = (index) => {
+        if (tutoringPlans.length > 2) {
+            setTutoringPlans(tutoringPlans.filter((_, i) => i !== index));
+        }
+    };
 
 const handleFaqChange = (index, field, value) => {
     const newFaqs = [...faqs];
@@ -311,10 +335,13 @@ const handleSubmit = (e) => {
     const finalServiceData = {
         ...formData,
         id: initialData?.id || Date.now(),
-        price: hasPackages ? packages.basic.price : formData.price,
+        price: hasPackages 
+            ? (isSessionBased ? tutoringPlans[0].price : packages.basic.price) 
+            : formData.price,
         tags: tags,
-        packages: hasPackages ? packages : null,
+        packages: hasPackages ? (isSessionBased ? tutoringPlans : packages) : null,
         hasPackages: hasPackages,
+        isSessionBased: isSessionBased,
         faqs: faqs.filter(f => f.question && f.answer),
         freelancerId: user.id,
         freelancerName: initialData?.freelancerName || user.firstName || user.username || user.companyName,
@@ -638,78 +665,148 @@ return (
             </div>
 
             {hasPackages ? (
-                <div className="packages-grid">
-                    {['basic', 'standard', 'premium'].map(tier => (
-                        <div key={tier} className="package-column">
-                            <h4 style={{ textTransform: 'capitalize' }}>{tier === 'basic' ? 'Básico' : tier === 'standard' ? 'Estándar' : 'Premium'}</h4>
-
-                            <div className="package-field">
-                                <label>Precio</label>
-                                <div className="price-input-wrapper">
+                isSessionBased ? (
+                    <div className="tutoring-plans-section">
+                        <h4>Planes de Sesiones (Mín 2, Máx 5)</h4>
+                        <div className="packages-grid">
+                            {tutoringPlans.map((plan, index) => (
+                                <div key={index} className="package-column relative">
+                                    {tutoringPlans.length > 2 && (
+                                        <button type="button" className="remove-plan-btn" onClick={() => removeTutoringPlan(index)} title="Quitar plan">×</button>
+                                    )}
                                     <input
-                                        type="number"
-                                        value={packages[tier].price}
-                                        onChange={(e) => handlePackageChange(tier, 'price', e.target.value)}
-                                        required
+                                        type="text"
+                                        className="plan-name-input"
+                                        value={plan.name}
+                                        onChange={(e) => handleTutoringPlanChange(index, 'name', e.target.value)}
+                                        placeholder="Nombre del Plan"
                                     />
-                                    <span className="currency-badge">ARS</span>
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                                    Recibes: ${calculateNet(packages[tier].price)}
-                                </div>
-                            </div>
-                            <div className="package-field">
-                                <label>Entrega (días)</label>
-                                <input type="number" min="1" value={packages[tier].deliveryTime} onChange={(e) => handlePackageChange(tier, 'deliveryTime', e.target.value)} required />
-                            </div>
-                            <div className="package-field">
-                                <label style={{ display: 'flex', alignItems: 'center' }}>
-                                    Revisiones
-                                    <div className="help-icon-wrapper">
-                                        <div className="help-icon">?</div>
-                                        <div className="help-tooltip">
-                                            Cantidad de veces que se permiten modificaciones o arreglos una vez entregado el servicio.
+                                    <div className="package-field">
+                                        <label>Precio Total</label>
+                                        <div className="price-input-wrapper">
+                                            <input
+                                                type="number"
+                                                value={plan.price}
+                                                onChange={(e) => handleTutoringPlanChange(index, 'price', e.target.value)}
+                                                required
+                                            />
+                                            <span className="currency-badge">ARS</span>
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                            Recibes: ${calculateNet(plan.price)}
                                         </div>
                                     </div>
-                                </label>
-                                <input type="number" value={packages[tier].revisions} onChange={(e) => handlePackageChange(tier, 'revisions', e.target.value)} required />
-                            </div>
-                            <div className="package-field">
-                                <label>Descripción</label>
-                                <textarea rows="3" value={packages[tier].description} onChange={(e) => handlePackageChange(tier, 'description', e.target.value)} required />
-                            </div>
+                                    <div className="package-field">
+                                        <label>Cantidad de Sesiones</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={plan.sessions}
+                                            onChange={(e) => handleTutoringPlanChange(index, 'sessions', e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="package-field">
+                                        <label>Qué incluye / Frecuencia</label>
+                                        <textarea
+                                            rows="3"
+                                            value={plan.description}
+                                            onChange={(e) => handleTutoringPlanChange(index, 'description', e.target.value)}
+                                            placeholder="Ej: 1 sesión por semana, materiales extra..."
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                            {tutoringPlans.length < 5 && (
+                                <button type="button" className="add-package-card" onClick={addTutoringPlan}>
+                                    <span>+</span>
+                                    <p>Agregar otro plan de sesiones</p>
+                                </button>
+                            )}
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <>
-                    <div className="form-row-3">
-                        <div className="price-input-wrapper">
-                            <input type="number" name="price" placeholder="Precio" onChange={handleChange} required />
-                            <span className="currency-badge">ARS</span>
-                        </div>
-                        <input type="number" name="deliveryTime" min="1" placeholder="Días de Entrega" onChange={handleChange} required />
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <input
-                                type="number"
-                                name="revisions"
-                                placeholder="Revisiones"
-                                onChange={handleChange}
-                                required
-                                style={{ width: '100%', paddingRight: '2.5rem' }}
-                            />
-                            <div className="help-icon-wrapper" style={{ position: 'absolute', right: '10px', marginLeft: 0 }}>
-                                <div className="help-icon">?</div>
-                                <div className="help-tooltip" style={{ width: '200px', right: 0, left: 'auto', transform: 'translateY(10px)' }}>
-                                    Cantidad de veces que se permiten modificaciones o arreglos una vez entregado el servicio.
+                    </div>
+                ) : (
+                    <div className="packages-grid">
+                        {['basic', 'standard', 'premium'].map(tier => (
+                            <div key={tier} className="package-column">
+                                <h4 style={{ textTransform: 'capitalize' }}>{tier === 'basic' ? 'Básico' : tier === 'standard' ? 'Estándar' : 'Premium'}</h4>
+
+                                <div className="package-field">
+                                    <label>Precio</label>
+                                    <div className="price-input-wrapper">
+                                        <input
+                                            type="number"
+                                            value={packages[tier].price}
+                                            onChange={(e) => handlePackageChange(tier, 'price', e.target.value)}
+                                            required
+                                        />
+                                        <span className="currency-badge">ARS</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                        Recibes: ${calculateNet(packages[tier].price)}
+                                    </div>
+                                </div>
+                                <div className="package-field">
+                                    <label>Entrega (días)</label>
+                                    <input type="number" min="1" value={packages[tier].deliveryTime} onChange={(e) => handlePackageChange(tier, 'deliveryTime', e.target.value)} required />
+                                </div>
+                                <div className="package-field">
+                                    <label style={{ display: 'flex', alignItems: 'center' }}>
+                                        Revisiones
+                                        <div className="help-icon-wrapper">
+                                            <div className="help-icon">?</div>
+                                            <div className="help-tooltip">
+                                                Cantidad de veces que se permiten modificaciones o arreglos una vez entregado el servicio.
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <input type="number" value={packages[tier].revisions} onChange={(e) => handlePackageChange(tier, 'revisions', e.target.value)} required />
+                                </div>
+                                <div className="package-field">
+                                    <label>Descripción</label>
+                                    <textarea rows="3" value={packages[tier].description} onChange={(e) => handlePackageChange(tier, 'description', e.target.value)} required />
                                 </div>
                             </div>
+                        ))}
+                    </div>
+                )
+            ) : (
+                <>
+                    <div className="form-row-pricing">
+                        <div className="price-group">
+                            <label className="field-label">Precio del Servicio</label>
+                            <div className="price-input-wrapper">
+                                <input type="number" name="price" placeholder="5000" value={formData.price} onChange={handleChange} required />
+                                <span className="currency-badge">ARS</span>
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                                Recibes: ${calculateNet(formData.price)}
+                            </div>
                         </div>
+
+                        {!isSessionBased && (
+                            <>
+                                <div className="form-group-field">
+                                    <label className="field-label">Días de Entrega</label>
+                                    <input type="number" name="deliveryTime" min="1" placeholder="3" value={formData.deliveryTime} onChange={handleChange} required />
+                                </div>
+                                <div className="form-group-field">
+                                    <label className="field-label" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        Revisiones
+                                        <div className="help-icon-wrapper" style={{ position: 'relative' }}>
+                                            <div className="help-icon">?</div>
+                                            <div className="help-tooltip" style={{ width: '200px' }}>
+                                                Cantidad de veces que se permiten modificaciones una vez entregado.
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <input type="number" name="revisions" placeholder="2" value={formData.revisions} onChange={handleChange} required />
+                                </div>
+                            </>
+                        )}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '-0.5rem', marginBottom: '1rem' }}>
-                        Recibes: ${calculateNet(formData.price)}
-                    </div>
-                    <textarea name="description" placeholder="Descripción detallada del servicio" rows="4" onChange={handleChange} required />
+                    <textarea name="description" placeholder={"Describe detalladamente qué ofreces en este servicio..."} rows="4" value={formData.description} onChange={handleChange} required />
                 </>
             )}
 
