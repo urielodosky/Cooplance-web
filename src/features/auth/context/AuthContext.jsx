@@ -1,228 +1,147 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import { processGamificationRules } from '../../../utils/gamification';
-import { syncUserGamificationData } from '../../../utils/syncUtils';
 
 const AuthContext = createContext();
-
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => {
-        try {
-            const savedUser = localStorage.getItem('cooplance_user');
-            if (savedUser) {
-                let parsedUser = JSON.parse(savedUser);
-                // Run gamification rules on load
-                const processed = processGamificationRules(parsedUser);
-                if (JSON.stringify(parsedUser) !== JSON.stringify(processed)) {
-                    localStorage.setItem('cooplance_user', JSON.stringify(processed));
-                    const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-                    const userIndex = storedUsers.findIndex(u => u.id == processed.id);
-                    if (userIndex !== -1) {
-                        storedUsers[userIndex] = processed;
-                        localStorage.setItem('cooplance_db_users', JSON.stringify(storedUsers));
-                    }
-                    syncUserGamificationData(processed);
-                }
-                return processed;
-            }
-            return null;
-        } catch (error) {
-            console.error("Error parsing user from localStorage:", error);
-            localStorage.removeItem('cooplance_user');
-            return null;
-        }
-    });
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
+    // ─── Bootstrap: Listen to Supabase auth state changes ───────────────────────
     useEffect(() => {
-        console.log("AuthContext User State:", user);
-    }, [user]);
-
-    // Database Integrity Check: Fix duplicate IDs & Resync Session
-    useEffect(() => {
-        try {
-            const rawUsers = localStorage.getItem('cooplance_db_users');
-            if (!rawUsers) return;
-
-            const storedUsers = JSON.parse(rawUsers);
-            const seenIds = new Set();
-            let hasChanges = false;
-            let idMap = {}; // Map oldId -> newId if changed
-
-            const fixedUsers = storedUsers.map(u => {
-                // Ensure ID exists
-                if (!u.id) {
-                    u.id = Date.now() + Math.floor(Math.random() * 10000);
-                    hasChanges = true;
-                    return u;
-                }
-
-                // Check for duplicates
-                if (seenIds.has(u.id)) {
-                    console.warn(`Duplicate ID found: ${u.id}. Regenerating for user ${u.username}`);
-                    const newId = Date.now() + Math.floor(Math.random() * 10000); // New unique ID
-                    idMap[u.username] = newId; // Track basic mapping
-                    u.id = newId;
-                    hasChanges = true;
-                }
-                seenIds.add(u.id);
-                return u;
-            });
-
-            if (hasChanges) {
-                console.log("Database integrity repair: Fixed duplicate/missing IDs.");
-                localStorage.setItem('cooplance_db_users', JSON.stringify(fixedUsers));
+        // Get initial session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                fetchProfile(session.user.id);
+            } else {
+                setLoading(false);
             }
+        });
 
-            // Session Resync: Ensure current user has the correct ID from DB
-            const savedSession = localStorage.getItem('cooplance_user');
-            if (savedSession) {
-                const currentSessionUser = JSON.parse(savedSession);
-                // Find this user in the fixed DB by unique traits (username/email)
-                // We avoid ID here because ID might be the problem
-                const matchInDb = fixedUsers.find(u =>
-                    (u.username && u.username.toLowerCase() === currentSessionUser.username?.toLowerCase()) ||
-                    (u.email && u.email.toLowerCase() === currentSessionUser.email?.toLowerCase())
-                );
-
-                if (matchInDb && matchInDb.id != currentSessionUser.id) {
-                    console.log(`Resyncing session ID for ${matchInDb.username}: ${currentSessionUser.id} -> ${matchInDb.id}`);
-                    const updatedSession = { ...currentSessionUser, ...matchInDb }; // Merge to keep DB truth
-                    setUser(updatedSession);
-                    localStorage.setItem('cooplance_user', JSON.stringify(updatedSession));
-                }
+        // Subscribe to changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) {
+                fetchProfile(session.user.id);
+            } else {
+                setUser(null);
+                setLoading(false);
             }
-        } catch (e) {
-            console.error("Error executing DB integrity check:", e);
-        }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
-    const login = (userData) => {
-        // Initialize stats if new
-        let processedUser = processGamificationRules(userData);
-        setUser(processedUser);
-        localStorage.setItem('cooplance_user', JSON.stringify(processedUser));
+    // ─── Fetch user profile from the public.profiles table ──────────────────────
+    const fetchProfile = async (userId) => {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('Error fetching profile:', error);
+            setLoading(false);
+            return;
+        }
+
+        // Apply gamification rules to the fetched profile
+        const processed = processGamificationRules(data);
+        setUser(processed);
+        setLoading(false);
     };
 
-    const register = (role, data) => {
-        const newUser = {
-            ...data,
-            role,
-            id: Date.now(),
-            xp: 0,
-            level: 1,
-            balance: 1000, // Initial Mock Balance
-            gamification: {
-                lastDecayCheck: Date.now(),
-                lastActivity: Date.now(),
-                vacation: {
-                    active: false,
-                    startDate: null,
-                    credits: 2,
-                    lastReset: Date.now()
+    // ─── REGISTER ───────────────────────────────────────────────────────────────
+    const register = async (role, data) => {
+        const { email, password, username, firstName, lastName, phone } = data;
+
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    username,
+                    first_name: firstName,
+                    last_name: lastName,
+                    role,
                 }
             }
-        };
-        setUser(newUser);
-        localStorage.setItem('cooplance_user', JSON.stringify(newUser));
+        });
 
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        storedUsers.push(newUser);
-        localStorage.setItem('cooplance_db_users', JSON.stringify(storedUsers));
+        if (authError) throw authError;
+
+        // Profile is auto-created by database trigger (handle_new_user)
+        return authData;
     };
 
-    const logout = () => {
+    // ─── LOGIN ──────────────────────────────────────────────────────────────────
+    const login = async ({ email, password }) => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return data;
+    };
+
+    // ─── LOGOUT ─────────────────────────────────────────────────────────────────
+    const logout = async () => {
+        await supabase.auth.signOut();
         setUser(null);
-        localStorage.removeItem('cooplance_user');
     };
 
-    const updateUser = (updatedData) => {
-        // Ensure gamification structure exists
-        let processed = processGamificationRules(updatedData);
-        setUser(processed);
-        localStorage.setItem('cooplance_user', JSON.stringify(processed));
-
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        // Use loose equality to handle possible string vs number ID mismatch
-        const userIndex = storedUsers.findIndex(u => u.id == processed.id);
-
-        if (userIndex !== -1) {
-            storedUsers[userIndex] = processed;
-        } else {
-            // If user not found in DB (desync), add them now
-            storedUsers.push(processed);
-        }
-        localStorage.setItem('cooplance_db_users', JSON.stringify(storedUsers));
-        
-        // Sync these changes to denormalized locations
-        syncUserGamificationData(processed);
-    };
-
-    const updateBalance = (amount, type = 'credit') => {
+    // ─── UPDATE USER PROFILE ─────────────────────────────────────────────────────
+    const updateUser = async (updatedData) => {
         if (!user) return;
 
-        let newBalance = parseFloat(user.balance || 0);
-        if (type === 'credit') {
-            newBalance += parseFloat(amount);
-        } else if (type === 'debit') {
-            newBalance -= parseFloat(amount);
+        const processed = processGamificationRules(updatedData);
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                first_name: processed.firstName || processed.first_name,
+                last_name: processed.lastName || processed.last_name,
+                avatar_url: processed.avatar_url || processed.avatarUrl,
+                bio: processed.bio,
+                level: processed.level,
+                points: processed.points || processed.xp || 0,
+            })
+            .eq('id', user.id);
+
+        if (error) {
+            console.error('Error updating profile:', error);
+            throw error;
         }
 
+        // Refresh local state
+        setUser(processed);
+    };
+
+    // ─── UPDATE BALANCE (local only for now, until wallet table is added) ────────
+    const updateBalance = (amount, type = 'credit') => {
+        if (!user) return;
+        let newBalance = parseFloat(user.balance || 0);
+        newBalance = type === 'credit' ? newBalance + parseFloat(amount) : newBalance - parseFloat(amount);
         const updatedUser = { ...user, balance: newBalance };
-        updateUser(updatedUser);
+        setUser(updatedUser);
         return newBalance;
     };
 
-    const checkUserExists = ({ username, email, phone }, excludeUserId = null) => {
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-
-        for (const u of storedUsers) {
-            // Use loose equality for ID check
-            if (excludeUserId && u.id == excludeUserId) continue;
-
-            if (username && u.username?.trim().toLowerCase() === username.toLowerCase()) {
-                return { exists: true, field: 'username' };
-            }
-            if (email && u.email?.toLowerCase() === email.toLowerCase()) {
-                return { exists: true, field: 'email' };
-            }
-            if (phone && u.phone === phone) {
-                return { exists: true, field: 'phone' };
-            }
+    // ─── CHECK IF USER EXISTS ────────────────────────────────────────────────────
+    const checkUserExists = async ({ username, email }) => {
+        if (username) {
+            const { data } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
+            if (data) return { exists: true, field: 'username' };
+        }
+        if (email) {
+            const { data } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
+            if (data) return { exists: true, field: 'email' };
         }
         return { exists: false, field: null };
     };
 
-    const deleteAccount = (userId) => {
-        // 1. Soft-delete user
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        const updatedUsers = storedUsers.map(u => {
-            if (u.id.toString() === userId.toString()) {
-                return { ...u, isDeleted: true };
-            }
-            return u;
-        });
-        localStorage.setItem('cooplance_db_users', JSON.stringify(updatedUsers));
-
-        // 2. Hard-delete their services
-        const storedServices = JSON.parse(localStorage.getItem('cooplance_db_services') || '[]');
-        const filteredServices = storedServices.filter(s => s.freelancerId?.toString() !== userId.toString());
-        localStorage.setItem('cooplance_db_services', JSON.stringify(filteredServices));
-
-        // 3. Hard-delete their projects (pedidos)
-        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-        const filteredProjects = storedProjects.filter(p => p.clientId?.toString() !== userId.toString());
-        localStorage.setItem('cooplance_db_projects', JSON.stringify(filteredProjects));
-
-        // 4. Logout if it's the current user
-        if (user && user.id.toString() === userId.toString()) {
-            logout();
-        }
-    };
-
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, updateUser, updateBalance, checkUserExists, deleteAccount }}>
-            {children}
+        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, updateBalance, checkUserExists }}>
+            {!loading && children}
         </AuthContext.Provider>
     );
 };

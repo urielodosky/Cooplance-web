@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useServices } from '../context/ServiceContext';
 import { useAuth } from '../../auth/context/AuthContext';
@@ -7,6 +7,7 @@ import ServiceCreateForm from '../components/ServiceCreateForm';
 import { getProfilePicture } from '../../../utils/avatarUtils';
 import PaymentModal from '../../../components/common/PaymentModal';
 import { formatLocationDetail } from '../../../utils/locationFormat';
+import BookingPicker from '../../../components/booking/BookingPicker';
 import '../../../styles/pages/ServiceDetail.scss';
 
 
@@ -22,6 +23,27 @@ const ServiceDetail = () => {
     const [showEditForm, setShowEditForm] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedTierForPayment, setSelectedTierForPayment] = useState(null);
+    const [selectedBooking, setSelectedBooking] = useState({ date: null, time: null });
+    const [existingBookings, setExistingBookings] = useState([]);
+
+    useEffect(() => {
+        if (service?.bookingConfig?.requiresBooking) {
+            try {
+                const jobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
+                const bookings = jobs
+                    .filter(j => j.serviceId === service.id || j.id === service.id)
+                    .filter(j => j.bookingDate && j.bookingTime && j.status !== 'cancelled')
+                    .map(j => ({
+                        date: j.bookingDate,
+                        time: j.bookingTime,
+                        duration: service.bookingConfig.sessionDetails.slotDurationMinutes
+                    }));
+                setExistingBookings(bookings);
+            } catch(e) {
+                console.error("Error fetching bookings", e);
+            }
+        }
+    }, [service]);
 
     if (!service) {
         return (
@@ -87,6 +109,11 @@ const ServiceDetail = () => {
             return;
         }
 
+        if (service?.bookingConfig?.requiresBooking && (!selectedBooking.date || !selectedBooking.time)) {
+            alert('Por favor, selecciona una fecha y horario disponible para el turno antes de continuar.');
+            return;
+        }
+
         const price = tierInfo ? tierInfo.price : service.price;
         const tierName = tierInfo ? tierInfo.name : 'Estándar';
 
@@ -110,7 +137,9 @@ const ServiceDetail = () => {
             ...service,
             price: price,
             deliveryTime: deliveryTime,
-            selectedTier: selectedTierForPayment?.name || 'Estándar'
+            selectedTier: selectedTierForPayment?.name || 'Estándar',
+            bookingDate: service?.bookingConfig?.requiresBooking ? selectedBooking.date : null,
+            bookingTime: service?.bookingConfig?.requiresBooking ? selectedBooking.time : null
         }, user);
 
         setShowPaymentModal(false);
@@ -241,7 +270,7 @@ const ServiceDetail = () => {
                         </div>
 
                         <div className="detail-section">
-                            <h3>Categoría y Subcategorías</h3>
+                            <h3>Categoría e Información</h3>
                             <div className="detail-tags" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.8rem' }}>
                                 {service.category && (
                                     <div style={{
@@ -257,16 +286,40 @@ const ServiceDetail = () => {
                                     </div>
                                 )}
 
-                                {(service.subcategory?.length > 0 || service.subcategories?.length > 0 || true) && (
+                                {service.subcategory && typeof service.subcategory === 'string' && (
                                     <>
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                                        {((service.subcategory || service.subcategories || []).length > 0 ? (service.subcategory || service.subcategories) : ['Logo', 'Branding', 'Identidad Visual']).map(sub => (
-                                            <span key={sub} className="detail-tag" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                                                {sub}
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            padding: '0.4rem 0.8rem',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            borderRadius: '6px',
+                                            border: '1px solid var(--border)',
+                                            color: 'var(--text-secondary)'
+                                        }}>
+                                            {service.subcategory}
+                                        </div>
+                                    </>
+                                )}
+
+                                {service.specialties && Array.isArray(service.specialties) && service.specialties.length > 0 && (
+                                    <>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                                        {service.specialties.map(spec => (
+                                            <span key={spec} className="detail-tag" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                                                {spec}
                                             </span>
                                         ))}
                                     </>
                                 )}
+
+                                {/* Fallback in case they have legacy subcategory as array */}
+                                {Array.isArray(service.subcategory) && service.subcategory.map(sub => (
+                                    <span key={sub} className="detail-tag" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                                        {sub}
+                                    </span>
+                                ))}
                             </div>
                         </div>
 
@@ -312,6 +365,14 @@ const ServiceDetail = () => {
                 </div>
 
                 <div className="detail-sidebar">
+                    {service.bookingConfig?.requiresBooking && (
+                        <BookingPicker 
+                            bookingConfig={service.bookingConfig}
+                            existingBookings={existingBookings}
+                            onSelect={(date, time) => setSelectedBooking({ date, time })}
+                        />
+                    )}
+
                     {service.hasPackages ? (
                         <div className="packages-container">
                             {['basic', 'standard', 'premium'].map(tier => {

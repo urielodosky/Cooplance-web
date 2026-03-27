@@ -159,7 +159,7 @@ const Register = () => {
         return age;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // Password validation
@@ -177,7 +177,6 @@ const Register = () => {
             const birthYear = new Date(formData.birthDate).getFullYear();
             const currentYear = new Date().getFullYear();
 
-            // Validate reasonable birth year
             if (birthYear < 1920 || birthYear > currentYear) {
                 alert("Por favor ingresa una fecha de nacimiento válida.");
                 return;
@@ -194,79 +193,54 @@ const Register = () => {
             }
         }
 
-        // Identity verification is mandatory for freelancers and companies
-        if ((role === 'freelancer' || role === 'company') && !formData.documentFile) {
-            alert("La verificación de identidad es obligatoria. Por favor sube un documento.");
-            return;
-        }
-
-        // At least one contact method required
-        if (!formData.email && !formData.phone) {
-            alert("Debes proporcionar al menos un método de contacto (correo electrónico o teléfono).");
+        if (!formData.email) {
+            alert("El correo electrónico es obligatorio.");
             return;
         }
 
         const cleanUsername = formData.username ? formData.username.trim() : '';
-
-        // Username validation
         if (cleanUsername && cleanUsername.length < 3) {
             alert("El nombre de usuario debe tener al menos 3 caracteres.");
             return;
         }
 
-        // Check for duplicates
-        // Case-insensitive duplicate check
-        const { exists, field } = checkUserExists({
-            username: cleanUsername,
-            email: formData.email,
-            phone: formData.phone
-        });
-
-        if (exists) {
-            let errorMsg = "El usuario ya existe.";
-            if (field === 'username') errorMsg = "El nombre de usuario ya está registrado.";
-            if (field === 'email') errorMsg = "El correo electrónico ya está registrado.";
-            if (field === 'phone') errorMsg = "El número de teléfono ya está registrado.";
-
-            alert(errorMsg);
-            setLoading(false);
-            return;
-        }
-
-        // Exclude confirmPassword from data sent to auth
-        // Also normalize username and email to lowercase for storage
-        const { confirmPassword, ...registrationData } = formData;
-
-        // Default username for companies if hidden/missing
-        if (role === 'company' && !cleanUsername) {
-            registrationData.username = registrationData.email ? registrationData.email.split('@')[0] : 'empresa_' + Math.floor(Math.random() * 1000);
-        } else if (cleanUsername) {
-            registrationData.username = cleanUsername.toLowerCase();
-        }
-
-        if (registrationData.email) registrationData.email = registrationData.email.toLowerCase();
-        // gender is already in formData and will be included in registrationData
-
-        // If email is provided, verify it first via separate page
-        if (formData.email) {
-            setLoading(true);
-            // BYPASS: Direct navigation to verification for testing
-            setTimeout(() => {
+        setLoading(true);
+        try {
+            // Check for duplicate username/email in Supabase
+            const { exists, field } = await checkUserExists({
+                username: cleanUsername || undefined,
+                email: formData.email,
+            });
+            if (exists) {
+                let errorMsg = "El usuario ya existe.";
+                if (field === 'username') errorMsg = "El nombre de usuario ya está registrado.";
+                if (field === 'email') errorMsg = "El correo electrónico ya está registrado.";
+                alert(errorMsg);
                 setLoading(false);
-                navigate('/verify-email', {
-                    state: {
-                        email: formData.email,
-                        role,
-                        type: 'registration',
-                        userData: registrationData,
-                        initialDebugOtp: '123456'
-                    }
-                });
-            }, 500);
-        } else {
-            // Direct registration if no email (only phone, though we should probably verify phone too)
-            register(role, registrationData);
-            navigate('/dashboard');
+                return;
+            }
+
+            const { confirmPassword, ...registrationData } = formData;
+
+            // Set username default for companies
+            if (role === 'company' && !cleanUsername) {
+                registrationData.username = registrationData.email.split('@')[0];
+            } else if (cleanUsername) {
+                registrationData.username = cleanUsername.toLowerCase();
+            }
+            if (registrationData.email) registrationData.email = registrationData.email.toLowerCase();
+
+            await register(role, registrationData);
+
+            // Supabase will send a confirmation email automatically.
+            // Navigate to a confirmation page so the user knows to check their email.
+            navigate('/verify-email', {
+                state: { email: formData.email, type: 'registration' }
+            });
+        } catch (err) {
+            alert(err.message || 'Error al registrarse. Inténtalo de nuevo.');
+        } finally {
+            setLoading(false);
         }
     };
 

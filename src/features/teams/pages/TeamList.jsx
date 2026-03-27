@@ -69,9 +69,13 @@ const TeamList = () => {
                                 boxShadow: 'var(--shadow-md)'
                             }} onClick={() => navigate(`/team/${team.id}`)}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
-                                    <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}>
-                                        {team.name.substring(0, 1)}
-                                    </div>
+                                    {team.logo ? (
+                                        <img src={team.logo} alt={team.name} style={{ width: '56px', height: '56px', borderRadius: '18px', objectFit: 'cover', boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4)' }} />
+                                    ) : (
+                                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}>
+                                            {team.name.substring(0, 1)}
+                                        </div>
+                                    )}
                                     <span className={`status-badge ${myRole === 'owner' ? 'active' : ''}`} style={{ height: 'fit-content', borderRadius: '20px', padding: '4px 12px' }}>
                                         {myRole === 'owner' ? 'Fundador' : 'Miembro'}
                                     </span>
@@ -89,6 +93,30 @@ const TeamList = () => {
                                         </span>
                                     ))}
                                 </div>
+
+                                {team.services && team.services.filter(s => s.active).length > 0 ? (
+                                    <div style={{ marginTop: '0.5rem', marginBottom: '1.5rem' }}>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: '500' }}>Servicios publicados:</p>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            {team.services.filter(s => s.active).slice(0, 2).map((srv, idx) => (
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.6rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                                        <span style={{ fontSize: '0.9rem', fontWeight: '500', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{srv.title}</span>
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Desde ${srv.price}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {team.services.filter(s => s.active).length > 2 && (
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.2rem' }}>+ {team.services.filter(s => s.active).length - 2} servicio(s) más...</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ marginTop: '0.5rem', marginBottom: '1.5rem', padding: '0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No tiene servicios activos en este momento.</p>
+                                    </div>
+                                )}
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '1.2rem', marginTop: 'auto' }}>
                                     <div style={{

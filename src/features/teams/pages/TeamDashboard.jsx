@@ -43,6 +43,7 @@ const TeamDashboard = () => {
     const [reviewTarget, setReviewTarget] = useState(null); // { projectId, targetId, targetName }
     const [editName, setEditName] = useState("");
     const [editDesc, setEditDesc] = useState("");
+    const [editLogo, setEditLogo] = useState("");
     const [chatView, setChatView] = useState('internal'); // 'internal' | 'client'
     const [showChatDropdown, setShowChatDropdown] = useState(false);
     const [selectedClientJob, setSelectedClientJob] = useState(null);
@@ -54,11 +55,22 @@ const TeamDashboard = () => {
         if (activeTeam) {
             setEditName(activeTeam.name);
             setEditDesc(activeTeam.description);
+            setEditLogo(activeTeam.logo || "");
         }
     }, [activeTeam?.id]);
 
     // --- 2. DERIVED STATE ---
+    const amIMember = user && activeTeam && activeTeam.members.some(m => m.userId === user.id);
     const amIFounder = user && activeTeam && members.find(m => m.userId === user.id)?.role === 'owner';
+
+    // Force tab to services or reviews if not a member and trying to access private tabs
+    useEffect(() => {
+        if (activeTeam && !amIMember) {
+            if (['chat', 'distribution', 'settings'].includes(activeTab)) {
+                setActiveTab('services');
+            }
+        }
+    }, [amIMember, activeTeam, activeTab]);
 
     // --- 3. EFFECTS ---
     useEffect(() => {
@@ -284,7 +296,7 @@ const TeamDashboard = () => {
 
     const handleUpdateInfos = async () => {
         try {
-            await updateTeam(activeTeam.id, { name: editName, description: editDesc });
+            await updateTeam(activeTeam.id, { name: editName, description: editDesc, logo: editLogo });
             alert("Información actualizada correctamente.");
         } catch (error) {
             alert(error.message);
@@ -320,9 +332,13 @@ const TeamDashboard = () => {
                             <button onClick={() => navigate('/my-coops')} className="btn-icon-soft" title="Volver">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
                             </button>
-                            <div className="team-avatar" style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', flexShrink: 0 }}>
-                                {activeTeam.name.substring(0, 1)}
-                            </div>
+                            {activeTeam.logo ? (
+                                <img src={activeTeam.logo} alt={activeTeam.name} style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', flexShrink: 0 }} />
+                            ) : (
+                                <div className="team-avatar" style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                                    {activeTeam.name.substring(0, 1)}
+                                </div>
+                            )}
                             <div className="team-text-info">
                                 <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>{activeTeam.name}</h2>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{members.length} miembros</span>
@@ -332,12 +348,13 @@ const TeamDashboard = () => {
                             {!isMobile && (
                                 <div className="tab-pill-container">
                                     {[
-                                        { id: 'chat', label: 'Chat', icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path> },
-                                        { id: 'members', label: 'Miembros', icon: <g><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></g> },
-                                        { id: 'distribution', label: 'Reparto', icon: <g><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></g> },
-                                        { id: 'services', label: 'Servicios', icon: <g><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></g> },
-                                        { id: 'settings', label: 'Ajustes', icon: <g><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></g> }
-                                    ].map(tab => (
+                                        { id: 'reviews', label: 'Reseñas', icon: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>, public: true },
+                                        { id: 'members', label: 'Miembros', icon: <g><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></g>, public: true },
+                                        { id: 'services', label: 'Servicios', icon: <g><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></g>, public: true },
+                                        { id: 'chat', label: 'Chat', icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>, public: false },
+                                        { id: 'distribution', label: 'Reparto', icon: <g><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></g>, public: false },
+                                        { id: 'settings', label: 'Ajustes', icon: <g><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></g>, public: false }
+                                    ].filter(tab => amIMember || tab.public).map(tab => (
                                         <div key={tab.id} style={{ position: 'relative' }}>
                                             <button
                                                 onClick={(e) => {
@@ -388,16 +405,24 @@ const TeamDashboard = () => {
                                     <div className="dropdown-menu" style={{ position: 'absolute', top: '100%', right: '0', padding: '0.5rem', borderRadius: '12px', minWidth: '180px', zIndex: 1000, border: '1px solid var(--border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-lg)' }}>
                                         {isMobile && (
                                             <>
-                                                <button className="menu-item" onClick={() => { setActiveTab('chat'); setChatView('internal'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat Interno</button>
-                                                <button className="menu-item" onClick={() => { setActiveTab('chat'); setChatView('client'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat Cliente</button>
+                                                <button className="menu-item" onClick={() => { setActiveTab('reviews'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>Reseñas</button>
                                                 <button className="menu-item" onClick={() => { setActiveTab('members'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Miembros</button>
-                                                <button className="menu-item" onClick={() => { setActiveTab('distribution'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Reparto</button>
                                                 <button className="menu-item" onClick={() => { setActiveTab('services'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>Servicios</button>
-                                                <button className="menu-item" onClick={() => { setActiveTab('settings'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
+
+                                                {amIMember && (
+                                                    <>
+                                                        <button className="menu-item" onClick={() => { setActiveTab('chat'); setChatView('internal'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat Interno</button>
+                                                        <button className="menu-item" onClick={() => { setActiveTab('chat'); setChatView('client'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat Cliente</button>
+                                                        <button className="menu-item" onClick={() => { setActiveTab('distribution'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>Reparto</button>
+                                                        <button className="menu-item" onClick={() => { setActiveTab('settings'); setShowMenu(false); }} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
+                                                    </>
+                                                )}
                                                 <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '0.4rem 0' }}></div>
                                             </>
                                         )}
-                                        <button className="menu-item" onClick={handleClearChat} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Vaciar Chat</button>
+                                        {amIMember && (
+                                            <button className="menu-item" onClick={handleClearChat} style={{ width: '100%', padding: '0.6rem', textAlign: 'left', background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Vaciar Chat</button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -406,7 +431,7 @@ const TeamDashboard = () => {
 
                     <div className="dashboard-scroll-container" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', minHeight: 0, overflowY: activeTab === 'chat' ? 'hidden' : 'auto', paddingRight: '0.2rem' }}>
                         {/* CHAT TAB */}
-                        {activeTab === 'chat' && (
+                        {amIMember && activeTab === 'chat' && (
                             <div className="team-chat-window glass">
                                 {/* Chat Channel Tabs */}
                                 {chatView === 'client' && !selectedClientJob ? (
@@ -541,6 +566,16 @@ const TeamDashboard = () => {
                                 )}
                             </div>
                         )}
+                        {/* REVIEWS TAB (New) */}
+                        {activeTab === 'reviews' && (
+                            <div className="glass" style={{ height: 'fit-content', borderRadius: '16px', padding: '1.5rem' }}>
+                                <h3 className="section-title" style={{ marginBottom: '1.5rem' }}>Reseñas y Evaluaciones</h3>
+                                <div style={{ textAlign: 'center', padding: '4rem 2rem', border: '1px dashed var(--border)', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
+                                    <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '1.2rem' }}>Aún no hay reseñas</h4>
+                                    <p style={{ color: 'var(--text-secondary)' }}>Esta Coop no ha recibido evaluaciones públicas de clientes en este momento.</p>
+                                </div>
+                            </div>
+                        )}
                         {/* MEMBERS TAB */}
                         {activeTab === 'members' && (
                             <div className="glass" style={{ height: 'fit-content', borderRadius: '16px', padding: '1.5rem' }}>
@@ -582,11 +617,13 @@ const TeamDashboard = () => {
                                             </div>
                                         );
                                     })}
-                                    <button className="invite-btn" onClick={handleInviteMember}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>Invitar Nuevo Miembro</button>
+                                    {amIMember && (
+                                        <button className="invite-btn" onClick={handleInviteMember}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>Invitar Nuevo Miembro</button>
+                                    )}
                                 </div>
                             </div>
                         )}
-                        {activeTab === 'distribution' && (
+                        {amIMember && activeTab === 'distribution' && (
                             <div className="glass" style={{ height: 'fit-content', borderRadius: '16px', padding: '1.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                                     <h3 className="section-title" style={{ margin: 0 }}>Reparto de Beneficios</h3>
@@ -705,25 +742,31 @@ const TeamDashboard = () => {
                                     <>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                                             <h3 className="section-title" style={{ margin: 0 }}>Servicios del Equipo</h3>
-                                            <button className="btn-primary" onClick={() => setShowCreateService(true)} style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>+ Nuevo Servicio</button>
+                                            {amIMember && (
+                                                <button className="btn-primary" onClick={() => setShowCreateService(true)} style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>+ Nuevo Servicio</button>
+                                            )}
                                         </div>
                                         <div className="services-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                                             {(!activeTeam.services || activeTeam.services.length === 0) ? (
-                                                <p style={{ color: 'var(--text-secondary)' }}>No hay servicios activos. Añade uno para empezar.</p>
+                                                <p style={{ color: 'var(--text-secondary)' }}>No hay servicios activos en este momento.</p>
                                             ) : (
                                                 activeTeam.services.map(service => (
                                                     <div key={service.id} className="service-card glass" style={{ padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                                                             <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>{service.title}</h4>
-                                                            <div style={{ background: service.active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: service.active ? '#10b981' : '#ef4444', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                                                {service.active ? 'ACTIVO' : 'INACTIVO'}
+                                                            {amIMember && (
+                                                                <div style={{ background: service.active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: service.active ? '#10b981' : '#ef4444', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                                    {service.active ? 'ACTIVO' : 'INACTIVO'}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Desde {service.price}</p>
+                                                        {amIMember && (
+                                                            <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                                                <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.4rem' }} onClick={() => toggleService(activeTeam.id, service.id)}>{service.active ? 'Pausar' : 'Activar'}</button>
+                                                                <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.4rem' }}>Editar</button>
                                                             </div>
-                                                        </div>
-                                                        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{service.price}</p>
-                                                        <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                                            <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.4rem' }} onClick={() => toggleService(activeTeam.id, service.id)}>{service.active ? 'Pausar' : 'Activar'}</button>
-                                                            <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.4rem' }}>Editar</button>
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 ))
                                             )}
@@ -733,13 +776,37 @@ const TeamDashboard = () => {
                             </div>
                         )}
                         {/* SETTINGS TAB (New) */}
-                        {activeTab === 'settings' && (
+                        {amIMember && activeTab === 'settings' && (
                             <div className="glass" style={{ height: 'fit-content', borderRadius: '16px', padding: '1.5rem' }}>
                                 <h3 className="section-title" style={{ marginBottom: '1.5rem' }}>Configuración del Equipo</h3>
 
                                 <div style={{ marginBottom: '2rem' }}>
                                     <h4 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Información General</h4>
                                     <div style={{ display: 'grid', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Logo / Foto del equipo (Opcional)</label>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                                                {editLogo && (
+                                                    <img src={editLogo} alt="Logo Preview" style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                                )}
+                                                <label style={{ display: 'inline-block', cursor: 'pointer', padding: '0.6rem 1.2rem', background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'all 0.2s', flex: 1, textAlign: 'center' }} className="file-upload-label">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = () => setEditLogo(reader.result);
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    {editLogo ? 'Cambiar Imagen' : 'Subir desde la PC'}
+                                                </label>
+                                            </div>
+                                        </div>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Nombre del Equipo</label>
                                             <input type="text" className="chat-input" value={editName} onChange={(e) => setEditName(e.target.value)} style={{ width: '100%', padding: '0.8rem', background: 'var(--bg-card)' }} />

@@ -15,7 +15,8 @@ const Explore = () => {
     const [filters, setFilters] = useState({
         query: '',
         category: '',
-        subcategory: [],
+        subcategory: '',
+        specialties: [],
         priceMin: '',
         priceMax: '',
         rating: 0,

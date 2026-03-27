@@ -1,81 +1,58 @@
+export const bookingCategories = [
+    "Educación y Estilo de Vida",
+    "Servicios Físicos y Locales",
+    "Profesionales Matriculados",
+    "Impacto Social",
+    "Soporte TI",
+    "Finanzas y Estrategia"
+];
+
 export const serviceCategories = {
-    "Artes Gráficas y Diseño": [
-        "Diseño de logos", "Marca", "Ilustración", "UX/UI", "Diseño web",
-        "Ilustraciones", "Diseño editorial", "Folleto Publicitario"
-    ],
-    "Marketing Digital": [
-        "SEO", "Marketing en redes sociales", "Email marketing", "Investigación de mercado"
-    ],
-    "Escritura": [
-        "Artículos", "Blogs", "Copywriting", "Redaccion de contenidos"
-
-    ],
-    "Video y Animación": [
-        "Edición de video", "Animación 2D/3D", "Diseño de video UGC",
-        "Produccion de Video"
-    ],
-    "Música y Audio": [
-        "Producción musical", "Locución (voice over)", "Jingles",
-        "Produccion de Audio", "Edicion Audio", "Produccion de Podcasts",
-        "Radio"
-    ],
-    "Programación y Tecnología": [
-        "Desarrollo web", "Desarrollo de apps", "Chatbots", "IA", "Shopify", "Wordpress",
-        "Desarrollo de Software", "Desarrollo de Videojuegos", "Ciberseguridad",
-    ],
-    "Datos": [
-        "Análisis de datos", "Hojas de cálculo", "Entrada de datos", "Big Data", "Data Science", "Documentacion", "Excel"
-    ],
-    "Negocios y Finanzas": [
-        "Plan de negocios", "Finanzas personales", "Consultoría",
-        "Contabilidad", "Auditoria", "Inversiones"
-    ],
-    "Coaching y Tutorias": [
-        "Matematicas", "Ingles", "Gimnasio", "Danza", "Canto", "Ciencias Duras", "Ciencias Sociales",
-    ],
-    "Gaming": [
-        "Tutoría", "Coaching", "Hobbies", "Helper", "Staff", "Compañia"
-    ],
-    "Inteligencia Artificial": [
-        "Videos IA", "Locuion con IA", "Desarrollo web", "Prompts"
-    ],
-    "Fotografía": [
-        "Fotografía de producto", "Fotografía lifestyle", "Fotografía e-commerce",
-        "Edición de fotos", "Retoque fotográfico", "Lightroom", "Photoshopeado"
-    ],
-    "Voluntariado e Intercambios": [
-        "Mentorías gratuitas", "Intercambio de servicios",
-        "Colaboraciones", "Proyectos sociales"
-    ],
-    "Servicios Presenciales": [
-        "Jardinería", "Carpintería", "Pintura", "Mudanzas", "Electricidad",
-        "Albañilería", "Mantenimiento", "Transporte (Fletes)", "Gasista", "Plomeria"
-    ],
-    "Estilo de Vida": [
-        "Recetas personalizadas", "Consejos de viaje", "Manualidades",
-        "Meditación", "Astrología", "Coaching personal"
-    ],
-    "Administración y Soporte": [
-        "Asistente virtual", "Gestión de agenda", "Atención al cliente",
-        "Gestión de e-commerce", "Carga de productos", "Soporte administrativo"
-    ],
-    "Arquitectura y Modelado 3D": [
-        "Diseño arquitectónico", "Planos", "Renderizado 3D",
-        "Interiorismo", "Exteriorismo", "Modelado CAD"
-    ],
-    "Ingeniería y Prototipado": [
-        "CAD", "Modelado mecánico", "Simulaciones",
-        "Prototipos", "Electrónica", "Circuitos básicos"
-    ],
-    "Soporte TI": [
-        "Reparación de PC", "Instalación de Software", "Redes y Conectividad",
-        "Soporte Remoto", "Recuperación de Datos", "Limpieza y Mantenimiento"
-    ],
-    "Trabajos Matriculados": [
-        "Psicología", "Abogacía y Legal", "Contaduría y Finanzas",
-        "Arquitectura", "Enfermería y Medicina", "Nutrición",
-        "Escribanía", "Traducción Pública", "Ingeniería Civil"
-    ]
-
-
+    "Diseño y Creatividad": {
+        "Diseño Gráfico": ["Diseño de logos", "Marca", "Diseño editorial", "Folleto Publicitario"],
+        "Arte e Ilustración": ["Ilustración", "Animación 2D/3D"],
+        "UX/UI y Web": ["UX/UI", "Diseño web"],
+        "Fotografía y Edición": ["Fotografía de producto", "Fotografía lifestyle", "Fotografía e-commerce", "Edición de fotos", "Retoque fotográfico", "Lightroom", "Photoshopeado"],
+        "Arquitectura y 3D": ["Diseño arquitectónico", "Planos", "Renderizado 3D", "Interiorismo", "Exteriorismo", "Modelado CAD"]
+    },
+    "Desarrollo y Tecnología": {
+        "Desarrollo de Software": ["Desarrollo web", "Desarrollo de apps", "Desarrollo de Videojuegos", "Shopify", "Wordpress"],
+        "Inteligencia Artificial": ["Modelos de IA", "Chatbots", "Videos IA", "Locución con IA", "Prompts"],
+        "Ciberseguridad y Redes": ["Ciberseguridad", "Redes y Conectividad"],
+        "Soporte TI": ["Reparación de PC", "Instalación de Software", "Soporte Remoto", "Recuperación de Datos", "Limpieza y Mantenimiento"],
+        "Datos": ["Análisis de datos", "Big Data", "Data Science", "Entrada de datos", "Hojas de cálculo", "Excel", "Documentacion"]
+    },
+    "Marketing y Contenido": {
+        "Marketing Digital": ["SEO", "Marketing en redes sociales", "Email marketing", "Investigación de mercado"],
+        "Escritura y Redacción": ["Artículos", "Blogs", "Copywriting", "Redacción de contenidos"],
+        "Video": ["Edición de video", "Diseño de video UGC", "Producción de Video"],
+        "Música y Audio": ["Producción musical", "Locución (voice over)", "Jingles", "Producción de Audio", "Edición Audio", "Producción de Podcasts", "Radio"]
+    },
+    "Negocios y Administración": {
+        "Finanzas y Estrategia": ["Plan de negocios", "Finanzas personales", "Consultoría", "Inversiones", "Contabilidad", "Auditoría"],
+        "Soporte Administrativo": ["Asistente virtual", "Gestión de agenda", "Atención al cliente", "Soporte administrativo"],
+        "E-commerce": ["Gestión de e-commerce", "Carga de productos"]
+    },
+    "Educación y Estilo de Vida": {
+        "Tutorías Académicas": ["Matemáticas", "Inglés", "Ciencias Naturales", "Ciencias Sociales", "Literatura/lengua", "Musica", "Historia", "Filosofia", "Quimica", "Fisica", "Biologia", "Apoyo escolar"],
+        "Bienestar y Entrenamiento": ["Gimnasio", "Rutinas en casa", "Danza", "Canto", "Coaching personal", "Meditación", "Recetas personalizadas", "Skincare y Cuidado Personal"],
+        "Entretenimiento y Gaming": ["Tutoría de Gaming", "Coaching de Gaming", "Compañía en juegos", "Helper", "Staff", "Hobbies"],
+        "Ocio y Esoterismo": ["Consejos de viaje", "Manualidades", "Astrología"]
+    },
+    "Ingeniería y Fabricación": {
+        "Ingeniería y Prototipado": ["CAD", "Modelado mecánico", "Simulaciones", "Prototipos", "Electrónica", "Circuitos básicos"]
+    },
+    "Servicios Físicos y Locales": {
+        "Oficios y Construcción": ["Albañilería", "Plomería", "Gasista", "Electricidad", "Carpintería", "Pintura"],
+        "Hogar y Logística": ["Jardinería", "Mantenimiento", "Mudanzas", "Transporte (Fletes)"]
+    },
+    "Profesionales Matriculados": {
+        "Salud": ["Psicología", "Enfermería y Medicina", "Nutrición"],
+        "Legal y Finanzas": ["Abogacía y Legal", "Escribanía", "Contaduría y Finanzas"],
+        "Ingeniería y Arquitectura": ["Arquitectura", "Ingeniería Civil"],
+        "Idiomas": ["Traducción Pública"]
+    },
+    "Impacto Social": {
+        "Voluntariado e Intercambios": ["Mentorías gratuitas", "Intercambio de servicios", "Colaboraciones", "Proyectos sociales"]
+    }
 };

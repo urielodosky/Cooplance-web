@@ -496,7 +496,7 @@ const Dashboard = () => {
                             <span>{xpDisplayText}</span>
                         </div>
                         <div className="xp-bar-bg">
-                            <div className="xp-bar-fill" style={{ width: `${xpPercentage}%`, background: isMaxLevel ? 'linear-gradient(90deg, #FFD700, #FFA500)' : 'var(--accent)' }}></div>
+                            <div className="xp-bar-fill" style={{ width: `${xpPercentage}%`, background: isMaxLevel ? 'linear-gradient(90deg, #FFD700, #FFA500)' : 'linear-gradient(90deg, #3b82f6, #60a5fa)' }}></div>
                         </div>
                         {isMaxLevel && (
                             <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#FFD700', textAlign: 'right' }}>

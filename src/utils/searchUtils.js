@@ -80,28 +80,23 @@ export const searchAndFilterItems = (items, filters = {}) => {
         // Category
         if (category && item.category !== category) return false;
 
-        // Subcategory (New)
-        if (filters.subcategory && filters.subcategory.length > 0) {
-            const filterSubs = Array.isArray(filters.subcategory) ? filters.subcategory : [filters.subcategory];
+        // Subcategory Match (New String Match)
+        if (filters.subcategory && item.subcategory !== filters.subcategory) {
+            // Check if item has a subcategory string mismatch, but ONLY if we are in the new format 
+            // where item.subcategory is a string. If it's old data, let it pass and be filtered by specialties
+            if (typeof item.subcategory === 'string' && item.subcategory !== filters.subcategory) return false;
+        }
 
-            // Normalize item subcategories to array
-            // Note: ProjectCreateForm saves as 'subcategories' (plural), but searchUtils used 'subcategory'.
-            // I should check what ProjectCreateForm saves. 
-            // Step 632: `subcategories: []`.
-            // ExploreClients maps storedProjects.
-            // Wait, does ExploreClients map 'subcategories' to 'subcategory'?
-            // Step 714: `const allProjects = storedProjects.reverse().map(p => ({ ...p, tags: ... }))`.
-            // It just spreads `...p`. So the key is `subcategories`.
-            // But searchUtils checks `item.subcategory`. 
-            // I MUST CHECK BOTH or FIX MAPPING.
+        // Specialties Match
+        if (filters.specialties && filters.specialties.length > 0) {
+            const filterSpecs = filters.specialties;
+            
+            // Normalize item specialties/subcategories to array to support old data
+            const itemSpecs = item.specialties || item.subcategories || item.subcategory || [];
+            const itemSpecsArray = Array.isArray(itemSpecs) ? itemSpecs : [itemSpecs];
 
-            const itemSubs = Array.isArray(item.subcategories)
-                ? item.subcategories
-                : (Array.isArray(item.subcategory) ? item.subcategory : (item.subcategory ? [item.subcategory] : []));
-
-            // Check intersection: If ANY filter subcategory matches ANY item subcategory, return true (or ALL? UI implies filtering down. Usually OR within same facet).
-            // SidebarFilter allows multiple selection. "SEO" OR "SEM".
-            const hasMatch = filterSubs.some(sub => itemSubs.includes(sub));
+            // Filter down: item must have basically ANY of the selected specialties to show up
+            const hasMatch = filterSpecs.some(spec => itemSpecsArray.includes(spec));
             if (!hasMatch) return false;
         }
 
@@ -201,17 +196,15 @@ export const searchAndFilterItems = (items, filters = {}) => {
         return true;
     });
 
-    // 2. Score and Sort by Relevance
-    // Calculate Filter Match Score (for Subcategories) to rank "more matching" items higher
-    if (filters.subcategory && filters.subcategory.length > 0) {
-        const filterSubs = Array.isArray(filters.subcategory) ? filters.subcategory : [filters.subcategory];
+    // Calculate Filter Match Score (for Specialties/Subcategories) to rank "more matching" items higher
+    if (filters.specialties && filters.specialties.length > 0) {
+        const filterSpecs = filters.specialties;
         result = result.map(item => {
-            const itemSubs = Array.isArray(item.subcategories)
-                ? item.subcategories
-                : (Array.isArray(item.subcategory) ? item.subcategory : (item.subcategory ? [item.subcategory] : []));
+            const itemSpecs = item.specialties || item.subcategories || item.subcategory || [];
+            const itemSpecsArray = Array.isArray(itemSpecs) ? itemSpecs : [itemSpecs];
 
-            // Count how many filter subcategories are present in the item
-            const matchCount = filterSubs.filter(sub => itemSubs.includes(sub)).length;
+            // Count how many filter specialties are present in the item
+            const matchCount = filterSpecs.filter(spec => itemSpecsArray.includes(spec)).length;
             return { ...item, _filterScore: matchCount };
         });
     }

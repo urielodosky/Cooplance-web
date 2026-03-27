@@ -403,7 +403,7 @@ const ProjectCreateForm = () => {
                             <div className="form-group fade-in">
                                 <label>Subcategorías (Máx. 3)</label>
                                 <div className="subcategories-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                    {serviceCategories[formData.category].map(sub => (
+                                    {Object.keys(serviceCategories[formData.category] || {}).map(sub => (
                                         <label key={sub} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
                                             <input
                                                 type="checkbox"

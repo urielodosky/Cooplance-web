@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../../styles/components/CustomDropdown.scss';
 
-const CustomDropdown = ({ label, options, value, onChange, placeholder = 'Seleccionar...', disabled = false, searchable = false, multiple = false, maxSelections = 0 }) => {
+const CustomDropdown = ({ label, options, value, onChange, placeholder = 'Seleccionar...', disabled = false, searchable = false, multiple = false, maxSelections = 0, allowCustom = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const dropdownRef = useRef(null);
@@ -91,6 +91,15 @@ const CustomDropdown = ({ label, options, value, onChange, placeholder = 'Selecc
                                 />
                             </div>
                         )}
+                        {allowCustom && searchTerm && !options.some(opt => (opt.label || opt).toString().toLowerCase() === searchTerm.toLowerCase()) && (
+                            <div
+                                className="dropdown-option"
+                                style={{ color: 'var(--primary)', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
+                                onClick={() => handleSelect(searchTerm)}
+                            >
+                                + Usar "{searchTerm}"
+                            </div>
+                        )}
                         {options
                             .filter(option => {
                                 if (!searchable || !searchTerm) return true;
@@ -138,7 +147,7 @@ const CustomDropdown = ({ label, options, value, onChange, placeholder = 'Selecc
                         {searchable && searchTerm && options.filter(option => {
                             const optLabel = (option.label || option).toString().toLowerCase();
                             return optLabel.includes(searchTerm.toLowerCase());
-                        }).length === 0 && (
+                        }).length === 0 && !allowCustom && (
                                 <div className="dropdown-option" style={{ color: 'var(--text-muted)', cursor: 'default' }}>
                                     Sin resultados
                                 </div>

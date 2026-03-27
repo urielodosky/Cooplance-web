@@ -1,70 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { otpService } from '../../../utils/otpService';
 import '../../../styles/pages/Login.scss';
 
 const Login = () => {
-    const [identifier, setIdentifier] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login, user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user) {
-            navigate('/dashboard');
-        }
+        if (user) navigate('/dashboard');
     }, [user, navigate]);
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        if (identifier && password) {
-            setLoading(true);
-            // Validate against mock database
-            const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-            const foundUser = storedUsers.find(u =>
-                (u.email?.toLowerCase() === identifier.toLowerCase() || u.username?.toLowerCase() === identifier.toLowerCase()) &&
-                u.password === password
-            );
-
-            if (foundUser) {
-                if (foundUser.email) {
-                    // Send OTP to email and redirect to separate page
-                    otpService.sendOTP(foundUser.email, 'login').then(result => {
-                        setLoading(false);
-                        if (result.success) {
-                            otpService.markAsSent(foundUser.email);
-                            navigate('/verify-email', {
-                                state: {
-                                    email: foundUser.email,
-                                    type: 'login',
-                                    userData: foundUser,
-                                    initialDebugOtp: result.devOTP
-                                }
-                            });
-                        } else {
-                            setError(result.message);
-                        }
-                    }).catch(err => {
-                        setLoading(false);
-                        setError('Error al conectar con el servidor de correos.');
-                    });
-                } else {
-                    setLoading(false);
-                    // If no email (legacy data), just login
-                    login(foundUser);
-                    navigate('/dashboard');
-                }
-            } else {
-                setLoading(false);
-                setError('Correo o contraseña incorrectos. (Asegúrate de haberte registrado)');
-            }
-        } else {
+        if (!email || !password) {
             setError('Por favor completa todos los campos.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await login({ email, password });
+            // AuthContext listener will set user and trigger the useEffect redirect
+        } catch (err) {
+            setError(
+                err.message === 'Invalid login credentials'
+                    ? 'Correo o contraseña incorrectos.'
+                    : err.message || 'Error al iniciar sesión.'
+            );
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -80,13 +51,13 @@ const Login = () => {
                     {error && <div style={{ color: 'var(--accent)', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
 
                     <div className="form-group">
-                        <label className="form-label">Correo Electrónico o Usuario</label>
+                        <label className="form-label">Correo Electrónico</label>
                         <input
-                            type="text"
+                            type="email"
                             className="form-input"
-                            placeholder="ejemplo@correo.com o usuario"
-                            value={identifier}
-                            onChange={(e) => setIdentifier(e.target.value)}
+                            placeholder="ejemplo@correo.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
                         />
                     </div>
@@ -114,7 +85,7 @@ const Login = () => {
                         style={{ width: '100%', marginTop: '1rem' }}
                         disabled={loading}
                     >
-                        {loading ? 'Enviando código...' : 'Iniciar Sesión'}
+                        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                     </button>
                 </form>
 

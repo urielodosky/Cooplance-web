@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useServices } from '../context/ServiceContext';
 import { useAuth } from '../../auth/context/AuthContext';
 import { processGamificationRules, calculateCommission } from '../../../utils/gamification';
-import { serviceCategories } from '../data/categories';
+import { serviceCategories, bookingCategories } from '../data/categories';
 import { locations } from '../data/locations';
+import universitiesData from '../data/universidades_limpias.json';
 import CustomDropdown from '../../../components/common/CustomDropdown';
+import BookingConfigForm from '../../../components/booking/BookingConfigForm';
 import '../../../styles/components/ServiceCreateForm.scss';
 
 const ServiceCreateForm = ({ onCancel, initialData }) => {
@@ -19,11 +21,13 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
 
     const [hasPackages, setHasPackages] = useState(initialData?.hasPackages || false);
     const [mediaType, setMediaType] = useState(initialData?.mediaType || { image: 'file', video: 'url' });
+    const [formError, setFormError] = useState('');
 
     const [formData, setFormData] = useState({
         title: initialData?.title || '',
         category: initialData?.category || '',
-        subcategory: initialData?.subcategory || [],
+        subcategory: (typeof initialData?.subcategory === 'string') ? initialData?.subcategory : '',
+        specialties: initialData?.specialties || (Array.isArray(initialData?.subcategory) ? initialData?.subcategory : []),
         workMode: initialData?.workMode || ['remote'],
         price: initialData?.price || '',
         description: initialData?.description || '',
@@ -37,6 +41,21 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
         province: initialData?.province || [],
         city: initialData?.city || [],
         paymentMethods: initialData?.paymentMethods || [],
+        professionalLicense: initialData?.professionalLicense || '',
+        professionalBody: initialData?.professionalBody || '',
+        bookingConfig: initialData?.bookingConfig || {
+            requiresBooking: false,
+            sessionDetails: { slotDurationMinutes: 60, bufferTimeMinutes: 0 },
+            availability: {
+                monday: { isActive: true, shifts: [{ start: "09:00", end: "17:00" }] },
+                tuesday: { isActive: true, shifts: [{ start: "09:00", end: "17:00" }] },
+                wednesday: { isActive: true, shifts: [{ start: "09:00", end: "17:00" }] },
+                thursday: { isActive: true, shifts: [{ start: "09:00", end: "17:00" }] },
+                friday: { isActive: true, shifts: [{ start: "09:00", end: "17:00" }] },
+                saturday: { isActive: false, shifts: [] },
+                sunday: { isActive: false, shifts: [] }
+            }
+        },
         ...initialData
     });
 
@@ -108,6 +127,25 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
         }
     }, [formData.province, formData.country]);
 
+    const categorySupportsBooking = bookingCategories.includes(formData.category) || 
+                                    bookingCategories.includes(formData.subcategory) || 
+                                    (Array.isArray(formData.specialties) && formData.specialties.some(s => bookingCategories.includes(s)));
+
+    const prevCategorySupportsBooking = React.useRef(categorySupportsBooking);
+
+    useEffect(() => {
+        if (categorySupportsBooking !== prevCategorySupportsBooking.current) {
+            prevCategorySupportsBooking.current = categorySupportsBooking;
+            setFormData(prev => ({
+                ...prev,
+                bookingConfig: {
+                    ...prev.bookingConfig,
+                    requiresBooking: categorySupportsBooking
+                }
+            }));
+        }
+    }, [categorySupportsBooking]);
+
     // Helper for Net Earnings
     const calculateNet = (price) => {
         if (!price) return '0.00';
@@ -148,7 +186,16 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
     };
 
     const handleCategoryChange = (val) => {
-        setFormData(prev => ({ ...prev, category: val, subcategory: [] }));
+        setFormData(prev => ({ 
+            ...prev, 
+            category: val, 
+            subcategory: '', 
+            specialties: []
+        }));
+    };
+
+    const handleSubcategoryChange = (val) => {
+        setFormData(prev => ({ ...prev, subcategory: val, specialties: [] }));
     };
 
     const handleSelectOption = (name, value) => {
@@ -247,6 +294,53 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
     const handleNextOrSubmit = (e) => {
         e.preventDefault();
 
+        setFormError(''); // reset errors
+
+        if (currentStep === 1 && formData.category === 'Profesionales Matriculados' && !formData.professionalBody?.trim()) {
+            setFormError('El Colegio Universitario / Jurisdicción es obligatorio.');
+            return;
+        }
+
+        if (currentStep === 1 && formData.bookingConfig?.requiresBooking) {
+            const { slotDurationMinutes, bufferTimeMinutes } = formData.bookingConfig.sessionDetails;
+            const totalSlotLength = Number(slotDurationMinutes) + Number(bufferTimeMinutes);
+            
+            let hasActiveDays = false;
+            for (const [day, data] of Object.entries(formData.bookingConfig.availability)) {
+                if (data.isActive) {
+                    hasActiveDays = true;
+                    if (!data.shifts || data.shifts.length === 0) {
+                        setFormError(`Debes agregar al menos un horario en el día activo (${day}).`);
+                        return;
+                    }
+                    for (const shift of data.shifts) {
+                        if (!shift.start || !shift.end) {
+                            setFormError(`Por favor completa los rangos de horas.`);
+                            return;
+                        }
+                        const getMins = (time) => time.split(':').map(Number)[0] * 60 + time.split(':').map(Number)[1];
+                        const startMins = getMins(shift.start);
+                        const endMins = getMins(shift.end);
+
+                        if (startMins >= endMins) {
+                            setFormError(`El horario de fin debe ser posterior al de inicio (${shift.start} a ${shift.end}).`);
+                            return;
+                        }
+
+                        const diff = endMins - startMins;
+                        if (diff < totalSlotLength) {
+                            setFormError(`El bloque de ${shift.start} a ${shift.end} en ${day} (${diff}m) es muy corto para abarcar una sesión completa (${totalSlotLength}m).`);
+                            return; 
+                        }
+                    }
+                }
+            }
+            if (!hasActiveDays) {
+                setFormError('Debes tener al menos un día activo en tu disponibilidad para ofrecer reservas.');
+                return;
+            }
+        }
+
         // Native HTML5 validation will have already passed if we are here.
         if (currentStep === 3) {
             const hasEmptyFaqs = faqs.some(f => !f.question.trim() || !f.answer.trim());
@@ -275,10 +369,13 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             image: formData.imageUrl,
             video: formData.videoUrl,
             mediaType: mediaType,
+            bookingConfig: formData.bookingConfig?.requiresBooking ? formData.bookingConfig : null,
             date: initialData?.date || new Date().toISOString(),
             country: formData.country,
             province: formData.province,
             city: formData.city,
+            professionalLicense: formData.category === 'Profesionales Matriculados' ? formData.professionalLicense : null,
+            professionalBody: formData.category === 'Profesionales Matriculados' ? formData.professionalBody : null,
             location: formData.workMode.includes('presential')
                 ? `${formData.city}, ${formData.province}, ${formData.country}`
                 : 'Remoto',
@@ -313,6 +410,13 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             </div>
 
             <form onSubmit={handleNextOrSubmit} className="service-form mt-4">
+
+                {formError && (
+                    <div style={{ color: '#ef4444', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        {formError}
+                    </div>
+                )}
 
                 {currentStep === 1 && (
                     <div className="step-content form-step-1" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -369,46 +473,59 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                                 />
                             </div>
 
-                            {/* SUBCATEGORY GRID */}
+                            {/* SUBCATEGORY SELECTION */}
                             {formData.category && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Subcategoría</label>
+                                    <CustomDropdown
+                                        options={Object.keys(serviceCategories[formData.category] || {}).map(sub => ({ label: sub, value: sub }))}
+                                        value={formData.subcategory || ''}
+                                        onChange={handleSubcategoryChange}
+                                        placeholder="Selecciona una Subcategoría"
+                                    />
+                                </div>
+                            )}
+
+                            {/* SPECIALTIES GRID */}
+                            {formData.category && formData.subcategory && (
                                 <div className="subcategory-wrapper">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                         <label className="category-label" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 0 }}>
-                                            Especialidad en {formData.category}
+                                            Especialidades en {formData.subcategory}
                                         </label>
-                                        <span style={{ fontSize: '0.8rem', color: (formData.subcategory?.length || 0) >= 3 ? 'var(--accent)' : 'var(--text-muted)' }}>
-                                            {(formData.subcategory?.length || 0)}/3 Seleccionadas
+                                        <span style={{ fontSize: '0.8rem', color: (formData.specialties?.length || 0) >= 3 ? 'var(--accent)' : 'var(--text-muted)' }}>
+                                            {(formData.specialties?.length || 0)}/3 Seleccionadas
                                         </span>
                                     </div>
 
                                     <div className="category-grid">
-                                        {serviceCategories[formData.category].map(sub => {
-                                            const isSelected = Array.isArray(formData.subcategory)
-                                                ? formData.subcategory.includes(sub)
-                                                : formData.subcategory === sub;
+                                        {(serviceCategories[formData.category]?.[formData.subcategory] || []).map(spec => {
+                                            const isSelected = Array.isArray(formData.specialties)
+                                                ? formData.specialties.includes(spec)
+                                                : false;
 
                                             return (
                                                 <div
-                                                    key={sub}
+                                                    key={spec}
                                                     className={`category-option ${isSelected ? 'selected' : ''}`}
                                                     onClick={() => {
-                                                        const current = Array.isArray(formData.subcategory) ? formData.subcategory : [];
-                                                        let newSubs;
-                                                        if (current.includes(sub)) {
-                                                            newSubs = current.filter(s => s !== sub);
+                                                        const current = Array.isArray(formData.specialties) ? formData.specialties : [];
+                                                        let newSpecs;
+                                                        if (current.includes(spec)) {
+                                                            newSpecs = current.filter(s => s !== spec);
                                                         } else {
                                                             if (current.length >= 3) return; // Limit reached
-                                                            newSubs = [...current, sub];
+                                                            newSpecs = [...current, spec];
                                                         }
-                                                        handleSelectOption('subcategory', newSubs);
+                                                        handleSelectOption('specialties', newSpecs);
                                                     }}
                                                 >
-                                                    {sub}
+                                                    {spec}
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                    {(formData.subcategory?.length || 0) === 0 && (
+                                    {(formData.specialties?.length || 0) === 0 && (
                                         <p style={{ fontSize: '0.8rem', color: 'var(--accent)', marginTop: '0.5rem' }}>
                                             * Selecciona al menos una especialidad antes de continuar.
                                         </p>
@@ -416,6 +533,35 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                                 </div>
                             )}
                         </div>
+
+                        {formData.category === 'Profesionales Matriculados' && (
+                            <div className="form-group" style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                    <h5 style={{ margin: 0, color: '#ef4444' }}>Credenciales Profesionales (CRÍTICO)</h5>
+                                </div>
+                                <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem' }}>N° de Matrícula Profesional</label>
+                                        <input type="text" name="professionalLicense" placeholder="Ej. MN 123456" value={formData.professionalLicense || ''} onChange={handleChange} required />
+                                    </div>
+                                    <div>
+                                        <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem' }}>Colegio Universitario / Jurisdicción</label>
+                                        <CustomDropdown
+                                            options={universitiesData.map(uni => ({ label: uni.name, value: uni.name }))}
+                                            value={formData.professionalBody}
+                                            onChange={(val) => handleSelectOption('professionalBody', val)}
+                                            placeholder="Ej. Escribí tu universidad o colegio..."
+                                            searchable={true}
+                                            allowCustom={true}
+                                        />
+                                    </div>
+                                </div>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.8rem', margin: '0.8rem 0 0 0' }}>
+                                    * Esta información es obligatoria y será verificada por soporte. Proveer datos falsos resultará en la suspensión permanente de tu cuenta.
+                                </p>
+                            </div>
+                        )}
 
                         <div className="form-group pricing-section" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
                             <div className="packages-toggle" style={{ marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
@@ -675,6 +821,41 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                                     </div>
                                 )}
                             </div>
+                        )}
+
+                        {categorySupportsBooking && (
+                            <div className="form-group" style={{ background: 'rgba(99, 102, 241, 0.05)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                    <input
+                                        type="checkbox"
+                                        id="requiresBookingToggle"
+                                        checked={formData.bookingConfig?.requiresBooking || false}
+                                        onChange={(e) => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                bookingConfig: {
+                                                    ...prev.bookingConfig,
+                                                    requiresBooking: e.target.checked
+                                                }
+                                            }));
+                                        }}
+                                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                                    />
+                                    <label htmlFor="requiresBookingToggle" style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', margin: 0 }}>
+                                        Habilitar sistema de turnos y calendario
+                                    </label>
+                                </div>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.1rem', marginBottom: 0 }}>
+                                    Tus clientes podrán reservar horarios específicos. Desactivalo si preferís coordinar los horarios de las sesiones manualmente por chat.
+                                </p>
+                            </div>
+                        )}
+
+                        {categorySupportsBooking && formData.bookingConfig?.requiresBooking && (
+                            <BookingConfigForm 
+                                config={formData.bookingConfig} 
+                                onChange={(newConfig) => setFormData({ ...formData, bookingConfig: newConfig })}
+                            />
                         )}
 
                         {(showSchedule || showFileFormats) && (

@@ -49,8 +49,7 @@ const CreateTeam = () => {
     const handleAddCategory = (categoryName) => {
         if (selectedCategories.length >= 2) return;
         if (selectedCategories.some(c => c.name === categoryName)) return;
-
-        setSelectedCategories([...selectedCategories, { name: categoryName, subcategories: [] }]);
+        setSelectedCategories([...selectedCategories, { name: categoryName, subcategories: [], specialties: [] }]);
     };
 
     const handleRemoveCategory = (categoryName) => {
@@ -67,6 +66,19 @@ const CreateTeam = () => {
             } else {
                 if (cat.subcategories.length >= 3) return cat; // Max 3 limit
                 return { ...cat, subcategories: [...cat.subcategories, sub] };
+            }
+        }));
+    };
+
+    const handleToggleSpecialty = (categoryName, spec) => {
+        setSelectedCategories(prev => prev.map(cat => {
+            if (cat.name !== categoryName) return cat;
+            const currentSpecs = cat.specialties || [];
+            if (currentSpecs.includes(spec)) {
+                return { ...cat, specialties: currentSpecs.filter(s => s !== spec) };
+            } else {
+                if (currentSpecs.length >= 5) return cat; // Max 5 limit
+                return { ...cat, specialties: [...currentSpecs, spec] };
             }
         }));
     };
@@ -212,6 +224,31 @@ const CreateTeam = () => {
                                 style={{ padding: '0.6rem 1rem', borderRadius: '8px', fontSize: '0.95rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', minHeight: '100px' }}
                             />
                         </div>
+
+                        <div className="form-group margin-top" style={{ marginTop: '1.5rem' }}>
+                            <label style={{ marginBottom: '0.6rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '500' }}>Logo / Foto del equipo (Opcional)</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                {formData.logo && (
+                                    <img src={formData.logo} alt="Logo Preview" style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                )}
+                                <label style={{ display: 'inline-block', cursor: 'pointer', padding: '0.6rem 1.2rem', background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem', transition: 'all 0.2s', flex: 1, textAlign: 'center' }} className="file-upload-label">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => setFormData({ ...formData, logo: reader.result });
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                        style={{ display: 'none' }}
+                                    />
+                                    {formData.logo ? 'Cambiar Imagen' : 'Subir desde la PC'}
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     {/* 2. Categories & Subcategories */}
@@ -243,7 +280,7 @@ const CreateTeam = () => {
                                     </p>
 
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                        {serviceCategories[cat.name].map(sub => (
+                                        {Object.keys(serviceCategories[cat.name] || {}).map(sub => (
                                             <button
                                                 key={sub}
                                                 type="button"
@@ -264,6 +301,39 @@ const CreateTeam = () => {
                                             </button>
                                         ))}
                                     </div>
+
+                                    {cat.subcategories.length > 0 && (
+                                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>
+                                                Especialidades disponibles (Máx. 5: {(cat.specialties || []).length}/5)
+                                            </p>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                {cat.subcategories.flatMap(sub => serviceCategories[cat.name]?.[sub] || []).map(spec => {
+                                                    const isSelected = (cat.specialties || []).includes(spec);
+                                                    return (
+                                                        <button
+                                                            key={spec}
+                                                            type="button"
+                                                            onClick={() => handleToggleSpecialty(cat.name, spec)}
+                                                            className={`chip ${isSelected ? 'active' : ''}`}
+                                                            style={{
+                                                                padding: '0.25rem 0.6rem',
+                                                                borderRadius: '16px',
+                                                                border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
+                                                                background: isSelected ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+                                                                color: isSelected ? '#a78bfa' : 'var(--text-muted)',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.75rem',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            {spec}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

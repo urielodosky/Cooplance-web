@@ -112,7 +112,7 @@ const Navbar = () => {
                 </div>
 
                 <Link to="/community" className="nav-link">Comunidad</Link>
-                <Link to="/events" className="nav-link" style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Eventos</Link>
+                <Link to="/events" className="nav-link" style={{ color: '#3b82f6', fontWeight: 'bold' }}>Eventos</Link>
             </div>
 
             {/* DESKTOP ACTIONS */}
@@ -245,7 +245,7 @@ const Navbar = () => {
                             <Link to="/my-coops" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Coops</Link>
 
                             <Link to="/community" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Comunidad</Link>
-                            <Link to="/events" className="mobile-nav-link text-accent" onClick={() => setIsMobileMenuOpen(false)}>Eventos</Link>
+                            <Link to="/events" className="mobile-nav-link" style={{ color: '#3b82f6', fontWeight: 'bold' }} onClick={() => setIsMobileMenuOpen(false)}>Eventos</Link>
 
                             {user && (user.role === 'buyer' || user.role === 'company') && (
                                 <Link to="/create-project" className="btn-primary mobile-create-btn" onClick={() => setIsMobileMenuOpen(false)}>

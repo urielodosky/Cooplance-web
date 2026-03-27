@@ -105,7 +105,8 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
         const reset = {
             query: '',
             category: '',
-            subcategory: [],
+            subcategory: '',
+            specialties: [],
             priceMin: '',
             priceMax: '',
             rating: 0,
@@ -188,11 +189,28 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                     <CustomDropdown
                         options={categories.map(c => ({ label: c, value: c }))}
                         value={currentFilters.category}
-                        onChange={(val) => handleChange('category', val)}
+                        onChange={(val) => {
+                            const newFilters = { ...currentFilters, category: val, subcategory: '', specialties: [] };
+                            onFilterChange(newFilters);
+                        }}
                         placeholder="Todas"
                     />
-
                 </div>
+
+                {currentFilters.category && (
+                    <div className="filter-section">
+                        <h3>Subcategoría</h3>
+                        <CustomDropdown
+                            options={Object.keys(serviceCategories[currentFilters.category] || {}).map(s => ({ label: s, value: s }))}
+                            value={currentFilters.subcategory || ''}
+                            onChange={(val) => {
+                                const newFilters = { ...currentFilters, subcategory: val, specialties: [] };
+                                onFilterChange(newFilters);
+                            }}
+                            placeholder="Todas"
+                        />
+                    </div>
+                )}
 
                 {variant === 'default' && (
                     <div className="filter-section">
@@ -329,8 +347,8 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
 
                 {/* Actions Inline - Moved Here */}
 
-                {/* Subcategories - Full Width Row */}
-                {currentFilters.category && (
+                {/* Specialties - Full Width Row */}
+                {currentFilters.category && currentFilters.subcategory && (
                     <div className="filter-subcategories-full" style={{
                         width: '100%',
                         marginTop: '0.5rem',
@@ -338,17 +356,17 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                         animation: 'fadeIn 0.3s ease'
                     }}>
                         <h4 style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 500 }}>
-                            Especialidades en {currentFilters.category}:
+                            Especialidades en {currentFilters.subcategory}:
                         </h4>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            {(serviceCategories[currentFilters.category] || []).map(sub => {
-                                const isSelected = Array.isArray(currentFilters.subcategory)
-                                    ? currentFilters.subcategory.includes(sub)
-                                    : currentFilters.subcategory === sub;
+                            {(serviceCategories[currentFilters.category]?.[currentFilters.subcategory] || []).map(spec => {
+                                const isSelected = Array.isArray(currentFilters.specialties)
+                                    ? currentFilters.specialties.includes(spec)
+                                    : false;
 
                                 return (
                                     <button
-                                        key={sub}
+                                        key={spec}
                                         style={{
                                             background: isSelected ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)',
                                             border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
@@ -361,22 +379,22 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                                             boxShadow: isSelected ? '0 2px 8px rgba(99, 102, 241, 0.25)' : 'none'
                                         }}
                                         onClick={() => {
-                                            const current = Array.isArray(currentFilters.subcategory) ? currentFilters.subcategory : [];
-                                            let newSubs;
-                                            if (current.includes(sub)) {
-                                                newSubs = current.filter(s => s !== sub);
+                                            const current = Array.isArray(currentFilters.specialties) ? currentFilters.specialties : [];
+                                            let newSpecs;
+                                            if (current.includes(spec)) {
+                                                newSpecs = current.filter(s => s !== spec);
                                             } else {
-                                                newSubs = [...current, sub];
+                                                newSpecs = [...current, spec];
                                             }
-                                            handleChange('subcategory', newSubs);
+                                            handleChange('specialties', newSpecs);
                                         }}
                                     >
-                                        {sub}
+                                        {spec}
                                     </button>
                                 );
                             })}
-                            {(!serviceCategories[currentFilters.category] || serviceCategories[currentFilters.category].length === 0) && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sin subcategorías.</span>
+                            {(!serviceCategories[currentFilters.category]?.[currentFilters.subcategory] || serviceCategories[currentFilters.category][currentFilters.subcategory].length === 0) && (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sin especialidades.</span>
                             )}
                         </div>
                     </div>
