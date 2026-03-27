@@ -63,26 +63,20 @@ const Settings = () => {
         }
     };
 
-    const handleUpdateProfile = (e) => {
+    const handleUpdateProfile = async (e) => {
         e.preventDefault();
-        console.log('Update profile clicked. Username:', username);
-
         const cleanUsername = username.trim();
 
         try {
-            // Validation: Username length
             if (cleanUsername.length < 3) {
-                const msg = 'Error: El nombre de usuario debe tener al menos 3 caracteres.';
-                setMessage({ text: msg, type: 'error' });
+                setMessage({ text: 'Error: El nombre de usuario debe tener al menos 3 caracteres.', type: 'error' });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
 
             // Check for duplicates (excluding self)
-            console.log('Checking duplicates for:', cleanUsername, 'Exclude ID:', user.id);
-            const { exists, field } = checkUserExists({
+            const { exists, field } = await checkUserExists({
                 username: cleanUsername
-                // Email is read-only in settings
             }, user.id);
 
             if (exists) {
@@ -96,34 +90,30 @@ const Settings = () => {
 
             setIsUpdating(true);
 
-            // Simulate API call
-            setTimeout(() => {
-                updateUser({
-                    ...user,
-                    username: cleanUsername.toLowerCase(),
-                    firstName: firstName,
-                    lastName: lastName,
-                    companyName: companyName,
-                    responsibleName: responsibleName,
-                    bio: bio,
-                    location: location,
-                    country: country,
-                    currency: 'ARS',
-                    workHours: workHours,
-                    paymentMethods: paymentMethods,
-                    vacancies: vacancies,
-                    gender: gender,
-                    cvFile: cvFile // Save CV file
-                });
-                setIsUpdating(false);
-                setMessage({ text: '¡Guardado con éxito! Tu perfil ha sido actualizado.', type: 'success' });
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            await updateUser({
+                ...user,
+                username: cleanUsername.toLowerCase(),
+                firstName: firstName,
+                lastName: lastName,
+                companyName: companyName,
+                responsibleName: responsibleName,
+                bio: bio,
+                location: location,
+                country: country,
+                workHours: workHours,
+                paymentMethods: paymentMethods,
+                vacancies: vacancies,
+                gender: gender
+            });
 
-                setTimeout(() => setMessage({ text: '', type: '' }), 3000);
-            }, 800);
+            setIsUpdating(false);
+            setMessage({ text: '¡Guardado con éxito! Tu perfil ha sido actualizado.', type: 'success' });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         } catch (error) {
             console.error("Error updating profile:", error);
-            alert("Error inesperado al actualizar perfil: " + error.message);
+            setMessage({ text: "Error inesperado: " + error.message, type: 'error' });
             setIsUpdating(false);
         }
     };

@@ -47,8 +47,22 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
-        // Apply gamification rules to the fetched profile
-        const processed = processGamificationRules(data);
+        // Map snake_case from DB to camelCase for frontend
+        const mapped = {
+            ...data,
+            firstName: data.first_name,
+            lastName: data.last_name,
+            avatarUrl: data.avatar_url,
+            companyName: data.company_name,
+            responsibleName: data.responsible_name,
+            workHours: data.work_hours,
+            paymentMethods: data.payment_methods,
+            cvUrl: data.cv_url,
+            xp: data.points // Gamification uses xp/points interchangeably in some places
+        };
+
+        // Apply gamification rules
+        const processed = processGamificationRules(mapped);
         setUser(processed);
         setLoading(false);
     };
@@ -95,16 +109,32 @@ export const AuthProvider = ({ children }) => {
 
         const processed = processGamificationRules(updatedData);
 
+        // Map frontend camelCase to database snake_case
+        const profileUpdate = {
+            username: processed.username?.toLowerCase(),
+            first_name: processed.firstName || processed.first_name,
+            last_name: processed.lastName || processed.last_name,
+            avatar_url: processed.avatarUrl || processed.avatar_url,
+            bio: processed.bio,
+            gender: processed.gender,
+            company_name: processed.companyName || processed.company_name,
+            responsible_name: processed.responsibleName || processed.responsible_name,
+            location: processed.location,
+            country: processed.country,
+            work_hours: processed.workHours || processed.work_hours,
+            payment_methods: processed.paymentMethods || processed.payment_methods,
+            vacancies: parseInt(processed.vacancies) || 0,
+            cv_url: processed.cvUrl || processed.cv_url,
+            level: processed.level,
+            points: processed.points
+        };
+
+        // Remove undefined fields
+        Object.keys(profileUpdate).forEach(key => profileUpdate[key] === undefined && delete profileUpdate[key]);
+
         const { error } = await supabase
             .from('profiles')
-            .update({
-                first_name: processed.firstName || processed.first_name,
-                last_name: processed.lastName || processed.last_name,
-                avatar_url: processed.avatar_url || processed.avatarUrl,
-                bio: processed.bio,
-                level: processed.level,
-                points: processed.points || processed.xp || 0,
-            })
+            .update(profileUpdate)
             .eq('id', user.id);
 
         if (error) {
@@ -112,8 +142,8 @@ export const AuthProvider = ({ children }) => {
             throw error;
         }
 
-        // Refresh local state
-        setUser(processed);
+        // Fetch latest profile from DB to ensure state consistency
+        await fetchProfile(user.id);
     };
 
     // ─── UPDATE BALANCE (local only for now, until wallet table is added) ────────

@@ -15,6 +15,15 @@ create table if not exists public.profiles (
     avatar_url text,
     bio text,
     points integer not null default 0,
+    gender text,
+    company_name text,
+    responsible_name text,
+    location text,
+    country text,
+    work_hours text,
+    payment_methods text,
+    vacancies integer default 0,
+    cv_url text,
     created_at timestamptz not null default now()
 );
 alter table public.profiles enable row level security;
@@ -119,18 +128,55 @@ create policy "Reviews are viewable by everyone." on public.reviews for select u
 create policy "Users can create reviews for their own jobs." on public.reviews for insert with check (auth.uid() = reviewer_id);
 
 
+-- 7. CHAT MESSAGES
+create table if not exists public.messages (
+    id uuid primary key default gen_random_uuid(),
+    sender_id uuid references public.profiles(id) on delete cascade not null,
+    receiver_id uuid references public.profiles(id) on delete cascade not null,
+    content text not null,
+    is_read boolean not null default false,
+    created_at timestamptz not null default now()
+);
+alter table public.messages enable row level security;
+create policy "Users can view their own messages." on public.messages for select using (auth.uid() = sender_id or auth.uid() = receiver_id);
+create policy "Users can send messages." on public.messages for insert with check (auth.uid() = sender_id);
+
+
 -- FUNCTION: auto-create a profile on signup
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-    insert into public.profiles (id, username, first_name, last_name, email, role)
+    insert into public.profiles (
+        id, 
+        username, 
+        first_name, 
+        last_name, 
+        email, 
+        role,
+        gender,
+        company_name,
+        responsible_name,
+        location,
+        country,
+        work_hours,
+        payment_methods,
+        vacancies
+    )
     values (
         new.id,
         coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
         coalesce(new.raw_user_meta_data->>'first_name', ''),
         coalesce(new.raw_user_meta_data->>'last_name', ''),
         new.email,
-        coalesce(new.raw_user_meta_data->>'role', 'client')
+        coalesce(new.raw_user_meta_data->>'role', 'client'),
+        new.raw_user_meta_data->>'gender',
+        new.raw_user_meta_data->>'company_name',
+        new.raw_user_meta_data->>'responsible_name',
+        new.raw_user_meta_data->>'location',
+        new.raw_user_meta_data->>'country',
+        new.raw_user_meta_data->>'work_hours',
+        new.raw_user_meta_data->>'payment_methods',
+        (new.raw_user_meta_data->>'vacancies')::integer
     );
     return new;
 end;
