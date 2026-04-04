@@ -7,6 +7,7 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { registerActivity } from '../utils/gamification';
 import { seedDatabase } from '../utils/seedData';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
+import { getProjects } from '../lib/projectService';
 import '../styles/pages/Explore.scss';
 
 const ExploreClients = () => {
@@ -14,6 +15,7 @@ const ExploreClients = () => {
     const [projects, setProjects] = useState([]);
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [selectedProjectForApply, setSelectedProjectForApply] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState({
         query: '',
@@ -29,49 +31,43 @@ const ExploreClients = () => {
     });
 
     useEffect(() => {
-        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        const now = new Date();
-
-        // Sort by newest first by default and Filter Expired
-        const validProjects = storedProjects.filter(p => {
-            // First, filter out projects posted by 'company' role clients
-            const client = storedUsers.find(u => u.id === p.clientId) || {};
-            if (client.role === 'company') {
-                return false; // Exclude projects from companies
-            }
-
-            if (!p.deadline) return true; // No deadline = never expires
-
-            // Avoid boolean deadline error just in case
-            if (typeof p.deadline !== 'string') return true;
-
-            // Robust parsing for YYYY-MM-DD to avoid timezone issues with new Date(string)
+        const fetchProjects = async () => {
+            setLoading(true);
             try {
-                const [year, month, day] = p.deadline.split('-').map(Number);
-                const deadlineDate = new Date(year, month - 1, day, 23, 59, 59, 999);
-                return now <= deadlineDate;
-            } catch (e) {
-                return true; // Keep if date is invalid to avoid accidental hiding
-            }
-        });
+                const data = await getProjects();
+                const now = new Date();
 
-        const allProjects = validProjects.reverse().map(p => {
-            const client = storedUsers.find(u => u.id === p.clientId) || {};
-            return {
-                ...p,
-                clientRating: client.rating || 0,
-                clientReviews: client.reviewsCount || 0,
-                clientAvatar: client.avatar || p.clientAvatar,
-                // Normalize fields for searchUtils if necessary
-                tags: [p.category, ...(p.tags || [])], // Ensure category is searchable
-                price: p.budgetMin, // Map budget to price for filter compatibility
-                // If project has specific methods, use them. Otherwise fallback to client's methods.
-                paymentMethods: p.paymentMethods || client.paymentMethods || {}
-            };
-        });
-        setProjects(allProjects);
-        setFilteredProjects(allProjects);
+                // Robust filtering for expired projects (already done in mapper but just in case)
+                const validProjects = data.filter(p => {
+                    if (p.clientRole === 'company') return false; 
+                    if (!p.deadline) return true;
+
+                    try {
+                        const deadlineDate = new Date(p.deadline);
+                        return now <= deadlineDate;
+                    } catch (e) {
+                        return true;
+                    }
+                });
+
+                // Map/Normalize fields for searchUtils if necessary
+                const allProjects = validProjects.map(p => ({
+                    ...p,
+                    tags: [p.category, ...(p.tags || [])],
+                    price: p.budget,
+                    paymentMethods: p.paymentMethods || {}
+                }));
+
+                setProjects(allProjects);
+                setFilteredProjects(allProjects);
+            } catch (err) {
+                console.error('Error loading projects:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProjects();
     }, []);
 
     const handleFilterChange = (newFilters) => {
@@ -82,37 +78,32 @@ const ExploreClients = () => {
 
     const { user, updateUser } = useAuth();
 
-    const handleApply = (projectId) => {
+    const handleApply = async (projectId) => {
         if (!user) {
-            alert('Debes iniciar sesión para postularte.');
             navigate('/login');
             return;
         }
 
-        if (user.role !== 'freelancer' && user.role !== 'company') {
-            // Companies can also act as freelancers sometimes? Assuming mostly freelancers.
-            // letting 'company' role apply if they want to act as service provider? 
-            // Requirement said "Freelancer Application", but let's stick to freelancer role for safety or allow both if acceptable.
-            // For now, let's allow freelancer.
-            if (user.role !== 'freelancer') {
-                alert('Solo los freelancers pueden postularse a proyectos.');
-                return;
-            }
+        if (user.role !== 'freelancer') {
+            alert('Solo los freelancers pueden postularse a proyectos.');
+            return;
         }
 
-        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
-
-        // Check if already applied
-        const alreadyApplied = storedProposals.some(p => p.projectId === projectId && p.freelancerId === user.id);
-        if (alreadyApplied) {
-            alert('Ya te has postulado a este proyecto.');
-            return;
+        // Check if already applied via Supabase
+        try {
+            const { hasUserApplied } = await import('../lib/proposalService');
+            const alreadyApplied = await hasUserApplied(projectId, user.id);
+            if (alreadyApplied) {
+                alert('Ya te has postulado a esta oferta.');
+                return;
+            }
+        } catch (err) {
+            console.error('Error checking application:', err);
         }
 
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
-        // Instead of immediate apply, open the modal
         setSelectedProjectForApply(project);
     };
 
@@ -151,7 +142,12 @@ const ExploreClients = () => {
 
             <div className="explore-content">
                 <div className="services-grid-explore">
-                    {projects.length === 0 ? (
+                    {loading ? (
+                        <div className="loading-container glass full-width-msg">
+                            <div className="loader"></div>
+                            <p>Cargando proyectos...</p>
+                        </div>
+                    ) : projects.length === 0 ? (
                         <div className="no-results glass full-width-msg">
                             <h3>Aún no existen pedidos registrados.</h3>
                             <p>Las solicitudes de trabajo aparecerán aquí.</p>

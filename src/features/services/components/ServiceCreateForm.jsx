@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import { useServices } from '../context/ServiceContext';
 import { useAuth } from '../../auth/context/AuthContext';
 import { processGamificationRules, calculateCommission } from '../../../utils/gamification';
@@ -21,9 +22,25 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
 
     const [hasPackages, setHasPackages] = useState(initialData?.hasPackages || false);
     const [mediaType, setMediaType] = useState(initialData?.mediaType || { image: 'file', video: 'url' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loadingStatus, setLoadingStatus] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const [formError, setFormError] = useState('');
 
+    // Multi-media state
+    const [images, setImages] = useState(() => {
+        if (initialData?.images && initialData.images.length > 0) return initialData.images;
+        if (initialData?.image) return [initialData.image];
+        return [];
+    });
+    const [videos, setVideos] = useState(() => {
+        if (initialData?.videos && initialData.videos.length > 0) return initialData.videos;
+        if (initialData?.video) return [{ src: initialData.video, type: initialData?.mediaType?.video || 'url' }];
+        return [];
+    });
+
     const [formData, setFormData] = useState({
+        ...initialData,
         title: initialData?.title || '',
         category: initialData?.category || '',
         subcategory: (typeof initialData?.subcategory === 'string') ? initialData?.subcategory : '',
@@ -33,14 +50,14 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
         description: initialData?.description || '',
         deliveryTime: initialData?.deliveryTime || '',
         revisions: initialData?.revisions || '',
-        imageUrl: initialData?.image || '',
-        videoUrl: initialData?.video || '',
-        portfolioUrl: initialData?.portfolioUrl || '',
-        location: initialData?.location || '',
+        imageUrl: initialData?.imageUrl || '',
+        videoUrl: initialData?.videoUrl || '',
+        price: initialData?.price || '',
         country: initialData?.country || 'Argentina',
         province: initialData?.province || [],
         city: initialData?.city || [],
-        paymentMethods: initialData?.paymentMethods || [],
+        paymentMethods: initialData?.paymentMethods ? Object.keys(initialData.paymentMethods).filter(k => initialData.paymentMethods[k]) : [],
+        portfolioUrl: initialData?.portfolioUrl || '',
         professionalLicense: initialData?.professionalLicense || '',
         professionalBody: initialData?.professionalBody || '',
         bookingConfig: initialData?.bookingConfig || {
@@ -55,8 +72,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 saturday: { isActive: false, shifts: [] },
                 sunday: { isActive: false, shifts: [] }
             }
-        },
-        ...initialData
+        }
     });
 
     const [tags, setTags] = useState(initialData?.tags || []);
@@ -67,11 +83,11 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
         video: initialData?.video ? 'Video actual' : ''
     });
 
-    const [packages, setPackages] = useState(initialData?.packages || {
-        basic: { price: '', description: '', deliveryTime: '', revisions: '' },
-        standard: { price: '', description: '', deliveryTime: '', revisions: '' },
-        premium: { price: '', description: '', deliveryTime: '', revisions: '' }
-    });
+    const [servicePackages, setServicePackages] = useState(initialData?.packages || [
+        { name: 'Básico', price: '', description: '', deliveryTime: '', revisions: '', sessions: 1 },
+        { name: 'Estándar', price: '', description: '', deliveryTime: '', revisions: '', sessions: 2 },
+        { name: 'Premium', price: '', description: '', deliveryTime: '', revisions: '', sessions: 3 }
+    ]);
 
     const isSessionBased = ['Educación y Estilo de Vida', 'Profesionales Matriculados', 'Negocios y Administración'].includes(formData.category) ||
         bookingCategories.includes(formData.category) ||
@@ -79,11 +95,6 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             formData.subcategory.toLowerCase().includes('tutoría') ||
             formData.subcategory.toLowerCase().includes('coaching')
         ));
-
-    const [tutoringPlans, setTutoringPlans] = useState(initialData?.tutoringPlans || [
-        { name: 'Plan Inicial', sessions: 2, price: '', description: '' },
-        { name: 'Plan Intermedio', sessions: 3, price: '', description: '' }
-    ]);
 
     const [faqs, setFaqs] = useState(initialData?.faqs || [{ question: '', answer: '' }]);
 
@@ -220,15 +231,18 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
 
     const handleChange = (e, type = 'text') => {
         if (type === 'file') {
+            // Legacy single file - no longer used for images/videos, kept for compatibility
             const file = e.target.files[0];
             if (file) {
-                const mockUrl = URL.createObjectURL(file);
-                const fieldName = e.target.name === 'image' ? 'imageUrl' : 'videoUrl';
-                setFormData({ ...formData, [fieldName]: mockUrl });
-                setFileNames({ ...fileNames, [e.target.name]: file.name });
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const fieldName = e.target.name === 'image' ? 'imageUrl' : 'videoUrl';
+                    setFormData({ ...formData, [fieldName]: reader.result });
+                    setFileNames({ ...fileNames, [e.target.name]: file.name });
+                };
+                reader.readAsDataURL(file);
             }
         } else {
-            // Price validation - prevent negative
             if (e.target.name === 'price') {
                 const val = parseFloat(e.target.value);
                 if (val < 0) {
@@ -238,6 +252,95 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             }
             setFormData({ ...formData, [e.target.name]: e.target.value });
         }
+    };
+
+    // Compress image using canvas to stay within localStorage limits
+    const compressImage = (file) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 600;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX_SIZE) { h = h * MAX_SIZE / w; w = MAX_SIZE; } }
+                    else { if (h > MAX_SIZE) { w = w * MAX_SIZE / h; h = MAX_SIZE; } }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    // Multi-image handler with compression
+    const handleAddImages = async (e) => {
+        const files = Array.from(e.target.files);
+        if (images.length + files.length > 5) {
+            setFormError(`Máximo 5 imágenes. Ya tenés ${images.length}.`);
+            setTimeout(() => setFormError(''), 3000);
+            return;
+        }
+        for (const file of files) {
+            const compressed = await compressImage(file);
+            setImages(prev => {
+                if (prev.length >= 5) return prev;
+                return [...prev, compressed];
+            });
+        }
+        e.target.value = '';
+    };
+
+    const handleRemoveImage = (index) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    // Multi-video handler - uses blob URLs (not base64) to avoid quota issues
+    const handleAddVideo = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (videos.length >= 2) {
+            setFormError('Máximo 2 videos.');
+            setTimeout(() => setFormError(''), 3000);
+            return;
+        }
+
+        const videoEl = document.createElement('video');
+        videoEl.preload = 'metadata';
+        const objectUrl = URL.createObjectURL(file);
+        videoEl.src = objectUrl;
+        videoEl.onloadedmetadata = () => {
+            if (videoEl.duration > 60) {
+                URL.revokeObjectURL(objectUrl);
+                setFormError(`El video dura ${Math.round(videoEl.duration)}s. Máximo permitido: 60 segundos.`);
+                setTimeout(() => setFormError(''), 4000);
+                return;
+            }
+            // Store as blob URL and include file object for Supabase upload
+            setVideos(prev => [...prev, { src: objectUrl, type: 'file', name: file.name, file: file, duration: Math.round(videoEl.duration) }]);
+        };
+        e.target.value = '';
+    };
+
+    const handleAddVideoUrl = () => {
+        if (videos.length >= 2) {
+            setFormError('Máximo 2 videos.');
+            setTimeout(() => setFormError(''), 3000);
+            return;
+        }
+        const url = prompt('Ingresá la URL del video (YouTube o Vimeo):');
+        if (url && url.trim()) {
+            setVideos(prev => [...prev, { src: url.trim(), type: 'url', name: 'Video URL' }]);
+        }
+    };
+
+    const handleRemoveVideo = (index) => {
+        setVideos(prev => prev.filter((_, i) => i !== index));
     };
 
     const handlePackageChange = (tier, field, value) => {
@@ -315,10 +418,15 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
         setTags(tags.filter((_, index) => index !== indexToRemove));
     };
 
-    const handleNextOrSubmit = (e) => {
+    const handleNextOrSubmit = async (e) => {
         e.preventDefault();
 
         setFormError(''); // reset errors
+
+        if (currentStep === 1 && !formData.subcategory?.trim()) {
+            setFormError('Debes seleccionar una subcategoría para tu servicio.');
+            return;
+        }
 
         if (currentStep === 1 && formData.category === 'Profesionales Matriculados' && !formData.professionalBody?.trim()) {
             setFormError('El Colegio Universitario / Jurisdicción es obligatorio.');
@@ -379,46 +487,130 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             return;
         }
 
-        const finalServiceData = {
-            ...formData,
-            id: initialData?.id || Date.now(),
-            price: hasPackages 
-                ? (isSessionBased ? tutoringPlans[0].price : packages.basic.price) 
-                : formData.price,
-            tags: tags,
-            packages: hasPackages ? (isSessionBased ? tutoringPlans : packages) : null,
-            hasPackages: hasPackages,
-            isSessionBased: isSessionBased,
-            faqs: faqs.filter(f => f.question && f.answer),
-            freelancerId: user.id,
-            freelancerName: initialData?.freelancerName || user.firstName || user.username || user.companyName,
-            level: initialData?.level || user.level || 1,
-            image: formData.imageUrl,
-            video: formData.videoUrl,
-            mediaType: mediaType,
-            bookingConfig: formData.bookingConfig?.requiresBooking ? formData.bookingConfig : null,
-            date: initialData?.date || new Date().toISOString(),
-            country: formData.country,
-            province: formData.province,
-            city: formData.city,
-            professionalLicense: formData.category === 'Profesionales Matriculados' ? formData.professionalLicense : null,
-            professionalBody: formData.category === 'Profesionales Matriculados' ? formData.professionalBody : null,
-            location: formData.workMode.includes('presential')
-                ? `${formData.city}, ${formData.province}, ${formData.country}`
-                : 'Remoto',
-            paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
-                ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
-                : null // Null implies "All/Default"
-        };
+        // ── FINAL SUBMIT ──
+        setIsSubmitting(true);
+        setFormError('');
+        setLoadingStatus('Iniciando...');
 
-        if (initialData) {
-            updateService(finalServiceData);
-            alert('¡Servicio actualizado con éxito!');
-        } else {
-            addService(finalServiceData);
-            alert('¡Servicio publicado con éxito!');
+        if (!user) {
+            setFormError('No estás autenticado. Por favor, inicia sesión para publicar tu servicio.');
+            setIsSubmitting(false);
+            return;
         }
-        onCancel();
+
+        try {
+            // Upload images to Supabase Storage
+            const imageUrls = [];
+            for (let i = 0; i < images.length; i++) {
+                setLoadingStatus(`Subiendo imagen ${i + 1}/${images.length}...`);
+                const img = images[i];
+                if (img.startsWith('data:')) {
+                    // Base64 → upload to Storage
+                    const response = await fetch(img);
+                    const blob = await response.blob();
+                    const fileName = `${user.id}/${Date.now()}_${i}.jpg`;
+                    const { error: uploadErr } = await supabase.storage
+                        .from('service-media')
+                        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+                    if (uploadErr) {
+                        console.error('Upload error:', uploadErr);
+                        // Fallback: keep base64
+                        imageUrls.push(img);
+                    } else {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('service-media')
+                            .getPublicUrl(fileName);
+                        imageUrls.push(publicUrl);
+                    }
+                } else {
+                    // Already a URL (editing existing service)
+                    imageUrls.push(img);
+                }
+            }
+
+            // Upload Videos to Supabase Storage
+            const finalVideos = [];
+            for (let i = 0; i < videos.length; i++) {
+                setLoadingStatus(`Subiendo video ${i + 1}/${videos.length}...`);
+                const vid = videos[i];
+                if (vid.type === 'url') {
+                    finalVideos.push(vid);
+                } else if (vid.type === 'file' && vid.file) {
+                    const ext = vid.file.name.split('.').pop();
+                    const fileName = `${user.id}/video_${Date.now()}_${i}.${ext}`;
+                    const { error: uploadErr } = await supabase.storage
+                        .from('service-media')
+                        .upload(fileName, vid.file, { contentType: vid.file.type, upsert: true });
+
+                    if (uploadErr) {
+                        console.error('Upload video error:', uploadErr);
+                        throw new Error(`Fallo al subir el video: ${uploadErr.message}`);
+                    } else {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('service-media')
+                            .getPublicUrl(fileName);
+                        finalVideos.push({ src: publicUrl, type: 'file', name: 'Video subido' });
+                    }
+                } else if (vid.type === 'file' && !vid.file) {
+                    // editing existing file video
+                    finalVideos.push(vid);
+                }
+            }
+
+            const finalServiceData = {
+                ...formData,
+                id: initialData?.id || undefined,
+                price: hasPackages
+                    ? servicePackages[0].price
+                    : formData.price,
+                tags: tags,
+                packages: hasPackages ? servicePackages : null,
+                hasPackages: hasPackages,
+                isSessionBased: isSessionBased,
+                faqs: faqs.filter(f => f.question && f.answer),
+                freelancerId: user.id,
+                freelancerName: initialData?.freelancerName || user.first_name || user.username || user.company_name,
+                level: initialData?.level || user.level || 1,
+                images: imageUrls,
+                image: imageUrls[0] || formData.imageUrl || null,
+                videos: finalVideos,
+                video: finalVideos[0]?.src || formData.videoUrl || null,
+                mediaType: mediaType,
+                bookingConfig: formData.bookingConfig?.requiresBooking ? formData.bookingConfig : null,
+                date: initialData?.date || new Date().toISOString(),
+                country: formData.country,
+                province: formData.province,
+                city: formData.city,
+                professionalLicense: formData.category === 'Profesionales Matriculados' ? formData.professionalLicense : null,
+                professionalBody: formData.category === 'Profesionales Matriculados' ? formData.professionalBody : null,
+                location: formData.workMode.includes('presential')
+                    ? `${formData.city}, ${formData.province}, ${formData.country}`
+                    : 'Remoto',
+                paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
+                    ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
+                    : null
+            };
+
+            setLoadingStatus('Guardando servicio...');
+            if (initialData) {
+                await updateService(finalServiceData);
+                setSuccessMessage('¡Servicio actualizado con éxito!');
+            } else {
+                await addService(finalServiceData);
+                setSuccessMessage('¡Servicio publicado con éxito!');
+            }
+            
+            setLoadingStatus('¡Listo!');
+            
+            // Navegar después de 2 segundos
+            setTimeout(() => {
+                onCancel();
+            }, 2000);
+        } catch (err) {
+            console.error('Error saving service:', err);
+            setFormError(`Error: ${err.message || JSON.stringify(err)}`);
+            setIsSubmitting(false);
+        }
     };
 
     const showSchedule = ['Coaching y Tutorias', 'Crecimiento Personal y Pasatiempos'].includes(formData.category);
@@ -436,7 +628,20 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 ))}
             </div>
 
-            <form onSubmit={handleNextOrSubmit} className="service-form mt-4">
+            {successMessage && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+                    background: 'var(--bg-card)', zIndex: 10, display: 'flex', 
+                    flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 'var(--radius-lg)'
+                }}>
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem' }}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>{successMessage}</h3>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Redirigiendo a tu panel...</p>
+                </div>
+            )}
+
+            <form onSubmit={handleNextOrSubmit} className="service-form mt-4" style={{ position: 'relative' }}>
 
                 {formError && (
                     <div style={{ color: '#ef4444', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -599,167 +804,180 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                                     onChange={(e) => setHasPackages(e.target.checked)}
                                     style={{ accentColor: 'var(--primary)', width: '18px', height: '18px' }}
                                 />
-                                <label htmlFor="usePackages" style={{ fontWeight: 500, fontSize: '1.05rem', cursor: 'pointer' }}>Activar Paquetes (Personalizados o Sesiones)</label>
+                                <label htmlFor="usePackages" style={{ fontWeight: 500, fontSize: '1.05rem', cursor: 'pointer' }}>Activar Paquetes</label>
                             </div>
 
-                            {hasPackages ? (
-                                isSessionBased ? (
-                                    <div className="tutoring-plans-section">
-                                        <h5 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Planes de Sesiones (Mín 2, Máx 5)</h5>
-                                        <div className="packages-grid">
-                                            {tutoringPlans.map((plan, index) => (
-                                                <div key={index} className="package-column relative">
-                                                    {tutoringPlans.length > 2 && (
-                                                        <button type="button" className="remove-plan-btn" onClick={() => removeTutoringPlan(index)} title="Quitar plan">×</button>
-                                                    )}
-                                                    <input
-                                                        type="text"
-                                                        className="plan-name-input"
-                                                        value={plan.name}
-                                                        onChange={(e) => handleTutoringPlanChange(index, 'name', e.target.value)}
-                                                        placeholder="Nombre del Plan"
-                                                    />
-                                                    <div className="package-field">
-                                                        <label>Precio Total</label>
-                                                        <div className="price-input-wrapper">
-                                                            <input
-                                                                type="number"
-                                                                value={plan.price}
-                                                                onChange={(e) => handleTutoringPlanChange(index, 'price', e.target.value)}
-                                                                required
-                                                            />
-                                                            <span className="currency-badge">ARS</span>
-                                                        </div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                                                            Recibes: ${calculateNet(plan.price)}
-                                                        </div>
+                            {hasPackages && (
+                                <div className="tutoring-plans-section">
+                                    <div className="packages-grid">
+                                        {servicePackages.map((plan, index) => (
+                                            <div key={index} className="package-column relative">
+                                                {servicePackages.length > 1 && (
+                                                    <button type="button" className="remove-plan-btn" onClick={() => {
+                                                        const newPlans = servicePackages.filter((_, i) => i !== index);
+                                                        setServicePackages(newPlans);
+                                                    }} title="Quitar plan">×</button>
+                                                )}
+                                                <input
+                                                    type="text"
+                                                    className="plan-name-input"
+                                                    value={plan.name}
+                                                    maxLength={10}
+                                                    onChange={(e) => {
+                                                        const newPlans = [...servicePackages];
+                                                        newPlans[index].name = e.target.value;
+                                                        setServicePackages(newPlans);
+                                                    }}
+                                                    placeholder="Nombre del Plan"
+                                                />
+                                                <div className="package-field">
+                                                    <label>Precio Total</label>
+                                                    <div className="price-input-wrapper">
+                                                        <input
+                                                            type="number"
+                                                            value={plan.price}
+                                                            onChange={(e) => {
+                                                                const newPlans = [...servicePackages];
+                                                                newPlans[index].price = e.target.value;
+                                                                setServicePackages(newPlans);
+                                                            }}
+                                                            required
+                                                        />
+                                                        <span className="currency-badge">ARS</span>
                                                     </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                                        Recibes: ${calculateNet(plan.price)}
+                                                    </div>
+                                                </div>
+
+                                                {isSessionBased ? (
                                                     <div className="package-field">
                                                         <label>Cantidad de Sesiones</label>
                                                         <input
                                                             type="number"
                                                             min="1"
                                                             value={plan.sessions}
-                                                            onChange={(e) => handleTutoringPlanChange(index, 'sessions', e.target.value)}
+                                                            onChange={(e) => {
+                                                                const newPlans = [...servicePackages];
+                                                                newPlans[index].sessions = e.target.value;
+                                                                setServicePackages(newPlans);
+                                                            }}
                                                             required
                                                         />
                                                     </div>
-                                                    <div className="package-field">
-                                                        <label>Resumen / Frecuencia</label>
-                                                        <textarea
-                                                            rows="3"
-                                                            value={plan.description}
-                                                            onChange={(e) => handleTutoringPlanChange(index, 'description', e.target.value)}
-                                                            placeholder="Ej: 1 clase semanal..."
-                                                            required
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {tutoringPlans.length < 5 && (
-                                                <button type="button" className="add-package-card" onClick={addTutoringPlan}>
-                                                    <span>+</span>
-                                                    <p>Agregar plan</p>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="packages-grid">
-                                        {['basic', 'standard', 'premium'].map(tier => (
-                                            <div key={tier} className="package-column">
-                                                <h5 style={{ textTransform: 'capitalize', textAlign: 'center', marginBottom: '1rem', color: 'var(--primary)', fontSize: '1.1rem' }}>
-                                                    {tier === 'basic' ? 'Básico' : tier === 'standard' ? 'Estándar' : 'Premium'}
-                                                </h5>
+                                                ) : (
+                                                    <>
+                                                        <div className="package-field">
+                                                            <label>Entrega (días)</label>
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                value={plan.deliveryTime}
+                                                                onChange={(e) => {
+                                                                    const newPlans = [...servicePackages];
+                                                                    newPlans[index].deliveryTime = e.target.value;
+                                                                    setServicePackages(newPlans);
+                                                                }}
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div className="package-field">
+                                                            <label>Revisiones</label>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                value={plan.revisions}
+                                                                onChange={(e) => {
+                                                                    const newPlans = [...servicePackages];
+                                                                    newPlans[index].revisions = e.target.value;
+                                                                    setServicePackages(newPlans);
+                                                                }}
+                                                                required
+                                                            />
+                                                        </div>
+                                                    </>
+                                                )}
 
                                                 <div className="package-field">
-                                                    <label>Precio</label>
-                                                    <div className="price-input-wrapper">
-                                                        <input
-                                                            type="number"
-                                                            min="100"
-                                                            value={packages[tier].price}
-                                                            onChange={(e) => handlePackageChange(tier, 'price', e.target.value)}
-                                                            required
-                                                        />
-                                                        <span className="currency-badge">ARS</span>
-                                                    </div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                                                        Recibes: ${calculateNet(packages[tier].price)}
-                                                    </div>
-                                                </div>
-                                                <div className="package-field">
-                                                    <label>Entrega (días)</label>
-                                                    <input type="number" min="1" value={packages[tier].deliveryTime} onChange={(e) => handlePackageChange(tier, 'deliveryTime', e.target.value)} required />
-                                                </div>
-                                                <div className="package-field">
-                                                    <label style={{ display: 'flex', alignItems: 'center' }}>
-                                                        Revisiones
-                                                        <div className="help-icon-wrapper">
-                                                            <div className="help-icon">?</div>
-                                                            <div className="help-tooltip">
-                                                                Cantidad de veces que se permiten modificaciones o arreglos una vez entregado el servicio.
-                                                            </div>
-                                                        </div>
-                                                    </label>
-                                                    <input type="number" value={packages[tier].revisions} onChange={(e) => handlePackageChange(tier, 'revisions', e.target.value)} required />
-                                                </div>
-                                                <div className="package-field">
-                                                    <label>Resumen de entregable</label>
-                                                    <textarea rows="3" value={packages[tier].description} onChange={(e) => handlePackageChange(tier, 'description', e.target.value)} required />
+                                                    <label>Resumen / Descripción</label>
+                                                    <textarea
+                                                        rows="3"
+                                                        value={plan.description}
+                                                        onChange={(e) => {
+                                                            const newPlans = [...servicePackages];
+                                                            newPlans[index].description = e.target.value;
+                                                            setServicePackages(newPlans);
+                                                        }}
+                                                        placeholder="Ej: Incluye..."
+                                                        required
+                                                    />
                                                 </div>
                                             </div>
                                         ))}
-                                    </div>
-                                )
-                            ) : (
-                                <>
-                                    <div className="form-row-pricing" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
-                                        <div>
-                                            <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Precio</label>
-                                            <div className="price-input-wrapper">
-                                                <input type="number" name="price" min="100" placeholder="Ej: 5000" value={formData.price || ''} onChange={handleChange} required />
-                                                <span className="currency-badge">ARS</span>
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                                                Recibes: ${calculateNet(formData.price || 0)}
-                                            </div>
-                                        </div>
-                                        {!isSessionBased && (
-                                            <>
-                                                <div>
-                                                    <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Entrega (Días)</label>
-                                                    <input type="number" name="deliveryTime" min="1" placeholder="Ej: 3" value={formData.deliveryTime || ''} onChange={handleChange} required style={{ width: '100%' }} />
-                                                </div>
-                                                <div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.5rem' }}>
-                                                        <label className="work-mode-label" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Revisiones</label>
-                                                        <div className="tooltip-container" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'help', overflow: 'visible' }}>
-                                                            <span style={{
-                                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                                width: '16px', height: '16px', borderRadius: '50%',
-                                                                border: '1.5px solid var(--text-muted)', color: 'var(--text-muted)',
-                                                                fontSize: '10px', fontWeight: 700, lineHeight: 1, flexShrink: 0
-                                                            }}>?</span>
-                                                            <div style={{
-                                                                position: 'absolute', bottom: '130%', left: '50%', transform: 'translateX(-50%)',
-                                                                padding: '0.5rem 0.8rem', background: '#0f172a',
-                                                                color: '#fff', fontSize: '0.75rem', borderRadius: '6px', width: '200px',
-                                                                textAlign: 'center', zIndex: 9999, opacity: 0, visibility: 'hidden',
-                                                                transition: 'all 0.2s', border: '1px solid var(--border)',
-                                                                boxShadow: '0 8px 20px rgba(0,0,0,0.4)', pointerEvents: 'none',
-                                                                whiteSpace: 'normal'
-                                                            }} className="tooltip-text">
-                                                                Cantidad de veces que se permiten modificaciones una vez entregado el servicio.
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <input type="number" name="revisions" placeholder="Ej: 2" value={formData.revisions || ''} onChange={handleChange} required style={{ width: '100%' }} />
-                                                </div>
-                                            </>
+                                        {servicePackages.length < 5 && (
+                                            <button type="button" className="add-package-card" onClick={() => {
+                                                setServicePackages([...servicePackages, {
+                                                    name: `Plan ${servicePackages.length + 1}`,
+                                                    price: '',
+                                                    description: '',
+                                                    deliveryTime: 1,
+                                                    revisions: 0,
+                                                    sessions: 1
+                                                }]);
+                                            }}>
+                                                <span>+</span>
+                                                <p>Agregar plan</p>
+                                            </button>
                                         )}
                                     </div>
-                                </>
+                                </div>
+                            )}
+                            {!hasPackages && (
+                                <div className="form-row-pricing" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+                                    <div>
+                                        <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Precio</label>
+                                        <div className="price-input-wrapper">
+                                            <input type="number" name="price" min="100" placeholder="Ej: 5000" value={formData.price || ''} onChange={handleChange} required />
+                                            <span className="currency-badge">ARS</span>
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                            Recibes: ${calculateNet(formData.price || 0)}
+                                        </div>
+                                    </div>
+                                    {!isSessionBased && (
+                                        <>
+                                            <div>
+                                                <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Entrega (Días)</label>
+                                                <input type="number" name="deliveryTime" min="1" placeholder="Ej: 3" value={formData.deliveryTime || ''} onChange={handleChange} required style={{ width: '100%' }} />
+                                            </div>
+                                            <div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.5rem' }}>
+                                                    <label className="work-mode-label" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Revisiones</label>
+                                                    <div className="tooltip-container" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'help', overflow: 'visible' }}>
+                                                        <span style={{
+                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                            width: '16px', height: '16px', borderRadius: '50%',
+                                                            border: '1.5px solid var(--text-muted)', color: 'var(--text-muted)',
+                                                            fontSize: '10px', fontWeight: 700, lineHeight: 1, flexShrink: 0
+                                                        }}>?</span>
+                                                        <div style={{
+                                                            position: 'absolute', bottom: '130%', left: '50%', transform: 'translateX(-50%)',
+                                                            padding: '0.5rem 0.8rem', background: '#0f172a',
+                                                            color: '#fff', fontSize: '0.75rem', borderRadius: '6px', width: '200px',
+                                                            textAlign: 'center', zIndex: 9999, opacity: 0, visibility: 'hidden',
+                                                            transition: 'all 0.2s', border: '1px solid var(--border)',
+                                                            boxShadow: '0 8px 20px rgba(0,0,0,0.4)', pointerEvents: 'none',
+                                                            whiteSpace: 'normal'
+                                                        }} className="tooltip-text">
+                                                            Cantidad de veces que se permiten modificaciones una vez entregado el servicio.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <input type="number" name="revisions" placeholder="Ej: 2" value={formData.revisions || ''} onChange={handleChange} required style={{ width: '100%' }} />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
 
@@ -983,42 +1201,119 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 {currentStep === 2 && (
                     <div className="step-content form-step-2" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <h4>Paso 2: Multimedia</h4>
-                        <div className="media-section" style={{ marginTop: '0' }}>
-                            <div className="media-inputs">
-                                {/* IMAGE INPUT */}
-                                <div className="media-group">
-                                    <label className="media-label">Imagen de Portada (Opcional)</label>
-                                    <div className="media-tabs">
-                                        <button type="button" className={`media-tab ${mediaType.image === 'file' ? 'active' : ''}`} onClick={() => toggleMediaType('image', 'file')}>Subir Archivo</button>
-                                        <button type="button" className={`media-tab ${mediaType.image === 'url' ? 'active' : ''}`} onClick={() => toggleMediaType('image', 'url')}>Enlace URL</button>
-                                    </div>
-                                    {mediaType.image === 'file' ? (
-                                        <label className="custom-file-upload">
-                                            <input type="file" name="image" accept="image/*" onChange={(e) => handleChange(e, 'file')} />
-                                            {fileNames.image ? <span className="file-name">{fileNames.image}</span> : 'Seleccionar Imagen'}
-                                        </label>
-                                    ) : (
-                                        <input type="url" name="imageUrl" placeholder="https://..." value={formData.imageUrl} onChange={handleChange} />
-                                    )}
-                                </div>
-
-                                {/* VIDEO INPUT */}
-                                <div className="media-group">
-                                    <label className="media-label">Video Promocional (Opcional)</label>
-                                    <div className="media-tabs">
-                                        <button type="button" className={`media-tab ${mediaType.video === 'url' ? 'active' : ''}`} onClick={() => toggleMediaType('video', 'url')}>Enlace URL (YouTube/Vimeo)</button>
-                                        <button type="button" className={`media-tab ${mediaType.video === 'file' ? 'active' : ''}`} onClick={() => toggleMediaType('video', 'file')}>Subir Archivo</button>
-                                    </div>
-                                    {mediaType.video === 'file' ? (
-                                        <label className="custom-file-upload">
-                                            <input type="file" name="video" accept="video/*" onChange={(e) => handleChange(e, 'file')} />
-                                            {fileNames.video ? <span className="file-name">{fileNames.video}</span> : 'Seleccionar Video'}
-                                        </label>
-                                    ) : (
-                                        <input type="url" name="videoUrl" placeholder="https://..." value={formData.videoUrl} onChange={handleChange} />
-                                    )}
-                                </div>
+                        
+                        {/* IMAGES SECTION */}
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <label style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                                    📷 Imágenes del Servicio
+                                </label>
+                                <span style={{ fontSize: '0.85rem', color: images.length >= 5 ? '#f87171' : 'var(--text-muted)', fontWeight: 600 }}>
+                                    {images.length}/5
+                                </span>
                             </div>
+
+                            {/* Image Preview Grid */}
+                            {images.length > 0 && (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+                                    {images.map((img, index) => (
+                                        <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: index === 0 ? '2px solid var(--primary)' : '1px solid var(--border)', aspectRatio: '1' }}>
+                                            <img src={img} alt={`Imagen ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            {index === 0 && (
+                                                <span style={{ position: 'absolute', top: '4px', left: '4px', background: 'var(--primary)', color: 'white', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>PORTADA</span>
+                                            )}
+                                            <button type="button" onClick={() => handleRemoveImage(index)} style={{
+                                                position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none', borderRadius: '50%', width: '22px', height: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', lineHeight: 1
+                                            }}>×</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {images.length < 5 && (
+                                <label style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    padding: '2rem', border: '2px dashed var(--border)', borderRadius: '10px', cursor: 'pointer',
+                                    background: 'rgba(99, 102, 241, 0.03)', transition: 'all 0.2s', minHeight: images.length === 0 ? '120px' : '60px'
+                                }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'rgba(99, 102, 241, 0.03)'; }}
+                                >
+                                    <input type="file" accept="image/*" multiple onChange={handleAddImages} style={{ display: 'none' }} />
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                        {images.length === 0 ? 'Click o arrastrá imágenes aquí' : `Agregar más (${5 - images.length} restantes)`}
+                                    </span>
+                                </label>
+                            )}
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', marginBottom: 0 }}>La primera imagen será la portada del servicio.</p>
+                        </div>
+
+                        {/* VIDEOS SECTION */}
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <label style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                                    🎬 Videos del Servicio
+                                </label>
+                                <span style={{ fontSize: '0.85rem', color: videos.length >= 2 ? '#f87171' : 'var(--text-muted)', fontWeight: 600 }}>
+                                    {videos.length}/2
+                                </span>
+                            </div>
+
+                            {/* Video Previews */}
+                            {videos.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+                                    {videos.map((vid, index) => (
+                                        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                            {vid.type === 'file' ? (
+                                                <video src={vid.src} style={{ width: '120px', height: '68px', objectFit: 'cover', borderRadius: '6px', background: '#000' }} />
+                                            ) : (
+                                                <div style={{ width: '120px', height: '68px', background: 'linear-gradient(135deg, #1a1a2e, #16213e)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                                </div>
+                                            )}
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                                    {vid.type === 'url' ? 'Video externo (URL)' : (vid.name || `Video ${index + 1}`)}
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                    {vid.type === 'url' ? vid.src.substring(0, 40) + '...' : `${vid.duration || '?'}s`}
+                                                </div>
+                                            </div>
+                                            <button type="button" onClick={() => handleRemoveVideo(index)} style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>Quitar</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {videos.length < 2 && (
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                    <label style={{
+                                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                                        padding: '1.2rem', border: '2px dashed var(--border)', borderRadius: '10px', cursor: 'pointer',
+                                        background: 'rgba(99, 102, 241, 0.03)', transition: 'all 0.2s'
+                                    }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+                                    >
+                                        <input type="file" accept="video/*" onChange={handleAddVideo} style={{ display: 'none' }} />
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Subir Video</span>
+                                    </label>
+                                    <button type="button" onClick={handleAddVideoUrl} style={{
+                                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                                        padding: '1.2rem', border: '2px dashed var(--border)', borderRadius: '10px', cursor: 'pointer',
+                                        background: 'rgba(99, 102, 241, 0.03)', transition: 'all 0.2s', color: 'var(--text-muted)', fontSize: '0.8rem'
+                                    }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                        URL de YouTube/Vimeo
+                                    </button>
+                                </div>
+                            )}
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', marginBottom: 0 }}>Máximo 1 minuto por video. Formatos: MP4, WebM.</p>
                         </div>
                     </div>
                 )}
@@ -1099,7 +1394,14 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                     </div>
                 )}
 
-                <div className="form-actions" style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+                {formError && (
+                    <div style={{ color: '#ef4444', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginTop: '1rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        {formError}
+                    </div>
+                )}
+
+                <div className="form-actions" style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
                     {currentStep > 1 && (
                         <button type="button" onClick={handlePrevStep} className="btn-cancel" style={{ padding: '0.8rem 1.5rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
                             Anterior
@@ -1111,8 +1413,8 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                             Siguiente
                         </button>
                     ) : (
-                        <button type="submit" className="btn-primary" style={{ padding: '0.8rem 2.5rem', fontWeight: 'bold' }}>
-                            {initialData ? 'Actualizar Servicio' : 'Publicar Servicio'}
+                        <button type="submit" className="btn-primary" disabled={isSubmitting} style={{ padding: '0.8rem 2.5rem', fontWeight: 'bold', opacity: isSubmitting ? 0.7 : 1 }}>
+                            {isSubmitting ? (loadingStatus || 'Procesando...') : (initialData ? 'Actualizar Servicio' : 'Publicar Servicio')}
                         </button>
                     )}
 

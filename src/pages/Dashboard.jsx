@@ -8,10 +8,11 @@ import { useNotifications } from '../context/NotificationContext';
 import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
-import ProposalListModal from '../components/project/ProposalListModal'; // New Import
-import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, registerActivity, XP_TABLE } from '../utils/gamification';
-import { autoExpireProposals } from '../utils/proposalUtils';
+import ProposalListModal from '../components/project/ProposalListModal';
+import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, registerActivity, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
+import { getProjects } from '../lib/projectService';
+import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
 import '../styles/pages/Dashboard.scss';
 // Assuming Dashboard might have inline styles per original file, or use global CSS.
 
@@ -23,6 +24,9 @@ const Dashboard = () => {
     const { addNotification } = useNotifications();
     const navigate = useNavigate();
 
+    // Early return to prevent race conditions with ProtectedRoute
+    if (!user) return null;
+
     const [showLevelUpModal, setShowLevelUpModal] = useState(false);
     const [myPublishedProjects, setMyPublishedProjects] = useState([]);
     const [myProposals, setMyProposals] = useState([]);
@@ -31,63 +35,42 @@ const Dashboard = () => {
 
     // Load Projects & Proposals Logic
     useEffect(() => {
-        // Auto-expire old proposals first
-        autoExpireProposals();
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                // 1. My Published Projects (Client/Company) from Supabase
+                const allProjects = await getProjects();
+                const myProjects = allProjects.filter(p => p.clientId === user.id);
+                setMyPublishedProjects(myProjects);
 
-        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
-
-        // 1. My Published Projects (Client/Company)
-        const myProjects = storedProjects.filter(p =>
-            p.clientId === user.id ||
-            p.userId === user.id ||
-            p.authorId === user.id
-        ).map(p => {
-            // Calculate proposal count
-            const count = storedProposals.filter(prop => prop.projectId === p.id).length;
-            return { ...p, proposalCount: count };
-        });
-        setMyPublishedProjects(myProjects.reverse());
-
-        // 2. My Proposals (Freelancer)
-        const myProps = storedProposals.filter(p => p.freelancerId === user.id).map(prop => {
-            const project = storedProjects.find(proj => proj.id == prop.projectId); // Loose equality for ID match
-            return {
-                ...prop,
-                clientRole: project ? (project.role || project.clientRole || (project.clientId > 200 && project.clientId < 300 ? 'company' : 'buyer')) : null
-            };
-        });
-        // Enrich with project details if needed, though they are stored in proposal
-        setMyProposals(myProps.reverse());
-
-        setMyProposals(myProps.reverse());
+                // 2. My Proposals (Freelancer) - from Supabase
+                const supabaseProposals = await getProposalsByUser(user.id);
+                setMyProposals(supabaseProposals);
+            } catch (err) {
+                console.error('Error loading dashboard data:', err);
+                setMyProposals([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
     }, [user.id]);
 
-    // MIGRATION: Update Vacation Credits from 2 to 4 for existing users
+    // Automated Gamification Processing (Inactivity, Decays, Vacation Reset)
     useEffect(() => {
-        if (user.role === 'freelancer' || user.role === 'company') {
-            const g = user.gamification || {};
-            if (g.vacation && !g.vacation.policyV2) {
-                // Policy changed from 2 to 4. Add 2 credits to current balance.
-                const newCredits = (g.vacation.credits || 0) + 2;
-                updateUser({
-                    ...user,
-                    gamification: {
-                        ...g,
-                        vacation: {
-                            ...g.vacation,
-                            credits: newCredits,
-                            policyV2: true // Mark as updated
-                        }
-                    }
+        if (user && (user.role === 'freelancer' || user.role === 'company')) {
+            const processedUser = processGamificationRules(user);
+            if (processedUser !== user) {
+                updateUser(processedUser).catch(err => {
+                    console.error("Dashboard Gamification update failed:", err);
                 });
             }
         }
     }, [user, updateUser]);
 
     // Computed Data
-    const myWork = jobs.filter(j => j.freelancerName === (user.firstName + ' ' + user.lastName) || j.freelancerName === user.companyName); // Heuristic based on original code usage
-    const myServices = services.filter(s => s.freelancerId === user.id || s.freelancerName === (user.firstName + ' ' + user.lastName)); // Added freelancerId check
+    const myWork = jobs.filter(j => j.freelancerId === user.id);
+    const myServices = services.filter(s => s.freelancerId === user.id);
     const myOrders = jobs.filter(j => j.buyerId === user.id);
 
     // Level Logic
@@ -176,71 +159,53 @@ const Dashboard = () => {
 
     const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null); // { id, title }
 
-    const handleAcceptProposal = (proposal) => {
-        // ... (existing logic)
+    const { createJob } = useJobs();
+
+    const handleAcceptProposal = async (proposal) => {
         const project = myPublishedProjects.find(p => p.id === proposal.projectId);
         if (!project) return;
 
-        const newJob = {
-            id: Date.now(),
-            serviceId: 'project_' + project.id,
-            serviceTitle: project.title,
-            freelancerName: proposal.freelancerName,
-            buyerId: user.id,
-            buyerName: user.role === 'company' ? user.companyName : (user.firstName + ' ' + user.lastName),
-            buyerRole: user.role,
-            buyerAvatar: user.avatar || null,
-            amount: project.budgetMin,
-            tier: 'Project',
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            duration: 7,
-            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        };
-
-        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
-        const updatedProposals = storedProposals.map(p =>
-            p.id === proposal.id ? { ...p, status: 'accepted' } : p
-        );
-        localStorage.setItem('cooplance_db_proposals', JSON.stringify(updatedProposals));
-        
-        const storedJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
-        storedJobs.push(newJob);
-        localStorage.setItem('cooplance_db_jobs', JSON.stringify(storedJobs));
-        window.location.reload();
+        try {
+            // 1. Update proposal status in Supabase
+            await updateProposalStatus(proposal.id, 'accepted');
+            
+            // 2. Create Job in Supabase via JobContext
+            // We pass the project and the proposal (freelancer)
+            await createJob(project, user); // User is the client here
+            
+            alert('¡Propuesta aceptada!');
+            window.location.reload();
+        } catch (err) {
+            console.error('Error accepting proposal:', err);
+            alert('Error al aceptar la propuesta: ' + err.message);
+        }
     };
 
-    const handleCancelProposal = (e, proposalId) => {
+    const handleCancelProposal = async (e, proposalId) => {
         e.stopPropagation();
         if (!window.confirm('¿Estás seguro de que deseas cancelar esta postulación?')) return;
 
-        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
-        const updated = storedProposals.map(p => 
-            p.id === proposalId ? { ...p, status: 'canceled' } : p
-        );
-        localStorage.setItem('cooplance_db_proposals', JSON.stringify(updated));
-        
-        // Update local state
-        const myProps = updated.filter(p => p.freelancerId === user.id);
-        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-        const enriched = myProps.map(prop => ({
-            ...prop,
-            clientRole: storedProjects.find(proj => proj.id == prop.projectId)?.clientRole || 'buyer'
-        }));
-        setMyProposals(enriched.reverse());
+        try {
+            await updateProposalStatus(proposalId, 'canceled');
+            setMyProposals(prev => prev.map(p =>
+                p.id === proposalId ? { ...p, status: 'canceled' } : p
+            ));
+        } catch (err) {
+            console.error('Error canceling proposal:', err);
+        }
         setOpenMenuId(null);
     };
 
-    const handleDeleteProposal = (e, proposalId) => {
+    const handleDeleteProposal = async (e, proposalId) => {
         e.stopPropagation();
         if (!window.confirm('¿Borrar esta postulación de tu historial?')) return;
 
-        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
-        const updated = storedProposals.filter(p => p.id !== proposalId);
-        localStorage.setItem('cooplance_db_proposals', JSON.stringify(updated));
-        
-        const myProps = updated.filter(p => p.freelancerId === user.id);
-        setMyProposals(myProps.reverse());
+        try {
+            await deleteProposalApi(proposalId);
+            setMyProposals(prev => prev.filter(p => p.id !== proposalId));
+        } catch (err) {
+            console.error('Error deleting proposal:', err);
+        }
         setOpenMenuId(null);
     };
 
@@ -277,14 +242,6 @@ const Dashboard = () => {
                 projectId={selectedProjectForProposals?.id}
                 projectTitle={selectedProjectForProposals?.title}
                 onAccept={handleAcceptProposal}
-            // We need to implement the callback prop!
-            // But I didn't define it in the Component file properly in previous step (I passed it as prop but didn't export it well, wait).
-            // I wrote: `onClick={() => handleAccept && handleAccept(proposal)}` inside the component.
-            // So I need to pass `handleAccept={handleAcceptProposal}`.
-            // But looking at my previous `write_to_file`, I didn't add `handleAccept` to the props destructuring: `const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalCount }) => {`.
-            // I missed `handleAccept`.
-            // I will need to fix `ProposalListModal.jsx` to accept `onAccept` or `handleAccept`.
-            // For now, I will render it and plan to fix the prop.
             />
 
 
@@ -298,7 +255,7 @@ const Dashboard = () => {
                         onError={(e) => e.target.style.display = 'none'}
                     />
                     <div>
-                        <h2 className="dashboard-greeting">Hola, {user.firstName || user.companyName}</h2>
+                        <h2 className="dashboard-greeting">Hola, {user.first_name || user.company_name || user.username || 'Usuario'}</h2>
                         <p className="dashboard-bio">Bienvenido a tu panel de control.</p>
                     </div>
                 </div>

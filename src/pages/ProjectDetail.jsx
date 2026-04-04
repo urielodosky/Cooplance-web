@@ -5,6 +5,8 @@ import { getProfilePicture } from '../utils/avatarUtils';
 import { registerActivity } from '../utils/gamification';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
 import { formatLocationDetail } from '../utils/locationFormat';
+import { getProjectById } from '../lib/projectService';
+import { getActiveJobsCount } from '../lib/jobService';
 import '../styles/pages/ServiceDetail.scss';
 import '../styles/pages/ProjectDetail.scss';
 
@@ -16,78 +18,90 @@ const ProjectDetail = () => {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showApplyModal, setShowApplyModal] = useState(false);
+    const [hasApplied, setHasApplied] = useState(false);
+    const [applyMessage, setApplyMessage] = useState({ text: '', type: '' });
 
     useEffect(() => {
-        const fetchProject = () => {
-            const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-            const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-
-            const foundProject = storedProjects.find(p => p.id === parseInt(id));
-
-            if (foundProject) {
-                // Enrich with client data
-                const client = storedUsers.find(u => u.id === foundProject.clientId) || {};
-                setProject({
-                    ...foundProject,
-                    clientName: client.role === 'company' ? client.companyName : (client.firstName ? `${client.firstName} ${client.lastName}` : foundProject.clientName),
-                    clientAvatar: client.avatar || foundProject.clientAvatar,
-                    clientRating: client.rating || 0,
-                    clientReviews: client.reviewsCount || 0,
-                    clientRole: client.role || foundProject.clientRole // Persist role
-                });
+        const fetchProjectData = async () => {
+            setLoading(true);
+            try {
+                const data = await getProjectById(id);
+                setProject(data);
+            } catch (err) {
+                console.error('Error fetching project:', err);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
-        fetchProject();
+        fetchProjectData();
     }, [id]);
+
+    // Check if user already applied (via Supabase)
+    useEffect(() => {
+        const checkApplied = async () => {
+            if (user && project) {
+                try {
+                    const { hasUserApplied } = await import('../lib/proposalService');
+                    const applied = await hasUserApplied(project.id, user.id);
+                    setHasApplied(applied);
+                } catch (err) {
+                    console.error('Error checking application:', err);
+                }
+            }
+        };
+        checkApplied();
+    }, [user, project]);
 
     const handleApply = () => {
         if (!user) {
-            alert('Debes iniciar sesión para postularte.');
             navigate('/login');
             return;
         }
 
         if (user.role !== 'freelancer') {
-            alert('Solo los freelancers pueden postularse a proyectos.');
+            setApplyMessage({ text: 'Solo los freelancers pueden postularse a proyectos.', type: 'error' });
+            setTimeout(() => setApplyMessage({ text: '', type: '' }), 4000);
             return;
         }
 
-        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
-        const alreadyApplied = storedProposals.some(p => p.projectId === project.id && p.freelancerId === user.id);
-
-        if (alreadyApplied) {
-            alert('Ya te has postulado a este proyecto.');
-            return;
+        if (hasApplied) {
+            return; // Button should be disabled, but just in case
         }
 
-        // Active Job Limit Check (Simultaneous Work)
-        const storedJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
-        const activeJobs = storedJobs.filter(j => j.freelancerId === user.id && j.status === 'active');
+        const checkLimitAndOpen = async () => {
+            const activeJobsCount = await getActiveJobsCount(user.id);
 
-        const getActiveJobLimit = (level) => {
-            if (level === 1) return 2;
-            if (level === 2) return 5;
-            if (level === 3) return 10;
-            if (level === 4) return 15;
-            return Infinity; // Level 5+
+            const getActiveJobLimit = (level) => {
+                if (level === 1) return 2;
+                if (level === 2) return 5;
+                if (level === 3) return 10;
+                if (level === 4) return 15;
+                return Infinity; // Level 5+
+            };
+
+            const limit = getActiveJobLimit(user.level || 1);
+            if (activeJobsCount >= limit) {
+                setApplyMessage({ 
+                    text: `Has alcanzado el límite de trabajos activos (${limit}) para tu Nivel ${user.level || 1}. Termina tus trabajos actuales o sube de nivel.`, 
+                    type: 'error' 
+                });
+                setTimeout(() => setApplyMessage({ text: '', type: '' }), 5000);
+                return;
+            }
+
+            // All checks passed, open the modal
+            setShowApplyModal(true);
         };
 
-        const limit = getActiveJobLimit(user.level || 1);
-        if (activeJobs.length >= limit) {
-            alert(`Has alcanzado el límite de trabajos activos simultáneos (${limit}) para tu Nivel ${user.level || 1}.\n\nDebes terminar tus trabajos actuales o subir de nivel para postularte a más proyectos.`);
-            return;
-        }
-
-        // All checks passed, open the modal instead of instant apply
-        setShowApplyModal(true);
+        checkLimitAndOpen();
     };
 
     const handleApplySuccess = () => {
         setShowApplyModal(false);
-        alert('¡Postulación enviada con éxito!');
-        navigate('/explore-clients');
+        setHasApplied(true);
+        setApplyMessage({ text: '¡Postulación enviada con éxito!', type: 'success' });
+        setTimeout(() => setApplyMessage({ text: '', type: '' }), 4000);
     };
 
     if (loading) return <div className="container" style={{ paddingTop: '6rem' }}>Cargando...</div>;
@@ -241,9 +255,46 @@ const ProjectDetail = () => {
                             )}
                         </div>
 
-                        <button className="btn-primary full-width-btn" onClick={handleApply}>
-                            Postularse Ahora
-                        </button>
+                        {/* Inline message banner */}
+                        {applyMessage.text && (
+                            <div style={{
+                                padding: '0.8rem 1rem',
+                                marginBottom: '0.8rem',
+                                borderRadius: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                                background: applyMessage.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                                color: applyMessage.type === 'error' ? '#f87171' : '#4ade80',
+                                border: `1px solid ${applyMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`
+                            }}>
+                                {applyMessage.text}
+                            </div>
+                        )}
+
+                        {hasApplied ? (
+                            <button 
+                                className="btn-primary full-width-btn" 
+                                disabled
+                                style={{ 
+                                    background: 'rgba(34, 197, 94, 0.2)', 
+                                    color: '#4ade80', 
+                                    border: '1px solid rgba(34, 197, 94, 0.4)',
+                                    cursor: 'default',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                Ya te has postulado a esta oferta
+                            </button>
+                        ) : (
+                            <button className="btn-primary full-width-btn" onClick={handleApply}>
+                                Postularse Ahora
+                            </button>
+                        )}
                     </div>
 
 

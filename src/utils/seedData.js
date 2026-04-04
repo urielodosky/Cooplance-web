@@ -22,7 +22,11 @@ export const seedDatabase = () => {
             country: "Argentina",
             xp: 1200,
             level: 3,
-            gamification: { credits: 2, level: 3 },
+            gamification: { 
+                vacation: { active: false, credits: 4, lastReset: Date.now(), policyV3: true },
+                lastActivity: Date.now(),
+                lastDecayCheck: Date.now()
+            },
             rating: 4.8,
             reviewsCount: 12
         },
@@ -38,7 +42,11 @@ export const seedDatabase = () => {
             country: "Colombia",
             xp: 4500,
             level: 10,
-            gamification: { credits: 5, level: 12 },
+            gamification: { 
+                vacation: { active: false, credits: 4, lastReset: Date.now(), policyV3: true },
+                lastActivity: Date.now(),
+                lastDecayCheck: Date.now()
+            },
             rating: 5.0,
             reviewsCount: 8
         },
@@ -54,7 +62,11 @@ export const seedDatabase = () => {
             country: "Colombia",
             xp: 800,
             level: 2,
-            gamification: { credits: 1, level: 2 },
+            gamification: { 
+                vacation: { active: false, credits: 4, lastReset: Date.now(), policyV3: true },
+                lastActivity: Date.now(),
+                lastDecayCheck: Date.now()
+            },
             rating: 4.7,
             reviewsCount: 22
         },

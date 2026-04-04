@@ -21,18 +21,8 @@ const ProjectCard = ({ project, onApply }) => {
     const navigate = useNavigate();
     // Only use image if explicitly provided by user
     const hasImage = !!project.imageUrl;
-    // Fetch fresh user data
-    const getClientDetails = () => {
-        try {
-            const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-            return allUsers.find(u => u.id === (project.clientId || project.authorId)) || {};
-        } catch (e) {
-            return {};
-        }
-    };
-    const cUser = getClientDetails();
-    const displayUsername = cUser.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
-    const avatar = cUser.avatar || project.clientAvatar;
+    const displayUsername = project.profiles?.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
+    const avatar = project.clientAvatar || project.profiles?.avatar_url;
 
     const handleClick = () => {
         navigate(`/project/${project.id}`);

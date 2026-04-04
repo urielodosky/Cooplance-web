@@ -4,66 +4,31 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { useJobs } from '../context/JobContext';
+import { supabase } from '../lib/supabase';
 import { useTeams } from '../context/TeamContext'; // Import TeamContext
 import '../styles/pages/Chat.scss';
 
 const Chat = () => {
     const { chatId } = useParams();
     const { user } = useAuth();
-    const { getUserChats, getChatById, sendMessage, toggleChatBlock } = useChat();
+    const { getUserChats, getChatById, sendMessage, toggleChatBlock, fetchMessages } = useChat();
     const { jobs, extendJobDeadline, updateJobStatus } = useJobs();
-    const { teams, canPerformAction, sendMessage: sendTeamMessage } = useTeams(); // Get teams and actions
     const navigate = useNavigate();
 
     const [activeChat, setActiveChat] = useState(null);
+    const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState('');
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [activeMenuId, setActiveMenuId] = useState(null);
     const [filterTab, setFilterTab] = useState('general'); // 'general', 'companies', 'clients', 'coops'
     const [showExtensionModal, setShowExtensionModal] = useState(false);
     const [extensionDays, setExtensionDays] = useState('2');
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const messagesEndRef = useRef(null);
 
     // --- MERGE CHATS LOGIC ---
     const userChats = getUserChats();
-
-    const teamChats = teams.flatMap(team => {
-        const chats = [];
-        const isMember = team.members.some(m => m.userId === user?.id);
-
-        // 1. Internal Chat (Coops) - REMOVED per user feedback (exclusive to Dashboard)
-
-        // 2. Client Chat (Coops interacting with Clients)
-        // Show if user has permission 'client_communication' OR is the client (simulation?)
-        // For now, check permission or if user is owner/admin/service_manager
-        if (isMember && canPerformAction(team.id, 'client_communication', user?.id)) {
-            chats.push({
-                id: `team_${team.id}_client`,
-                name: `${team.name} (Cliente)`,
-                contextTitle: "Comunicación Cliente",
-                type: 'coop_client',
-                messages: (team.messages || []).filter(m => m.type === 'client').map(m => ({
-                    ...m,
-                    id: m.id || `msg_${m.timestamp}`, // Ensure ID
-                    senderId: m.userId,
-                    senderName: m.username,
-                    attachments: m.attachment ? [m.attachment] : [],
-                    timestamp: m.timestamp
-                })),
-                status: 'active',
-                lastMessage: (team.messages || []).filter(m => m.type === 'client').slice(-1)[0]?.text || "Inicio comunicación cliente",
-                lastMessageAt: (team.messages || []).filter(m => m.type === 'client').slice(-1)[0]?.timestamp || team.createdAt,
-                participants: team.members.map(m => m.userId), // Simplified
-                isTeam: true,
-                teamId: team.id,
-                channel: 'client'
-            });
-        }
-        return chats;
-    });
-
-    // Combine and Sort
-    const allChats = [...userChats, ...teamChats].sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+    const allChats = [...userChats].sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
 
     // Filter based on Tab
     const filteredChats = allChats.filter(chat => {
@@ -75,22 +40,50 @@ const Chat = () => {
     });
 
     useEffect(() => {
-        if (chatId) {
-            // Check global chats
-            let chat = getChatById(chatId);
-            // Check team chats if not found
-            if (!chat) {
-                chat = teamChats.find(c => c.id === chatId);
-            }
-
-            if (chat) {
-                setActiveChat(chat);
-            }
-        } else if (filteredChats.length > 0) {
-            // Default to first chat if none selected
-            navigate(`/chat/${filteredChats[0].id}`);
+        if (!chatId) {
+            if (filteredChats.length > 0) navigate(`/chat/${filteredChats[0].id}`);
+            return;
         }
-    }, [chatId, userChats, teams, filterTab, getChatById, navigate, jobs]); // Depend on jobs too to force re-calc
+
+        const chat = getChatById(chatId);
+        if (chat) setActiveChat(chat);
+    }, [chatId, userChats, filterTab, getChatById, navigate]);
+
+    // FETCH MESSAGES & SUBSCRIBE
+    useEffect(() => {
+        if (!chatId) return;
+
+        const load = async () => {
+            setIsLoadingMessages(true);
+            const msgs = await fetchMessages(chatId);
+            setMessages(msgs);
+            setIsLoadingMessages(false);
+        };
+        load();
+
+        const channel = supabase
+            .channel(`chat:${chatId}`)
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'messages',
+                filter: `chat_id=eq.${chatId}`
+            }, (payload) => {
+                const newMsg = {
+                    id: payload.new.id,
+                    senderId: payload.new.sender_id,
+                    senderName: payload.new.sender_name,
+                    text: payload.new.content,
+                    attachments: payload.new.attachments || [],
+                    timestamp: payload.new.created_at,
+                    isSystem: payload.new.is_system
+                };
+                setMessages(prev => [...prev, newMsg]);
+            })
+            .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [chatId, fetchMessages]);
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -99,28 +92,16 @@ const Chat = () => {
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
-    // Auto-scroll (unchanged)
+    // Auto-scroll
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [activeChat?.messages]);
+    }, [messages]);
 
     const handleSendMessage = (e) => {
         e.preventDefault();
-        if (!activeChat || activeChat.status === 'blocked') return;
-        if (!messageInput.trim()) return;
+        if (!activeChat || !messageInput.trim()) return;
 
-        if (activeChat.isTeam) {
-            // Team Context Send
-            // activeChat.teamId, text, attachment, type
-            try {
-                sendTeamMessage(activeChat.teamId, messageInput, null, activeChat.channel);
-            } catch (err) {
-                alert(err.message);
-            }
-        } else {
-            // Chat Context Send
-            sendMessage(activeChat.id, messageInput);
-        }
+        sendMessage(activeChat.id, messageInput);
         setMessageInput('');
     };
 
@@ -219,21 +200,14 @@ const Chat = () => {
     };
 
     // ... helper unchanged ...
-    const getChatName = (chat) => { /* ... */ const myId = user.id || user.username; const otherId = chat.participants.find(p => p !== myId); return otherId || 'Chat'; };
+    const getChatName = (chat) => {
+        if (!chat) return 'Chat';
+        return chat.context_title || 'Conversación';
+    };
 
-    // Helper: check if the other participant in a chat is on vacation, return days left or false
     const getOtherUserVacation = (chat) => {
-        try {
-            if (chat.isTeam) return false;
-            const myId = user.id || user.username;
-            const otherId = chat.participants?.find(p => p !== myId);
-            if (!otherId) return false;
-            const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-            const otherUser = allUsers.find(u => u.id == otherId);
-            if (!otherUser?.gamification?.vacation?.active) return false;
-            const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - otherUser.gamification.vacation.startDate) / 86400000));
-            return daysLeft;
-        } catch(e) { return false; }
+        // ... (This would now need a join on profiles table to be accurate)
+        return false; 
     };
 
     if (!user) return <div className="container" style={{ padding: '4rem' }}>Inicia sesión para ver tus mensajes.</div>;
@@ -257,32 +231,11 @@ const Chat = () => {
     const handleExtendDeadline = (days) => {
         if (!activeJob) return;
 
-        // 1. Extend the job in global state (this updates jobs array)
+        // 1. Extend the job via context
         extendJobDeadline(activeJob.id, days);
 
         // 2. Send the system message notifying the extension
         sendMessage(activeChat.id, `🔄 El cliente ha extendido el plazo de entrega por ${days} días.`, [], { isSystem: true });
-
-        // 3. Simulate Freelancer Reply (Demo Purpose)
-        setTimeout(() => {
-            try {
-                const myId = user?.id || user?.username;
-                const freelancerId = activeChat.participants?.find(p => p !== myId) || 'freelancer_sim_id';
-                const freelancerName = activeJob?.freelancerName || 'Freelancer';
-
-                sendMessage(activeChat.id, `¡Muchas gracias por la extensión! Seguimos trabajando. 🚀`, [], {
-                    senderId: freelancerId,
-                    senderName: freelancerName
-                });
-            } catch (err) {
-                console.error("Simulation error", err);
-                alert("Error de simulación: " + err.message);
-            }
-        }, 1500);
-
-        // Note: Because ChatContext and JobContext update independently, 
-        // the deriving variables 'activeJob' and 'isJobExpired' below 
-        // will automatically recalculate on the next render cycle when jobs/chats change.
     };
 
     const handleCancelJob = () => {
@@ -348,7 +301,7 @@ const Chat = () => {
                                             </div>
                                             {chat.status === 'blocked' && <span style={{ fontSize: '10px', color: '#ef4444' }}>BLOQUEADO</span>}
                                         </div>
-                                        <div className="chat-preview">{chat.status === 'blocked' ? <i>Chat bloqueado</i> : (chat.lastMessage || 'Nuevo chat')}</div>
+                                        <div className="chat-preview">{chat.status === 'blocked' ? <i>Chat bloqueado</i> : (chat.last_message || 'Nuevo chat')}</div>
                                     </div>
 
                                     {/* Three Dots Button */}
@@ -420,15 +373,17 @@ const Chat = () => {
                             </div>
 
                             <div className="messages-container">
-                                {activeChat.messages.length === 0 ? (
+                                {isLoadingMessages ? (
+                                    <div className="empty-messages"><p>Cargando mensajes...</p></div>
+                                ) : messages.length === 0 ? (
                                     <div className="empty-messages">
                                         <p>¡Este es el comienzo de tu historial de mensajes!</p>
                                     </div>
                                 ) : (
-                                    activeChat.messages.map((msg, index) => {
-                                        const isMe = msg.senderId === user.id || msg.senderName === (user.firstName || user.companyName);
+                                    messages.map((msg, index) => {
+                                        const isMe = msg.senderId === user.id;
                                         const msgDate = new Date(msg.timestamp);
-                                        const prevMsg = activeChat.messages[index - 1];
+                                        const prevMsg = messages[index - 1];
                                         const prevDate = prevMsg ? new Date(prevMsg.timestamp) : null;
 
                                         const showDateDivider = !prevDate || msgDate.toDateString() !== prevDate.toDateString();
@@ -630,16 +585,6 @@ const Chat = () => {
                                         className="chat-input"
                                         autoFocus
                                     />
-                                    <button type="button" className="chat-send-btn outline" onClick={() => {
-                                        const myId = user?.id || user?.username;
-                                        const freelancerId = activeChat.participants?.find(p => p !== myId) || 'freelancer_sim_id';
-                                        sendMessage(activeChat.id, `Hola! Este es un mensaje de prueba para ver el color celeste.`, [], {
-                                            senderId: freelancerId,
-                                            senderName: activeJob?.freelancerName || 'Freelancer'
-                                        });
-                                    }} title="Simular Respuesta" style={{ padding: '0 0.5rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                                        🤖
-                                    </button>
                                     <button type="submit" className="btn-send">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <line x1="22" y1="2" x2="11" y2="13"></line>

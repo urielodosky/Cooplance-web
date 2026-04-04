@@ -105,13 +105,26 @@ export const processGamificationRules = (user) => {
         hasChanges = true;
     }
 
-    const g = updatedUser.gamification;
-
     // 1. Vacation Logic (Reset credits yearly)
+    const g = updatedUser.gamification;
     const oneYear = 365 * 24 * 60 * 60 * 1000;
+    
+    // Annual Reset
     if (now - g.vacation.lastReset > oneYear) {
         g.vacation.credits = 4;
         g.vacation.lastReset = now;
+        g.vacation.policyV3 = true; // Mark as reset under the new policy
+        hasChanges = true;
+    }
+
+    // LEGACY SYNC: If user has more than 4 credits (due to previous migration bugs), cap at 4.
+    // Also mark as policyV3 to avoid re-checking.
+    if (!g.vacation.policyV3 || g.vacation.credits > 4) {
+        if (g.vacation.credits > 4) {
+            g.vacation.credits = 4;
+            hasChanges = true;
+        }
+        g.vacation.policyV3 = true;
         hasChanges = true;
     }
 

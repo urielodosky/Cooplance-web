@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../features/auth/context/AuthContext';
+import { supabase } from '../lib/supabase';
 import { registerActivity } from '../utils/gamification';
 import * as NotificationService from '../services/NotificationService';
 
@@ -11,51 +12,85 @@ export const ChatProvider = ({ children }) => {
     const { user, updateUser } = useAuth();
     const [chats, setChats] = useState([]);
 
-    // Load chats from localStorage
-    useEffect(() => {
-        try {
-            const storedChats = JSON.parse(localStorage.getItem('cooplance_db_chats') || '[]');
-            setChats(storedChats);
-        } catch (error) {
-            console.error("Failed to parse chats from storage", error);
+    const loadChats = useCallback(async () => {
+        if (!user) {
             setChats([]);
+            return;
         }
-    }, []);
 
-    // Save chats to localStorage whenever they change
+        try {
+            // Fetch chats where the user is a participant
+            const { data: participations, error: pError } = await supabase
+                .from('chat_participants')
+                .select('chat_id, chats(*)')
+                .eq('user_id', user.id);
+
+            if (pError) throw pError;
+
+            const userChats = (participations || []).map(p => ({
+                ...p.chats,
+                messages: [] // We'll load messages on demand or subscribe
+            }));
+
+            setChats(userChats);
+        } catch (error) {
+            console.error("[ChatContext] Failed to fetch chats", error);
+        }
+    }, [user]);
+
+    // Load on mount or user change
     useEffect(() => {
-        if (chats.length > 0) {
-            localStorage.setItem('cooplance_db_chats', JSON.stringify(chats));
-        }
-    }, [chats]);
+        loadChats();
+    }, [loadChats]);
 
-    const createChat = (participants, type = 'direct', contextId = null, contextTitle = '') => {
-        // Check if chat already exists
-        const existingChat = chats.find(c =>
-            c.type === type &&
-            c.contextId === contextId &&
-            participants.every(p => c.participants.includes(p))
-        );
+    // Global Message Subscription (optional, can be done per chat)
+    useEffect(() => {
+        if (!user) return;
 
-        if (existingChat) {
-            return existingChat.id;
-        }
+        // Simplified: Listen for any new messages in any of my chats
+        const channel = supabase
+            .channel('realtime:messages')
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'messages'
+            }, (payload) => {
+                // Check if the chat of the new message is one of mine
+                if (chats.some(c => c.id === payload.new.chat_id)) {
+                   // Refresh that chat or last message
+                   loadChats(); 
+                }
+            })
+            .subscribe();
 
-        const newChat = {
-            id: 'chat_' + Date.now(),
-            participants, // Array of user IDs or names
-            type, // 'order', 'project', 'direct'
-            contextId, // orderId or projectId
-            contextTitle, // Service Name or Project Title
-            status: 'active', // 'active', 'blocked'
-            messages: [],
-            createdAt: new Date().toISOString(),
-            lastMessage: null,
-            lastMessageAt: new Date().toISOString()
-        };
+        return () => supabase.removeChannel(channel);
+    }, [user, chats, loadChats]); 
 
-        setChats(prev => [...prev, newChat]);
-        return newChat.id;
+    const createChat = async (participants, type = 'direct', contextId = null, contextTitle = '') => {
+        // ... (existing participants are IDs here usually after migration)
+        const { data: chat, error } = await supabase
+            .from('chats')
+            .insert({
+                type,
+                context_id: contextId,
+                context_title: contextTitle,
+                status: 'active'
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Add participants
+        const participantRecords = participants.map(pId => ({
+            chat_id: chat.id,
+            user_id: pId
+        }));
+
+        await supabase.from('chat_participants').insert(participantRecords);
+
+        setChats(prev => [...prev, { ...chat, messages: [] }]);
+        return chat.id;
     };
 
     const toggleChatBlock = (chatId) => {
@@ -67,54 +102,38 @@ export const ChatProvider = ({ children }) => {
         }));
     };
 
-    const sendMessage = (chatId, text, attachments = [], options = {}) => {
-        const chatToNotify = chats.find(c => c.id === chatId);
-        if (chatToNotify && chatToNotify.status !== 'blocked' && !options.isSystem) {
-            const senderId = options.senderId || (user?.id || user?.username);
-            const receivers = chatToNotify.participants.filter(p => String(p) !== String(senderId) && p !== 'system');
-            receivers.forEach(receiverId => {
-                NotificationService.createNotification(receiverId, {
-                    type: NotificationService.NOTIFICATION_TYPES.MESSAGE,
-                    title: `Nuevo mensaje en ${chatToNotify.contextTitle || 'Chat'}`,
-                    message: text || 'Adjunto enviado',
-                    link: `/chat/${chatId}`
-                });
-            });
-        }
+    const sendMessage = async (chatId, text, attachments = [], options = {}) => {
+        const { data: message, error } = await supabase
+            .from('messages')
+            .insert({
+                chat_id: chatId,
+                sender_id: options.isSystem ? null : (user?.id),
+                sender_name: options.senderName || (options.isSystem ? 'Sistema Cooplance' : (user?.firstName || user?.username)),
+                content: text,
+                attachments,
+                is_system: options.isSystem || false
+            })
+            .select()
+            .single();
 
-        setChats(prev => prev.map(chat => {
-            if (chat.id === chatId) {
-                // Prevent sending if blocked, EXCEPT for system messages
-                if (chat.status === 'blocked' && !options.isSystem) return chat;
+        if (error) throw error;
 
-                const newMessage = {
-                    id: 'msg_' + Date.now(),
-                    senderId: options.senderId || (options.isSystem ? 'system' : (user?.id || user?.username)),
-                    senderName: options.senderName || (options.isSystem ? 'Sistema Cooplance' : (user?.firstName || user?.companyName || user?.username)),
-                    text,
-                    attachments, // Array of { type: 'image'|'video', url: '...' }
-                    timestamp: new Date().toISOString(),
-                    isSystem: options.isSystem || false
-                };
-                return {
-                    ...chat,
-                    messages: [...chat.messages, newMessage],
-                    lastMessage: text || (attachments.length ? 'Adjunto enviado' : ''),
-                    lastMessageAt: newMessage.timestamp
-                };
-            }
-            return chat;
-        }));
+        // Update chat last message
+        await supabase
+            .from('chats')
+            .update({ 
+                last_message: text || (attachments.length ? 'Adjunto enviado' : ''),
+                last_message_at: new Date().toISOString()
+            })
+            .eq('id', chatId);
 
         // Register activity on message send
-        if (user) {
+        if (user && !options.isSystem) {
             const updated = registerActivity(user);
-            // Updating user state here might cause re-renders or loops if not careful,
-            // but since it updates a timestamp, it's generally safe for gamification.
-            // However, ChatContext usually shouldn't drive User updates directly if avoidable,
-            // but for this MVP feature it's the direct way.
             updateUser(updated);
         }
+
+        return message;
     };
 
     const getChatById = (chatId) => {
@@ -129,6 +148,29 @@ export const ChatProvider = ({ children }) => {
         return chats.filter(c => c.participants.includes(userId)).sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
     };
 
+    const fetchMessages = async (chatId) => {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('chat_id', chatId)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('[ChatContext] Error fetching messages:', error);
+            return [];
+        }
+
+        return data.map(m => ({
+            id: m.id,
+            senderId: m.sender_id,
+            senderName: m.sender_name,
+            text: m.content,
+            attachments: m.attachments,
+            timestamp: m.created_at,
+            isSystem: m.is_system
+        }));
+    };
+
     return (
         <ChatContext.Provider value={{
             chats,
@@ -136,7 +178,9 @@ export const ChatProvider = ({ children }) => {
             sendMessage,
             toggleChatBlock,
             getChatById,
-            getUserChats
+            getUserChats,
+            fetchMessages,
+            refreshChats: loadChats
         }}>
             {children}
         </ChatContext.Provider>

@@ -78,20 +78,6 @@ const Navbar = () => {
                         COOPLANCE
                     </div>
                 </Link>
-                {user?.isMock && (
-                    <div className="local-mode-badge" style={{ 
-                        background: '#f59e0b', 
-                        color: '#000', 
-                        fontSize: '0.7rem', 
-                        padding: '2px 8px', 
-                        borderRadius: '10px', 
-                        fontWeight: 'bold',
-                        marginLeft: '8px',
-                        animation: 'pulse 2s infinite'
-                    }}>
-                        MODO LOCAL
-                    </div>
-                )}
             </div>
 
             {/* DESKTOP LINKS */}
@@ -174,7 +160,9 @@ const Navbar = () => {
                                     alt="Profile"
                                     className="nav-profile-avatar-small"
                                 />
-                                Perfil
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1.2' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Perfil</span>
+                                </div>
                                 <span className={`dropdown-chevron ${showProfileMenu ? 'up' : ''}`}>▼</span>
                             </button>
 
@@ -274,7 +262,7 @@ const Navbar = () => {
                                     <div className="mobile-user-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <img src={getProfilePicture(user)} alt="Profile" className="nav-profile-avatar-small" />
-                                            <span>{user.username || user.firstName}</span>
+                                            <span>{user.username || user.first_name || user.company_name}</span>
                                         </div>
                                         <NotificationDropdown />
                                     </div>

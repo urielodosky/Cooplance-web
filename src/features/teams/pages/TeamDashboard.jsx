@@ -34,20 +34,17 @@ const TeamDashboard = () => {
     const [simulationResult, setSimulationResult] = useState(null);
     const [showMenu, setShowMenu] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    const [members, setMembers] = useState([]);
     const [openMenuId, setOpenMenuId] = useState(null);
     const [roleSelectorMember, setRoleSelectorMember] = useState(null);
 
-    // Mock Services State (Local for now, could be Context later)
-    // Mock Services State Removed - using activeTeam.services
-    const [reviewTarget, setReviewTarget] = useState(null); // { projectId, targetId, targetName }
+    const [reviewTarget, setReviewTarget] = useState(null); 
     const [editName, setEditName] = useState("");
     const [editDesc, setEditDesc] = useState("");
     const [editLogo, setEditLogo] = useState("");
-    const [chatView, setChatView] = useState('internal'); // 'internal' | 'client'
+    const [chatView, setChatView] = useState('internal'); 
     const [showChatDropdown, setShowChatDropdown] = useState(false);
     const [selectedClientJob, setSelectedClientJob] = useState(null);
-    const [clientJobFilter, setClientJobFilter] = useState('active'); // 'active' | 'completed'
+    const [clientJobFilter, setClientJobFilter] = useState('active'); 
     const [showCreateService, setShowCreateService] = useState(false);
 
     // Initialize edit state when activeTeam loads
@@ -55,13 +52,14 @@ const TeamDashboard = () => {
         if (activeTeam) {
             setEditName(activeTeam.name);
             setEditDesc(activeTeam.description);
-            setEditLogo(activeTeam.logo || "");
+            setEditLogo(activeTeam.logo_url || "");
         }
     }, [activeTeam?.id]);
 
     // --- 2. DERIVED STATE ---
-    const amIMember = user && activeTeam && activeTeam.members.some(m => m.userId === user.id);
-    const amIFounder = user && activeTeam && members.find(m => m.userId === user.id)?.role === 'owner';
+    const members = activeTeam?.members || [];
+    const amIMember = user && activeTeam && members.some(m => m.user_id === user.id);
+    const amIFounder = user && activeTeam && members.find(m => m.user_id === user.id)?.role === 'owner';
 
     // Force tab to services or reviews if not a member and trying to access private tabs
     useEffect(() => {
@@ -90,29 +88,10 @@ const TeamDashboard = () => {
         };
     }, []);
 
-    // Initial member load
+    // No need for FAKE_MEMBERS logic in Supabase migration
     useEffect(() => {
-        if (activeTeam) {
-            // MOCK DATAMERGE
-            const FAKE_MEMBERS = [
-                { userId: 'fake-1', username: 'Elena_Dev', role: 'member', status: 'active', level: 5, joinedAt: new Date().toISOString() },
-                { userId: 'fake-2', username: 'CarlosDesign', role: 'member', status: 'active', level: 3, joinedAt: new Date().toISOString() },
-                { userId: 'fake-3', username: 'Sofia_Lead', role: 'member', status: 'active', level: 8, joinedAt: new Date().toISOString() }
-            ];
-
-            setMembers(prev => {
-                // Combine real members with fake ones for demo
-                const combined = [...activeTeam.members, ...FAKE_MEMBERS];
-                return combined.map(m => {
-                    // Update current user level dynamic
-                    if (user && m.userId === user.id) {
-                        return { ...m, level: user.level || 1, expulsionWarning: m.expulsionWarning || false };
-                    }
-                    return { ...m, expulsionWarning: m.expulsionWarning || false };
-                });
-            });
-        }
-    }, [activeTeam, user]); // Depend on user to update level
+        // Members are now fetched via Context subscription
+    }, [activeTeam, user]);
 
     // Scroll Lock
     useEffect(() => {
@@ -146,9 +125,10 @@ const TeamDashboard = () => {
 
     const handlePrivateMessage = (memberId) => {
         if (!user) return;
-        const newChatId = createChat([user.id, memberId], 'direct');
-        navigate(`/ chat / ${newChatId} `);
-        setOpenMenuId(null);
+        createChat([user.id, memberId], 'direct').then(newChatId => {
+            navigate(`/chat/${newChatId}`);
+            setOpenMenuId(null);
+        });
     };
 
     const handleFileSelect = (e) => {
@@ -332,8 +312,8 @@ const TeamDashboard = () => {
                             <button onClick={() => navigate('/my-coops')} className="btn-icon-soft" title="Volver">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
                             </button>
-                            {activeTeam.logo ? (
-                                <img src={activeTeam.logo} alt={activeTeam.name} style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', flexShrink: 0 }} />
+                            {activeTeam.logo_url ? (
+                                <img src={activeTeam.logo_url} alt={activeTeam.name} style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', flexShrink: 0 }} />
                             ) : (
                                 <div className="team-avatar" style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', flexShrink: 0 }}>
                                     {activeTeam.name.substring(0, 1)}
@@ -579,36 +559,35 @@ const TeamDashboard = () => {
                         {/* MEMBERS TAB */}
                         {activeTab === 'members' && (
                             <div className="glass" style={{ height: 'fit-content', borderRadius: '16px', padding: '1.5rem' }}>
-                                <h3 className="section-title" style={{ marginBottom: '1.5rem' }}>Miembros ({members.length})</h3>
+                                <h3 className="section-title" style={{ marginBottom: '1.5rem' }}>Miembros ({activeTeam.members?.length || 0})</h3>
                                 <div className="member-list-container">
-                                    {members.map((member, idx) => {
-                                        const isMe = user && member.userId === user.id;
-                                        const amIFounder = user && members.find(m => m.userId === user.id)?.role === 'owner';
-                                        const displayName = isMe ? `${user.username || user.firstName} (Tú)` : (member.username || `Usuario ${member.userId.substring(0, 5)}...`);
+                                    {(activeTeam.members || []).map((member, idx) => {
+                                        const isMe = user && member.user_id === user.id;
+                                        const amIFounder = user && activeTeam.members.find(m => m.user_id === user.id)?.role === 'owner';
+                                        const displayName = isMe ? `${user.username || user.firstName} (Tú)` : (member.profile?.username || `Usuario ${member.user_id.substring(0, 5)}...`);
                                         const hasWarning = member.expulsionWarning;
-                                        const isOpen = openMenuId === member.userId;
+                                        const isOpen = openMenuId === member.user_id;
                                         return (
                                             <div key={idx} className="member-item" style={{ position: 'relative', paddingRight: amIFounder && !isMe ? '3rem' : '1rem', zIndex: isOpen ? 100 : 1 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', flex: 1, position: 'relative', zIndex: 2 }} onClick={() => navigate(`/ profile / ${member.userId} `)}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', flex: 1, position: 'relative', zIndex: 2 }} onClick={() => navigate(`/profile/${member.user_id}`)}>
                                                     <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', color: 'white' }}>{displayName.charAt(0).toUpperCase()}</div>
                                                     <div>
                                                         <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{displayName}{hasWarning && <span style={{ fontSize: '0.7rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>⚠ Expulsión en 2d</span>}</h4>
                                                         <span style={{ fontSize: '0.85rem', color: member.role === 'owner' ? '#fbbf24' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>{member.role === 'owner' ? 'Fundador' : (member.role === 'member' ? 'Miembro' : member.role.charAt(0).toUpperCase() + member.role.slice(1))} • {member.status || 'Activo'}</span>
-                                                        {(() => { try { const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]'); const u = allUsers.find(x => x.id == member.userId); if (u?.gamification?.vacation?.active) { const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - u.gamification.vacation.startDate) / 86400000)); return <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.65rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(16, 185, 129, 0.25)', marginTop: '4px' }}>De vacaciones — {daysLeft}d</span>; } return null; } catch(e) { return null; } })()}
                                                     </div>
                                                 </div>
                                                 <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative', zIndex: 101 }}>
-                                                    <span style={{ display: 'block', fontWeight: 'bold', color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.1)', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.9rem' }}>Nivel {isMe ? (user?.level || 1) : (member.level || '?')}</span>
+                                                    <span style={{ display: 'block', fontWeight: 'bold', color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.1)', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.9rem' }}>Nivel {isMe ? (user?.level || 1) : (member.profile?.level || 1)}</span>
                                                     {amIFounder && !isMe && (
                                                         <div style={{ position: 'relative' }}>
-                                                            <button className="btn-icon-soft" style={{ position: 'relative', background: isOpen ? 'rgba(255,255,255,0.1)' : 'transparent', color: isOpen ? 'var(--text-primary)' : 'currentColor' }} onClick={(e) => { e.stopPropagation(); setOpenMenuId(isOpen ? null : member.userId); }}>
+                                                            <button className="btn-icon-soft" style={{ position: 'relative', background: isOpen ? 'rgba(255,255,255,0.1)' : 'transparent', color: isOpen ? 'var(--text-primary)' : 'currentColor' }} onClick={(e) => { e.stopPropagation(); setOpenMenuId(isOpen ? null : member.user_id); }}>
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                                                             </button>
                                                             {isOpen && (
                                                                 <div className="dropdown-menu" style={{ position: 'absolute', top: '0', right: '100%', marginRight: '0.5rem', padding: '0.5rem', borderRadius: '16px', minWidth: '200px', zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }} onClick={(e) => e.stopPropagation()}>
-                                                                    <button className="menu-item" onClick={() => handleRoleChangeRequest(member.userId, member.role)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>🛡</span> Cambiar Rol</button>
-                                                                    <button className="menu-item" onClick={() => handleWarnExpulsion(member.userId)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>⚠</span> Avisar Expulsión</button>
-                                                                    <button className="menu-item" onClick={() => handlePrivateMessage(member.userId)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>💬</span> Mensaje Privado</button>
+                                                                    <button className="menu-item" onClick={() => handleRoleChangeRequest(member.user_id, member.role)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>🛡</span> Cambiar Rol</button>
+                                                                    <button className="menu-item" onClick={() => handleWarnExpulsion(member.user_id)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>⚠</span> Avisar Expulsión</button>
+                                                                    <button className="menu-item" onClick={() => handlePrivateMessage(member.user_id)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>💬</span> Mensaje Privado</button>
                                                                 </div>
                                                             )}
                                                         </div>

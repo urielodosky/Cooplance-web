@@ -206,7 +206,7 @@ const Register = () => {
 
         setLoading(true);
         try {
-            // Check for duplicate username/email in Supabase
+            // Check for duplicate username/email in Local Storage
             const { exists, field } = await checkUserExists({
                 username: cleanUsername || undefined,
                 email: formData.email,
@@ -230,15 +230,26 @@ const Register = () => {
             }
             if (registrationData.email) registrationData.email = registrationData.email.toLowerCase();
 
-            await register(role, registrationData);
+            // Store pending registration data temporarily
+            sessionStorage.setItem('cooplance_pending_registration', JSON.stringify({
+                role,
+                data: registrationData
+            }));
 
-            // Supabase will send a confirmation email automatically.
-            // Navigate to a confirmation page so the user knows to check their email.
-            navigate('/verify-email', {
-                state: { email: formData.email, type: 'registration' }
-            });
+            // Send OTP and show it on screen as requested
+            const otpResult = await otpService.sendOTP(registrationData.email);
+            
+            if (otpResult.success) {
+                alert(`¡Código de verificación enviado! \n\nCÓDIGO (para pruebas): ${otpResult.devOTP} \n\nRecuerda que expira en 3 minutos.`);
+                
+                navigate('/verify-email', {
+                    state: { email: registrationData.email, type: 'registration' }
+                });
+            } else {
+                throw new Error(otpResult.message);
+            }
         } catch (err) {
-            alert(err.message || 'Error al registrarse. Inténtalo de nuevo.');
+            alert(err.message || 'Error al procesar el registro. Inténtalo de nuevo.');
         } finally {
             setLoading(false);
         }
@@ -265,18 +276,18 @@ const Register = () => {
 
                     {/* 1. Username or Company Name */}
                     {role !== 'company' ? (
-                        <input type="text" name="username" placeholder="Nombre de Usuario" onChange={handleChange} required maxLength={25} />
+                        <input type="text" name="username" value={formData.username} placeholder="Nombre de Usuario" onChange={handleChange} required maxLength={25} />
                     ) : (
-                        <input type="text" name="companyName" placeholder="Nombre de la Empresa" onChange={handleChange} required />
+                        <input type="text" name="companyName" value={formData.companyName} placeholder="Nombre de la Empresa" onChange={handleChange} required />
                     )}
 
                     {/* 2. First Name & Last Name / Responsible Name */}
                     {role === 'company' ? (
-                        <input type="text" name="responsibleName" placeholder="Nombre del Responsable" onChange={handleChange} required maxLength={15} />
+                        <input type="text" name="responsibleName" value={formData.responsibleName} placeholder="Nombre del Responsable" onChange={handleChange} required maxLength={15} />
                     ) : (
                         <div className="form-grid-2">
-                            <input type="text" name="firstName" placeholder="Nombre" onChange={handleChange} required maxLength={15} />
-                            <input type="text" name="lastName" placeholder="Apellido" onChange={handleChange} required maxLength={15} />
+                            <input type="text" name="firstName" value={formData.firstName} placeholder="Nombre" onChange={handleChange} required maxLength={15} />
+                            <input type="text" name="lastName" value={formData.lastName} placeholder="Apellido" onChange={handleChange} required maxLength={15} />
                         </div>
                     )}
 
@@ -425,13 +436,13 @@ const Register = () => {
 
                     {/* 10. & 11. Contact Info */}
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Información de Contacto y Acceso:</p>
-                    <input type="email" name="email" placeholder="Correo Electrónico (Obligatorio)" onChange={handleChange} required />
-                    <input type="tel" name="phone" placeholder="Celular (Opcional)" onChange={handleChange} />
+                    <input type="email" name="email" value={formData.email || ''} placeholder="Correo Electrónico (Obligatorio)" onChange={handleChange} autoComplete="email" required />
+                    <input type="tel" name="phone" value={formData.phone || ''} placeholder="Celular (Opcional)" onChange={handleChange} autoComplete="tel" />
 
                     {/* 12. Passwords */}
                     <div className="form-grid-2">
-                        <input type="password" name="password" placeholder="Contraseña" onChange={handleChange} required />
-                        <input type="password" name="confirmPassword" placeholder="Repetir Contraseña" onChange={handleChange} required />
+                        <input type="password" name="password" value={formData.password || ''} placeholder="Contraseña" onChange={handleChange} autoComplete="new-password" required />
+                        <input type="password" name="confirmPassword" value={formData.confirmPassword || ''} placeholder="Repetir Contraseña" onChange={handleChange} autoComplete="new-password" required />
                     </div>
 
                     <button

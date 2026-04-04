@@ -14,17 +14,21 @@ import '../../../styles/pages/ServiceDetail.scss';
 const ServiceDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { services } = useServices();
+    const { services, loading } = useServices();
     const { user, updateBalance } = useAuth();
     const { createJob } = useJobs();
 
-    const service = services.find(s => s.id === Number(id));
+    const service = services.find(s => String(s.id) === String(id));
 
     const [showEditForm, setShowEditForm] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedTierForPayment, setSelectedTierForPayment] = useState(null);
     const [selectedBooking, setSelectedBooking] = useState({ date: null, time: null });
     const [existingBookings, setExistingBookings] = useState([]);
+    const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+    const [desiredSessions, setDesiredSessions] = useState(1);
+    const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+    const [isGalleryHovered, setIsGalleryHovered] = useState(false);
 
     useEffect(() => {
         if (service?.bookingConfig?.requiresBooking) {
@@ -56,6 +60,15 @@ const ServiceDetail = () => {
         );
     }
 
+    // Build media items array for gallery
+    const mediaItems = [];
+    // Add images
+    const allImages = service.images && service.images.length > 0 ? service.images : (service.image ? [service.image] : []);
+    allImages.forEach((img, i) => mediaItems.push({ type: 'image', src: img, label: `Imagen ${i + 1}` }));
+    // Add videos
+    const allVideos = service.videos && service.videos.length > 0 ? service.videos : (service.video ? [{ src: service.video, type: service.mediaType?.video || 'url' }] : []);
+    allVideos.forEach((vid, i) => mediaItems.push({ type: 'video', src: vid.src || vid, videoType: vid.type || 'url', label: vid.name || `Video ${i + 1}` }));
+
     // Helper to get freelancer details for display
     const getFreelancerDetails = () => {
         try {
@@ -73,7 +86,7 @@ const ServiceDetail = () => {
     const displayAvatar = getProfilePicture({
         role: 'freelancer',
         avatar: freelancerUser.avatar || service.freelancerAvatar,
-        gender: freelancerUser.gender || 'male' // Default fallback
+        gender: freelancerUser.gender || 'male'
     });
 
 
@@ -90,7 +103,6 @@ const ServiceDetail = () => {
     }
 
     // Identify if the current user is the owner
-    // Check ID first (robust), then fallback to name matching (legacy)
     const isOwner = user && (
         (service.freelancerId && service.freelancerId === user.id) ||
         service.freelancerName === (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user.companyName || user.username))
@@ -147,8 +159,6 @@ const ServiceDetail = () => {
         navigate('/dashboard');
     };
 
-    // Removed the early return for isOwner to allow viewing the page as others see it.
-
     return (
         <div className="container service-detail-container">
             {isOwner && (
@@ -171,21 +181,93 @@ const ServiceDetail = () => {
 
             <div className="detail-grid">
                 <div className="detail-main">
-                    {(service.video && service.mediaType?.video === 'url') || service.image ? (
-                        <div className="glass detail-hero-section">
-                            {service.video && service.mediaType?.video === 'url' ? (
-                                <div className="video-wrapper">
-                                    <iframe
-                                        src={service.video.replace('watch?v=', 'embed/')}
-                                        title="Service Video"
-                                        allowFullScreen
+                    {/* MEDIA GALLERY */}
+                    {mediaItems.length > 0 && (
+                        <div className="glass detail-hero-section" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' }}>
+                            {/* Main viewer */}
+                            <div 
+                                style={{ position: 'relative', background: '#0a0a1a', borderRadius: '8px', overflow: 'hidden', display: 'flex', justifyContent: 'center', height: '350px' }}
+                                onMouseEnter={() => setIsGalleryHovered(true)}
+                                onMouseLeave={() => setIsGalleryHovered(false)}
+                            >
+                                {mediaItems[activeMediaIndex]?.type === 'image' ? (
+                                    <img
+                                        src={mediaItems[activeMediaIndex].src}
+                                        alt={service.title}
+                                        className="detail-hero-image"
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                                     />
+                                ) : mediaItems[activeMediaIndex]?.type === 'video' ? (
+                                    mediaItems[activeMediaIndex].videoType === 'url' ? (
+                                        <div className="video-wrapper" style={{ width: '100%', height: '100%' }}>
+                                            <iframe
+                                                src={mediaItems[activeMediaIndex].src.replace('watch?v=', 'embed/')}
+                                                title="Service Video"
+                                                allowFullScreen
+                                                style={{ width: '100%', height: '100%', border: 'none' }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <video
+                                            src={mediaItems[activeMediaIndex].src}
+                                            controls
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }}
+                                        />
+                                    )
+                                ) : null}
+
+                                {/* Nav arrows */}
+                                {mediaItems.length > 1 && isGalleryHovered && (
+                                    <>
+                                        <button onClick={() => setActiveMediaIndex(prev => prev > 0 ? prev - 1 : mediaItems.length - 1)}
+                                            style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', zIndex: 5 }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.8)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.6)'}
+                                        >‹</button>
+                                        <button onClick={() => setActiveMediaIndex(prev => prev < mediaItems.length - 1 ? prev + 1 : 0)}
+                                            style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', zIndex: 5 }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.8)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.6)'}
+                                        >›</button>
+                                    </>
+                                )}
+
+                                {/* Counter badge */}
+                                {mediaItems.length > 1 && (
+                                    <span style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.7)', color: 'white', padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                        {activeMediaIndex + 1} / {mediaItems.length}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Thumbnail strip */}
+                            {mediaItems.length > 1 && (
+                                <div style={{ display: 'flex', gap: '6px', padding: '8px 0', overflowX: 'auto' }}>
+                                    {mediaItems.map((item, index) => (
+                                        <button
+                                            key={index}
+                                            type="button"
+                                            onClick={() => setActiveMediaIndex(index)}
+                                            style={{
+                                                flexShrink: 0, width: '64px', height: '48px', borderRadius: '6px', overflow: 'hidden',
+                                                border: index === activeMediaIndex ? '2px solid var(--primary)' : '2px solid transparent',
+                                                opacity: index === activeMediaIndex ? 1 : 0.6, cursor: 'pointer', padding: 0,
+                                                background: '#0a0a1a', transition: 'all 0.2s', position: 'relative'
+                                            }}
+                                        >
+                                            {item.type === 'image' ? (
+                                                <img src={item.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1a1a2e, #16213e)' }}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                                </div>
+                                            )}
+                                        </button>
+                                    ))}
                                 </div>
-                            ) : (
-                                <img src={service.image} alt={service.title} className="detail-hero-image" />
                             )}
                         </div>
-                    ) : null}
+                    )}
 
                     <div className="detail-content">
                         <h1 className="detail-title">{service.title}</h1>
@@ -369,42 +451,101 @@ const ServiceDetail = () => {
                         <BookingPicker 
                             bookingConfig={service.bookingConfig}
                             existingBookings={existingBookings}
-                            onSelect={(date, time) => setSelectedBooking({ date, time })}
+                            onSelect={(dateOrArray, time) => {
+                                if (Array.isArray(dateOrArray)) {
+                                    setSelectedBooking({ dates: dateOrArray });
+                                } else {
+                                    setSelectedBooking({ date: dateOrArray, time });
+                                }
+                            }}
+                            maxSlots={
+                                service.hasPackages && Array.isArray(service.packages) && service.packages[selectedPlanIndex]?.sessions
+                                    ? Number(service.packages[selectedPlanIndex].sessions)
+                                    : 1
+                            }
                         />
                     )}
 
-                    {service.hasPackages ? (
-                        <div className="packages-container">
-                            {['basic', 'standard', 'premium'].map(tier => {
-                                const pkg = service.packages[tier];
+                    {service.hasPackages && Array.isArray(service.packages) && service.packages.length > 0 ? (
+                        <div className="glass single-price-box" style={{ padding: 0, overflow: 'hidden' }}>
+                            {/* Plan Tab Buttons */}
+                            <div style={{
+                                display: 'flex',
+                                borderBottom: '1px solid var(--border)',
+                                background: 'rgba(255,255,255,0.03)'
+                            }}>
+                                {service.packages.map((pkg, index) => (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => setSelectedPlanIndex(index)}
+                                        style={{
+                                            flex: selectedPlanIndex === index ? '1.5' : '1',
+                                            padding: '0.7rem 0.4rem',
+                                            background: selectedPlanIndex === index ? 'var(--primary)' : 'transparent',
+                                            color: selectedPlanIndex === index ? 'white' : 'var(--text-secondary)',
+                                            border: 'none',
+                                            borderRight: index < service.packages.length - 1 ? '1px solid var(--border)' : 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: selectedPlanIndex === index ? 700 : 500,
+                                            fontSize: selectedPlanIndex === index ? '0.85rem' : '0.75rem',
+                                            transition: 'all 0.25s ease',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
+                                        }}
+                                    >
+                                        {pkg.name || `Plan ${index + 1}`}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Selected Plan Details */}
+                            {(() => {
+                                const pkg = service.packages[selectedPlanIndex];
+                                if (!pkg) return null;
                                 return (
-                                    <div key={tier} className={`glass package-box tier-${tier}`}>
-                                        <div className="package-price-row">
-                                            <h4>{tier === 'basic' ? 'Básico' : tier === 'standard' ? 'Estándar' : 'Premium'}</h4>
-                                            <span className="pkg-price">${pkg.price} ARS</span>
+                                    <div style={{ padding: '1.2rem' }}>
+                                        <div className="package-price-row" style={{ marginBottom: '0.6rem' }}>
+                                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{pkg.name || `Plan ${selectedPlanIndex + 1}`}</h4>
+                                            <span className="pkg-price" style={{ fontSize: '1.3rem' }}>${pkg.price} ARS</span>
                                         </div>
-                                        <p className="pkg-desc">{pkg.description}</p>
-                                        <div className="pkg-meta">
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                                {pkg.deliveryTime} días
-                                            </span>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></svg>
-                                                {pkg.revisions} revisiones
-                                            </span>
+                                        {pkg.description && (
+                                            <p className="pkg-desc" style={{ margin: '0 0 0.8rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{pkg.description}</p>
+                                        )}
+                                        <div className="pkg-meta" style={{ marginBottom: '1rem' }}>
+                                            {pkg.sessions ? (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                    {pkg.sessions} sesiones incluidas
+                                                </span>
+                                            ) : (
+                                                <>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                        {pkg.deliveryTime} días
+                                                    </span>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></svg>
+                                                        {pkg.revisions} revisiones
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                         <button
                                             className="btn-primary w-100"
-                                            onClick={() => handleHire({ ...pkg, name: tier })}
+                                            onClick={() => handleHire({ ...pkg, name: pkg.name || `Plan ${selectedPlanIndex + 1}` })}
                                             disabled={isOwner}
                                             style={isOwner ? { opacity: 0.5, cursor: 'not-allowed', background: 'var(--text-muted)' } : {}}
                                         >
                                             {isOwner ? 'Tu Servicio' : `Continuar ($${pkg.price} ARS)`}
                                         </button>
+                                        <p className="warranty-text" style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.6rem', marginBottom: 0 }}>Pago protegido por garantía de Cooplance.</p>
                                     </div>
                                 );
-                            })}
+                            })()}
+
+
                         </div>
                     ) : (
                         <div className="glass single-price-box">

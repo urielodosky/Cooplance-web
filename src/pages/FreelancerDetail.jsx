@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTeams } from '../context/TeamContext';
 import { getProfilePicture } from '../utils/avatarUtils';
 import ServiceCard from '../features/services/components/ServiceCard';
+import { supabase } from '../lib/supabase';
 import '../styles/pages/ServiceDetail.scss';
 
 const FreelancerDetail = () => {
@@ -20,50 +21,50 @@ const FreelancerDetail = () => {
     );
 
     useEffect(() => {
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        const storedServices = JSON.parse(localStorage.getItem('cooplance_db_services') || '[]');
-        const storedJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
+        const fetchFreelancerData = async () => {
+            setLoading(true);
+            try {
+                // 1. Fetch Profile
+                const { data: profile, error: pError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (pError) throw pError;
+                setFreelancer(profile);
 
-        // Check for mock users (from TeamDashboard demo)
-        if (id && id.toString().startsWith('fake-')) {
-            const mockUsers = {
-                'fake-1': { id: 'fake-1', firstName: 'Elena', lastName: 'Dev', username: 'Elena_Dev', level: 5, bio: 'Desarrolladora Full Stack con 5 años de experiencia. Experta en React y Node.js.', location: 'Madrid, España', avatar: null },
-                'fake-2': { id: 'fake-2', firstName: 'Carlos', lastName: 'Design', username: 'CarlosDesign', level: 3, bio: 'Diseñador UI/UX apasionado por las interfaces limpias y la accesibilidad.', location: 'Buenos Aires, Argentina', avatar: null },
-                'fake-3': { id: 'fake-3', firstName: 'Sofia', lastName: 'Lead', username: 'Sofia_Lead', level: 8, bio: 'Tech Lead y Arquitecta de Software. Lidero equipos de alto rendimiento.', location: 'Bogotá, Colombia', avatar: null }
-            };
-            setFreelancer(mockUsers[id] || null);
-            setFreelancerServices([]);
-            setFreelancerJobs([]);
-        } else {
-            // Normal users
-            const foundFreelancer = storedUsers.find(u => u.id == id);
-            if (foundFreelancer) {
-                if (foundFreelancer.isDeleted) {
-                    setFreelancer({
-                        ...foundFreelancer,
-                        isDeleted: true,
-                        firstName: 'Usuario',
-                        lastName: 'Eliminado',
-                        username: 'Usuario Eliminado',
-                        bio: 'Esta cuenta ha sido eliminada y ya no está disponible.'
-                    });
-                    setFreelancerServices([]);
-                    setFreelancerJobs([]);
-                } else {
-                    setFreelancer(foundFreelancer);
-                    const services = storedServices.filter(s => s.freelancerId === foundFreelancer.id);
-                    setFreelancerServices(services);
+                // 2. Fetch Services
+                const { data: servicesData, error: sError } = await supabase
+                    .from('services')
+                    .select('*')
+                    .eq('owner_id', id)
+                    .eq('active', true);
+                
+                if (sError) throw sError;
+                setFreelancerServices(servicesData || []);
 
-                    // Finished jobs logic
-                    const finishedJobs = storedJobs.filter(j =>
-                        j.freelancerId === foundFreelancer.id &&
-                        (j.status === 'completed' || j.status === 'canceled')
-                    );
-                    setFreelancerJobs(finishedJobs);
-                }
+                // 3. Fetch Jobs (for work history)
+                // Note: We'll fetch completed jobs specifically
+                const { data: jobsData, error: jError } = await supabase
+                    .from('jobs')
+                    .select('*')
+                    .eq('freelancer_id', id)
+                    .in('status', ['completed', 'canceled'])
+                    .limit(10);
+                
+                if (jError) throw jError;
+                setFreelancerJobs(jobsData || []);
+
+            } catch (err) {
+                console.error("Error loading freelancer data:", err);
+                // Fail silently or set error state
+            } finally {
+                setLoading(false);
             }
-        }
-        setLoading(false);
+        };
+
+        if (id) fetchFreelancerData();
     }, [id]);
 
     if (loading) {

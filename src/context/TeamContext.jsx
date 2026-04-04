@@ -1,27 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { supabase } from '../lib/supabase';
-import {
-    validateCreateTeam as validateCreateService,
-    createTeam as createTeamService,
-    activateCoopProject as activateProjectService,
-    calculateFrozenDistribution as calculateFrozenService,
-    canPerformAction as canPerformActionService,
-    processMemberExit as processMemberExitService,
-    monitorInactivity,
-    addMember as addMemberService,
-    updateMemberRole as updateRoleService,
-    dissolveTeam as dissolveTeamService,
-    toggleTeamService as toggleServiceService,
-    addTeamService as addTeamServiceService,
-    completeProject as completeProjectService,
-    updateTeamRules as updateRulesService,
-    submitMemberReview as submitReviewService,
-    updateTeamInfo as updateTeamInfoService,
-    getPublicTeamProfile as getPublicProfileService,
-    acceptTeamRules as acceptRulesService,
-    respondToInvite as respondToInviteService
-} from '../services/TeamService';
+import * as TeamService from '../services/TeamService';
 import * as NotificationService from '../services/NotificationService';
 
 const TeamContext = createContext();
@@ -35,603 +15,142 @@ export const useTeams = () => {
 };
 
 export const TeamProvider = ({ children }) => {
-    const { user, updateUser } = useAuth();
+    const { user } = useAuth();
     const [teams, setTeams] = useState([]);
-    const [userTeams, setUserTeams] = useState([]); // Teams where user is a member
+    const [userTeams, setUserTeams] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Load Teams from Supabase on mount
     const fetchTeams = useCallback(async () => {
+        if (!user) {
+            setTeams([]);
+            setUserTeams([]);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            const { data: allTeams, error } = await supabase
                 .from('teams')
-                .select(`
-                    *,
-                    services (*),
-                    team_members (
-                        id, user_id, role, status, joined_at,
-                        profiles (id, username, first_name, last_name, avatar_url, level)
-                    )
-                `);
-
+                .select('*, members:team_members(*, profile:profiles(*)), services(*)');
+            
             if (error) throw error;
-
-            // Normalize data to match existing shape expected by the UI
-            const normalized = (data || []).map(t => ({
-                ...t,
-                founderId: t.founder_id,
-                name: t.name,
-                logo: t.logo_url,
-                members: (t.team_members || []).map(m => ({
-                    userId: m.user_id,
-                    role: m.role,
-                    status: m.status,
-                    joinedAt: m.joined_at,
-                    ...m.profiles
-                })),
-                services: t.services || [],
-                messages: t.messages || []
-            }));
-
-            setTeams(normalized);
-            // Keep localStorage in sync as fallback for services that still read it
-            localStorage.setItem('cooplance_db_teams', JSON.stringify(normalized));
+            
+            setTeams(allTeams || []);
+            
+            // Filter teams where user is a member
+            const relevant = (allTeams || []).filter(team =>
+                team.members.some(member => member.user_id === user.id)
+            );
+            setUserTeams(relevant);
         } catch (err) {
             console.error('Error fetching teams:', err);
-            // Fallback to localStorage if Supabase fails
-            const stored = localStorage.getItem('cooplance_db_teams');
-            if (stored) setTeams(JSON.parse(stored));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
     useEffect(() => {
-        monitorInactivity();
         fetchTeams();
+
+        // Real-time subscription
+        const channel = supabase
+            .channel('team-updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => fetchTeams())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => fetchTeams())
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [fetchTeams]);
 
-    // Filter teams relevant to current user
-    useEffect(() => {
-        if (user && teams.length > 0) {
-            const relevant = teams.filter(team =>
-                team.members.some(member => member.userId === user.id)
-            );
-            setUserTeams(relevant);
-        } else {
-            setUserTeams([]);
-        }
-    }, [user, teams]);
+    // --- Actions ---
 
-    // --- BUSINESS LOGIC ---
-
-    // Permission Check: Can this user create a team?
-    // Start using Service Logic for consistent validation
-    const canCreateTeam = (currentUser) => {
-        if (!currentUser) return false;
-        try {
-            return validateCreateService(currentUser.id);
-        } catch (e) {
-            // If validation throws, it means they can't create
-            // We return false or the error message depending on UI needs
-            // Here strict boolean for UI disabling
-            return false;
-        }
-    };
-
-    // 4. Search User (Supabase)
-    const searchUser = async (query) => {
-        if (!query) return null;
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id, username, first_name, last_name, email, avatar_url')
-            .or(`username.eq.${query},email.eq.${query}`)
-            .neq('id', user?.id)
-            .limit(1)
-            .maybeSingle();
-
-        if (error || !data) return null;
-        return {
-            id: data.id,
-            username: data.username,
-            firstName: data.first_name,
-            lastName: data.last_name,
-            email: data.email,
-            avatar: data.avatar_url
-        };
-    };
-
-    // 1. Create Team (Supabase)
     const createTeam = async (teamData) => {
-        if (!user) throw new Error('Debes estar autenticado para crear un equipo.');
-        try {
-            // Insert team into Supabase
-            const { data: newTeam, error: teamError } = await supabase
-                .from('teams')
-                .insert({
-                    name: teamData.name,
-                    description: teamData.description,
-                    logo_url: teamData.logo,
-                    categories: teamData.categories,
-                    tags: teamData.tags,
-                    founder_id: user.id,
-                    internal_rules: teamData.rules,
-                    distribution_config: teamData.distributionConfig
-                })
-                .select()
-                .single();
-
-            if (teamError) throw teamError;
-
-            // Add creator as owner in team_members
-            await supabase.from('team_members').insert({
-                team_id: newTeam.id,
-                user_id: user.id,
-                role: 'owner',
-                status: 'active'
-            });
-
-            // Reload teams to keep state in sync
-            await fetchTeams();
-            return newTeam;
-        } catch (error) {
-            throw error;
-        }
+        if (!user) throw new Error('Auth required');
+        const team = await TeamService.createTeam(teamData, user.id);
+        await fetchTeams();
+        return team;
     };
 
-    // 2. Add Member (Mock)
-    const addMember = (teamId, newUser) => {
-        const teamIndex = teams.findIndex(t => t.id === teamId);
-        if (teamIndex === -1) throw new Error("Team no encontrado");
-
-        const team = teams[teamIndex];
-        if (team.members.some(m => m.userId === newUser.id)) throw new Error("El usuario ya está en el equipo");
-
-        const updatedTeam = {
-            ...team,
-            members: [
-                ...team.members,
-                {
-                    userId: newUser.id,
-                    role: 'member',
-                    joinedAt: new Date().toISOString(),
-                    status: 'active'
-                }
-            ]
-        };
-
-        const updatedTeams = [...teams];
-        updatedTeams[teamIndex] = updatedTeam;
-        setTeams(updatedTeams);
-        localStorage.setItem('cooplance_db_teams', JSON.stringify(updatedTeams));
-
-        // Notify invited user
-        NotificationService.createNotification(newUser.id, {
-            type: NotificationService.NOTIFICATION_TYPES.INVITE,
-            title: '¡Te han invitado a una Coop!',
-            message: `Has sido añadido a la cooperativa '${team.name}'. Entra para ver los detalles.`,
-            link: `/team/${team.id}`
-        });
-    };
-
-    // 3. CORE ALGORITHM: Distribute Revenue
-    const simulateDistribution = (grossAmount, membersWithLevels) => {
-        // membersWithLevels expectation: [{ userId, level: 1 }, { userId, level: 5 }]
-
-        const COMMISSION_RATE = 0.12;
-        const commission = grossAmount * COMMISSION_RATE;
-        const netAmount = grossAmount - commission;
-
-        // Calculate Total Weight (Sum of Levels)
-        const totalWeight = membersWithLevels.reduce((sum, member) => sum + (member.level || 1), 0);
-
-        if (totalWeight === 0) return { commission, net: netAmount, distribution: [] };
-
-        const distribution = membersWithLevels.map(member => {
-            const level = member.level || 1;
-            const shareRatio = level / totalWeight;
-            const amount = netAmount * shareRatio;
-
-            return {
-                userId: member.userId,
-                level: level,
-                weightRatio: shareRatio,
-                percentage: (shareRatio * 100).toFixed(1),
-                amount: amount
-            };
-        });
-
-        return {
-            gross: grossAmount,
-            commission: commission,
-            net: netAmount,
-            totalWeight: totalWeight,
-            distribution: distribution
-        };
-    };
-
-    // 5. Send Message (Mock)
-    const sendMessage = (teamId, text, attachment = null, type = 'internal') => {
-        const teamIndex = teams.findIndex(t => t.id === teamId);
-        if (teamIndex === -1) throw new Error("Team no encontrado");
-
-        // Permission Check for Client Chat (Point 4)
-        if (type === 'client') {
-            const canTalkToClient = canPerformActionService(teamId, 'client_communication', user.id);
-            if (!canTalkToClient) {
-                throw new Error("Solo el Encargado de Servicio (o Admin/Fundador) puede hablar con el cliente.");
-            }
-        }
-
-        const updatedTeam = {
-            ...teams[teamIndex],
-            messages: [
-                ...(teams[teamIndex].messages || []),
-                {
-                    id: crypto.randomUUID(),
-                    userId: user.id,
-                    username: user.username || user.firstName,
-                    avatar: user.avatar,
-                    text: text || '', // Allow empty text if attachment exists
-                    attachment, // { url: string, type: 'image' | 'video' }
-                    type, // 'internal' | 'client'
-                    timestamp: new Date().toISOString()
-                }
-            ]
-        };
-
-        const updatedTeams = [...teams];
-        updatedTeams[teamIndex] = updatedTeam;
-        setTeams(updatedTeams);
-        localStorage.setItem('cooplance_db_teams', JSON.stringify(updatedTeams));
-    };
-
-    // 6. Clear Chat (Mock)
-    const clearChat = (teamId) => {
-        const teamIndex = teams.findIndex(t => t.id === teamId);
-        if (teamIndex === -1) return;
-
-        const updatedTeam = {
-            ...teams[teamIndex],
-            messages: []
-        };
-        const updatedTeams = [...teams];
-        updatedTeams[teamIndex] = updatedTeam;
-        setTeams(updatedTeams);
-        localStorage.setItem('cooplance_db_teams', JSON.stringify(updatedTeams));
-    };
-
-    // 7. Delete Message (Mock)
-    const deleteMessage = (teamId, messageId) => {
-        const teamIndex = teams.findIndex(t => t.id === teamId);
-        if (teamIndex === -1) return;
-
-        const updatedTeam = {
-            ...teams[teamIndex],
-            messages: (teams[teamIndex].messages || []).filter(m => m.id !== messageId)
-        };
-        const updatedTeams = [...teams];
-        updatedTeams[teamIndex] = updatedTeam;
-        setTeams(updatedTeams);
-        localStorage.setItem('cooplance_db_teams', JSON.stringify(updatedTeams));
-    };
-
-    // 5. Activate Project (Freeze Logic)
-    const activateProject = async (teamId, projectId, serviceId, amount) => {
-        try {
-            const projectSnapshot = activateProjectService(teamId, projectId, serviceId, amount);
-
-            // Refresh local state to reflect new history
-            const storedTeams = localStorage.getItem('cooplance_db_teams');
-            if (storedTeams) {
-                setTeams(JSON.parse(storedTeams));
-            }
-
-            return projectSnapshot;
-        } catch (error) {
-            console.error("Failed to activate project:", error);
-            throw error;
-        }
-    };
-
-    // 6. Get Frozen Distribution
-    const getFrozenDistribution = (teamId, projectId) => {
-        return calculateFrozenService(teamId, projectId);
-    };
-
-    // 7. Join Team (Formerly addMember logic)
-    const joinTeam = async (teamId) => {
-        // Validation handled by Service in future, for now simple logic + service check
-        const teamIndex = teams.findIndex(t => t.id === teamId);
-        if (teamIndex === -1) throw new Error("Team no encontrado");
-
-        // Service check for 'join' not strictly implemented yet but can be added
-        // validateJoinTeam(user.id, teamId) ...
-
-        const team = teams[teamIndex];
-        if (team.members.some(m => m.userId === user.id)) {
-            throw new Error("Ya eres miembro de este equipo");
-        }
-
-        // Max 7 members check
-        if (team.members.filter(m => m.status === 'active').length >= 7) {
-            throw new Error("El equipo ha alcanzado el límite de 7 miembros.");
-        }
-
-        const newMember = {
-            userId: user.id,
-            role: 'member',
-            joinedAt: new Date().toISOString(),
-            status: 'active' // Auto-join for now, should be 'pending' if invite-only
-        };
-
-        const updatedTeam = {
-            ...team,
-            members: [...team.members, newMember]
-        };
-
-        const updatedTeams = [...teams];
-        updatedTeams[teamIndex] = updatedTeam;
-        setTeams(updatedTeams);
-        localStorage.setItem('cooplance_db_teams', JSON.stringify(updatedTeams));
-    };
-
-    // 8. Leave Team
-    const leaveTeam = async (teamId) => {
-        try {
-            // Use Service for robust exit/succession logic
-            const updatedTeam = processMemberExitService(teamId, user.id);
-
-            // Update Local State
-            const updatedTeams = [...teams];
-            const idx = updatedTeams.findIndex(t => t.id === teamId);
-            if (idx !== -1) {
-                updatedTeams[idx] = updatedTeam;
-            }
-            setTeams(updatedTeams);
-            // LocalStorage update is handled within processMemberExitService but we update state for reactivity
-        } catch (error) {
-            console.error("Failed to leave team:", error);
-            throw error; // Re-throw for UI
-        }
-    };
-
-    // 9. Permission Check Wrapper
-    const canPerformAction = (teamId, action, targetUserId) => {
-        return canPerformActionService(teamId, action, user.id, targetUserId);
-    };
-
-    // 10. Management Actions
     const addMemberToTeam = async (teamId, newUserId) => {
-        try {
-            const updatedTeam = addMemberService(teamId, newUserId, user.id);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
+        await TeamService.addMember(teamId, newUserId, user.id);
+        await fetchTeams();
     };
 
     const updateMemberRole = async (teamId, targetUserId, newRole) => {
-        try {
-            const updatedTeam = updateRoleService(teamId, targetUserId, newRole, user.id);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
+        await TeamService.updateMemberRole(teamId, targetUserId, newRole, user.id);
+        await fetchTeams();
+    };
 
-            // Notify target user
-            NotificationService.createNotification(targetUserId, {
-                type: NotificationService.NOTIFICATION_TYPES.ROLE_CHANGE,
-                title: 'Rol Actualizado',
-                message: `Tu rol en la cooperativa '${updatedTeam.name}' ha sido cambiado a: ${newRole}.`,
-                link: `/team/${updatedTeam.id}`
-            });
-
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
+    const leaveTeam = async (teamId) => {
+        await TeamService.processMemberExit(teamId, user.id);
+        await fetchTeams();
     };
 
     const dissolveCoop = async (teamId) => {
-        try {
-            const updatedTeam = dissolveTeamService(teamId, user.id);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
+        await TeamService.dissolveTeam(teamId, user.id);
+        await fetchTeams();
     };
 
     const toggleService = async (teamId, serviceId) => {
-        try {
-            const updatedService = toggleServiceService(teamId, serviceId, user.id);
-            // Deep update state for services
-            setTeams(prev => prev.map(t => {
-                if (t.id === teamId) {
-                    const newServices = (t.services || []).map(s => s.id === serviceId ? updatedService : s);
-                    return { ...t, services: newServices };
-                }
-                return t;
-            }));
-            return updatedService;
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    const addServiceToTeam = async (teamId, serviceData) => {
-        try {
-            // Persist service to Supabase
-            const { data: newService, error } = await supabase
-                .from('services')
-                .insert({
-                    owner_id: user.id,
-                    team_id: teamId,
-                    title: serviceData.title,
-                    description: serviceData.description,
-                    category: serviceData.category,
-                    subcategory: serviceData.subcategory,
-                    specialties: serviceData.specialties,
-                    price: serviceData.price,
-                    delivery_time: serviceData.deliveryTime,
-                    revisions: serviceData.revisions,
-                    image_url: serviceData.image,
-                    video_url: serviceData.video,
-                    tags: serviceData.tags,
-                    work_mode: serviceData.workMode,
-                    booking_config: serviceData.bookingConfig,
-                    packages: serviceData.packages,
-                    faqs: serviceData.faqs,
-                    active: true
-                })
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Also update local state via service for UI consistency
-            const updatedTeam = addTeamServiceService(teamId, { ...serviceData, id: newService.id, supabaseId: newService.id }, user.id);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    const closeProject = async (teamId, projectId, ratings) => {
-        try {
-            const updatedTeam = completeProjectService(teamId, projectId, ratings);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-
-            // Sync Current User XP if they gained any
-            if (user) {
-                const users = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-                const updatedMe = users.find(u => u.id === user.id);
-                if (updatedMe && updatedMe.xp !== user.xp) {
-                    updateUser(updatedMe);
-                }
-            }
-
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
+        await TeamService.toggleTeamService(teamId, serviceId, user.id);
+        await fetchTeams();
     };
 
     const updateRules = async (teamId, rulesText) => {
-        try {
-            const updatedTeam = updateRulesService(teamId, rulesText, user.id);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    const submitEvaluation = async (teamId, projectId, targetUserId, score, feedback) => {
-        try {
-            const updatedTeam = submitReviewService(teamId, projectId, user.id, targetUserId, score, feedback);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    const updateTeam = async (teamId, data) => {
-        try {
-            // Persist to Supabase
-            const { error } = await supabase
-                .from('teams')
-                .update({
-                    name: data.name,
-                    description: data.description,
-                    logo_url: data.logo,
-                    categories: data.categories,
-                    tags: data.tags
-                })
-                .eq('id', teamId);
-
-            if (error) throw error;
-
-            // Update local state
-            const updatedTeam = updateTeamInfoService(teamId, data, user.id);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    const respondToInvite = async (teamId, accept) => {
-        try {
-            const updatedTeam = respondToInviteService(teamId, user.id, accept);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-
-            // Notify when someone accepts an invite so team knows
-            if (accept) {
-                NotificationService.createNotification(updatedTeam.createdBy, {
-                    type: NotificationService.NOTIFICATION_TYPES.SYSTEM,
-                    title: '¡Nueva incorporación!',
-                    message: `${user.username || user.firstName} ha aceptado tu invitación a la Coop '${updatedTeam.name}'.`,
-                    link: `/team/${updatedTeam.id}`
-                });
-            }
-
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
-    };
-
-    const getPublicProfile = async (teamId) => {
-        try {
-            return getPublicProfileService(teamId);
-        } catch (error) {
-            throw error;
-        }
+        await TeamService.updateTeamRules(teamId, rulesText, user.id);
+        await fetchTeams();
     };
 
     const acceptRules = async (teamId) => {
-        try {
-            const updatedTeam = acceptRulesService(teamId, user.id);
-            setTeams(prev => prev.map(t => t.id === teamId ? updatedTeam : t));
-            return updatedTeam;
-        } catch (error) {
-            throw error;
-        }
+        await TeamService.acceptTeamRules(teamId, user.id);
+        await fetchTeams();
     };
 
+    const closeProject = async (teamId, projectId, ratings) => {
+        await TeamService.completeProject(teamId, projectId, ratings);
+        await fetchTeams();
+    };
+
+    const submitEvaluation = async (teamId, projectId, targetUserId, score, feedback) => {
+        await TeamService.submitMemberReview(teamId, projectId, user.id, targetUserId, score, feedback);
+        await fetchTeams();
+    };
+
+    const updateTeam = async (teamId, data) => {
+        await TeamService.updateTeamInfo(teamId, data, user.id);
+        await fetchTeams();
+    };
+
+    const respondToInvite = async (teamId, accept) => {
+        await TeamService.respondToInvite(teamId, user.id, accept);
+        await fetchTeams();
+    };
+
+    // Helper for UI
+    const canPerformAction = (teamId, action, targetUserId) => {
+        return TeamService.canPerformAction(teamId, action, user.id, targetUserId);
+    };
 
     const value = {
         teams,
         userTeams,
         loading,
         createTeam,
-        canCreateTeam,
-        searchUser,
-        joinTeam,
         leaveTeam,
-        sendMessage,
-        clearChat,
-        deleteMessage,
-        simulateDistribution,
-        // New Advanced Features
-        activateProject,
-        getFrozenDistribution,
-        canPerformAction,
         addMemberToTeam,
         updateMemberRole,
         dissolveCoop,
         toggleService,
-        addServiceToTeam,
-        closeProject,
         updateRules,
+        acceptRules,
+        closeProject,
         submitEvaluation,
         updateTeam,
-        getPublicProfile,
-        acceptRules,
-        respondToInvite
+        respondToInvite,
+        canPerformAction
     };
 
     return (

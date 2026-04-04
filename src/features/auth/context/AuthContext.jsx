@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
 import { processGamificationRules } from '../../../utils/gamification';
+import { supabase } from '../../../lib/supabase';
+import InitialLoader from '../../../components/common/InitialLoader';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -9,111 +10,125 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // ─── Bootstrap: Listen to Supabase auth state changes ───────────────────────
+    // ─── Bootstrap: Load from Supabase ─────────────────────────────────────
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                fetchProfile(session.user.id);
-            } else {
-                // Try to load mock user from local storage for development/testing
-                const savedMock = localStorage.getItem('cooplance_mock_user');
-                if (savedMock) {
-                    setUser(JSON.parse(savedMock));
-                } else {
-                    // Provide a default mock user so the app is always usable
-                    setUser({
-                        id: 'mock-id-123',
-                        username: 'usuario_invitado',
-                        firstName: 'Invitado',
-                        lastName: 'Local',
-                        role: 'freelancer',
-                        isMock: true,
-                        xp: 100,
-                        level: 1,
-                        balance: 0,
-                        bio: 'Modo local activo para pruebas.'
-                    });
-                }
-                setLoading(false);
-            }
-        });
+        let isMounted = true;
 
-        // Subscribe to changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) {
-                fetchProfile(session.user.id);
+        const handleSession = async (session) => {
+            if (!isMounted) return;
+            
+            if (session?.user) {
+                await fetchProfile(session.user.id);
             } else {
                 setUser(null);
                 setLoading(false);
             }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    // ─── Fetch user profile from the public.profiles table ──────────────────────
-    const fetchProfile = async (userId) => {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-        if (error) {
-            console.error('Error fetching profile:', error);
-            setLoading(false);
-            return;
-        }
-
-        // Map snake_case from DB to camelCase for frontend
-        const mapped = {
-            ...data,
-            firstName: data.first_name,
-            lastName: data.last_name,
-            avatarUrl: data.avatar_url,
-            companyName: data.company_name,
-            responsibleName: data.responsible_name,
-            workHours: data.work_hours,
-            paymentMethods: data.payment_methods,
-            cvUrl: data.cv_url,
-            xp: data.points // Gamification uses xp/points interchangeably in some places
         };
 
-        // Apply gamification rules
-        const processed = processGamificationRules(mapped);
-        setUser(processed);
-        setLoading(false);
+        // Initialize state via getSession AND subscribe to future changes safely
+        const initializeAuth = async () => {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) console.error("getSession error:", error);
+            
+            await handleSession(session);
+        };
+
+        initializeAuth();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            console.log("Auth state changed:", _event);
+            if (_event === 'INITIAL_SESSION') return; // We handled it in getSession
+            await handleSession(session);
+        });
+
+        // SAFETY FALLBACK: If Supabase initialization hangs entirely, force load
+        const fallbackTimer = setTimeout(() => {
+            if (isMounted) {
+                console.warn("AuthContext initialization timed out (3s). Forcing UI to load.");
+                setLoading(false);
+            }
+        }, 3000);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(fallbackTimer);
+            subscription.unsubscribe();
+        };
+    }, []);
+
+    const fetchProfile = async (userId) => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+            
+            if (error) throw error;
+            setUser(data);
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // ─── REGISTER ───────────────────────────────────────────────────────────────
-    const register = async (role, data) => {
-        const { email, password, username, firstName, lastName, phone } = data;
+    // Utility for safely timing out hanging Supabase requests
+    const withTimeout = (promise, ms, operationName) => {
+        return Promise.race([
+            promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: La operación "${operationName}" excedió el tiempo límite. Intenta recargar la página.`)), ms))
+        ]);
+    };
 
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+    // ─── REGISTER (Final step after verification) ───────────────────────────────
+    const register = async (role, registrationData) => {
+        const { email, password, username, first_name, last_name, gender, company_name, responsible_name, location, country, work_hours, payment_methods, vacancies } = registrationData;
+
+        // Ensure metadata is passed for the SQL trigger handle_new_user()
+        const { data, error } = await withTimeout(supabase.auth.signUp({
             email,
             password,
             options: {
                 data: {
-                    username,
-                    first_name: firstName,
-                    last_name: lastName,
                     role,
+                    username,
+                    first_name: first_name || '',
+                    last_name: last_name || '',
+                    gender,
+                    company_name: company_name || null,
+                    responsible_name: responsible_name || null,
+                    location: location || null,
+                    country: country || null,
+                    work_hours: work_hours || null,
+                    payment_methods: payment_methods || null,
+                    vacancies: vacancies ? parseInt(vacancies) : 0
                 }
             }
-        });
+        }), 10000, "Registro");
 
-        if (authError) throw authError;
-
-        // Profile is auto-created by database trigger (handle_new_user)
-        return authData;
+        if (error) {
+            throw new Error(error.message);
+        }
+        
+        // DON'T call fetchProfile here - onAuthStateChange handles it.
+        return data.user;
     };
 
     // ─── LOGIN ──────────────────────────────────────────────────────────────────
     const login = async ({ email, password }) => {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        return data;
+        const { data, error } = await withTimeout(supabase.auth.signInWithPassword({
+            email,
+            password
+        }), 10000, "Iniciar sesión");
+        
+        if (error) {
+            throw new Error(error.message);
+        }
+        
+        // DON'T call fetchProfile here - onAuthStateChange handles it.
+        // Calling it here causes a localStorage lock collision with gotrue-js.
+        return data.user;
     };
 
     // ─── LOGOUT ─────────────────────────────────────────────────────────────────
@@ -124,45 +139,16 @@ export const AuthProvider = ({ children }) => {
 
     // ─── UPDATE USER PROFILE ─────────────────────────────────────────────────────
     const updateUser = async (updatedData) => {
-        // Handle Mock User (Local Storage Fallback)
-        if (user?.isMock) {
-            console.log('Using Mock User - Saving to Local Storage:', updatedData);
-            const mockData = { ...updatedData, lastUpdated: new Date().toISOString() };
-            localStorage.setItem('cooplance_mock_user', JSON.stringify(mockData));
-            setUser(mockData);
-            return;
-        }
-
         if (!user) return;
 
         const processed = processGamificationRules(updatedData);
-
-        // Map frontend camelCase to database snake_case strictly
-        const profileUpdate = {
-            username: processed.username?.toLowerCase(),
-            first_name: processed.firstName !== undefined ? processed.firstName : processed.first_name,
-            last_name: processed.lastName !== undefined ? processed.lastName : processed.last_name,
-            avatar_url: processed.avatarUrl !== undefined ? processed.avatarUrl : processed.avatar_url,
-            bio: processed.bio,
-            gender: processed.gender,
-            company_name: processed.companyName !== undefined ? processed.companyName : processed.company_name,
-            responsible_name: processed.responsibleName !== undefined ? processed.responsibleName : processed.responsible_name,
-            location: processed.location,
-            country: processed.country,
-            work_hours: processed.workHours !== undefined ? processed.workHours : processed.work_hours,
-            payment_methods: processed.paymentMethods !== undefined ? processed.payment_methods : processed.payment_methods,
-            vacancies: parseInt(processed.vacancies) || 0,
-            cv_url: processed.cvUrl !== undefined ? processed.cvUrl : processed.cv_url,
-            level: processed.level,
-            points: processed.points !== undefined ? processed.points : processed.xp
-        };
-
-        // Remove undefined fields
-        Object.keys(profileUpdate).forEach(key => profileUpdate[key] === undefined && delete profileUpdate[key]);
-
+        
+        // Remove unwanted fields from update (like id, createdAt which shouldn't change)
+        const { id, auth_id, created_at, email, ...updatePayload } = processed;
+        
         const { error } = await supabase
             .from('profiles')
-            .update(profileUpdate)
+            .update(updatePayload)
             .eq('id', user.id);
 
         if (error) {
@@ -170,38 +156,65 @@ export const AuthProvider = ({ children }) => {
             throw error;
         }
 
-        console.log('Profile updated successfully in DB:', profileUpdate);
-
-        // Fetch latest profile from DB to ensure state consistency
+        // Refetch profile to get newest data
         await fetchProfile(user.id);
     };
 
-    // ─── UPDATE BALANCE (local only for now, until wallet table is added) ────────
-    const updateBalance = (amount, type = 'credit') => {
+    // ─── UPDATE BALANCE ──────────────────────────────────────────────────────────
+    const updateBalance = async (amount, type = 'credit') => {
         if (!user) return;
-        let newBalance = parseFloat(user.balance || 0);
+        let newBalance = parseFloat(user.points || user.balance || 0); // Assuming we use points as balance as per schema
         newBalance = type === 'credit' ? newBalance + parseFloat(amount) : newBalance - parseFloat(amount);
-        const updatedUser = { ...user, balance: newBalance };
-        setUser(updatedUser);
-        return newBalance;
+        
+        try {
+            await updateUser({ ...user, points: newBalance });
+            return newBalance;
+        } catch (err) {
+            console.error('Balance update error:', err);
+        }
+    };
+
+    // ─── DELETE ACCOUNT ──────────────────────────────────────────────────────────
+    const deleteAccount = async () => {
+        if (!user) return;
+        
+        const { error } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', user.id);
+
+        if (error) {
+            console.error('Error deleting account:', error);
+        } else {
+            // After deleting profile, log them out.
+            logout();
+        }
     };
 
     // ─── CHECK IF USER EXISTS ────────────────────────────────────────────────────
-    const checkUserExists = async ({ username, email }) => {
+    const checkUserExists = async ({ username, email }, excludeId = null) => {
         if (username) {
-            const { data } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
-            if (data) return { exists: true, field: 'username' };
+            let query = supabase.from('profiles').select('id').ilike('username', username);
+            if (excludeId) query = query.neq('id', excludeId);
+            const { data } = await query;
+            if (data && data.length > 0) return { exists: true, field: 'username' };
         }
+        
         if (email) {
-            const { data } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
-            if (data) return { exists: true, field: 'email' };
+            let query = supabase.from('profiles').select('id').ilike('email', email);
+            if (excludeId) query = query.neq('id', excludeId);
+            const { data } = await query;
+            if (data && data.length > 0) return { exists: true, field: 'email' };
         }
+
         return { exists: false, field: null };
     };
 
+    console.log("AuthContext Render! loading:", loading, "user:", user ? user.id : 'null');
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, updateBalance, checkUserExists }}>
-            {!loading && children}
+        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, updateBalance, checkUserExists, deleteAccount }}>
+            {loading ? <InitialLoader /> : children}
         </AuthContext.Provider>
     );
 };

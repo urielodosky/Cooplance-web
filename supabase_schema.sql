@@ -24,6 +24,8 @@ create table if not exists public.profiles (
     payment_methods text,
     vacancies integer default 0,
     cv_url text,
+    gamification jsonb,
+    xp integer default 0,
     created_at timestamptz not null default now()
 );
 alter table public.profiles enable row level security;
@@ -31,7 +33,40 @@ create policy "Profiles are viewable by everyone." on public.profiles for select
 create policy "Users can update their own profile." on public.profiles for update using (auth.uid() = id);
 
 
--- 2. SERVICES
+-- 2. TEAMS / COOPS
+create table if not exists public.teams (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    description text,
+    logo_url text,
+    categories jsonb,
+    tags text[],
+    founder_id uuid references public.profiles(id) on delete set null,
+    internal_rules text,
+    distribution_config jsonb,
+    created_at timestamptz not null default now()
+);
+alter table public.teams enable row level security;
+create policy "Teams are viewable by everyone." on public.teams for select using (true);
+create policy "Authenticated users can create teams." on public.teams for insert with check (auth.uid() = founder_id);
+create policy "Founders can update their team." on public.teams for update using (auth.uid() = founder_id);
+
+
+-- 3. TEAM MEMBERS
+create table if not exists public.team_members (
+    id uuid primary key default gen_random_uuid(),
+    team_id uuid references public.teams(id) on delete cascade not null,
+    user_id uuid references public.profiles(id) on delete cascade not null,
+    role text not null default 'member', -- 'owner', 'member'
+    status text not null default 'invited', -- 'invited', 'active', 'inactive'
+    joined_at timestamptz not null default now(),
+    unique(team_id, user_id)
+);
+alter table public.team_members enable row level security;
+create policy "Team members are viewable by everyone." on public.team_members for select using (true);
+
+
+-- 4. SERVICES
 create table if not exists public.services (
     id uuid primary key default gen_random_uuid(),
     owner_id uuid references public.profiles(id) on delete cascade not null,
@@ -59,39 +94,6 @@ create policy "Services are viewable by everyone." on public.services for select
 create policy "Users can create their own services." on public.services for insert with check (auth.uid() = owner_id);
 create policy "Users can update their own services." on public.services for update using (auth.uid() = owner_id);
 create policy "Users can delete their own services." on public.services for delete using (auth.uid() = owner_id);
-
-
--- 3. TEAMS / COOPS
-create table if not exists public.teams (
-    id uuid primary key default gen_random_uuid(),
-    name text not null,
-    description text,
-    logo_url text,
-    categories jsonb,
-    tags text[],
-    founder_id uuid references public.profiles(id) on delete set null,
-    internal_rules text,
-    distribution_config jsonb,
-    created_at timestamptz not null default now()
-);
-alter table public.teams enable row level security;
-create policy "Teams are viewable by everyone." on public.teams for select using (true);
-create policy "Authenticated users can create teams." on public.teams for insert with check (auth.uid() = founder_id);
-create policy "Founders can update their team." on public.teams for update using (auth.uid() = founder_id);
-
-
--- 4. TEAM MEMBERS
-create table if not exists public.team_members (
-    id uuid primary key default gen_random_uuid(),
-    team_id uuid references public.teams(id) on delete cascade not null,
-    user_id uuid references public.profiles(id) on delete cascade not null,
-    role text not null default 'member', -- 'owner', 'member'
-    status text not null default 'invited', -- 'invited', 'active', 'inactive'
-    joined_at timestamptz not null default now(),
-    unique(team_id, user_id)
-);
-alter table public.team_members enable row level security;
-create policy "Team members are viewable by everyone." on public.team_members for select using (true);
 
 
 -- 5. JOBS / ORDERS

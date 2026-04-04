@@ -201,7 +201,7 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                     <div className="filter-section">
                         <h3>Subcategoría</h3>
                         <CustomDropdown
-                            options={Object.keys(serviceCategories[currentFilters.category] || {}).map(s => ({ label: s, value: s }))}
+                            options={Object.keys((typeof serviceCategories[currentFilters.category] === 'object' && !Array.isArray(serviceCategories[currentFilters.category])) ? serviceCategories[currentFilters.category] : {}).map(s => ({ label: s, value: s }))}
                             value={currentFilters.subcategory || ''}
                             onChange={(val) => {
                                 const newFilters = { ...currentFilters, subcategory: val, specialties: [] };

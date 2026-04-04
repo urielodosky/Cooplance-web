@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/context/AuthContext';
 import { serviceCategories } from '../../features/services/data/categories';
 import { locations } from '../../features/services/data/locations';
+import { supabase } from '../../lib/supabase';
+import { createProject } from '../../lib/projectService';
 
 const ProjectCreateForm = () => {
     const navigate = useNavigate();
@@ -14,6 +16,11 @@ const ProjectCreateForm = () => {
     const minDate = new Date().toLocaleDateString('en-CA');
 
     const [currentStep, setCurrentStep] = useState(1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loadingStatus, setLoadingStatus] = useState('');
+    const [formError, setFormError] = useState('');
+    const [imageFile, setImageFile] = useState(null);
+    const [videoFile, setVideoFile] = useState(null);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -107,6 +114,9 @@ const ProjectCreateForm = () => {
                 const fieldName = e.target.name === 'image' ? 'imageUrl' : 'videoUrl';
                 setFormData(prev => ({ ...prev, [fieldName]: mockUrl }));
                 setFileNames(prev => ({ ...prev, [e.target.name]: file.name }));
+                
+                if (e.target.name === 'image') setImageFile(file);
+                if (e.target.name === 'video') setVideoFile(file);
             }
         } else {
             const { name, value } = e.target;
@@ -266,7 +276,7 @@ const ProjectCreateForm = () => {
         return formData.country && formData.province && formData.province.length > 0 && locations[formData.country] ? Object.keys(locations[formData.country]).reduce((acc, p) => [...acc, ...(locations[formData.country][p] || [])], []) : [];
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // Validation
@@ -280,34 +290,81 @@ const ProjectCreateForm = () => {
             return;
         }
 
-        const clientName = user ? (user.role === 'company' ? user.companyName : `${user.firstName} ${user.lastName}`) : 'Usuario';
-        const clientAvatar = user?.avatar || null;
-        const clientRole = user?.role || 'client';
+        if (!user) {
+            setFormError('Debes iniciar sesión para publicar un proyecto.');
+            return;
+        }
 
-        const projects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-        projects.push({
-            ...formData,
-            id: Date.now(),
-            clientId: user?.id || 'guest',
-            clientName,
-            clientAvatar,
-            clientRole,
-            clientRating: 0,
-            status: 'open',
-            createdAt: new Date().toISOString(),
-            faqs: faqs.filter(f => f.question && f.answer),
-            questions: user?.role === 'company' ? questions.filter(q => q.text.trim() !== '') : [],
-            workMode: formData.workMode,
-            location: formData.workMode.includes('presential')
-                ? (Array.isArray(formData.city) && formData.city.length > 0 ? formData.city.join(' / ') + `, ${formData.country}` : formData.country)
-                : 'Remoto',
-            paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
-                ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
-                : null // Null implies "All/Default"
-        });
-        localStorage.setItem('cooplance_db_projects', JSON.stringify(projects));
+        setIsSubmitting(true);
+        setFormError('');
+        setLoadingStatus('Iniciando...');
 
-        navigate('/explore-clients'); // Redirect to marketplace
+        try {
+            let finalImageUrl = formData.imageUrl;
+            let finalVideoUrl = formData.videoUrl;
+
+            // Upload Image if present
+            if (mediaType.image === 'file' && imageFile) {
+                setLoadingStatus('Subiendo imagen...');
+                const ext = imageFile.name.split('.').pop();
+                const fileName = `projects/${user.id}/${Date.now()}_img.${ext}`;
+                const { error: uploadErr } = await supabase.storage
+                    .from('service-media')
+                    .upload(fileName, imageFile);
+                
+                if (!uploadErr) {
+                    const { data: { publicUrl } } = supabase.storage.from('service-media').getPublicUrl(fileName);
+                    finalImageUrl = publicUrl;
+                }
+            }
+
+            // Upload Video if present
+            if (mediaType.video === 'file' && videoFile) {
+                setLoadingStatus('Subiendo video...');
+                const ext = videoFile.name.split('.').pop();
+                const fileName = `projects/${user.id}/${Date.now()}_vid.${ext}`;
+                const { error: uploadErr } = await supabase.storage
+                    .from('service-media')
+                    .upload(fileName, videoFile);
+                
+                if (!uploadErr) {
+                    const { data: { publicUrl } } = supabase.storage.from('service-media').getPublicUrl(fileName);
+                    finalVideoUrl = publicUrl;
+                }
+            }
+
+            setLoadingStatus('Guardando proyecto...');
+            const projectData = {
+                ...formData,
+                clientId: user.id,
+                clientName: user.role === 'company' ? user.companyName : `${user.firstName || user.first_name} ${user.lastName || user.last_name || ''}`.trim(),
+                clientAvatar: user.avatar || user.avatar_url,
+                clientRole: user.role,
+                status: 'open',
+                imageUrl: finalImageUrl,
+                videoUrl: finalVideoUrl,
+                faqs: faqs.filter(f => f.question && f.answer),
+                questions: user?.role === 'company' ? questions.filter(q => q.text.trim() !== '') : [],
+                location: formData.workMode.includes('presential')
+                    ? (Array.isArray(formData.city) && formData.city.length > 0 ? formData.city.join(' / ') + `, ${formData.country}` : formData.country)
+                    : 'Remoto',
+                paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
+                    ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
+                    : null
+            };
+
+            await createProject(projectData);
+            setLoadingStatus('¡Listo!');
+            
+            setTimeout(() => {
+                navigate('/explore-clients');
+            }, 1500);
+
+        } catch (err) {
+            console.error('Error creating project:', err);
+            setFormError(`Error: ${err.message || 'Error desconocido al publicar el proyecto.'}`);
+            setIsSubmitting(false);
+        }
     };
 
     const handleNextOrSubmit = (e) => {
@@ -1141,6 +1198,13 @@ const ProjectCreateForm = () => {
                 }
                 {/* END OF STEP 5 */}
 
+                {formError && (
+                    <div style={{ color: '#ef4444', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        {formError}
+                    </div>
+                )}
+
                 <div className="form-actions" style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
                     {currentStep > 1 ? (
                         <button type="button" onClick={handlePrevStep} className="btn-cancel" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
@@ -1152,10 +1216,15 @@ const ProjectCreateForm = () => {
                         </button>
                     )}
 
-                    <button type="submit" className="btn-submit">
-                        {(currentStep === 4 && user?.role !== 'company') ? 'Publicar Proyecto'
-                            : (currentStep === 5 && user?.role === 'company') ? 'Publicar Oferta'
-                                : 'Siguiente'}
+                    <button 
+                        type="submit" 
+                        className="btn-primary" 
+                        disabled={isSubmitting}
+                        style={{ padding: '0.8rem 2.5rem', fontWeight: 'bold', opacity: isSubmitting ? 0.7 : 1 }}
+                    >
+                        {isSubmitting 
+                            ? (loadingStatus || 'Procesando...') 
+                            : (currentStep < (user?.role === 'company' ? 5 : 4) ? 'Siguiente' : (user?.role === 'company' ? 'Publicar Oferta' : 'Publicar Proyecto'))}
                     </button>
                 </div>
             </form >

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import '../styles/pages/AdminFinanceDashboard.scss';
 
 const formatCurrency = (value) => {
@@ -75,89 +76,75 @@ const AdminFinanceDashboard = () => {
         return () => clearInterval(interval);
     }, [lockoutUntil]);
 
-    const calculateMetrics = () => {
-        let jobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
+    const calculateMetrics = async () => {
+        try {
+            // 1. Fetch Completed Jobs from Supabase
+            // We join with profiles (owner_id) to get the freelancer level
+            const { data: jobs, error } = await supabase
+                .from('jobs')
+                .select('*, profiles!freelancer_id(level, username, first_name, last_name)')
+                .eq('status', 'completed');
 
-        // Filter completed jobs for revenue calculation
-        let completedJobs = jobs.filter(j => j.status === 'completed');
+            if (error) throw error;
 
-        // Helper to get commission rate based on level
-        const getCommissionRate = (level) => {
-            const lvl = parseInt(level) || 1;
-            if (lvl >= 1 && lvl <= 5) return 0.12;
-            if (lvl === 6) return 0.11;
-            if (lvl === 7) return 0.10;
-            if (lvl === 8) return 0.09;
-            if (lvl === 9) return 0.08;
-            if (lvl >= 10) return 0.06;
-            return 0.12; // default
-        };
+            // Helper to get commission rate based on level
+            const getCommissionRate = (level) => {
+                const lvl = parseInt(level) || 1;
+                if (lvl >= 1 && lvl <= 5) return 0.12;
+                if (lvl === 6) return 0.11;
+                if (lvl === 7) return 0.10;
+                if (lvl === 8) return 0.09;
+                if (lvl === 9) return 0.08;
+                if (lvl >= 10) return 0.06;
+                return 0.12; // default
+            };
 
-        // FORCE MOCK DATA FOR TESTING $1000 AND BYPASS CACHE BUGS
-        // We overwrite the entire array with just our mock so it reads the new properties properly.
-        completedJobs = [
-            {
-                id: 'test-job-1',
-                status: 'completed',
-                amount: 1000,
-                serviceTitle: 'Desarrollo Web (MOCK DE PRUEBA)',
-                buyerName: 'Cliente Ejemplo',
-                freelancerName: 'Freelancer Prueba',
-                freelancerLevel: 3, // Simulate level 3 (12% commission)
-                completedAt: new Date().toISOString()
-            }
-        ];
-        // Cleanse storage
-        localStorage.setItem('cooplance_db_jobs', JSON.stringify(completedJobs));
+            let totalVol = 0;
+            let grossRevenue = 0;
+            let recentTrans = [];
 
-        let totalVol = 0;
-        let grossRevenue = 0;
-        let recentTrans = [];
+            (jobs || []).forEach(job => {
+                const freelancerLevel = job.profiles?.level || 1;
+                const commissionRate = getCommissionRate(freelancerLevel);
+                const actualCommission = job.amount * commissionRate;
 
-        // Sort by completed date descending
-        const sortedJobs = [...completedJobs].sort((a, b) =>
-            new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt)
-        );
+                totalVol += job.amount;
+                grossRevenue += actualCommission;
 
-        sortedJobs.forEach(job => {
-            const rawLevel = job.freelancerLevel || 1;
-            const commissionRate = getCommissionRate(rawLevel);
-            const actualCommission = job.amount * commissionRate;
-
-            totalVol += job.amount;
-            grossRevenue += actualCommission;
-
-            recentTrans.push({
-                id: job.id,
-                date: job.completedAt || job.createdAt,
-                title: job.serviceTitle,
-                amount: job.amount,
-                commission: actualCommission,
-                ratePercentage: Math.round(commissionRate * 100),
-                buyer: job.buyerName,
-                freelancer: job.freelancerName,
-                level: rawLevel
+                recentTrans.push({
+                    id: job.id,
+                    date: job.completed_at || job.created_at,
+                    title: job.service_title || job.title,
+                    amount: job.amount,
+                    commission: actualCommission,
+                    ratePercentage: Math.round(commissionRate * 100),
+                    buyer: job.buyer_name || 'Desconocido', // In production, we'd join with buyer profile
+                    freelancer: job.profiles ? `${job.profiles.first_name || ''} ${job.profiles.last_name || ''}`.trim() || job.profiles.username : 'Desconocido',
+                    level: freelancerLevel
+                });
             });
-        });
 
-        // Tax estimates
-        const iva = grossRevenue * 0.21;
-        const iibb = grossRevenue * 0.05; // estimate
-        const chequeTax = grossRevenue * 0.012; // 1.2%
+            // Tax estimates
+            const iva = grossRevenue * 0.21;
+            const iibb = grossRevenue * 0.05; 
+            const chequeTax = grossRevenue * 0.012; 
 
-        const totalTaxes = iva + iibb + chequeTax;
-        const net = grossRevenue - totalTaxes;
+            const totalTaxes = iva + iibb + chequeTax;
+            const net = grossRevenue - totalTaxes;
 
-        setMetrics({
-            totalVolume: totalVol,
-            platformGrossRevenue: grossRevenue,
-            estimatedIva: iva,
-            estimatedIibb: iibb,
-            estimatedChequeTax: chequeTax,
-            netRevenue: net
-        });
+            setMetrics({
+                totalVolume: totalVol,
+                platformGrossRevenue: grossRevenue,
+                estimatedIva: iva,
+                estimatedIibb: iibb,
+                estimatedChequeTax: chequeTax,
+                netRevenue: net
+            });
 
-        setTransactions(recentTrans);
+            setTransactions(recentTrans);
+        } catch (err) {
+            console.error("Error calculating admin metrics:", err);
+        }
     };
 
     const handlePasscodeSubmit = (e) => {

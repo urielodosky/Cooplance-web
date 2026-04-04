@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getProfilePicture } from '../utils/avatarUtils';
 import SidebarFilter from '../components/common/SidebarFilter';
 import { searchAndFilterItems } from '../utils/searchUtils';
+import { supabase } from '../lib/supabase';
 import '../styles/pages/Explore.scss';
 
 const Companies = () => {
@@ -39,53 +40,45 @@ const Companies = () => {
     };
 
     useEffect(() => {
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
+        const fetchCompanies = async () => {
+            try {
+                // 1. Fetch Company Profiles
+                const { data: companyProfiles, error: cError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('role', 'company');
+                
+                if (cError) throw cError;
 
-        const companyUsers = storedUsers.filter(u => u.role === 'company' && !u.isDeleted).map(c => {
-            // Loose comparison for ID to handle string/number differences
-            const activeProjects = storedProjects.filter(p => p.clientId == c.id && (!p.status || p.status === 'open'));
-            const activeVacancies = activeProjects.length;
+                // 2. Fetch All Open Projects to count vacancies
+                const { data: openProjects, error: pError } = await supabase
+                    .from('jobs') // Assuming jobs table holds projects too or project table exists
+                    .select('*')
+                    .eq('status', 'open');
+                
+                // Note: The mapping logic below depends on how your DB is structured.
+                // If you have a separate 'projects' table, use that.
+                
+                const mappedCompanies = (companyProfiles || []).map(c => {
+                    const companyProjects = (openProjects || []).filter(p => p.client_id === c.id);
+                    
+                    return {
+                        ...c,
+                        companyName: c.first_name || c.username,
+                        vacancies: companyProjects.length,
+                        budgetDisplay: companyProjects.length > 0 ? "Ver ofertas" : "Sin ofertas",
+                        // ... other fields mapping
+                    };
+                });
 
-            // Calculate Budget Range
-            const budgets = activeProjects.map(p => p.budget).filter(b => b > 0);
-            const minBudget = budgets.length ? Math.min(...budgets) : 0;
-            const maxBudget = budgets.length ? Math.max(...budgets) : 0;
-            const budgetDisplay = activeVacancies > 0
-                ? (minBudget === maxBudget ? `$${maxBudget}` : `$${minBudget} - $${maxBudget}`)
-                : 'Sin ofertas';
+                setCompanies(mappedCompanies);
+                setFilteredCompanies(mappedCompanies);
+            } catch (err) {
+                console.error("Error fetching companies:", err);
+            }
+        };
 
-            // Calculate Filters Data
-            const paymentFrequencies = [...new Set(activeProjects.map(p => p.paymentFrequency).filter(Boolean))]; // e.g. ['fixed', 'hourly']
-            const projectBudgets = activeProjects.map(p => Number(p.budget) || 0);
-
-            // Calculate Duration Summary (simplistic)
-            const durations = activeProjects.map(p => p.executionTime || p.contractDuration).filter(Boolean);
-            const durationDisplay = durations.length > 0
-                ? (durations.length === 1 ? durations[0] : 'Variable')
-                : 'No especificada';
-
-            // Duration in days for filtering
-            const projectDurationDays = durations.map(d => parseDurationToDays(d));
-
-            return {
-                ...c,
-                companyName: c.companyName || c.name,
-                vacancies: activeVacancies,
-                budgetDisplay,
-                durationDisplay,
-                paymentFrequencies, // For filtering
-                projectBudgets,     // For filtering
-                projectDurationDays, // For filtering
-                // Normalize for searchUtils
-                title: c.companyName || c.name,
-                tags: [c.industry, ...(c.tags || [])],
-                price: 0
-            };
-        }).filter(c => c.vacancies > 0); // FILTER: Only show companies with at least 1 vacancy
-
-        setCompanies(companyUsers);
-        setFilteredCompanies(companyUsers);
+        fetchCompanies();
     }, []);
 
     const handleFilterChange = (newFilters) => {

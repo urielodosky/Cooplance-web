@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import '../styles/pages/Dashboard.scss';
 
 const Wallet = () => {
@@ -11,7 +12,8 @@ const Wallet = () => {
 
     // UI State
     const [activeTab, setActiveTab] = useState('overview');
-    const [filterMethod, setFilterMethod] = useState('all'); // NEW: Filter state
+    const [loading, setLoading] = useState(true);
+    const [filterMethod, setFilterMethod] = useState('all'); 
     const [connectedAccounts, setConnectedAccounts] = useState({
         paypal: false,
         mercadopago: false,
@@ -29,108 +31,74 @@ const Wallet = () => {
     });
 
     useEffect(() => {
-        if (!user || !jobs) return;
+        if (!user) return;
 
-        let earned = 0;
-        let spent = 0;
-        let pending = 0;
-        let completed = 0;
-        const methodStats = {};
-        const allTransactions = [];
+        const fetchTransactions = async () => {
+            setLoading(true);
+            try {
+                const { data: txs, error } = await supabase
+                    .from('transactions')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
 
-        const initMethod = (method) => {
-            if (!methodStats[method]) methodStats[method] = { earned: 0, spent: 0, count: 0, pending: 0 };
+                if (error) throw error;
+
+                let earned = 0;
+                let spent = 0;
+                let pending = 0;
+                const methodStats = {};
+
+                const mapped = (txs || []).map(t => {
+                    const amount = parseFloat(t.amount);
+                    if (t.type === 'income') earned += amount;
+                    if (t.type === 'expense') spent += amount;
+                    if (t.status === 'pending') pending += amount;
+
+                    if (!methodStats[t.method]) methodStats[t.method] = { earned: 0, spent: 0, count: 0, pending: 0 };
+                    if (t.type === 'income') methodStats[t.method].earned += amount;
+                    if (t.type === 'expense') methodStats[t.method].spent += amount;
+                    methodStats[t.method].count++;
+
+                    return {
+                        id: t.id,
+                        type: t.type,
+                        amount: amount,
+                        method: t.method,
+                        title: t.description || 'Transacción',
+                        date: t.created_at,
+                        status: t.status,
+                        serviceLink: t.related_id ? `/chat/order_${t.related_id}` : '#'
+                    };
+                });
+
+                setStats({
+                    totalEarned: earned,
+                    totalSpent: spent,
+                    pendingClearance: pending,
+                    completedJobs: txs.filter(t => t.type === 'income').length,
+                    byMethod: methodStats,
+                    transactions: mapped
+                });
+            } catch (err) {
+                console.error('Error fetching transactions:', err);
+            } finally {
+                setLoading(false);
+            }
         };
 
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
+        fetchTransactions();
 
-        jobs.forEach(job => {
-            const isFreelancer = job.freelancerId === user.id;
-            const isBuyer = job.buyerId === user.id;
-            const method = job.paymentMethod || 'platform';
+        // Optional: Real-time subscription for wallet
+        const channel = supabase
+            .channel('wallet-updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` }, () => fetchTransactions())
+            .subscribe();
 
-            let partnerRole = 'client';
-            let partnerId = isFreelancer ? job.buyerId : job.freelancerId;
-            let partnerName = isFreelancer ? job.buyerName : job.freelancerName;
-
-            if (partnerId) {
-                const partnerUser = storedUsers.find(u => u.id === partnerId);
-                if (partnerUser) {
-                    partnerRole = partnerUser.role;
-                }
-            }
-
-            const partnerLink = partnerRole === 'company' ? `/company/${partnerId}` :
-                partnerRole === 'freelancer' ? `/freelancer/${partnerId}` :
-                    `/client/${partnerId}`;
-
-            const serviceLink = job.serviceId ? `/service/${job.serviceId}` : `/project/${job.id}`;
-
-            if (isFreelancer) {
-                if (job.status === 'completed') {
-                    const amount = parseFloat(job.amount);
-                    earned += amount;
-                    completed++;
-
-                    initMethod(method);
-                    methodStats[method].earned += amount;
-                    methodStats[method].count++;
-
-                    allTransactions.push({
-                        id: job.id,
-                        type: 'income',
-                        amount: amount,
-                        method: method,
-                        title: job.serviceTitle || job.title || 'Servicio',
-                        date: job.completedAt || job.createdAt,
-                        status: 'completed',
-                        serviceLink,
-                        partnerName,
-                        partnerLink
-                    });
-
-                } else if (job.status === 'active' || job.status === 'in_progress') {
-                    const amount = parseFloat(job.amount);
-                    pending += amount;
-                    initMethod(method);
-                    methodStats[method].pending += amount;
-                }
-            }
-
-            if (isBuyer) {
-                const amount = parseFloat(job.amount);
-                spent += amount;
-
-                initMethod(method);
-                methodStats[method].spent += amount;
-
-                allTransactions.push({
-                    id: job.id,
-                    type: 'expense',
-                    amount: amount,
-                    method: method,
-                    title: job.title || job.serviceTitle || 'Servicio',
-                    date: job.createdAt,
-                    status: 'completed',
-                    serviceLink,
-                    partnerName,
-                    partnerLink
-                });
-            }
-        });
-
-        // Sort by date desc
-        allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        setStats({
-            totalEarned: earned,
-            totalSpent: spent,
-            pendingClearance: pending,
-            completedJobs: completed,
-            byMethod: methodStats,
-            transactions: allTransactions
-        });
-    }, [user, jobs]);
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user]);
 
     // Derived stats
     const currentStats = filterMethod === 'all'

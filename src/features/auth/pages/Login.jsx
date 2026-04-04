@@ -27,14 +27,11 @@ const Login = () => {
         setLoading(true);
         try {
             await login({ email, password });
-            // AuthContext listener will set user and trigger the useEffect redirect
+            // Login succeeded! Keep loading=true. 
+            // The useEffect watching `user` will navigate to /dashboard
+            // once onAuthStateChange fires and populates the user context.
         } catch (err) {
-            setError(
-                err.message === 'Invalid login credentials'
-                    ? 'Correo o contraseña incorrectos.'
-                    : err.message || 'Error al iniciar sesión.'
-            );
-        } finally {
+            setError(err.message || 'Error al iniciar sesión.');
             setLoading(false);
         }
     };

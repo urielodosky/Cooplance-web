@@ -1,10 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../features/auth/context/AuthContext';
-import confetti from 'canvas-confetti';
+import { BADGE_FAMILIES, CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
+import {
+    CreditCard as Coin,
+    Zap as Flame,
+    Rocket,
+    Heart,
+    Zap as Lightning,
+    Star,
+    Diamond,
+    Users as Handshake,
+    Eye
+} from 'lucide-react';
 
 const BadgeNotificationContext = createContext();
 
 export const useBadgeNotification = () => useContext(BadgeNotificationContext);
+
+const Icons = { Coin, Flame, Rocket, Heart, Lightning, Star, Diamond, Handshake, Eye };
 
 export const BadgeNotificationProvider = ({ children }) => {
     const { user } = useAuth();
@@ -16,121 +29,49 @@ export const BadgeNotificationProvider = ({ children }) => {
         if (!user) return;
 
         const isClient = user.role === 'buyer' || user.role === 'company';
-        const allJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
-        const myOrders = allJobs.filter(j => j.buyerId === user.id);
-        const mySales = allJobs.filter(j => j.freelancerId === user.id);
-        const myServices = JSON.parse(localStorage.getItem('cooplance_db_services') || '[]').filter(s => s.freelancerId === user.id);
-        const myProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]').filter(p => p.clientId === user.id);
 
-        const buyerFrequency = {};
-        mySales.forEach(sale => {
-            buyerFrequency[sale.buyerId] = (buyerFrequency[sale.buyerId] || 0) + 1;
-        });
-        const maxLoyalty = Object.values(buyerFrequency).length > 0 ? Math.max(...Object.values(buyerFrequency)) : 0;
-        const uniqueFreelancersHired = new Set(myOrders.map(o => o.freelancerId)).size;
-
-        const Icons = {
-            Rocket: '🚀',
-            Coin: '💰',
-            Flame: '🔥',
-            Star: '⭐',
-            Lightning: '⚡',
-            Trophy: '🏆',
-            Crown: '👑',
-            Hand: '👋',
-            Handshake: '🤝',
-            Check: '✅',
-            Diamond: '💎',
-            Eye: '👁️',
-            Heart: '❤️'
+        // MIGRATION NOTE: Stats should eventually be fetched from Supabase via a dedicated hook.
+        // For now, we skip localStorage and use the user profile level and basic counts.
+        const userLevel = user.level || 1;
+        
+        const getProgressForFamily = (familyId) => {
+            switch (familyId) {
+                case 'levels': return userLevel;
+                case 'reviews': return user.reviews_count || 0;
+                // Other families (sales, loyalty, etc.) will stay at 0 until 
+                // we implement the global stats aggregator.
+                default: return 0;
+            }
         };
 
-        const freelancerFamilies = [
-            {
-                familyId: 'sales', badges: [
-                    { id: 'f_sales_1', title: 'Primera Venta', required: 1, icon: Icons.Coin },
-                    { id: 'f_sales_10', title: '10 Ventas', required: 10, icon: Icons.Coin },
-                    { id: 'f_sales_100', title: '100 Ventas', required: 100, icon: Icons.Coin },
-                    { id: 'f_sales_1000', title: '1,000 Ventas', required: 1000, icon: Icons.Coin },
-                    { id: 'f_sales_10000', title: '10,000 Ventas', required: 10000, icon: Icons.Coin },
-                ], currentProgress: mySales.length
-            },
-            {
-                familyId: 'levels', badges: [
-                    { id: 'f_lvl_2', title: 'Aspirante', required: 2, icon: Icons.Flame },
-                    { id: 'f_lvl_6', title: 'Profesional', required: 6, icon: Icons.Flame },
-                    { id: 'f_lvl_8', title: 'Experto', required: 8, icon: Icons.Flame },
-                    { id: 'f_lvl_9', title: 'Maestro', required: 9, icon: Icons.Flame },
-                    { id: 'f_lvl_10', title: 'Leyenda Viva', required: 10, icon: Icons.Flame },
-                ], currentProgress: user.level || 1
-            },
-            {
-                familyId: 'services', badges: [
-                    { id: 'f_srv_1', title: 'El Pionero', required: 1, icon: Icons.Rocket },
-                    { id: 'f_srv_3', title: 'Emprendedor', required: 3, icon: Icons.Rocket },
-                    { id: 'f_srv_5', title: 'Agencia', required: 5, icon: Icons.Rocket },
-                ], currentProgress: myServices.length
-            },
-            {
-                familyId: 'loyalty', badges: [
-                    { id: 'f_loy_2', title: 'Cliente Frecuente', required: 2, icon: Icons.Heart },
-                    { id: 'f_loy_5', title: 'Lealtad Pura', required: 5, icon: Icons.Heart },
-                    { id: 'f_loy_10', title: 'Amigos Por Siempre', required: 10, icon: Icons.Heart },
-                ], currentProgress: maxLoyalty
-            },
-            {
-                familyId: 'speed', badges: [
-                    { id: 'f_spd_1', title: 'Acelerador', required: 1, icon: Icons.Lightning },
-                    { id: 'f_spd_5', title: 'Turbo', required: 5, icon: Icons.Lightning },
-                    { id: 'f_spd_10', title: 'Rayo', required: 10, icon: Icons.Lightning },
-                    { id: 'f_spd_100', title: 'Viajero en el Tiempo', required: 100, icon: Icons.Lightning },
-                ], currentProgress: Math.floor(mySales.length / 3)
-            },
-            {
-                familyId: 'reviews', badges: [
-                    { id: 'f_rev_1', title: 'Buen Comienzo', required: 1, icon: Icons.Star },
-                    { id: 'f_rev_5', title: 'Aprobado', required: 5, icon: Icons.Star },
-                    { id: 'f_rev_10', title: 'Famoso', required: 10, icon: Icons.Star },
-                    { id: 'f_rev_100', title: 'Ídolo de Masas', required: 100, icon: Icons.Star },
-                ], currentProgress: user.reviewsCount || 0
+        const getIconForFamily = (familyId) => {
+            switch (familyId) {
+                case 'sales': return Icons.Coin;
+                case 'levels': return Icons.Flame;
+                case 'services': return Icons.Rocket;
+                case 'loyalty': return Icons.Heart;
+                case 'speed': return Icons.Lightning;
+                case 'reviews': return Icons.Star;
+                case 'purchases': return Icons.Diamond;
+                case 'talent': return Icons.Handshake;
+                case 'projects': return Icons.Eye;
+                default: return Icons.Star;
             }
-        ];
+        };
 
-        const clientFamilies = [
-            {
-                familyId: 'purchases', badges: [
-                    { id: 'c_pur_1', title: 'Primer Paso', required: 1, icon: Icons.Diamond },
-                    { id: 'c_pur_10', title: 'Inversor', required: 10, icon: Icons.Diamond },
-                    { id: 'c_pur_100', title: 'Magnate', required: 100, icon: Icons.Diamond },
-                ], currentProgress: myOrders.length
-            },
-            {
-                familyId: 'talent', badges: [
-                    { id: 'c_tal_2', title: 'Ojo Crítico', required: 2, icon: Icons.Handshake },
-                    { id: 'c_tal_5', title: 'Director de Casting', required: 5, icon: Icons.Handshake },
-                    { id: 'c_tal_10', title: 'Red Global', required: 10, icon: Icons.Handshake },
-                ], currentProgress: uniqueFreelancersHired
-            },
-            {
-                familyId: 'projects', badges: [
-                    { id: 'c_prj_1', title: 'Primera Idea', required: 1, icon: Icons.Eye },
-                    { id: 'c_prj_3', title: 'Arquitecto', required: 3, icon: Icons.Eye },
-                    { id: 'c_prj_5', title: 'Visionario', required: 5, icon: Icons.Eye },
-                ], currentProgress: myProjects.length
-            }
-        ];
-
-        const displayFamilies = isClient ? clientFamilies : freelancerFamilies;
+        const displayFamilies = isClient ? CLIENT_BADGE_FAMILIES : BADGE_FAMILIES;
         let currentlyUnlocked = [];
 
         displayFamilies.forEach(family => {
+            const familyProgress = getProgressForFamily(family.familyId);
             family.badges.forEach((badge, index) => {
-                if (family.currentProgress >= badge.required) {
+                if (familyProgress >= badge.required) {
                     const mappedIndex = Math.floor((index / Math.max(1, family.badges.length - 1)) * 4);
                     const tierColors = ['#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2', '#b9f2ff'];
 
                     currentlyUnlocked.push({
                         ...badge,
+                        icon: getIconForFamily(family.familyId),
                         tierColor: tierColors[Math.min(mappedIndex, 4)]
                     });
                 }
@@ -143,9 +84,9 @@ export const BadgeNotificationProvider = ({ children }) => {
         const newlyUnlocked = currentlyUnlocked.filter(b => !cachedIds.includes(b.id));
 
         if (newlyUnlocked.length > 0) {
-            // Save new state
-            const allIds = currentlyUnlocked.map(b => b.id);
-            localStorage.setItem(`cooplance_badges_unlocked_${user.id}`, JSON.stringify(allIds));
+            // Save new state: MERGE with existing to ensure permanence even if progress decays
+            const updatedAllIds = Array.from(new Set([...cachedIds, ...currentlyUnlocked.map(b => b.id)]));
+            localStorage.setItem(`cooplance_badges_unlocked_${user.id}`, JSON.stringify(updatedAllIds));
 
             // Queue notifications
             setQueue(prev => [...prev, ...newlyUnlocked]);
@@ -166,13 +107,7 @@ export const BadgeNotificationProvider = ({ children }) => {
             setCurrentNotification(next);
             setQueue(prev => prev.slice(1));
 
-            // Trigger confetti
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: [next.tierColor, '#ffffff', '#8b5cf6']
-            });
+            // Trigger notification (Confetti disabled as requested)
 
             // Dismiss after 4 seconds
             setTimeout(() => {
@@ -187,59 +122,83 @@ export const BadgeNotificationProvider = ({ children }) => {
             {/* Notification UI */}
             <div style={{
                 position: 'fixed',
-                bottom: '2rem',
-                right: '2rem',
+                bottom: '3rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
                 zIndex: 9999,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1rem',
-                pointerEvents: 'none'
+                alignItems: 'center',
+                pointerEvents: 'none',
+                width: '100%',
+                maxWidth: '400px',
+                padding: '0 1.5rem'
             }}>
                 {currentNotification && (
                     <div className="badge-notification-anim" style={{
-                        background: 'rgba(15, 23, 42, 0.95)',
-                        backdropFilter: 'blur(10px)',
-                        border: `1px solid ${currentNotification.tierColor}`,
-                        boxShadow: `0 10px 40px ${currentNotification.tierColor}40, 0 0 0 1px rgba(255,255,255,0.1) inset`,
-                        padding: '1.2rem 1.5rem',
-                        borderRadius: '20px',
+                        background: 'rgba(15, 23, 42, 0.9)',
+                        backdropFilter: 'blur(12px)',
+                        border: `1px solid ${currentNotification.tierColor}60`,
+                        boxShadow: `0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 0 20px ${currentNotification.tierColor}30`,
+                        padding: '1.5rem 2rem',
+                        borderRadius: '24px',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '1.2rem',
-                        animation: 'slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                        maxWidth: '350px',
+                        gap: '1rem',
+                        animation: 'slideUp 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards',
                         pointerEvents: 'auto',
-                        cursor: 'default'
+                        cursor: 'default',
+                        width: 'auto',
+                        minWidth: '280px',
+                        textAlign: 'center'
                     }}>
                         <div style={{
-                            background: `linear-gradient(135deg, ${currentNotification.tierColor}, rgba(255,255,255,0.2))`,
-                            padding: '1rem',
+                            background: `linear-gradient(135deg, ${currentNotification.tierColor}, ${currentNotification.tierColor}88)`,
+                            padding: '1.2rem',
                             borderRadius: '50%',
-                            fontSize: '2rem',
+                            fontSize: '2.5rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: `0 4px 15px ${currentNotification.tierColor}60`
+                            boxShadow: `0 8px 25px ${currentNotification.tierColor}80`,
+                            color: '#fff'
                         }}>
-                            {currentNotification.icon}
+                            {React.createElement(currentNotification.icon, { size: 40, strokeWidth: 2.2 })}
                         </div>
-                        <div>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', color: currentNotification.tierColor }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                            <span style={{
+                                fontSize: '0.8rem',
+                                fontWeight: '800',
+                                textTransform: 'uppercase',
+                                letterSpacing: '3px',
+                                color: currentNotification.tierColor,
+                                textShadow: `0 0 10px ${currentNotification.tierColor}60`
+                            }}>
                                 ¡Insignia Desbloqueada!
                             </span>
-                            <h4 style={{ margin: '0.2rem 0', fontSize: '1.2rem', color: '#fff' }}>{currentNotification.title}</h4>
+                            <h4 style={{ margin: 0, fontSize: '1.4rem', color: '#fff', fontWeight: '700' }}>
+                                {currentNotification.title}
+                            </h4>
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
+                                {currentNotification.description || '¡Excelente trabajo!'}
+                            </p>
                         </div>
                     </div>
                 )}
             </div>
 
             <style>{`
-                @keyframes slideInRight {
-                    from { transform: translateX(120%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
+                @keyframes slideUp {
+                    from { transform: translateY(120%) scale(0.9); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
                 }
                 .badge-notification-anim {
-                    animation-fill-mode: forwards;
+                    transition: all 0.3s ease;
+                }
+                .badge-notification-anim:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1) inset;
                 }
             `}</style>
         </BadgeNotificationContext.Provider>

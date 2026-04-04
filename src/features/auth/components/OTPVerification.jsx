@@ -4,12 +4,13 @@ import '../../../styles/components/OTPVerification.scss';
 
 const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
-    const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+    const [timeLeft, setTimeLeft] = useState(180); // 3 minutes in seconds
     const [canResend, setCanResend] = useState(false);
     const [cooldown, setCooldown] = useState(0);
     const [error, setError] = useState('');
     const [debugOtp, setDebugOtp] = useState(initialDebugOtp || '');
     const [loading, setLoading] = useState(false);
+    const [resendCount, setResendCount] = useState(0);
     const inputRefs = useRef([]);
 
     useEffect(() => {
@@ -18,10 +19,21 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
         setCooldown(initialCooldown);
         setCanResend(initialCooldown === 0);
 
-        // Timer for 5 minute expiration
+        // Timer for 3 minute expiration
         const expirationTimer = setInterval(() => {
             setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
         }, 1000);
+
+        // Try to find debug OTP in localStorage if not provided
+        if (!debugOtp) {
+            const stored = localStorage.getItem(`otp_demo_${email}`);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    setDebugOtp(parsed.code);
+                } catch (e) {}
+            }
+        }
 
         // Timer for 30s resend cooldown
         const cooldownTimer = setInterval(() => {
@@ -38,7 +50,7 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
             clearInterval(expirationTimer);
             clearInterval(cooldownTimer);
         };
-    }, [email]);
+    }, [email, debugOtp]);
 
     const handleChange = (index, value) => {
         if (isNaN(value)) return;
@@ -86,7 +98,7 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
     };
 
     const handleResend = async () => {
-        if (!canResend) return;
+        if (!canResend || resendCount >= 2) return;
 
         setLoading(true);
         const result = await otpService.sendOTP(email, 'resend');
@@ -96,9 +108,10 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
             if (result.devOTP) setDebugOtp(result.devOTP);
 
             otpService.markAsSent(email);
+            setResendCount(prev => prev + 1);
             setCanResend(false);
             setCooldown(30);
-            setTimeLeft(300);
+            setTimeLeft(180);
             setOtp(['', '', '', '', '', '']);
             if (inputRefs.current[0]) {
                 inputRefs.current[0].focus();
@@ -169,9 +182,9 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
                 <button
                     className="btn-secondary"
                     onClick={handleResend}
-                    disabled={!canResend}
+                    disabled={!canResend || resendCount >= 2}
                 >
-                    {canResend ? 'Reenviar Código' : `Reenviar en ${cooldown}s`}
+                    {resendCount >= 2 ? 'Límite de reenvíos superado' : canResend ? 'Reenviar Código' : `Reenviar en ${cooldown}s`}
                 </button>
 
                 <button className="btn-text" onClick={onCancel}>

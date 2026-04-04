@@ -99,11 +99,11 @@ const CoopServiceCreateForm = ({ onCancel, teamId, initialData, dashboardMembers
         video: initialData?.video ? 'Video actual' : ''
     });
 
-    const [packages, setPackages] = useState(initialData?.packages || {
-        basic: { price: '', description: '', deliveryTime: '', revisions: '' },
-        standard: { price: '', description: '', deliveryTime: '', revisions: '' },
-        premium: { price: '', description: '', deliveryTime: '', revisions: '' }
-    });
+    const [servicePackages, setServicePackages] = useState(initialData?.packages || [
+        { name: 'Básico', price: '', description: '', deliveryTime: '', revisions: '', sessions: 1 },
+        { name: 'Estándar', price: '', description: '', deliveryTime: '', revisions: '', sessions: 2 },
+        { name: 'Premium', price: '', description: '', deliveryTime: '', revisions: '', sessions: 3 }
+    ]);
 
     const [faqs, setFaqs] = useState(initialData?.faqs || [{ question: '', answer: '' }]);
 
@@ -141,10 +141,6 @@ const getCities = () => formData.country && formData.province && locations[formD
             formData.subcategory.toLowerCase().includes('coaching')
         ));
 
-    const [tutoringPlans, setTutoringPlans] = useState(initialData?.tutoringPlans || [
-        { name: 'Plan Inicial', sessions: 2, price: '', description: '' },
-        { name: 'Plan Intermedio', sessions: 3, price: '', description: '' }
-    ]);
 
     const categorySupportsBooking = bookingCategories.includes(formData.category) ||
         bookingCategories.includes(formData.subcategory) ||
@@ -213,27 +209,24 @@ const handleChange = (e, type = 'text') => {
             const val = parseFloat(value);
             if (val < 0) return;
         }
-        setPackages(prev => ({
-            ...prev,
-            [tier]: { ...prev[tier], [field]: value }
-        }));
+        setServicePackages(prev => prev.map((pkg, i) => i === tier ? { ...pkg, [field]: value } : pkg));
     };
 
     const handleTutoringPlanChange = (index, field, value) => {
-        const newPlans = [...tutoringPlans];
+        const newPlans = [...servicePackages]; // Assuming tutoringPlans is now servicePackages
         newPlans[index][field] = value;
-        setTutoringPlans(newPlans);
+        setServicePackages(newPlans);
     };
 
     const addTutoringPlan = () => {
-        if (tutoringPlans.length < 5) {
-            setTutoringPlans([...tutoringPlans, { name: `Plan ${tutoringPlans.length + 1}`, sessions: 1, price: '', description: '' }]);
+        if (servicePackages.length < 5) {
+            setServicePackages([...servicePackages, { name: `Plan ${servicePackages.length + 1}`, sessions: 1, price: '', description: '' }]);
         }
     };
 
     const removeTutoringPlan = (index) => {
-        if (tutoringPlans.length > 2) {
-            setTutoringPlans(tutoringPlans.filter((_, i) => i !== index));
+        if (servicePackages.length > 2) {
+            setServicePackages(servicePackages.filter((_, i) => i !== index));
         }
     };
 
@@ -332,24 +325,34 @@ const handleSubmit = (e) => {
         return;
     }
 
+    if (!formData.subcategory?.trim()) {
+        setFormError('Debes seleccionar una subcategoría para tu servicio.');
+        return;
+    }
+
     const finalServiceData = {
         ...formData,
         id: initialData?.id || Date.now(),
-        price: hasPackages 
-            ? (isSessionBased ? tutoringPlans[0].price : packages.basic.price) 
-            : formData.price,
-        tags: tags,
-        packages: hasPackages ? (isSessionBased ? tutoringPlans : packages) : null,
+        price: hasPackages ? servicePackages[0].price : formData.price,
+        packages: hasPackages ? servicePackages : null,
         hasPackages: hasPackages,
         isSessionBased: isSessionBased,
         faqs: faqs.filter(f => f.question && f.answer),
+        owner_id: user.id,
+        team_id: teamId,
+        tags: tags,
+        image_url: formData.imageUrl,
+        video_url: formData.videoUrl,
+        participantMode,
+        fixedParticipants: participantMode === 'fixed' ? fixedParticipants : [],
+        bookingConfig: formData.bookingConfig?.requiresBooking ? formData.bookingConfig : null,
+        paymentMethods: formData.paymentMethods,
         freelancerId: user.id,
         freelancerName: initialData?.freelancerName || user.firstName || user.username || user.companyName,
         level: initialData?.level || user.level || 1,
         image: formData.imageUrl,
         video: formData.videoUrl,
         mediaType: mediaType,
-        bookingConfig: formData.bookingConfig?.requiresBooking ? formData.bookingConfig : null,
         date: initialData?.date || new Date().toISOString(),
         country: formData.country,
         province: formData.province,
@@ -654,124 +657,143 @@ return (
                 />
             )}
 
-            <div className="packages-toggle">
+            <div className="packages-toggle" style={{ marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
                 <input
                     type="checkbox"
                     id="usePackages"
                     checked={hasPackages}
                     onChange={(e) => setHasPackages(e.target.checked)}
+                    style={{ accentColor: 'var(--primary)', width: '18px', height: '18px' }}
                 />
-                <label htmlFor="usePackages">Activar Paquetes (Básico, Estándar, Premium)</label>
+                <label htmlFor="usePackages" style={{ fontWeight: 500, fontSize: '1.05rem', cursor: 'pointer' }}>Activar Paquetes</label>
             </div>
 
-            {hasPackages ? (
-                isSessionBased ? (
-                    <div className="tutoring-plans-section">
-                        <h4>Planes de Sesiones (Mín 2, Máx 5)</h4>
-                        <div className="packages-grid">
-                            {tutoringPlans.map((plan, index) => (
-                                <div key={index} className="package-column relative">
-                                    {tutoringPlans.length > 2 && (
-                                        <button type="button" className="remove-plan-btn" onClick={() => removeTutoringPlan(index)} title="Quitar plan">×</button>
-                                    )}
-                                    <input
-                                        type="text"
-                                        className="plan-name-input"
-                                        value={plan.name}
-                                        onChange={(e) => handleTutoringPlanChange(index, 'name', e.target.value)}
-                                        placeholder="Nombre del Plan"
-                                    />
-                                    <div className="package-field">
-                                        <label>Precio Total</label>
-                                        <div className="price-input-wrapper">
-                                            <input
-                                                type="number"
-                                                value={plan.price}
-                                                onChange={(e) => handleTutoringPlanChange(index, 'price', e.target.value)}
-                                                required
-                                            />
-                                            <span className="currency-badge">ARS</span>
-                                        </div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                                            Recibes: ${calculateNet(plan.price)}
-                                        </div>
+            {hasPackages && (
+                <div className="tutoring-plans-section">
+                    <div className="packages-grid">
+                        {servicePackages.map((plan, index) => (
+                            <div key={index} className="package-column relative">
+                                {servicePackages.length > 1 && (
+                                    <button type="button" className="remove-plan-btn" onClick={() => {
+                                        const newPlans = servicePackages.filter((_, i) => i !== index);
+                                        setServicePackages(newPlans);
+                                    }} title="Quitar plan">×</button>
+                                )}
+                                <input
+                                    type="text"
+                                    className="plan-name-input"
+                                    value={plan.name}
+                                    maxLength={10}
+                                    onChange={(e) => {
+                                        const newPlans = [...servicePackages];
+                                        newPlans[index].name = e.target.value;
+                                        setServicePackages(newPlans);
+                                    }}
+                                    placeholder="Nombre del Plan"
+                                />
+                                <div className="package-field">
+                                    <label>Precio Total</label>
+                                    <div className="price-input-wrapper">
+                                        <input
+                                            type="number"
+                                            value={plan.price}
+                                            onChange={(e) => {
+                                                const newPlans = [...servicePackages];
+                                                newPlans[index].price = e.target.value;
+                                                setServicePackages(newPlans);
+                                            }}
+                                            required
+                                        />
+                                        <span className="currency-badge">ARS</span>
                                     </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                        Recibes: ${calculateNet(plan.price)}
+                                    </div>
+                                </div>
+
+                                {isSessionBased ? (
                                     <div className="package-field">
                                         <label>Cantidad de Sesiones</label>
                                         <input
                                             type="number"
                                             min="1"
                                             value={plan.sessions}
-                                            onChange={(e) => handleTutoringPlanChange(index, 'sessions', e.target.value)}
+                                            onChange={(e) => {
+                                                const newPlans = [...servicePackages];
+                                                newPlans[index].sessions = e.target.value;
+                                                setServicePackages(newPlans);
+                                            }}
                                             required
                                         />
                                     </div>
-                                    <div className="package-field">
-                                        <label>Qué incluye / Frecuencia</label>
-                                        <textarea
-                                            rows="3"
-                                            value={plan.description}
-                                            onChange={(e) => handleTutoringPlanChange(index, 'description', e.target.value)}
-                                            placeholder="Ej: 1 sesión por semana, materiales extra..."
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                            {tutoringPlans.length < 5 && (
-                                <button type="button" className="add-package-card" onClick={addTutoringPlan}>
-                                    <span>+</span>
-                                    <p>Agregar otro plan de sesiones</p>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                ) : (
-                    <div className="packages-grid">
-                        {['basic', 'standard', 'premium'].map(tier => (
-                            <div key={tier} className="package-column">
-                                <h4 style={{ textTransform: 'capitalize' }}>{tier === 'basic' ? 'Básico' : tier === 'standard' ? 'Estándar' : 'Premium'}</h4>
+                                ) : (
+                                    <>
+                                        <div className="package-field">
+                                            <label>Entrega (días)</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={plan.deliveryTime}
+                                                onChange={(e) => {
+                                                    const newPlans = [...servicePackages];
+                                                    newPlans[index].deliveryTime = e.target.value;
+                                                    setServicePackages(newPlans);
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="package-field">
+                                            <label>Revisiones</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={plan.revisions}
+                                                onChange={(e) => {
+                                                    const newPlans = [...servicePackages];
+                                                    newPlans[index].revisions = e.target.value;
+                                                    setServicePackages(newPlans);
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
                                 <div className="package-field">
-                                    <label>Precio</label>
-                                    <div className="price-input-wrapper">
-                                        <input
-                                            type="number"
-                                            value={packages[tier].price}
-                                            onChange={(e) => handlePackageChange(tier, 'price', e.target.value)}
-                                            required
-                                        />
-                                        <span className="currency-badge">ARS</span>
-                                    </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                                        Recibes: ${calculateNet(packages[tier].price)}
-                                    </div>
-                                </div>
-                                <div className="package-field">
-                                    <label>Entrega (días)</label>
-                                    <input type="number" min="1" value={packages[tier].deliveryTime} onChange={(e) => handlePackageChange(tier, 'deliveryTime', e.target.value)} required />
-                                </div>
-                                <div className="package-field">
-                                    <label style={{ display: 'flex', alignItems: 'center' }}>
-                                        Revisiones
-                                        <div className="help-icon-wrapper">
-                                            <div className="help-icon">?</div>
-                                            <div className="help-tooltip">
-                                                Cantidad de veces que se permiten modificaciones o arreglos una vez entregado el servicio.
-                                            </div>
-                                        </div>
-                                    </label>
-                                    <input type="number" value={packages[tier].revisions} onChange={(e) => handlePackageChange(tier, 'revisions', e.target.value)} required />
-                                </div>
-                                <div className="package-field">
-                                    <label>Descripción</label>
-                                    <textarea rows="3" value={packages[tier].description} onChange={(e) => handlePackageChange(tier, 'description', e.target.value)} required />
+                                    <label>Resumen / Descripción</label>
+                                    <textarea
+                                        rows="3"
+                                        value={plan.description}
+                                        onChange={(e) => {
+                                            const newPlans = [...servicePackages];
+                                            newPlans[index].description = e.target.value;
+                                            setServicePackages(newPlans);
+                                        }}
+                                        placeholder="Ej: Incluye..."
+                                        required
+                                    />
                                 </div>
                             </div>
                         ))}
+                        {servicePackages.length < 5 && (
+                            <button type="button" className="add-package-card" onClick={() => {
+                                setServicePackages([...servicePackages, {
+                                    name: `Plan ${servicePackages.length + 1}`,
+                                    price: '',
+                                    description: '',
+                                    deliveryTime: 1,
+                                    revisions: 0,
+                                    sessions: 1
+                                }]);
+                            }}>
+                                <span>+</span>
+                                <p>Agregar plan</p>
+                            </button>
+                        )}
                     </div>
-                )
-            ) : (
+                </div>
+            )}
+            {!hasPackages && (
                 <>
                     <div className="form-row-pricing">
                         <div className="price-group">

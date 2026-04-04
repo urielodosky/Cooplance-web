@@ -41,13 +41,9 @@ import { useEffect } from 'react'
 
 function App() {
   useEffect(() => {
-    // Check if we need to seed data (only once)
-    const hasSeeded = localStorage.getItem('cooplance_seeded_v25'); // Increment version to force re-seed
-    if (!hasSeeded) {
-      seedDatabase();
-      localStorage.setItem('cooplance_seeded_v25', 'true');
-      window.location.reload();
-    }
+    // Automatic seeding is now disabled to allow for a clean start as requested.
+    // If you need to re-seed demo data, you can do so from the Settings or Login page.
+    console.log("Cooplance initialized. Automatic seeding skipped.");
   }, []);
 
   return (
@@ -62,7 +58,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/create-service" element={<CreateService />} />
+              <Route path="/create-service" element={<ProtectedRoute><CreateService /></ProtectedRoute>} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/companies" element={<Companies />} />
               <Route path="/company/:id" element={<CompanyDetail />} />

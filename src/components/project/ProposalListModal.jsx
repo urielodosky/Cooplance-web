@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getProfilePicture } from '../../utils/avatarUtils';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/context/AuthContext';
-import { autoExpireProposals } from '../../utils/proposalUtils';
+import { getProposalsByProject } from '../../lib/proposalService';
 import PaymentModal from '../common/PaymentModal';
 import '../../styles/components/ProposalListModal.scss';
 
@@ -13,12 +13,18 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (isOpen && projectId) {
-            autoExpireProposals();
-            const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
-            const projectProposals = storedProposals.filter(p => p.projectId === projectId);
-            setProposals(projectProposals);
-        }
+        const loadProposals = async () => {
+            if (isOpen && projectId) {
+                try {
+                    const data = await getProposalsByProject(projectId);
+                    setProposals(data);
+                } catch (err) {
+                    console.error('Error loading proposals:', err);
+                    setProposals([]);
+                }
+            }
+        };
+        loadProposals();
     }, [isOpen, projectId]);
 
     const handleContractClick = (proposal) => {
@@ -77,13 +83,13 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <img
                                             src={getProfilePicture({ role: 'freelancer', avatar: null })} // We'd need freelancer avatar here ideally
-                                            alt={proposal.freelancerName}
+                                            alt={proposal.userName}
                                             style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--primary)' }}
                                         />
                                         <div>
-                                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{proposal.freelancerName}</h4>
+                                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{proposal.userName}</h4>
                                             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                                Nivel {proposal.freelancerLevel} • {new Date(proposal.createdAt).toLocaleDateString()}
+                                                Nivel {proposal.userLevel || 1} • {new Date(proposal.createdAt).toLocaleDateString()}
                                             </p>
                                         </div>
                                     </div>
@@ -101,7 +107,7 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
                                     <button
                                         className="btn-secondary"
                                         style={{ marginLeft: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
-                                        onClick={() => navigate(`/freelancer/${proposal.freelancerId}`)}
+                                        onClick={() => navigate(`/freelancer/${proposal.userId}`)}
                                     >
                                         Ver Perfil
                                     </button>
@@ -143,7 +149,7 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
                 isOpen={!!selectedProposalForPayment}
                 onClose={() => setSelectedProposalForPayment(null)}
                 amount={100} // Mock amount
-                freelancerName={selectedProposalForPayment?.freelancerName}
+                freelancerName={selectedProposalForPayment?.userName}
                 onConfirm={handlePaymentSuccess}
             />
         </div >

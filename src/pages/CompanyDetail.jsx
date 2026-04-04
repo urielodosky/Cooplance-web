@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProfilePicture } from '../utils/avatarUtils';
 import ProjectCard from '../components/project/ProjectCard';
+import { supabase } from '../lib/supabase';
 import '../styles/pages/CompanyDetail.scss';
 // We rely on ServiceDetail.css for some basics, but will add inline styles for specific company hero look
 
@@ -14,38 +15,48 @@ const CompanyDetail = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-        const storedJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
+        const fetchCompanyData = async () => {
+            setLoading(true);
+            try {
+                // 1. Fetch Company Profile
+                const { data: profile, error: pError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (pError) throw pError;
+                setCompany(profile);
 
-        const foundCompany = storedUsers.find(u => u.id === parseInt(id));
+                // 2. Fetch Active Projects (Jobs created by this company)
+                const { data: projectsData, error: prError } = await supabase
+                    .from('jobs')
+                    .select('*')
+                    .eq('client_id', id)
+                    .eq('status', 'open');
+                
+                if (prError) throw prError;
+                setCompanyProjects(projectsData || []);
 
-        if (foundCompany) {
-            if (foundCompany.isDeleted) {
-                setCompany({
-                    ...foundCompany,
-                    isDeleted: true,
-                    firstName: 'Empresa',
-                    companyName: 'Empresa Eliminada',
-                    bio: 'Esta cuenta ha sido eliminada y ya no está disponible.'
-                });
-                setCompanyProjects([]);
-                setCompanyJobs([]);
-            } else {
-                setCompany(foundCompany);
-                // Find active projects by this company
-                const projects = storedProjects.filter(p => p.clientId === foundCompany.id && p.status === 'open');
-                setCompanyProjects(projects);
+                // 3. Fetch Completed Jobs (as Buyer)
+                const { data: jobsData, error: jError } = await supabase
+                    .from('jobs')
+                    .select('*')
+                    .eq('client_id', id)
+                    .in('status', ['completed', 'canceled']);
+                
+                if (jError) throw jError;
+                setCompanyJobs(jobsData || []);
 
-                // Find finished jobs for this company (as buyer)
-                const finishedJobs = storedJobs.filter(j =>
-                    j.buyerId === foundCompany.id &&
-                    (j.status === 'completed' || j.status === 'canceled')
-                );
-                setCompanyJobs(finishedJobs);
+            } catch (err) {
+                console.error("Error loading company data:", err);
+                // Fail silently
+            } finally {
+                setLoading(false);
             }
-        }
-        setLoading(false);
+        };
+
+        if (id) fetchCompanyData();
     }, [id]);
 
     if (loading) return <div className="container" style={{ paddingTop: '6rem' }}>Cargando...</div>;

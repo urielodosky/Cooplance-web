@@ -1,10 +1,4 @@
-// Internal Database Helpers for Notifications
-const DB_KEYS = {
-    NOTIFICATIONS: 'cooplance_db_notifications'
-};
-
-const getDB = (key) => JSON.parse(localStorage.getItem(key)) || [];
-const saveDB = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+import { supabase } from '../lib/supabase';
 
 // Standardized Notification Types
 export const NOTIFICATION_TYPES = {
@@ -19,80 +13,109 @@ export const NOTIFICATION_TYPES = {
 };
 
 /**
- * Retrieves all notifications for a specific user, sorted by date (newest first).
+ * Retrieves all notifications for a specific user from Supabase.
  */
-export const getUserNotifications = (userId) => {
-    const notifications = getDB(DB_KEYS.NOTIFICATIONS) || [];
-    return notifications
-        .filter(n => n.userId === userId)
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+export const getUserNotifications = async (userId) => {
+    const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('[NotificationService] Error fetching notifications:', error);
+        return [];
+    }
+
+    return data.map(mapFromDB);
 };
 
 /**
- * Adds a new notification to the system for the target user.
- * @param {string} userId - Target user ID
- * @param {object} notificationData - { type, title, message, link? }
+ * Adds a new notification to Supabase.
  */
-export const createNotification = (userId, notificationData) => {
-    const notifications = getDB(DB_KEYS.NOTIFICATIONS) || [];
+export const createNotification = async (userId, notificationData) => {
+    const { data, error } = await supabase
+        .from('notifications')
+        .insert({
+            user_id: userId,
+            type: notificationData.type || NOTIFICATION_TYPES.SYSTEM,
+            title: notificationData.title,
+            content: notificationData.message || notificationData.content,
+            link: notificationData.link || null,
+            is_read: false
+        })
+        .select('*')
+        .single();
 
-    const newNotification = {
-        id: crypto.randomUUID(),
-        userId,
-        type: notificationData.type || NOTIFICATION_TYPES.SYSTEM,
-        title: notificationData.title,
-        message: notificationData.message,
-        link: notificationData.link || null,
-        read: false,
-        timestamp: new Date().toISOString()
+    if (error) {
+        console.error('[NotificationService] Error creating notification:', error);
+        return null;
+    }
+
+    return mapFromDB(data);
+};
+
+/**
+ * Marks a specific notification as read in Supabase.
+ */
+export const markNotificationAsRead = async (notificationId) => {
+    const { data, error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId)
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('[NotificationService] Error marking notification as read:', error);
+        return null;
+    }
+
+    return mapFromDB(data);
+};
+
+/**
+ * Marks all notifications as read for a specific user in Supabase.
+ */
+export const markAllAsRead = async (userId) => {
+    const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('[NotificationService] Error marking all as read:', error);
+        return false;
+    }
+
+    return true;
+};
+
+/**
+ * Deletes a specific notification from Supabase.
+ */
+export const deleteNotification = async (notificationId) => {
+    const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+    if (error) {
+        console.error('[NotificationService] Error deleting notification:', error);
+    }
+};
+
+// ── Helpers ───────────────────────────────────────────────────
+
+function mapFromDB(row) {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        type: row.type,
+        title: row.title,
+        message: row.content,
+        link: row.link,
+        read: row.is_read,
+        timestamp: row.created_at
     };
-
-    notifications.push(newNotification);
-    saveDB(DB_KEYS.NOTIFICATIONS, notifications);
-    return newNotification;
-};
-
-/**
- * Marks a specific notification as read.
- */
-export const markNotificationAsRead = (notificationId) => {
-    const notifications = getDB(DB_KEYS.NOTIFICATIONS) || [];
-    const index = notifications.findIndex(n => n.id === notificationId);
-
-    if (index !== -1) {
-        notifications[index].read = true;
-        saveDB(DB_KEYS.NOTIFICATIONS, notifications);
-        return notifications[index];
-    }
-    return null;
-};
-
-/**
- * Marks all notifications as read for a specific user.
- */
-export const markAllAsRead = (userId) => {
-    const notifications = getDB(DB_KEYS.NOTIFICATIONS) || [];
-    let updated = false;
-
-    const updatedNotifications = notifications.map(n => {
-        if (n.userId === userId && !n.read) {
-            updated = true;
-            return { ...n, read: true };
-        }
-        return n;
-    });
-
-    if (updated) {
-        saveDB(DB_KEYS.NOTIFICATIONS, updatedNotifications);
-    }
-    return updated;
-};
-
-/**
- * Deletes a specific notification.
- */
-export const deleteNotification = (notificationId) => {
-    let notifications = getDB(DB_KEYS.NOTIFICATIONS) || [];
-    notifications = notifications.filter(n => n.id !== notificationId);
-    saveDB(DB_KEYS.NOTIFICATIONS, notifications);
-};
+}

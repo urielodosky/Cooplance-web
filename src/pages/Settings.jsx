@@ -3,43 +3,44 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import CustomDropdown from '../components/common/CustomDropdown';
 import { getProfilePicture } from '../utils/avatarUtils';
+import { supabase } from '../lib/supabase';
 import '../styles/pages/Settings.scss';
 
 const Settings = () => {
     const { user, updateUser, checkUserExists, deleteAccount } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [username, setUsername] = useState(user?.username || '');
-    const [firstName, setFirstName] = useState(user?.firstName || '');
-    const [lastName, setLastName] = useState(user?.lastName || '');
-    const [companyName, setCompanyName] = useState(user?.companyName || '');
-    const [responsibleName, setResponsibleName] = useState(user?.responsibleName || '');
+    const [firstName, setFirstName] = useState(user?.first_name || '');
+    const [lastName, setLastName] = useState(user?.last_name || '');
+    const [companyName, setCompanyName] = useState(user?.company_name || '');
+    const [responsibleName, setResponsibleName] = useState(user?.responsible_name || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [location, setLocation] = useState(user?.location || '');
     const [country, setCountry] = useState(user?.country || 'Argentina');
-    const [workHours, setWorkHours] = useState(user?.workHours || '');
-    const [paymentMethods, setPaymentMethods] = useState(user?.paymentMethods || '');
+    const [workHours, setWorkHours] = useState(user?.work_hours || '');
+    const [paymentMethods, setPaymentMethods] = useState(user?.payment_methods || '');
     const [vacancies, setVacancies] = useState(user?.vacancies || '');
     const [isEditingBioInline, setIsEditingBioInline] = useState(false);
-    const [gender, setGender] = useState(user?.gender || 'male'); // Default to male
+    const [gender, setGender] = useState(user?.gender || 'male');
     const [isUpdating, setIsUpdating] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
     const fileInputRef = useRef(null);
     const cvInputRef = useRef(null);
-    const [cvFile, setCvFile] = useState(user?.cvFile || '');
+    const [cvFile, setCvFile] = useState(user?.cv_url || '');
 
     // Sync state with user object when it changes (e.g. after update or load)
     React.useEffect(() => {
         if (user) {
             setUsername(user.username || '');
-            setFirstName(user.firstName || '');
-            setLastName(user.lastName || '');
-            setCompanyName(user.companyName || '');
-            setResponsibleName(user.responsibleName || '');
+            setFirstName(user.first_name || '');
+            setLastName(user.last_name || '');
+            setCompanyName(user.company_name || '');
+            setResponsibleName(user.responsible_name || '');
             setBio(user.bio || '');
             setLocation(user.location || '');
             setCountry(user.country || 'Argentina');
-            setWorkHours(user.workHours || '');
-            setPaymentMethods(user.paymentMethods || '');
+            setWorkHours(user.work_hours || '');
+            setPaymentMethods(user.payment_methods || '');
             setVacancies(user.vacancies || '');
             setGender(user.gender || 'male');
         }
@@ -53,17 +54,48 @@ const Settings = () => {
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                // In a real app, you'd upload this to a server
-                // Here we update local state/context
-                updateUser({ ...user, profilePicture: reader.result });
-                setMessage({ text: 'Foto de perfil actualizada correctamente', type: 'success' });
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        try {
+            setMessage({ text: 'Subiendo foto...', type: 'info' });
+            
+            // Upload to Supabase Storage
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, { upsert: true });
+
+            if (uploadError) {
+                // If bucket doesn't exist, fall back to base64
+                console.warn('Storage upload failed, using base64 fallback:', uploadError.message);
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    try {
+                        await updateUser({ ...user, avatar_url: reader.result });
+                        setMessage({ text: 'Foto de perfil actualizada', type: 'success' });
+                    } catch (err) {
+                        setMessage({ text: 'Error al guardar la foto: ' + err.message, type: 'error' });
+                    }
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            await updateUser({ ...user, avatar_url: publicUrl });
+            setMessage({ text: 'Foto de perfil actualizada correctamente', type: 'success' });
+        } catch (err) {
+            console.error('Avatar upload error:', err);
+            setMessage({ text: 'Error al subir la foto: ' + err.message, type: 'error' });
         }
     };
 
@@ -111,16 +143,16 @@ const Settings = () => {
             await updateUser({
                 ...user,
                 username: cleanUsername.toLowerCase(),
-                firstName: firstName,
-                lastName: lastName,
-                companyName: companyName,
-                responsibleName: responsibleName,
-                bio: bio,
-                location: location,
-                country: country,
-                workHours: workHours,
-                paymentMethods: paymentMethods,
-                vacancies: vacancies,
+                first_name: firstName || null,
+                last_name: lastName || null,
+                company_name: companyName || null,
+                responsible_name: responsibleName || null,
+                bio: bio || null,
+                location: location || null,
+                country: country || null,
+                work_hours: workHours || null,
+                payment_methods: paymentMethods || null,
+                vacancies: vacancies !== '' && vacancies !== null ? parseInt(vacancies) || 0 : 0,
                 gender: gender
             });
 
@@ -186,7 +218,7 @@ const Settings = () => {
                         accept="image/*"
                     />
                     <h3 className="settings-greeting">
-                        Hola, {user.role === 'company' ? (companyName || user.companyName) : (firstName || user.firstName || user.username)}
+                        Hola, {user.role === 'company' ? (companyName || user.company_name) : (firstName || user.first_name || user.username)}
                     </h3>
 
                     <div style={{ margin: '1rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
@@ -459,11 +491,61 @@ const Settings = () => {
                     </form>
                 </div>
 
-                {/* DANGER ZONE - Eliminar Cuenta */}
                 <div className="settings-section" border="true" style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #ef4444' }}>
                     <h3 style={{ color: '#ef4444', marginBottom: '1rem' }}>Zona de Peligro</h3>
+                    <div style={{ marginBottom: '2rem' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: '1.5' }}>
+                            <strong>Base de Datos Local:</strong> Controla los datos de la plataforma. La limpieza borrará todos tus usuarios y proyectos locales.
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (window.confirm('¿Estás seguro de que quieres limpiar todos los datos? La aplicación quedará vacía.')) {
+                                        localStorage.clear();
+                                        window.location.href = '/';
+                                    }
+                                }}
+                                className="btn-secondary"
+                                style={{
+                                    color: '#ef4444',
+                                    border: '1px solid #ef4444',
+                                    padding: '0.6rem 1.2rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    flex: 1
+                                }}
+                            >
+                                Limpiar Base de Datos
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    // Use the imported seedDatabase if available, otherwise suggest reload
+                                    import('../utils/seedData').then(({ seedDatabase }) => {
+                                        seedDatabase();
+                                        localStorage.setItem('cooplance_seeded_v25', 'true');
+                                        alert('Datos de prueba cargados. La página se recargará.');
+                                        window.location.reload();
+                                    });
+                                }}
+                                className="btn-secondary"
+                                style={{
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid var(--border)',
+                                    padding: '0.6rem 1.2rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    flex: 1
+                                }}
+                            >
+                                Cargar Datos Ejemplos
+                            </button>
+                        </div>
+                    </div>
+
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-                        Al eliminar tu cuenta, todos tus datos públicos y privados serán borrados permanentemente. Serás removido de las búsquedas y todos los servicios o pedidos que hayas publicado se eliminarán de inmediato. Esta acción es irreversible.
+                        Al eliminar tu cuenta, todos tus datos serán borrados permanentemente del almacenamiento local. Esta acción es irreversible.
                     </p>
                     <button
                         type="button"
@@ -491,7 +573,6 @@ const Settings = () => {
                         onMouseEnter={(e) => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = '#fff'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
                     >
-                        Eliminar Cuenta Definitivamente
                     </button>
                 </div>
             </div>

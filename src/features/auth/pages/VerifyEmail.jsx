@@ -16,13 +16,25 @@ const VerifyEmail = () => {
         return null;
     }
 
-    const handleVerifySuccess = () => {
-        if (type === 'registration') {
-            register(role, userData);
-            navigate('/dashboard');
-        } else if (type === 'login') {
-            login(userData);
-            navigate('/dashboard');
+    const handleVerifySuccess = async () => {
+        // Retrieve pending registration data from sessionStorage
+        const pendingData = JSON.parse(sessionStorage.getItem('cooplance_pending_registration'));
+
+        if (pendingData) {
+            try {
+                const { role, data } = pendingData;
+                await register(role, data);
+
+                // Clean up
+                sessionStorage.removeItem('cooplance_pending_registration');
+                navigate('/dashboard');
+            } catch (error) {
+                console.error('Error during Supabase registration:', error);
+                alert('Error al crear la cuenta en la Base de Datos: ' + error.message);
+            }
+        } else {
+            console.error('No pending registration found in sessionStorage');
+            navigate('/register');
         }
     };
 

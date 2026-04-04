@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { registerActivity } from '../../utils/gamification';
 import { useAuth } from '../../features/auth/context/AuthContext';
+import { createProposal } from '../../lib/proposalService';
 
 const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
     const { user, updateUser } = useAuth();
@@ -8,6 +9,7 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
     const [coverLetter, setCoverLetter] = useState('');
     const [expirationDays, setExpirationDays] = useState('');
     const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     const questions = project.questions || [];
 
@@ -16,10 +18,9 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
         setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate all questions are answered
         for (const q of questions) {
             if (!answers[q.id] || answers[q.id].trim() === '') {
                 setError('Por favor responde todas las preguntas antes de postularte.');
@@ -27,45 +28,34 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
             }
         }
 
-        const storedProposals = JSON.parse(localStorage.getItem('cooplance_db_proposals') || '[]');
+        setSubmitting(true);
+        try {
+            const userName = user.first_name
+                ? `${user.first_name} ${user.last_name || ''}`.trim()
+                : (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.username);
 
-        // Structure the answers
-        const formattedAnswers = questions.map(q => ({
-            questionId: q.id,
-            questionText: q.text,
-            answer: answers[q.id]
-        }));
+            await createProposal({
+                projectId: project.id,
+                userId: user.id,
+                userName: userName,
+                userRole: user.role || 'freelancer',
+                coverLetter: coverLetter || 'Hola, estoy interesado en tu proyecto.',
+                amount: project.budget || 0,
+                deliveryDays: expirationDays ? parseInt(expirationDays) : 30,
+            });
 
-        let expirationDate = null;
-        if (expirationDays && !isNaN(parseInt(expirationDays))) {
-             expirationDate = new Date(Date.now() + parseInt(expirationDays) * 24 * 60 * 60 * 1000).toISOString();
+            if (updateUser) {
+                const updatedUser = registerActivity(user);
+                updateUser(updatedUser);
+            }
+
+            onSuccess();
+        } catch (err) {
+            console.error('Error submitting proposal:', err);
+            setError(`Error: ${err.message || JSON.stringify(err)}`);
+        } finally {
+            setSubmitting(false);
         }
-
-        const newProposal = {
-            id: Date.now(),
-            projectId: project.id,
-            projectTitle: project.title,
-            clientId: project.clientId || project.authorId,
-            freelancerId: user.id,
-            freelancerName: user.firstName + ' ' + user.lastName,
-            freelancerLevel: user.level || 1,
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            expirationDate,
-            coverLetter: coverLetter || 'Hola, estoy interesado en tu proyecto.',
-            answers: formattedAnswers
-        };
-
-        const updatedProposals = [...storedProposals, newProposal];
-        localStorage.setItem('cooplance_db_proposals', JSON.stringify(updatedProposals));
-
-        // Register Activity
-        if (updateUser) {
-            const updatedUser = registerActivity(user);
-            updateUser(updatedUser);
-        }
-
-        onSuccess();
     };
 
     return (
@@ -166,8 +156,8 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
                         <button type="button" onClick={onClose} className="btn-secondary">
                             Cancelar
                         </button>
-                        <button type="submit" className="btn-primary">
-                            Enviar Postulación
+                        <button type="submit" className="btn-primary" disabled={isSubmitting} style={{ opacity: isSubmitting ? 0.7 : 1 }}>
+                            {isSubmitting ? 'Enviando...' : 'Enviar Postulación'}
                         </button>
                     </div>
                 </form>

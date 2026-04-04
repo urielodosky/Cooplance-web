@@ -2,6 +2,8 @@ import React from 'react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+import { BADGE_FAMILIES, CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
+
 const Badges = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -16,6 +18,9 @@ const Badges = () => {
     const mySales = allJobs.filter(j => j.freelancerId === user.id);
     const myServices = JSON.parse(localStorage.getItem('cooplance_db_services') || '[]').filter(s => s.freelancerId === user.id);
     const myProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]').filter(p => p.clientId === user.id);
+
+    // Load saved (permanent) badges
+    const savedUnlockedIds = JSON.parse(localStorage.getItem(`cooplance_badges_unlocked_${user.id}`) || '[]');
 
     // Calculate loyalty (max purchases by a single buyer)
     const buyerFrequency = {};
@@ -39,6 +44,43 @@ const Badges = () => {
         Lock: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
     };
 
+    const getProgressForFamily = (familyId) => {
+        switch(familyId) {
+            case 'sales': return mySales.length;
+            case 'levels': return user.level || 1;
+            case 'services': return myServices.length;
+            case 'loyalty': return maxLoyalty;
+            case 'speed': return Math.floor(mySales.length / 3);
+            case 'reviews': return user.reviewsCount || 0;
+            case 'purchases': return myOrders.length;
+            case 'talent': return uniqueFreelancersHired;
+            case 'projects': return myProjects.length;
+            default: return 0;
+        }
+    };
+
+    const getIconForFamily = (familyId) => {
+        switch(familyId) {
+            case 'sales': return Icons.Sales;
+            case 'levels': return Icons.Level;
+            case 'services': return Icons.Service;
+            case 'loyalty': return Icons.Loyalty;
+            case 'speed': return Icons.Speed;
+            case 'reviews': return Icons.Review;
+            case 'purchases': return Icons.Sales; // Using same as purchases
+            case 'talent': return Icons.Handshake;
+            case 'projects': return Icons.Eye;
+            default: return Icons.Review;
+        }
+    };
+
+    const displayFamiliesRaw = isClient ? CLIENT_BADGE_FAMILIES : BADGE_FAMILIES;
+    const displayFamilies = displayFamiliesRaw.map(family => ({
+        ...family,
+        icon: getIconForFamily(family.familyId),
+        currentProgress: getProgressForFamily(family.familyId)
+    }));
+
     // Tier colors for progression (Bronze, Silver, Gold, Platinum, Diamond)
     const tierStyles = [
         { color: '#cd7f32', glow: 'rgba(205, 127, 50, 0.4)' }, // Tier 0 (Bronze)
@@ -54,136 +96,15 @@ const Badges = () => {
         return tierStyles[Math.min(mappedIndex, 4)];
     };
 
-    const freelancerFamilies = [
-        {
-            familyId: 'sales',
-            title: 'Trayectoria Comercial',
-            description: 'Volumen y éxito en la venta de servicios.',
-            icon: Icons.Sales,
-            badges: [
-                { title: 'Iniciación Comercial', desc: 'Registro de la primera venta.', required: 1 },
-                { title: 'Consolidación', desc: '10 ventas completadas con éxito.', required: 10 },
-                { title: 'Alto Volumen', desc: 'Alcanza las 100 ventas concretadas.', required: 100 },
-                { title: 'Rendimiento Superior', desc: 'Hito de 1,000 ventas alcanzado.', required: 1000 },
-                { title: 'Líder de Mercado', desc: 'Referente global con 10,000 ventas.', required: 10000 },
-            ],
-            currentProgress: mySales.length
-        },
-        {
-            familyId: 'levels',
-            title: 'Desarrollo Profesional',
-            description: 'Mide tu crecimiento y nivel de experiencia.',
-            icon: Icons.Level,
-            badges: [
-                { title: 'Profesional Junior', desc: 'Alcanza el Nivel 2.', required: 2 },
-                { title: 'Profesional Pleno', desc: 'Alcanza el Nivel 6.', required: 6 },
-                { title: 'Especialista Senior', desc: 'Alcanza el Nivel 8.', required: 8 },
-                { title: 'Consultor Principal', desc: 'Alcanza el Nivel 9.', required: 9 },
-                { title: 'Referente de Industria', desc: 'Alcanza el nivel máximo de experiencia (10).', required: 10 },
-            ],
-            currentProgress: user.level || 1
-        },
-        {
-            familyId: 'services',
-            title: 'Portafolio de Servicios',
-            description: 'Diversificación de la oferta profesional.',
-            icon: Icons.Service,
-            badges: [
-                { title: 'Primer Servicio', desc: 'Publicación de la primera oferta de servicio.', required: 1 },
-                { title: 'Portafolio en Crecimiento', desc: 'Oferta diversificada de 3 servicios.', required: 3 },
-                { title: 'Proveedor Integral', desc: 'Portafolio completo de 5 servicios activos.', required: 5 },
-            ],
-            currentProgress: myServices.length
-        },
-        {
-            familyId: 'loyalty',
-            title: 'Fidelización de Clientes',
-            description: 'Métricas de retención y recurrencia.',
-            icon: Icons.Loyalty,
-            badges: [
-                { title: 'Retención Inicial', desc: 'Un cliente ha vuelto a contratar tus servicios.', required: 2 },
-                { title: 'Socio Estratégico', desc: 'Relación continua con 5 contratos recurrentes.', required: 5 },
-                { title: 'Proveedor de Confianza', desc: 'Alianza a largo plazo con 10 contratos del mismo cliente.', required: 10 },
-            ],
-            currentProgress: maxLoyalty
-        },
-        {
-            familyId: 'speed',
-            title: 'Eficiencia Operativa',
-            description: 'Métricas de cumplimiento de plazos de entrega.',
-            icon: Icons.Speed,
-            badges: [
-                { title: 'Entrega Eficiente', desc: 'Primera entrega anticipada.', required: 1 },
-                { title: 'Gestión de Tiempos', desc: '5 entregas antes de la fecha límite.', required: 5 },
-                { title: 'Optimización de Plazos', desc: '10 entregas anticipadas confirmadas.', required: 10 },
-                { title: 'Excelencia Operativa', desc: 'Historial de 100 entregas puntuales y anticipadas.', required: 100 },
-            ],
-            currentProgress: Math.floor(mySales.length / 3) // Mock calculation for demo
-        },
-        {
-            familyId: 'reviews',
-            title: 'Satisfacción del Cliente',
-            description: 'Evaluaciones y control de calidad percibida.',
-            icon: Icons.Review,
-            badges: [
-                { title: 'Primera Evaluación', desc: 'Primera reseña con máxima calificación.', required: 1 },
-                { title: 'Calidad Consistente', desc: '5 reseñas consecutivas de excelencia.', required: 5 },
-                { title: 'Alta Recomendación', desc: '10 valoraciones perfectas documentadas.', required: 10 },
-                { title: 'Excelencia Reconocida', desc: 'Logro de 100 reseñas estelares verificadas.', required: 100 },
-            ],
-            currentProgress: user.reviewsCount || 0
-        }
-    ];
-
-    const clientFamilies = [
-        {
-            familyId: 'purchases',
-            title: 'Inversión en Talento',
-            description: 'Historial de contrataciones corporativas y adjudicación de proyectos.',
-            icon: Icons.Sales,
-            badges: [
-                { title: 'Primera Contratación', desc: 'Gestión de la primera contratación.', required: 1 },
-                { title: 'Cliente Recurrente', desc: 'Registros de 10 contrataciones realizadas.', required: 10 },
-                { title: 'Inversor Corporativo', desc: 'Asignación de 100 contratos de proyecto.', required: 100 },
-            ],
-            currentProgress: myOrders.length
-        },
-        {
-            familyId: 'talent',
-            title: 'Diversificación de Recursos Humanos',
-            description: 'Capacidad para expandir la red de talento y formar equipos multidisciplinarios.',
-            icon: Icons.Handshake,
-            badges: [
-                { title: 'Explorador de Talento', desc: 'Colaboración documentada con 2 profesionales distintos.', required: 2 },
-                { title: 'Gestor de Contrataciones', desc: 'Asignaciones diversificadas con 5 perfiles.', required: 5 },
-                { title: 'Desarrollador de Redes', desc: 'Consolidación de una red de 10 profesionales.', required: 10 },
-            ],
-            currentProgress: uniqueFreelancersHired
-        },
-        {
-            familyId: 'projects',
-            title: 'Gestión de Proyectos',
-            description: 'Estructuración y publicación de iniciativas profesionales.',
-            icon: Icons.Eye,
-            badges: [
-                { title: 'Planeación Inicial', desc: 'Estructuración del primer proyecto.', required: 1 },
-                { title: 'Administrador de Proyectos', desc: 'Planificación documentada de 3 iniciativas.', required: 3 },
-                { title: 'Director de Iniciativas', desc: 'Gestión simultánea o histórica de 5 grandes proyectos.', required: 5 },
-            ],
-            currentProgress: myProjects.length
-        }
-    ];
-
-    const displayFamilies = isClient ? clientFamilies : freelancerFamilies;
-
-    // Calculate total unlocked badges
+    // Calculate total unlocked badges (including permanent ones)
     let totalUnlocked = 0;
     let totalBadges = 0;
 
     displayFamilies.forEach(family => {
         family.badges.forEach(badge => {
             totalBadges++;
-            if (family.currentProgress >= badge.required) {
+            const isAchieved = (family.currentProgress >= badge.required) || savedUnlockedIds.includes(badge.id);
+            if (isAchieved) {
                 totalUnlocked++;
             }
         });
@@ -231,7 +152,7 @@ const Badges = () => {
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
                             {family.badges.map((badge, bIndex) => {
-                                const isAchieved = family.currentProgress >= badge.required;
+                                const isAchieved = (family.currentProgress >= badge.required) || savedUnlockedIds.includes(badge.id);
                                 const tierStyle = getTierStyle(bIndex, family.badges.length);
 
                                 return (

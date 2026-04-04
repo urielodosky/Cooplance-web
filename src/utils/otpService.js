@@ -17,8 +17,12 @@ export const otpService = {
         console.warn(' [OTP SERVICE] Running in OFFLINE DEMO MODE');
         const fakeOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Store in localStorage for verification
-        localStorage.setItem(`otp_demo_${email}`, fakeOtp);
+        // Store in localStorage for verification with timestamp
+        const otpData = {
+            code: fakeOtp,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(`otp_demo_${email}`, JSON.stringify(otpData));
 
         return {
             success: true,
@@ -34,13 +38,31 @@ export const otpService = {
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        const storedOtp = localStorage.getItem(`otp_demo_${email}`);
+        const storedData = localStorage.getItem(`otp_demo_${email}`);
+        if (!storedData && code !== '123456') {
+            return { success: false, message: 'No se encontró código para este email.' };
+        }
 
-        // Accept either the stored OTP or a magic '123456' for ease of use
-        if (code === storedOtp || code === '123456') {
+        // Magic code 123456 bypasses expiration for dev ease
+        if (code === '123456') {
+            return { success: true, message: 'Verificación exitosa (Bypass).' };
+        }
+
+        const { code: storedOtp, timestamp } = JSON.parse(storedData);
+        
+        // CHECK EXPIRATION: 3 minutes = 180,000 ms
+        const isExpired = Date.now() - timestamp > 180000;
+
+        if (isExpired) {
+            localStorage.removeItem(`otp_demo_${email}`);
+            return { success: false, message: 'El código ha expirado (duración 3 min). Solicita uno nuevo.' };
+        }
+
+        if (code === storedOtp) {
+            localStorage.removeItem(`otp_demo_${email}`); // Clear after use
             return { success: true, message: 'Verificación exitosa.' };
         } else {
-            return { success: false, message: 'Código incorrecto. Intenta con 123456' };
+            return { success: false, message: 'Código incorrecto.' };
         }
     },
 
