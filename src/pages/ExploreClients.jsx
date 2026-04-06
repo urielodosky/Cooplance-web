@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SidebarFilter from '../components/common/SidebarFilter';
 import ProjectCard from '../components/project/ProjectCard';
+import ProjectSkeleton from '../components/project/ProjectSkeleton';
 import { searchAndFilterItems } from '../utils/searchUtils';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { registerActivity } from '../utils/gamification';
@@ -143,10 +144,11 @@ const ExploreClients = () => {
             <div className="explore-content">
                 <div className="services-grid-explore">
                     {loading ? (
-                        <div className="loading-container glass full-width-msg">
-                            <div className="loader"></div>
-                            <p>Cargando proyectos...</p>
-                        </div>
+                        <>
+                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                <ProjectSkeleton key={i} />
+                            ))}
+                        </>
                     ) : projects.length === 0 ? (
                         <div className="no-results glass full-width-msg">
                             <h3>Aún no existen pedidos registrados.</h3>

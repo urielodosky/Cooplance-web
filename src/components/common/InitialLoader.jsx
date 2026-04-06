@@ -1,7 +1,22 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const InitialLoader = () => {
+    const [messageIndex, setMessageIndex] = useState(0);
+    
+    const messages = [
+        { text: "Buscando los detalles del servicio...", size: '1.1rem' },
+        { text: "Preparando el entorno...", size: '1.1rem' },
+        { text: "Casi listo...", size: '1.5rem' }
+    ];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setMessageIndex((prev) => (prev + 1) % messages.length);
+        }, 1500);
+        return () => clearInterval(interval);
+    }, [messages.length]);
+
     return (
         <div style={containerStyle}>
             <motion.div 
@@ -11,7 +26,19 @@ const InitialLoader = () => {
                 style={contentStyle}
             >
                 <div className="logo-container" style={logoStyle}>
-                    <span style={logoTextStyle}>cooplance</span>
+                    <motion.span 
+                        style={logoTextStyle}
+                        animate={{ 
+                            backgroundPosition: ["200% 50%", "0% 50%"] 
+                        }}
+                        transition={{ 
+                            duration: 3, 
+                            repeat: Infinity, 
+                            ease: "linear" 
+                        }}
+                    >
+                        cooplance
+                    </motion.span>
                 </div>
                 
                 {/* Modern subtle loading bar */}
@@ -28,13 +55,25 @@ const InitialLoader = () => {
                     />
                 </div>
                 
-                <motion.p 
-                    style={textStyle}
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                >
-                    Conectando con tu entorno...
-                </motion.p>
+                <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AnimatePresence mode="wait">
+                        <motion.p 
+                            key={messageIndex}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.4 }}
+                            style={{
+                                ...textStyle,
+                                fontSize: messages[messageIndex].size,
+                                fontWeight: messageIndex === 2 ? '600' : '500',
+                                color: messageIndex === 2 ? '#E2E8F0' : '#94A3B8'
+                            }}
+                        >
+                            {messages[messageIndex].text}
+                        </motion.p>
+                    </AnimatePresence>
+                </div>
             </motion.div>
         </div>
     );
@@ -59,27 +98,29 @@ const contentStyle = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '24px'
+    gap: '32px'
 };
 
 const logoStyle = {
-    background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    marginBottom: '10px'
+    marginBottom: '15px'
 };
 
 const logoTextStyle = {
-    fontSize: '2.5rem',
+    fontSize: '3.5rem',
     fontWeight: '800',
-    letterSpacing: '-1px'
+    letterSpacing: '-1.5px',
+    background: 'linear-gradient(90deg, #8B5CF6, #06B6D4, #FFFFFF, #8B5CF6, #06B6D4)',
+    backgroundSize: '200% auto',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    display: 'inline-block'
 };
 
 const loaderTrackStyle = {
-    width: '200px',
-    height: '4px',
+    width: '280px',
+    height: '6px',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: '4px',
+    borderRadius: '6px',
     overflow: 'hidden',
     position: 'relative'
 };
@@ -91,14 +132,15 @@ const loaderFillStyle = {
     width: '50%',
     height: '100%',
     background: 'linear-gradient(90deg, transparent, #8B5CF6, #06B6D4, transparent)',
-    borderRadius: '4px'
+    borderRadius: '6px'
 };
 
 const textStyle = {
     color: '#94A3B8',
-    fontSize: '0.9rem',
-    fontWeight: '500',
-    marginTop: '10px'
+    margin: 0,
+    textAlign: 'center'
 };
 
+
 export default InitialLoader;
+

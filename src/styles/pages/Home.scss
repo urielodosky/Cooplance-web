@@ -1,10 +1,33 @@
 .home-container {
     padding: 4rem 1rem;
+    position: relative;
+    min-height: 100vh;
+    
+    /* Grid background spanning full container with a subtle side-to-center fade */
+    &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+        background-size: 60px 60px;
+        /* Mask that fades from sides to center */
+        mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        z-index: -1;
+        pointer-events: none;
+    }
+
 }
+
 
 .hero-header {
     text-align: center;
-    margin-bottom: 4rem;
+    margin-bottom: 2rem;
     padding: 2rem 0;
     display: flex;
     flex-direction: column;
@@ -16,16 +39,16 @@
     font-size: 4rem;
     line-height: 1.1;
     font-weight: 800;
-    /* Use variables for gradient so it adapts to light mode (Dark text) */
-    background: linear-gradient(to right, var(--text-primary), var(--text-secondary));
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
 }
 
 .highlight-text {
-    color: var(--primary);
-    -webkit-text-fill-color: var(--primary);
+    /* Spectacular gradient only for the essential keyword */
+    background: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
 }
 
 .hero-description {
@@ -43,17 +66,61 @@
 
 .btn-hero-primary {
     font-size: 1.1rem;
-    padding: 0.75rem 2rem;
+    padding: 0.8rem 2.2rem;
     text-decoration: none;
+    background: #8B5CF6; // Solid violet
+    color: white;
+    border-radius: var(--radius-full);
+    border: none;
+    transition: background 0.2s, transform 0.2s;
+
+    &:hover {
+        background: #7c4dff;
+        transform: translateY(-1px);
+    }
 }
 
 .btn-hero-secondary {
     font-size: 1.1rem;
-    padding: 0.75rem 2rem;
+    padding: 0.8rem 2.2rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-full);
     color: var(--text-primary);
     text-decoration: none;
+    transition: background 0.2s;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+}
+
+.test-cta-inline {
+    text-align: center;
+    margin-bottom: 3.5rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+
+    p {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-link {
+        background: none;
+        border: none;
+        color: var(--primary);
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+        font-size: inherit;
+
+        &:hover {
+            color: var(--secondary);
+        }
+    }
 }
 
 .roles-section {

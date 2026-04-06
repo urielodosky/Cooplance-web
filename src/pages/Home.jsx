@@ -12,7 +12,7 @@ const Home = () => {
         <div className="container home-container">
             <header className="hero-header">
                 <h1 className="hero-title">
-                    Crecemos juntos,<br />
+                    Crecemos juntos<br />
                     <span className="highlight-text">trabajás libre.</span>
                 </h1>
                 <p className="hero-description">
@@ -27,14 +27,9 @@ const Home = () => {
                     </Link>
                 </div>
             </header>
-            <div style={{ textAlign: 'center', marginBottom: '3.5rem', marginTop: '3rem', padding: '0 1rem' }}>
-                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '0.8rem', fontWeight: 700 }}>¿No sabés qué tipo de cuenta es la ideal para vos?</h2>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto 1.5rem auto' }}>
-                    Nosotros te ayudamos a descubrir tu perfil perfecto en Cooplance con un rápido test.
-                </p>
-                <button className="btn-primary" onClick={() => setShowTestModal(true)} style={{ padding: '0.8rem 2rem', fontSize: '1.1rem', borderRadius: '50px', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)' }}>
-                    Hacer el Test Rápido
-                </button>
+
+            <div className="test-cta-inline">
+                <p>¿No sabés qué cuenta elegir? <button className="btn-link" onClick={() => setShowTestModal(true)}>Descubrilo con un Test Rápido</button></p>
             </div>
 
             <section className="roles-section">

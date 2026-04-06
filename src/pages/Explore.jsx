@@ -3,7 +3,7 @@ import { useServices } from '../features/services/context/ServiceContext';
 import ServiceCard from '../features/services/components/ServiceCard';
 import SidebarFilter from '../components/common/SidebarFilter';
 import { searchAndFilterItems } from '../utils/searchUtils';
-import { serviceCategories } from '../features/services/data/categories';
+import ServiceSkeleton from '../features/services/components/ServiceSkeleton';
 import '../styles/pages/Explore.scss';
 
 const Explore = () => {
@@ -29,20 +29,9 @@ const Explore = () => {
     if (loading && services.length === 0) {
         content = (
             <>
-                {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="glass" style={{ height: '350px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }}>
-                        <div className="skeleton-pulse" style={{ height: '180px', background: 'rgba(255,255,255,0.03)' }}></div>
-                        <div style={{ padding: '1.5rem' }}>
-                            <div className="skeleton-pulse" style={{ height: '20px', width: '80%', background: 'rgba(255,255,255,0.05)', marginBottom: '12px', borderRadius: '4px' }}></div>
-                            <div className="skeleton-pulse" style={{ height: '14px', width: '100%', background: 'rgba(255,255,255,0.03)', marginBottom: '8px', borderRadius: '4px' }}></div>
-                            <div className="skeleton-pulse" style={{ height: '14px', width: '60%', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}></div>
-                        </div>
-                    </div>
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                    <ServiceSkeleton key={i} />
                 ))}
-                <style>{`
-                    @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 0.3; } 100% { opacity: 0.6; } }
-                    .skeleton-pulse { animation: pulse 2s infinite ease-in-out; }
-                `}</style>
             </>
         );
     } else if (services.length === 0) {

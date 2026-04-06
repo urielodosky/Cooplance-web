@@ -11,6 +11,8 @@ import '../styles/pages/ServiceDetail.scss';
 import '../styles/pages/ProjectDetail.scss';
 
 
+import ProjectDetailSkeleton from '../components/project/ProjectDetailSkeleton';
+
 const ProjectDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -104,8 +106,8 @@ const ProjectDetail = () => {
         setTimeout(() => setApplyMessage({ text: '', type: '' }), 4000);
     };
 
-    if (loading) return <div className="container" style={{ paddingTop: '6rem' }}>Cargando...</div>;
-    if (!project) return <div className="container" style={{ paddingTop: '6rem' }}>Proyecto no encontrado.</div>;
+    if (loading) return <ProjectDetailSkeleton />;
+    if (!project) return <div className="container" style={{ paddingTop: '6rem', color: 'var(--text-primary)', textAlign: 'center' }}><h3>Proyecto no encontrado.</h3></div>;
 
     const translateFrequency = (freq) => {
         const map = { 'one-time': 'Pago Único', 'weekly': 'Semanal', 'biweekly': 'Quincenal', 'monthly': 'Mensual' };

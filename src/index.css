@@ -210,8 +210,60 @@ button:focus-visible {
   background: var(--primary);
 }
 
-/* Global Firefox scrollbar */
+/* Firefox scrollbar */
 html {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
+
+/* Skeleton Styles */
+.skeleton-pulse {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 25%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite ease-in-out;
+    border-radius: 4px;
+}
+
+[data-theme="light"] .skeleton-pulse {
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.05) 25%,
+        rgba(0, 0, 0, 0.1) 50%,
+        rgba(0, 0, 0, 0.05) 75%
+    );
+    background-size: 200% 100%;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+}
+
+.skeleton-title {
+    height: 1.2rem;
+    width: 80%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text {
+    height: 0.85rem;
+    width: 100%;
+    margin-bottom: 0.4rem;
+}
+
+.skeleton-badge {
+    height: 1.2rem;
+    width: 60px;
+    border-radius: 4px;
+}
