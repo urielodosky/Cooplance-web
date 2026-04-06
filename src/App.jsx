@@ -37,6 +37,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { TeamProvider } from './context/TeamContext'
 import { ChatProvider } from './context/ChatContext'
 import { seedDatabase } from './utils/seedData'
+import React, { useEffect } from 'react'
 import { isConfigured } from './lib/supabase'
 import ConfigRequired from './components/common/ConfigRequired'
 
