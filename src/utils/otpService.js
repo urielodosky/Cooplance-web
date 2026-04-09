@@ -49,7 +49,7 @@ export const otpService = {
         }
 
         const { code: storedOtp, timestamp } = JSON.parse(storedData);
-        
+
         // CHECK EXPIRATION: 3 minutes = 180,000 ms
         const isExpired = Date.now() - timestamp > 180000;
 

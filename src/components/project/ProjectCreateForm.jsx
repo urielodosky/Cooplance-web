@@ -37,9 +37,9 @@ const ProjectCreateForm = () => {
         contractDuration: '',
         commissionPercentage: '',
         workMode: ['remote'], // Array for multi-select
-        country: '',
-        province: [],
-        city: [],
+        country: 'Argentina',
+        province: '', // Changed to string for single selection
+        city: '', // Changed to string for single selection
         location: '',
         paymentMethods: [],
         contractDurationType: 'unique', // 'unique', 'days', 'weeks', 'months', 'years'
@@ -238,31 +238,22 @@ const ProjectCreateForm = () => {
         if (name?.target) {
             // Native Event (country select)
             const { name: fieldName, value: fieldValue } = name.target;
-            setFormData(prev => {
-                const newData = { ...prev, [fieldName]: fieldValue };
-                if (fieldName === 'country') {
-                    newData.province = [];
-                    newData.city = [];
-                }
-                return newData;
-            });
+            setFormData(prev => ({
+                ...prev,
+                [fieldName]: fieldValue,
+                province: '',
+                city: ''
+            }));
         } else {
             // Custom Call
-            setFormData(prev => {
-                const newData = { ...prev, [name]: value };
-                if (name === 'country') {
-                    newData.province = [];
-                    newData.city = [];
-                } else if (name === 'province') {
-                    if (Array.isArray(prev.province) && Array.isArray(value) && value.length < prev.province.length) {
-                        const removedProv = prev.province.find(p => !value.includes(p));
-                        if (removedProv && Array.isArray(newData.city)) {
-                            newData.city = newData.city.filter(c => !c.endsWith(`(${removedProv})`));
-                        }
-                    }
-                }
-                return newData;
-            });
+            setFormData(prev => ({
+                ...prev,
+                [name]: value,
+                // If country changes, reset province and city
+                ...(name === 'country' ? { province: '', city: '' } : {}),
+                // If province changes, reset city
+                ...(name === 'province' ? { city: '' } : {})
+            }));
         }
     };
 
@@ -273,7 +264,10 @@ const ProjectCreateForm = () => {
 
     const getCities = () => {
         if (formData.country === 'Argentina') return argCities;
-        return formData.country && formData.province && formData.province.length > 0 && locations[formData.country] ? Object.keys(locations[formData.country]).reduce((acc, p) => [...acc, ...(locations[formData.country][p] || [])], []) : [];
+        if (formData.country && formData.province && locations[formData.country]) {
+            return locations[formData.country][formData.province] || [];
+        }
+        return [];
     };
 
     const handleSubmit = async (e) => {
@@ -579,46 +573,58 @@ const ProjectCreateForm = () => {
                             )}
                         </div>
 
-                        {user?.role !== 'company' && (
-                            <div className="form-grid-2" style={{ marginTop: '1rem' }}>
-                                <div className="form-group">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                        <label style={{ marginBottom: 0 }}>Tipo de Presupuesto</label>
-                                        <div className="help-icon-wrapper">
-                                            <span className="help-icon" style={{ fontSize: '0.8rem', width: '16px', height: '16px' }}>?</span>
-                                            <div className="help-tooltip" style={{ width: '250px', bottom: '100%', left: '50%', transform: 'translateX(-50%)' }}>
-                                                <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.85rem' }}>
-                                                    <li style={{ marginBottom: '0.3rem' }}><strong>Fijo:</strong> El precio es definitivo (debe ser mayor a 0). No se permite regateo.</li>
-                                                    <li><strong>Variable:</strong> Inicia en 0 o más. Los freelancers pueden ofertar un costo diferente que deberás aprobar.</li>
-                                                </ul>
-                                            </div>
+                        <div className="form-grid-2" style={{ marginTop: '1rem' }}>
+                            <div className="form-group">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <label style={{ marginBottom: 0 }}>Tipo de Presupuesto</label>
+                                    <div className="help-icon-wrapper">
+                                        <span className="help-icon" style={{ fontSize: '0.8rem', width: '16px', height: '16px' }}>?</span>
+                                        <div className="help-tooltip" style={{ width: '250px', bottom: '100%', left: '50%', transform: 'translateX(-50%)' }}>
+                                            <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.85rem' }}>
+                                                <li style={{ marginBottom: '0.3rem' }}><strong>Fijo:</strong> El precio es definitivo (debe ser mayor a 0). No se permite regateo.</li>
+                                                <li><strong>Variable:</strong> Inicia en 0 o más. Los freelancers pueden ofertar un costo diferente que deberás aprobar.</li>
+                                            </ul>
                                         </div>
                                     </div>
-                                    <CustomDropdown
-                                        options={[
-                                            { value: 'fixed', label: 'Fijo' },
-                                            { value: 'negotiable', label: 'Variable (Ofertable)' }
-                                        ]}
-                                        value={formData.budgetType}
-                                        onChange={(val) => handleDropdownChange('budgetType', val)}
-                                    />
                                 </div>
-                                <div className="form-group">
-                                    <label>Presupuesto Máximo Estimado ($)</label>
-                                    <div className="price-input-wrapper">
-                                        <input
-                                            type="number"
-                                            name="budget"
-                                            value={formData.budget}
-                                            onChange={handleChange}
-                                            required
-                                            placeholder="0.00"
-                                        />
-                                        <span className="currency-badge">ARS</span>
-                                    </div>
-                                </div>
+                                <CustomDropdown
+                                    options={[
+                                        { value: 'fixed', label: 'Fijo' },
+                                        { value: 'negotiable', label: 'Variable (Ofertable)' }
+                                    ]}
+                                    value={formData.budgetType}
+                                    onChange={(val) => handleDropdownChange('budgetType', val)}
+                                />
                             </div>
-                        )}
+                            <div className="form-group">
+                                <label>Frecuencia de Pago</label>
+                                <CustomDropdown
+                                    options={[
+                                        { value: 'unique', label: 'Pago Único' },
+                                        { value: 'daily', label: 'Diario' },
+                                        { value: 'weekly', label: 'Semanal' },
+                                        { value: 'monthly', label: 'Mensual' }
+                                    ]}
+                                    value={formData.paymentFrequency || 'unique'}
+                                    onChange={(val) => handleDropdownChange('paymentFrequency', val)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group" style={{ marginTop: '1rem' }}>
+                            <label>Presupuesto Máximo Estimado ($)</label>
+                            <div className="price-input-wrapper">
+                                <input
+                                    type="number"
+                                    name="budget"
+                                    value={formData.budget}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="0.00"
+                                />
+                                <span className="currency-badge">ARS</span>
+                            </div>
+                        </div>
 
                         {user?.role === 'company' && (
                             <div className="form-grid-2" style={{ marginTop: '1rem' }}>
@@ -734,123 +740,53 @@ const ProjectCreateForm = () => {
                                             transition: 'all 0.2s', border: '1px solid var(--border)',
                                             boxShadow: '0 8px 20px rgba(0,0,0,0.4)', pointerEvents: 'none', whiteSpace: 'normal'
                                         }}>
-                                            Podes elegir hasta 3 provincias y hasta 5 ciudades por provincia (Si estás en Argentina). Seleccioná el país y luego las provincias.
+                                            Seleccioná el país, provincia y ciudad donde se llevará a cabo el proyecto.
                                         </div>
                                     </div>
                                     <style>{`.tooltip-container:hover .tooltip-text { opacity: 1 !important; visibility: visible !important; }`}</style>
                                 </div>
 
-                                <div className="select-wrapper" style={{ marginBottom: '1rem' }}>
-                                    <select
-                                        name="country"
-                                        value={formData.country || ''}
-                                        onChange={handleLocationChange}
-                                        className="native-select"
-                                        required={formData.workMode.includes('presential')}
-                                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)' }}
-                                    >
-                                        <option value="">Selecciona País</option>
-                                        {Object.keys(locations).map(country => (
-                                            <option key={country} value={country}>{country}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Province selector - single dropdown */}
-                                {formData.country && (!formData.province || formData.province.length < 3) && (
-                                    <CustomDropdown
-                                        options={getProvinces()
-                                            .filter(p => !formData.province?.includes(p))
-                                            .map(prov => ({ label: prov, value: prov }))}
-                                        value={null}
-                                        onChange={(val) => {
-                                            if (val && (!formData.province || !formData.province.includes(val))) {
-                                                handleLocationChange('province', [...(formData.province || []), val]);
-                                            }
-                                        }}
-                                        placeholder={`+ Agregar provincia/estado (${formData.province?.length || 0}/3)`}
-                                        searchable={true}
-                                    />
-                                )}
-
-                                {/* One row per selected province with city selector next to it */}
-                                {formData.province && formData.province.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
-                                        {formData.province.map(prov => {
-                                            const provCities = (formData.city || []).filter(c => c.endsWith(`(${prov})`));
-                                            const isArg = formData.country === 'Argentina';
-                                            const provCityOptions = isArg
-                                                ? argCities.filter(c => c.endsWith(`(${prov})`)).map(c => ({ label: c.replace(` (${prov})`, ''), value: c }))
-                                                : (locations[formData.country]?.[prov] || []).map(c => ({ label: c, value: c + ` (${prov})` }));
-
-                                            return (
-                                                <div key={prov} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', alignItems: 'start' }}>
-                                                    {/* Province name & remove button */}
-                                                    <div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                                            <span style={{ fontWeight: 600, color: 'var(--primary)', fontSize: '0.9rem' }}>
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
-                                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                                                    <circle cx="12" cy="10" r="3"></circle>
-                                                                </svg>
-                                                                {prov}
-                                                            </span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleLocationChange('province', formData.province.filter(p => p !== prov))}
-                                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0', display: 'flex', transition: 'color 0.2s' }}
-                                                                onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
-                                                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                                                                title="Quitar provincia"
-                                                            >
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                                            </button>
-                                                        </div>
-                                                        {/* City chips for this province */}
-                                                        {provCities.length > 0 && (
-                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                                                {provCities.map(city => (
-                                                                    <span key={city} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: 'var(--text-primary)', padding: '0.25rem 0.55rem', borderRadius: '100px', fontSize: '0.75rem' }}>
-                                                                        {city.replace(` (${prov})`, '')}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => handleLocationChange('city', (formData.city || []).filter(c => c !== city))}
-                                                                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0', display: 'flex', transition: 'color 0.2s' }}
-                                                                            onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
-                                                                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                                                                        >
-                                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                                                        </button>
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* City selector for this province */}
-                                                    <div>
-                                                        {isLoadingLoc ? (
-                                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Cargando ciudades...</span>
-                                                        ) : (
-                                                            <CustomDropdown
-                                                                options={provCityOptions.filter(co => !provCities.includes(co.value))}
-                                                                value={provCities}
-                                                                onChange={(val) => {
-                                                                    const otherCities = (formData.city || []).filter(c => !c.endsWith(`(${prov})`));
-                                                                    handleLocationChange('city', [...otherCities, ...val]);
-                                                                }}
-                                                                placeholder={`Ciudad de ${prov.split(' ')[0]}... (Max 5)`}
-                                                                searchable={true}
-                                                                multiple={true}
-                                                                maxSelections={5}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                <div className="location-selection-row" style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                                    gap: '1rem', 
+                                    marginTop: '1rem',
+                                    marginBottom: '1rem' 
+                                }}>
+                                    <div className="form-group">
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>País</label>
+                                        <CustomDropdown
+                                            options={Object.keys(locations).map(country => ({ label: country, value: country }))}
+                                            value={formData.country}
+                                            onChange={(val) => handleLocationChange('country', val)}
+                                            placeholder="Seleccionar País"
+                                        />
                                     </div>
-                                )}
+
+                                    <div className="form-group">
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Provincia / Estado</label>
+                                        <CustomDropdown
+                                            options={getProvinces().map(prov => ({ label: prov, value: prov }))}
+                                            value={formData.province}
+                                            onChange={(val) => handleLocationChange('province', val)}
+                                            placeholder={formData.country ? "Seleccionar..." : "Primero elige país"}
+                                            disabled={!formData.country}
+                                            searchable={true}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Ciudad</label>
+                                        <CustomDropdown
+                                            options={getCities().map(city => ({ label: city, value: city }))}
+                                            value={formData.city}
+                                            onChange={(val) => handleLocationChange('city', val)}
+                                            placeholder={formData.province ? (isLoadingLoc ? "Cargando..." : "Seleccionar...") : "Primero elige provincia"}
+                                            disabled={!formData.province || isLoadingLoc}
+                                            searchable={true}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

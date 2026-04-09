@@ -11,129 +11,442 @@ export const useChat = () => useContext(ChatContext);
 export const ChatProvider = ({ children }) => {
     const { user, updateUser } = useAuth();
     const [chats, setChats] = useState([]);
+    const [isCleaning, setIsCleaning] = useState(false);
 
-    const loadChats = useCallback(async () => {
-        if (!user) {
-            setChats([]);
-            return;
-        }
-
+    const loadChats = async () => {
+        if (!user) return;
         try {
-            // Fetch chats where the user is a participant
+            // 1. Obtener chats donde participo
             const { data: participations, error: pError } = await supabase
                 .from('chat_participants')
-                .select('chat_id, chats(*)')
+                .select('chat_id')
                 .eq('user_id', user.id);
 
             if (pError) throw pError;
+            const chatIds = (participations || []).map(p => p.chat_id);
 
-            const userChats = (participations || []).map(p => ({
-                ...p.chats,
-                messages: [] // We'll load messages on demand or subscribe
-            }));
+            if (chatIds.length === 0) {
+                setChats([]);
+                return;
+            }
 
-            setChats(userChats);
-        } catch (error) {
-            console.error("[ChatContext] Failed to fetch chats", error);
-        }
-    }, [user]);
+            // 2. Obtener los detalles de esos chats
+            const { data: chatsData, error: cError } = await supabase
+                .from('chats')
+                .select('*')
+                .in('id', chatIds)
+                .order('last_message_at', { ascending: false });
 
-    // Load on mount or user change
-    useEffect(() => {
-        loadChats();
-    }, [loadChats]);
+            if (cError) throw cError;
 
-    // Global Message Subscription (optional, can be done per chat)
-    useEffect(() => {
-        if (!user) return;
+            // 3. Obtener participantes con sus nombres (desde la tabla profiles)
+            const { data: allParticipants, error: apError } = await supabase
+                .from('chat_participants')
+                .select(`
+                    chat_id, 
+                    user_id,
+                    user:user_id(username, first_name, last_name, avatar_url)
+                `)
+                .in('chat_id', chatIds);
 
-        // Simplified: Listen for any new messages in any of my chats
-        const channel = supabase
-            .channel('realtime:messages')
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'messages'
-            }, (payload) => {
-                // Check if the chat of the new message is one of mine
-                if (chats.some(c => c.id === payload.new.chat_id)) {
-                   // Refresh that chat or last message
-                   loadChats(); 
+            if (apError) throw apError;
+
+            const enrichedChats = (chatsData || []).map(chat => {
+                const participants = (allParticipants || [])
+                    .filter(p => p.chat_id === chat.id)
+                    .map(p => ({
+                        id: p.user_id,
+                        username: p.user?.username || 'Usuario',
+                        fullName: p.user?.first_name ? `${p.user.first_name} ${p.user.last_name || ''}`.trim() : null,
+                        avatar: p.user?.avatar_url
+                    }));
+
+                // Calcular nombre amigable
+                let chatDisplayName = chat.context_title;
+                if (!chatDisplayName && chat.type === 'direct') {
+                    const other = participants.find(p => p.id !== user.id);
+                    chatDisplayName = other ? (other.fullName || other.username) : 'Chat Privado';
                 }
-            })
-            .subscribe();
 
-        return () => supabase.removeChannel(channel);
-    }, [user, chats, loadChats]); 
+                return {
+                    ...chat,
+                    displayName: chatDisplayName || 'Conversación',
+                    participants,
+                    messages: []
+                };
+            });
 
-    const createChat = async (participants, type = 'direct', contextId = null, contextTitle = '') => {
-        // ... (existing participants are IDs here usually after migration)
-        const { data: chat, error } = await supabase
-            .from('chats')
-            .insert({
-                type,
-                context_id: contextId,
-                context_title: contextTitle,
-                status: 'active'
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        // Add participants
-        const participantRecords = participants.map(pId => ({
-            chat_id: chat.id,
-            user_id: pId
-        }));
-
-        await supabase.from('chat_participants').insert(participantRecords);
-
-        setChats(prev => [...prev, { ...chat, messages: [] }]);
-        return chat.id;
+            setChats(enrichedChats);
+        } catch (error) {
+            console.error("[ChatContext] Error loading chats:", error);
+        }
     };
 
-    const toggleChatBlock = (chatId) => {
-        setChats(prev => prev.map(chat => {
-            if (chat.id === chatId) {
-                return { ...chat, status: chat.status === 'blocked' ? 'active' : 'blocked' };
+    const createChat = async (participantIds, type = 'direct', contextId = null, contextTitle = null) => {
+        if (!user) throw new Error("Debe estar autenticado");
+
+        const normalizedContextId = contextId?.toString();
+        
+        try {
+            console.log(`[ChatContext] Iniciando búsqueda/creación de chat. Tipo: ${type}, ContextID: ${normalizedContextId}`);
+            
+            // 1. BUSCAR CHAT EXISTENTE GLOBALMENTE EN LA BASE DE DATOS
+            let targetChatId = null;
+
+            if (type === 'order' && normalizedContextId) {
+                // Para pedidos, el contextId es la clave única definitiva
+                const { data: existingChat } = await supabase
+                    .from('chats')
+                    .select('id')
+                    .eq('type', 'order')
+                    .eq('context_id', normalizedContextId)
+                    .maybeSingle();
+                
+                if (existingChat) {
+                    targetChatId = existingChat.id;
+                    console.log("[ChatContext] Encontrado chat de pedido existente en DB:", targetChatId);
+                }
+            } else if (type === 'direct') {
+                // Para chats directos, buscamos si ya existe uno compartido entre estos dos usuarios
+                const otherId = participantIds.find(id => id !== user.id);
+                
+                // 1. Obtener chats donde participo YO
+                const { data: myParts } = await supabase
+                    .from('chat_participants')
+                    .select('chat_id')
+                    .eq('user_id', user.id);
+                
+                if (myParts && myParts.length > 0) {
+                    const myChatIds = myParts.map(p => p.chat_id);
+                    // 2. ¿En alguno de esos participa también el OTRO?
+                    const { data: commonPart } = await supabase
+                        .from('chat_participants')
+                        .select('chat_id')
+                        .in('chat_id', myChatIds)
+                        .eq('user_id', otherId)
+                        .limit(1);
+                    
+                    if (commonPart && commonPart.length > 0) {
+                        // 3. Verificar que sea de tipo 'direct'
+                        const { data: finalChat } = await supabase
+                            .from('chats')
+                            .select('id')
+                            .eq('id', commonPart[0].chat_id)
+                            .eq('type', 'direct')
+                            .maybeSingle();
+                        
+                        if (finalChat) {
+                            targetChatId = finalChat.id;
+                            console.log("[ChatContext] Encontrado chat directo compartido en DB:", targetChatId);
+                        }
+                    }
+                }
             }
-            return chat;
-        }));
+
+            // 2. SI EL CHAT EXISTE, ASEGURAR QUE EL USUARIO ACTUAL ES PARTICIPANTE (RE-UNIÓN)
+            if (targetChatId) {
+                const { data: participation } = await supabase
+                    .from('chat_participants')
+                    .select('id')
+                    .eq('chat_id', targetChatId)
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                
+                if (!participation) {
+                    console.log("[ChatContext] El chat existe pero el usuario no es participante. Re-uniendo...");
+                    await supabase
+                        .from('chat_participants')
+                        .insert({ chat_id: targetChatId, user_id: user.id });
+                }
+
+                // Recargar si no está en el estado local
+                if (!chats.some(c => c.id === targetChatId)) {
+                    await loadChats();
+                }
+                return targetChatId;
+            }
+
+            // 3. SI NO EXISTE, ENTONCES SÍ CREAR UNO TOTALMENTE NUEVO
+            console.log("[ChatContext] No se encontró chat previo. Creando nuevo registro...");
+            const { data: chat, error: cError } = await supabase
+                .from('chats')
+                .insert({
+                    type,
+                    context_id: normalizedContextId,
+                    context_title: contextTitle,
+                    last_message: 'Nueva conversación',
+                    last_message_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (cError) throw cError;
+
+            // 4. Añadir participantes iniciales
+            const pData = participantIds.map(pid => ({
+                chat_id: chat.id,
+                user_id: pid
+            }));
+
+            const { error: pError } = await supabase
+                .from('chat_participants')
+                .insert(pData);
+
+            if (pError) throw pError;
+
+            // Actualizar estado local y devolver
+            await loadChats();
+            return chat.id;
+
+        } catch (error) {
+            console.error("[ChatContext] Error crítico en createChat:", error);
+            throw error;
+        }
+    };
+
+    // Cargar al montar o cambiar usuario
+    useEffect(() => {
+        loadChats();
+    }, [user]);
+
+    // Suscripción Global a Mensajes
+    const toggleChatBlock = async (chatId) => {
+        const chat = chats.find(c => c.id === chatId);
+        if (!chat) return;
+
+        const newStatus = chat.status === 'blocked' ? 'active' : 'blocked';
+
+        try {
+            const { error } = await supabase
+                .from('chats')
+                .update({ status: newStatus })
+                .eq('id', chatId);
+
+            if (error) throw error;
+
+            setChats(prev => prev.map(c =>
+                c.id === chatId ? { ...c, status: newStatus } : c
+            ));
+        } catch (error) {
+            console.error("[ChatContext] Error al bloquear chat:", error);
+        }
+    };
+
+    const fetchMessages = async (chatId) => {
+        try {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('chat_id', chatId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            return (data || []).map(m => ({
+                id: m.id,
+                senderId: m.sender_id,
+                senderName: m.sender_name,
+                text: m.content,
+                attachments: m.attachments || [],
+                timestamp: m.created_at,
+                isSystem: m.is_system
+            }));
+        } catch (error) {
+            console.error("[ChatContext] Error al obtener mensajes:", error);
+            return [];
+        }
     };
 
     const sendMessage = async (chatId, text, attachments = [], options = {}) => {
-        const { data: message, error } = await supabase
-            .from('messages')
-            .insert({
-                chat_id: chatId,
-                sender_id: options.isSystem ? null : (user?.id),
-                sender_name: options.senderName || (options.isSystem ? 'Sistema Cooplance' : (user?.firstName || user?.username)),
-                content: text,
-                attachments,
-                is_system: options.isSystem || false
-            })
-            .select()
-            .single();
+        if (!user && !options.isSystem) throw new Error("Debe estar autenticado");
 
-        if (error) throw error;
+        try {
+            // Determinar el receiver_id (ID del otro participante)
+            let receiverId = options.receiverId;
 
-        // Update chat last message
-        await supabase
-            .from('chats')
-            .update({ 
-                last_message: text || (attachments.length ? 'Adjunto enviado' : ''),
-                last_message_at: new Date().toISOString()
-            })
-            .eq('id', chatId);
+            if (!receiverId) {
+                // Intentar encontrarlo en el estado local
+                const chat = chats.find(c => c.id === chatId);
+                if (chat && chat.participants) {
+                    const other = chat.participants.find(p => p.id !== user?.id);
+                    receiverId = other ? other.id : null;
+                }
 
-        // Register activity on message send
-        if (user && !options.isSystem) {
-            const updated = registerActivity(user);
-            updateUser(updated);
+                // Búsqueda exhaustiva en la base de datos si no está en el estado local
+                if (!receiverId) {
+                    const { data: participants } = await supabase
+                        .from('chat_participants')
+                        .select('user_id')
+                        .eq('chat_id', chatId);
+                    
+                    const other = participants?.find(p => p.user_id !== user?.id);
+                    if (other) receiverId = other.user_id;
+                }
+            }
+
+            if (!receiverId && !options.isSystem) {
+                console.warn("[ChatContext] No se pudo determinar el receptor del mensaje.");
+            }
+
+            const { data: message, error } = await supabase
+                .from('messages')
+                .insert({
+                    chat_id: chatId,
+                    sender_id: options.isSystem ? null : user.id,
+                    sender_name: options.senderName || (options.isSystem ? 'Sistema' : (user.username || user.first_name || 'Usuario')),
+                    receiver_id: receiverId, // Campo obligatorio crítico
+                    content: text,
+                    attachments: attachments,
+                    is_system: options.isSystem || false
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Actualizar el "último mensaje" en el chat
+            await supabase
+                .from('chats')
+                .update({
+                    last_message: text || (attachments.length ? 'Archivo adjunto' : ''),
+                    last_message_at: new Date().toISOString()
+                })
+                .eq('id', chatId);
+
+            // Registro de actividad gamificada
+            if (user && !options.isSystem) {
+                const updated = registerActivity(user);
+                updateUser(updated);
+            }
+
+            return message;
+        } catch (error) {
+            console.error("[ChatContext] Error al enviar mensaje:", error);
+            throw error;
         }
+    };
 
-        return message;
+    const deleteChat = async (chatId) => {
+        if (!user) return;
+
+        try {
+            // Solo eliminamos nuestra participación, no el chat completo para todos
+            const { error } = await supabase
+                .from('chat_participants')
+                .delete()
+                .eq('chat_id', chatId)
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            setChats(prev => prev.filter(c => c.id !== chatId));
+            return true;
+        } catch (error) {
+            console.error("[ChatContext] Error deleting chat participation:", error);
+            return false;
+        }
+    };
+
+    const purgeDuplicateChats = async () => {
+        if (!user || isCleaning) return 0;
+        setIsCleaning(true);
+        console.log("[ChatContext] Iniciando purga masiva...");
+
+        // Seguridad: Si en 15s no ha terminado, desbloquear el botón pase lo que pase
+        const safetyTimeout = setTimeout(() => {
+            if (isCleaning) {
+                console.warn("[ChatContext] La purga ha excedido el tiempo de seguridad. Desbloqueando...");
+                setIsCleaning(false);
+            }
+        }, 15000);
+
+        try {
+            // 1. Agrupar chats por contexto y tipo
+            const groups = {};
+            chats.forEach(chat => {
+                let key = '';
+                if (chat.type === 'order' && chat.context_id) {
+                    key = `order_${chat.context_id}`;
+                } else if (chat.type === 'direct') {
+                    const other = chat.participants.find(p => p.id !== user.id);
+                    if (other) key = `direct_${other.id}`;
+                }
+
+                if (key) {
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(chat);
+                }
+            });
+
+            // 2. Identificar víctimas (duplicados obsoletos)
+            const idsToDelete = [];
+            Object.keys(groups).forEach(key => {
+                const group = groups[key];
+                if (group.length > 1) {
+                    // Ordenar: Priorizamos chats con mensajes reales, luego por fecha más reciente
+                    const sorted = [...group].sort((a, b) => {
+                        const aHasMsg = a.last_message && a.last_message !== 'Nueva conversación';
+                        const bHasMsg = b.last_message && b.last_message !== 'Nueva conversación';
+                        
+                        if (aHasMsg !== bHasMsg) return bHasMsg ? 1 : -1;
+                        return new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0);
+                    });
+                    
+                    // Mantener el 1ero, borrar el resto
+                    const victims = sorted.slice(1).map(c => c.id);
+                    idsToDelete.push(...victims);
+                }
+            });
+
+            // PLUS: Purga agresiva por NOMBRE (Para los que no tienen context_id pero se llaman igual y están vacíos)
+            const emptyByName = {};
+            chats.forEach(chat => {
+                if (!chat.context_id && chat.last_message === 'Nueva conversación') {
+                    if (!emptyByName[chat.displayName]) emptyByName[chat.displayName] = [];
+                    emptyByName[chat.displayName].push(chat);
+                }
+            });
+
+            Object.values(emptyByName).forEach(list => {
+                if (list.length > 1) {
+                    const sorted = [...list].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                    idsToDelete.push(...sorted.slice(1).map(c => c.id));
+                }
+            });
+
+            const uniqueIdsToDelete = [...new Set(idsToDelete)];
+
+            if (uniqueIdsToDelete.length === 0) {
+                console.log("[ChatContext] No hay duplicados para limpiar.");
+                return 0;
+            }
+
+            console.log(`[ChatContext] Eliminando participación en ${uniqueIdsToDelete.length} chats...`);
+
+            // 3. Ejecutar borrado masivo
+            const { error: deleteError } = await supabase
+                .from('chat_participants')
+                .delete()
+                .in('chat_id', uniqueIdsToDelete)
+                .eq('user_id', user.id);
+
+            if (deleteError) throw deleteError;
+
+            // 4. Pequeña espera para que DB procese
+            await new Promise(r => setTimeout(r, 500));
+
+            // 5. Recargar estado
+            await loadChats();
+            console.log(`[ChatContext] Éxito: Se han limpiado ${uniqueIdsToDelete.length} duplicados.`);
+            clearTimeout(safetyTimeout);
+            return uniqueIdsToDelete.length;
+
+        } catch (error) {
+            console.error("[ChatContext] Error crítico en la purga:", error);
+            throw error;
+        } finally {
+            setIsCleaning(false);
+        }
     };
 
     const getChatById = (chatId) => {
@@ -141,48 +454,26 @@ export const ChatProvider = ({ children }) => {
     };
 
     const getUserChats = () => {
-        if (!user) return [];
-        // Filter chats where user is a participant
-        // For simplicity using ID or Name matching
-        const userId = user.id || user.username; // Normalize identifier usage
-        return chats.filter(c => c.participants.includes(userId)).sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
-    };
-
-    const fetchMessages = async (chatId) => {
-        const { data, error } = await supabase
-            .from('messages')
-            .select('*')
-            .eq('chat_id', chatId)
-            .order('created_at', { ascending: true });
-
-        if (error) {
-            console.error('[ChatContext] Error fetching messages:', error);
-            return [];
-        }
-
-        return data.map(m => ({
-            id: m.id,
-            senderId: m.sender_id,
-            senderName: m.sender_name,
-            text: m.content,
-            attachments: m.attachments,
-            timestamp: m.created_at,
-            isSystem: m.is_system
-        }));
+        return chats;
     };
 
     return (
         <ChatContext.Provider value={{
             chats,
             createChat,
-            sendMessage,
             toggleChatBlock,
+            deleteChat,
+            purgeDuplicateChats,
+            isCleaning,
+            sendMessage,
+            fetchMessages,
             getChatById,
             getUserChats,
-            fetchMessages,
-            refreshChats: loadChats
+            loadChats
         }}>
             {children}
         </ChatContext.Provider>
     );
 };
+
+export default ChatProvider;

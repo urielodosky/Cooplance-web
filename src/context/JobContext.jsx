@@ -16,13 +16,19 @@ const mapJobFromDB = (row) => ({
     projectId: row.project_id,
     serviceTitle: row.service_title,
     freelancerId: row.provider_id,
-    freelancerName: row.provider?.first_name
+    freelancerName: row.provider?.first_name 
         ? `${row.provider.first_name} ${row.provider.last_name || ''}`.trim()
         : (row.provider?.username || 'Proveedor'),
+    freelancerAvatar: row.provider?.avatar_url,
+    freelancerUsername: row.provider?.username,
+    freelancerRole: row.provider?.role || 'freelancer',
     buyerId: row.client_id,
     buyerName: row.buyer_name || (row.client?.first_name
         ? `${row.client.first_name} ${row.client.last_name || ''}`.trim()
         : (row.client?.username || 'Cliente')),
+    buyerUsername: row.client?.username,
+    buyerAvatar: row.client?.avatar_url,
+    buyerRealName: (row.client?.first_name ? `${row.client.first_name} ${row.client.last_name || ''}`.trim() : null),
     buyerRole: row.buyer_role || row.client?.role || 'client',
     amount: row.amount,
     tier: row.tier || 'Standard',
@@ -74,7 +80,11 @@ export const JobProvider = ({ children }) => {
         try {
             const { data, error } = await supabase
                 .from('jobs')
-                .select('*')
+                .select(`
+                    *,
+                    client:client_id(username, first_name, last_name, avatar_url, role),
+                    provider:provider_id(username, first_name, last_name, avatar_url, role)
+                `)
                 .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`)
                 .order('created_at', { ascending: false });
 

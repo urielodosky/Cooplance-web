@@ -104,7 +104,7 @@ const Navbar = () => {
                             <button onClick={() => handleOptionClick('/companies')} className="dropdown-item">
                                 Empresas
                             </button>
-                            <button onClick={() => handleOptionClick('/my-coops')} className="dropdown-item">
+                            <button onClick={() => handleOptionClick('/explore-teams')} className="dropdown-item">
                                 Coops
                             </button>
                         </div>
@@ -206,7 +206,22 @@ const Navbar = () => {
                 ) : (
                     <div className="nav-actions-container" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <button onClick={() => navigate('/login')} className="btn-login">Iniciar sesión</button>
-                        <button onClick={() => navigate('/register')} className="btn-primary">Registrarse</button>
+                        <button 
+                            onClick={() => {
+                                // Contextual registration: if looking at a role, register as that role
+                                let registerPath = '/register';
+                                if (location.pathname.includes('/info/')) {
+                                    const roleFromPath = location.pathname.split('/').pop();
+                                    if (roleFromPath) {
+                                        registerPath += `?role=${roleFromPath}`;
+                                    }
+                                }
+                                navigate(registerPath);
+                            }} 
+                            className="btn-primary"
+                        >
+                            Registrarse
+                        </button>
                     </div>
                 )}
             </div>
@@ -244,7 +259,7 @@ const Navbar = () => {
                             )}
                             <Link to="/explore" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Freelancers</Link>
                             <Link to="/companies" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Empresas</Link>
-                            <Link to="/my-coops" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Coops</Link>
+                            <Link to="/explore-teams" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Coops</Link>
 
                             <Link to="/community" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Comunidad</Link>
                             <Link to="/events" className="mobile-nav-link" style={{ color: '#3b82f6', fontWeight: 'bold' }} onClick={() => setIsMobileMenuOpen(false)}>Eventos</Link>
@@ -300,7 +315,23 @@ const Navbar = () => {
                             ) : (
                                 <div className="mobile-auth-buttons">
                                     <button onClick={() => navigate('/login')} className="btn-login mobile-btn">Iniciar sesión</button>
-                                    <button onClick={() => navigate('/register')} className="btn-primary mobile-btn">Registrarse</button>
+                                    <button 
+                                        onClick={() => {
+                                            // Contextual registration: if looking at a role, register as that role
+                                            let registerPath = '/register';
+                                            if (location.pathname.includes('/info/')) {
+                                                const roleFromPath = location.pathname.split('/').pop();
+                                                if (roleFromPath) {
+                                                    registerPath += `?role=${roleFromPath}`;
+                                                }
+                                            }
+                                            navigate(registerPath);
+                                            setIsMobileMenuOpen(false);
+                                        }} 
+                                        className="btn-primary mobile-btn"
+                                    >
+                                        Registrarse
+                                    </button>
                                 </div>
                             )}
                         </div>

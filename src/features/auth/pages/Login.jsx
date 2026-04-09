@@ -27,12 +27,19 @@ const Login = () => {
         setLoading(true);
         try {
             await login({ email, password });
-            // Login succeeded! Keep loading=true. 
-            // The useEffect watching `user` will navigate to /dashboard
-            // once onAuthStateChange fires and populates the user context.
+            // El useEffect se encargará de navegar si el usuario se carga
         } catch (err) {
             setError(err.message || 'Error al iniciar sesión.');
             setLoading(false);
+        } finally {
+            // No quitamos el loading inmediatamente aquí si fue exitoso 
+            // para evitar que el botón parpadee antes de navegar,
+            // pero si en 5 segundos no hemos navegado, lo liberamos por seguridad.
+            setTimeout(() => {
+                if (window.location.pathname === '/login') {
+                    setLoading(false);
+                }
+            }, 5000);
         }
     };
 

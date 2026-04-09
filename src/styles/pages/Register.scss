@@ -160,3 +160,101 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     background: #ffffff;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
+
+/* Terms & Privacy Custom Checkbox */
+.terms-container {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: rgba(139, 92, 246, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        background: rgba(139, 92, 246, 0.1);
+        border-color: rgba(139, 92, 246, 0.4);
+    }
+}
+
+.checkbox-wrapper {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.checkbox-wrapper input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 22px;
+    width: 22px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &::after {
+        content: "";
+        position: absolute;
+        display: none;
+        left: 7px;
+        top: 3px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+}
+
+.checkbox-wrapper input:checked ~ .checkmark {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+
+    &::after {
+        display: block;
+    }
+}
+
+.terms-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    user-select: none;
+
+    a {
+        color: var(--primary);
+        font-weight: 700;
+        text-decoration: none;
+        transition: opacity 0.2s;
+
+        &:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+    }
+}
+
+[data-theme="light"] .terms-container {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+[data-theme="light"] .checkmark {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}

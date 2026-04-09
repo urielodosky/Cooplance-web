@@ -1,87 +1,106 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { serviceCategories } from '../../features/services/data/categories';
 import CustomDropdown from './CustomDropdown';
 import '../../styles/components/SidebarFilter.scss';
 
 const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
-
     // Ensure we have default values to avoid modifying undefined
     const currentFilters = filters || {
         query: '',
         category: '',
+        subcategory: '',
+        specialties: [],
         priceMin: '',
         priceMax: '',
         rating: 0,
         workMode: [],
         level: '',
         location: '',
-        paymentFrequency: '',
+        country: 'Argentina',
+        province: [],
+        city: [],
+        paymentMethods: [],
+        paymentFrequency: [],
         durationMin: '',
         durationMax: '',
         durationUnit: 'months',
         commissionMin: '',
-        commissionMax: ''
+        commissionMax: '',
+        memberCountMin: '',
+        memberCountMax: ''
     };
+    
+    const [isExpanded, setIsExpanded] = useState(false);
 
-    // Local state for query to allow "Enter" or "Button" triggering
-    const [localQuery, setLocalQuery] = React.useState(currentFilters.query);
-
-    // Sync local query if parent changes it (e.g. clear filters)
-    React.useEffect(() => {
+    // Local state for query
+    const [localQuery, setLocalQuery] = useState(currentFilters.query);
+    
+    // Sync local query if parent changes it
+    useEffect(() => {
         setLocalQuery(currentFilters.query);
     }, [currentFilters.query]);
 
-    // Payment Frequency Dropdown State
-    const [isPaymentMenuOpen, setIsPaymentMenuOpen] = React.useState(false);
-    const paymentMenuRef = React.useRef(null);
+    // Location API State
+    const [argProvinces, setArgProvinces] = useState([]);
+    const [argCities, setArgCities] = useState([]);
+    const [isLoadingLoc, setIsLoadingLoc] = useState(false);
 
-    // Payment Methods Dropdown State (New)
-    const [isPaymentMethodsOpen, setIsPaymentMethodsOpen] = React.useState(false);
-    const paymentMethodsRef = React.useRef(null);
-
-    // Close payment menu on click outside
-    React.useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (paymentMenuRef.current && !paymentMenuRef.current.contains(event.target)) {
-                setIsPaymentMenuOpen(false);
-            }
-            if (paymentMethodsRef.current && !paymentMethodsRef.current.contains(event.target)) {
-                setIsPaymentMethodsOpen(false);
+    // Fetch Provinces on Mount (Fixed to Argentina)
+    useEffect(() => {
+        const fetchProvinces = async () => {
+            try {
+                setIsLoadingLoc(true);
+                const res = await fetch('https://apis.datos.gob.ar/georef/api/provincias?campos=nombre&max=100');
+                const data = await res.json();
+                const names = data.provincias.map(p => p.nombre).sort();
+                setArgProvinces(names);
+            } catch (error) {
+                console.error("Error fetching provinces:", error);
+            } finally {
+                setIsLoadingLoc(false);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        fetchProvinces();
     }, []);
 
-    // Helper to get display text for payment frequency
-    const getPaymentFrequencyLabel = () => {
-        const selected = currentFilters.paymentFrequency || [];
-        if (!selected || selected.length === 0) return 'Cualquiera';
-
-        const labels = {
-            'unique': 'Único',
-            'daily': 'Diario',
-            'weekly': 'Semanal',
-            'biweekly': 'Quincenal',
-            'monthly': 'Mensual',
-            'commission': 'Comisión'
-        };
-
-        if (Array.isArray(selected)) {
-            if (selected.length === 6) return 'Todas';
-            if (selected.length === 0) return 'Cualquiera';
-            return selected.map(k => labels[k]).join(', ');
+    // Fetch Cities based on selected provinces
+    useEffect(() => {
+        const selectedProvinces = currentFilters.province || [];
+        if (Array.isArray(selectedProvinces) && selectedProvinces.length > 0) {
+            const fetchCities = async () => {
+                try {
+                    setIsLoadingLoc(true);
+                    let allCities = [];
+                    for (const prov of selectedProvinces) {
+                        const res = await fetch(`https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(prov)}&campos=nombre,provincia.nombre&max=1000`);
+                        const data = await res.json();
+                        const cityNames = data.localidades.map(m => `${m.nombre} (${m.provincia.nombre})`);
+                        allCities = [...allCities, ...cityNames];
+                    }
+                    const names = [...new Set(allCities)].sort();
+                    setArgCities(names);
+                } catch (error) {
+                    console.error("Error fetching cities:", error);
+                } finally {
+                    setIsLoadingLoc(false);
+                }
+            };
+            fetchCities();
+        } else {
+            setArgCities([]);
         }
-        return labels[selected] || 'Cualquiera';
-    };
+    }, [currentFilters.province]);
 
     const categories = Object.keys(serviceCategories || {}).sort();
 
     const handleChange = (name, value) => {
         const newFilters = { ...currentFilters, [name]: value };
-        // If category changes, reset subcategory
         if (name === 'category') {
-            newFilters.subcategory = [];
+            newFilters.subcategory = '';
+            newFilters.specialties = [];
+        }
+        if (name === 'subcategory') {
+            newFilters.specialties = [];
         }
         onFilterChange(newFilters);
     };
@@ -113,33 +132,28 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
             workMode: [],
             level: '',
             location: '',
-            country: '',
-            province: '',
-            city: '',
-            paymentFrequency: '',
+            country: 'Argentina',
+            province: [],
+            city: [],
+            paymentMethods: [],
+            paymentFrequency: [],
             durationMin: '',
             durationMax: '',
             durationUnit: 'months',
             commissionMin: '',
-            commissionMax: ''
+            commissionMax: '',
+            memberCountMin: '',
+            memberCountMax: ''
         };
         onFilterChange(reset);
-    };
-
-
-
-    const handleStarHover = (e, starIndex) => {
-        // Visual feedback only
     };
 
     const handleStarClick = (e, starIndex) => {
         const { left, width } = e.currentTarget.getBoundingClientRect();
         const mouseX = e.clientX - left;
         const isHalf = mouseX < width / 2;
-
         let newRating = starIndex;
         if (isHalf) newRating -= 0.5;
-
         handleChange('rating', newRating);
     };
 
@@ -147,20 +161,13 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
         return [1, 2, 3, 4, 5].map(star => {
             const rating = currentFilters.rating;
             let className = 'star';
-
-            if (rating >= star) {
-                className += ' full';
-            } else if (rating === star - 0.5) {
-                className += ' half';
-            }
-
+            if (rating >= star) className += ' full';
+            else if (rating === star - 0.5) className += ' half';
             return (
                 <span
                     key={star}
                     className={className}
                     onClick={(e) => handleStarClick(e, star)}
-                    onMouseMove={(e) => handleStarHover(e, star)}
-                    title={`${star - 0.5} o ${star} estrellas`}
                 >
                     ★
                 </span>
@@ -168,394 +175,363 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
         });
     };
 
+    // Payment method options
+    const paymentOptions = [
+        { label: 'PayPal', value: 'paypal' },
+        { label: 'Mercado Pago', value: 'mercadopago' },
+        { label: 'Binance', value: 'binance' },
+        { label: 'Tarjeta', value: 'card' }
+    ];
+
+    // Payment frequency options
+    const frequencyOptions = [
+        { label: 'Único', value: 'unique' },
+        { label: 'Diario', value: 'daily' },
+        { label: 'Semanal', value: 'weekly' },
+        { label: 'Quincenal', value: 'biweekly' },
+        { label: 'Mensual', value: 'monthly' },
+        { label: 'Por Venta', value: 'per_sale' },
+        { label: 'Comisión', value: 'commission' }
+    ];
+
+    const durationUnits = [
+        { label: 'Días', value: 'days' },
+        { label: 'Semanas', value: 'weeks' },
+        { label: 'Meses', value: 'months' },
+        { label: 'Años', value: 'years' }
+    ];
+
     return (
-        <div className="glass sidebar-filter">
-            {/* Top Row: Search - Made more compact */}
+        <div className="glass sidebar-filter premium-compact">
+            {/* 1. Search Row */}
             <div className="filter-search-row">
-                <input
-                    type="text"
-                    placeholder={variant === 'company' ? "Buscar empresa..." : "Buscar... (ej. Logo, React)"}
-                    className="search-input"
-                    value={localQuery}
-                    onChange={(e) => setLocalQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearchTrigger()}
-                />
+                <div className="search-wrapper">
+                    <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre o palabra clave..."
+                        className="search-input"
+                        value={localQuery}
+                        onChange={(e) => setLocalQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearchTrigger()}
+                    />
+                </div>
+                <div className="search-actions">
+                    <button 
+                        className={`btn-toggle-filters ${isExpanded ? 'active' : ''}`}
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="4" y1="21" x2="4" y2="14" />
+                            <line x1="4" y1="10" x2="4" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="12" />
+                            <line x1="12" y1="8" x2="12" y2="3" />
+                            <line x1="20" y1="21" x2="20" y2="16" />
+                            <line x1="20" y1="12" x2="20" y2="3" />
+                            <line x1="1" y1="14" x2="7" y2="14" />
+                            <line x1="9" y1="8" x2="15" y2="8" />
+                            <line x1="17" y1="16" x2="23" y2="16" />
+                        </svg>
+                        <span>Filtros</span>
+                    </button>
+                    {!isExpanded && (
+                        <button onClick={handleSearchTrigger} className="btn-search-violet-main">
+                            Buscar
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Middle Row: Filter Options */}
-            <div className="filter-options-row">
-                <div className="filter-section">
-                    <h3>Categoría</h3>
+            {isExpanded && (
+                <div className="expanded-filters-container animate-slide-down">
+
+            {/* 2. Main Filter Grid (Row 1) */}
+            <div className={`filter-options-grid ${variant === 'company' ? 'is-company' : variant === 'team' ? 'is-team' : ''}`}>
+                {/* Category */}
+                <div className="filter-item">
+                    <label>CATEGORÍA</label>
                     <CustomDropdown
                         options={categories.map(c => ({ label: c, value: c }))}
                         value={currentFilters.category}
-                        onChange={(val) => {
-                            const newFilters = { ...currentFilters, category: val, subcategory: '', specialties: [] };
-                            onFilterChange(newFilters);
-                        }}
+                        onChange={(val) => handleChange('category', val)}
                         placeholder="Todas"
                     />
                 </div>
 
-                {currentFilters.category && (
-                    <div className="filter-section">
-                        <h3>Subcategoría</h3>
+                {/* Modality Boxes (Compact) */}
+                <div className="filter-item">
+                    <label>MODALIDAD</label>
+                    <div className="compact-box-selectors">
+                        <div 
+                            className={`selection-box-sm remote ${currentFilters.workMode.includes('remote') ? 'active' : ''}`}
+                            onClick={() => handleCheckbox('workMode', 'remote')}
+                        >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                <polyline points="10 9 12 11 14 9"></polyline>
+                            </svg>
+                            <span>Remoto</span>
+                        </div>
+                        <div 
+                            className={`selection-box-sm presential ${currentFilters.workMode.includes('presential') ? 'active' : ''}`}
+                            onClick={() => handleCheckbox('workMode', 'presential')}
+                        >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>Presencial</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Frequency for Companies & Teams */}
+                {(variant === 'company' || variant === 'team') && (
+                    <div className="filter-item">
+                        <label>FRECUENCIA</label>
                         <CustomDropdown
-                            options={Object.keys((typeof serviceCategories[currentFilters.category] === 'object' && !Array.isArray(serviceCategories[currentFilters.category])) ? serviceCategories[currentFilters.category] : {}).map(s => ({ label: s, value: s }))}
-                            value={currentFilters.subcategory || ''}
-                            onChange={(val) => {
-                                const newFilters = { ...currentFilters, subcategory: val, specialties: [] };
-                                onFilterChange(newFilters);
-                            }}
-                            placeholder="Todas"
+                            options={frequencyOptions}
+                            value={currentFilters.paymentFrequency}
+                            onChange={(val) => handleChange('paymentFrequency', val)}
+                            placeholder="Elegir..."
+                            multiple={true}
                         />
                     </div>
                 )}
 
-                {variant === 'default' && (
-                    <div className="filter-section">
-                        <h3>Precio</h3>
-                        <div className="range-inputs">
-                            <input
-                                type="number"
-                                placeholder="Mín"
-                                className="range-input"
-                                value={currentFilters.priceMin}
-                                onChange={(e) => handleChange('priceMin', e.target.value)}
-                            />
-                            <span>-</span>
-                            <input
-                                type="number"
-                                placeholder="Máx"
-                                className="range-input"
-                                value={currentFilters.priceMax}
-                                onChange={(e) => handleChange('priceMax', e.target.value)}
-                            />
-                        </div>
-                    </div>
-                )}
 
-                <div className="filter-section" style={{ flex: 1.5 }}>
-                    <h3>Modalidad / Ubicación</h3>
-                    <div className="checkbox-group">
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={currentFilters.workMode.includes('remote')}
-                                onChange={() => handleCheckbox('workMode', 'remote')}
-                            />
-                            Remoto
-                        </label>
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                checked={currentFilters.workMode.includes('presential')}
-                                onChange={() => handleCheckbox('workMode', 'presential')}
-                            />
-                            Presencial
-                        </label>
-                    </div>
-                    {currentFilters.workMode.includes('presential') && (
-                        <div className="location-inputs" style={{
-                            display: 'flex',
-                            gap: '0.5rem',
-                            marginTop: '0.5rem',
-                            width: '100%',
-                            animation: 'fadeIn 0.2s ease'
-                        }}>
-                            <input
-                                type="text"
-                                placeholder="País"
-                                className="search-input"
-                                style={{ padding: '0.3rem', fontSize: '0.8rem', flex: 1 }}
-                                value={currentFilters.country || ''}
-                                onChange={(e) => handleChange('country', e.target.value)}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Provincia"
-                                className="search-input"
-                                style={{ padding: '0.3rem', fontSize: '0.8rem', flex: 1 }}
-                                value={currentFilters.province || ''}
-                                onChange={(e) => handleChange('province', e.target.value)}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Ciudad"
-                                className="search-input"
-                                style={{ padding: '0.3rem', fontSize: '0.8rem', flex: 1 }}
-                                value={currentFilters.city || ''}
-                                onChange={(e) => handleChange('city', e.target.value)}
-                            />
-                        </div>
+                <div className="filter-item">
+                    {(variant === 'company' || variant === 'team') && currentFilters.paymentFrequency?.includes('commission') ? (
+                        <>
+                            <label>% COMISIÓN</label>
+                            <div className="compact-range">
+                                <input
+                                    type="number"
+                                    placeholder="Mín %"
+                                    value={currentFilters.commissionMin}
+                                    onChange={(e) => handleChange('commissionMin', e.target.value)}
+                                />
+                                <span className="sep">-</span>
+                                <input
+                                    type="number"
+                                    placeholder="Máx %"
+                                    value={currentFilters.commissionMax}
+                                    onChange={(e) => handleChange('commissionMax', e.target.value)}
+                                />
+                                <span className="unit-label">%</span>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <label>{(variant === 'company' || variant === 'team') ? 'PRESUPUESTO EST.' : 'PRESUPUESTO ($)'}</label>
+                            <div className="compact-range">
+                                <input
+                                    type="number"
+                                    placeholder="Mín"
+                                    value={currentFilters.priceMin}
+                                    onChange={(e) => handleChange('priceMin', e.target.value)}
+                                />
+                                <span className="sep">-</span>
+                                <input
+                                    type="number"
+                                    placeholder="Máx"
+                                    value={currentFilters.priceMax}
+                                    onChange={(e) => handleChange('priceMax', e.target.value)}
+                                />
+                            </div>
+                        </>
                     )}
                 </div>
 
-                {/* Payment Method Filter (New) */}
-                {/* Payment Method Filter (New Dropdown) */}
-                <div className="filter-section">
-                    <h3>Métodos de Pago</h3>
-
-                    {/* Reusing custom dropdown logic for multi-select */}
-                    <div className="custom-dropdown-container">
-                        <div
-                            className={`custom-dropdown-wrapper ${isPaymentMethodsOpen ? 'open' : ''}`}
-                            ref={paymentMethodsRef}
-                        >
-                            <div
-                                className="dropdown-selected"
-                                onClick={() => setIsPaymentMethodsOpen(!isPaymentMethodsOpen)}
-                                style={{ justifyContent: 'space-between' }}
-                            >
-                                <span style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {(currentFilters.paymentMethods && currentFilters.paymentMethods.length > 0)
-                                        ? `${currentFilters.paymentMethods.length} seleccionado(s)`
-                                        : 'Cualquiera'}
-                                </span>
-                                <span className={`dropdown-arrow ${isPaymentMethodsOpen ? 'up' : ''}`}>▼</span>
-                            </div>
-
-                            {isPaymentMethodsOpen && (
-                                <div className="dropdown-options">
-                                    {[
-                                        { id: 'paypal', label: 'PayPal' },
-                                        { id: 'mercadopago', label: 'Mercado Pago' },
-                                        { id: 'binance', label: 'Binance Pay' },
-                                        { id: 'card', label: 'Tarjeta (Crédito/Débito)' }
-                                    ].map(method => (
-                                        <div
-                                            key={method.id}
-                                            className="dropdown-option"
-                                            onClick={(e) => { e.stopPropagation(); handleCheckbox('paymentMethods', method.id); }}
-                                        >
-                                            <div className="checkbox-label" style={{ width: '100%' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={(currentFilters.paymentMethods || []).includes(method.id)}
-                                                    onChange={() => { }}
-                                                    style={{ marginRight: '8px' }}
-                                                />
-                                                {method.label}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions Inline - Moved Here */}
-
-                {/* Specialties - Full Width Row */}
-                {currentFilters.category && currentFilters.subcategory && (
-                    <div className="filter-subcategories-full" style={{
-                        width: '100%',
-                        marginTop: '0.5rem',
-                        marginBottom: '0.5rem',
-                        animation: 'fadeIn 0.3s ease'
-                    }}>
-                        <h4 style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 500 }}>
-                            Especialidades en {currentFilters.subcategory}:
-                        </h4>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            {(serviceCategories[currentFilters.category]?.[currentFilters.subcategory] || []).map(spec => {
-                                const isSelected = Array.isArray(currentFilters.specialties)
-                                    ? currentFilters.specialties.includes(spec)
-                                    : false;
-
-                                return (
-                                    <button
-                                        key={spec}
-                                        style={{
-                                            background: isSelected ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)',
-                                            border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
-                                            color: isSelected ? 'white' : 'var(--text-secondary)',
-                                            padding: '0.3rem 0.8rem', // Slightly larger padding for full row
-                                            borderRadius: 'var(--radius-sm)',
-                                            fontSize: '0.85rem',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            boxShadow: isSelected ? '0 2px 8px rgba(99, 102, 241, 0.25)' : 'none'
-                                        }}
-                                        onClick={() => {
-                                            const current = Array.isArray(currentFilters.specialties) ? currentFilters.specialties : [];
-                                            let newSpecs;
-                                            if (current.includes(spec)) {
-                                                newSpecs = current.filter(s => s !== spec);
-                                            } else {
-                                                newSpecs = [...current, spec];
-                                            }
-                                            handleChange('specialties', newSpecs);
-                                        }}
-                                    >
-                                        {spec}
-                                    </button>
-                                );
-                            })}
-                            {(!serviceCategories[currentFilters.category]?.[currentFilters.subcategory] || serviceCategories[currentFilters.category][currentFilters.subcategory].length === 0) && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sin especialidades.</span>
-                            )}
-                        </div>
+                {/* Payment Methods Dropdown (only for default variant in first row) */}
+                {variant === 'default' && (
+                    <div className="filter-item">
+                        <label>MÉTODOS DE PAGO</label>
+                        <CustomDropdown
+                            options={paymentOptions}
+                            value={currentFilters.paymentMethods}
+                            onChange={(val) => handleChange('paymentMethods', val)}
+                            placeholder="Elegir..."
+                            multiple={true}
+                        />
                     </div>
                 )}
-
-                {variant === 'company' && (
-                    <div className="company-filters-grid" style={{
-                        gridColumn: '1 / -1',
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '1.5rem',
-                        padding: '1rem',
-                        background: 'rgba(255,255,255,0.03)',
-                        borderRadius: '12px',
-                        border: '1px solid var(--border)',
-                        marginTop: '0.5rem',
-                        marginBottom: '0.5rem',
-                        width: '100%'
-                    }}>
-                        {/* Column 1: Payment Frequency - EXPANDABLE DROPDOWN */}
-                        <div className="filter-section" style={{ margin: 0, padding: 0, border: 'none', background: 'transparent' }} ref={paymentMenuRef}>
-                            <h3 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-primary)' }}>Frecuencia de Pago</h3>
-
-                            <div className="custom-dropdown-container">
-                                <div className={`custom-dropdown-wrapper ${isPaymentMenuOpen ? 'open' : ''}`}>
-                                    <div className="dropdown-selected" onClick={() => setIsPaymentMenuOpen(!isPaymentMenuOpen)}>
-                                        <span style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {getPaymentFrequencyLabel()}
-                                        </span>
-                                        <span className={`dropdown-arrow ${isPaymentMenuOpen ? 'up' : ''}`}>▼</span>
-                                    </div>
-
-                                    {isPaymentMenuOpen && (
-                                        <div className="dropdown-options">
-                                            {[
-                                                { value: 'unique', label: 'Único' },
-                                                { value: 'daily', label: 'Diario' },
-                                                { value: 'weekly', label: 'Semanal' },
-                                                { value: 'biweekly', label: 'Quincenal' },
-                                                { value: 'monthly', label: 'Mensual' },
-                                                { value: 'commission', label: 'Comisión' }
-                                            ].map((option) => (
-                                                <div
-                                                    key={option.value}
-                                                    className="dropdown-option"
-                                                    onClick={(e) => { e.stopPropagation(); handleCheckbox('paymentFrequency', option.value); }}
-                                                >
-                                                    <div className="checkbox-label" style={{ width: '100%' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={Array.isArray(currentFilters.paymentFrequency) ? currentFilters.paymentFrequency.includes(option.value) : currentFilters.paymentFrequency === option.value}
-                                                            onChange={() => { }}
-                                                            style={{ marginRight: '8px' }}
-                                                        />
-                                                        {option.label}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Commission Filter - Only visible if 'commission' is selected */}
-                            {(Array.isArray(currentFilters.paymentFrequency) && currentFilters.paymentFrequency.includes('commission')) && (
-                                <div className="fade-in" style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
-                                    <h4 style={{ marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Comisión (%)</h4>
-                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                        <input
-                                            type="number"
-                                            placeholder="Mín"
-                                            className="search-input"
-                                            style={{ flex: 1, padding: '0.4rem', textAlign: 'center', minWidth: '0' }}
-                                            value={currentFilters.commissionMin || ''}
-                                            onChange={(e) => handleChange('commissionMin', e.target.value)}
-                                        />
-                                        <span style={{ color: 'var(--text-secondary)' }}>-</span>
-                                        <input
-                                            type="number"
-                                            placeholder="Máx"
-                                            className="search-input"
-                                            style={{ flex: 1, padding: '0.4rem', textAlign: 'center', minWidth: '0' }}
-                                            value={currentFilters.commissionMax || ''}
-                                            onChange={(e) => handleChange('commissionMax', e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Column 2: Budget & Duration */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {/* Min Price */}
-                            <div className="filter-section" style={{ margin: 0, padding: 0, border: 'none', background: 'transparent' }}>
-                                <h3 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-primary)' }}>Pago Mínimo</h3>
-                                <div className="range-inputs" style={{ display: 'flex', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.8rem', marginRight: '0.5rem', color: 'var(--text-secondary)' }}>$</span>
-                                    <input
-                                        type="number"
-                                        placeholder="0"
-                                        className="range-input"
-                                        style={{ width: '100%', padding: '0.4rem' }}
-                                        value={currentFilters.priceMin}
-                                        onChange={(e) => handleChange('priceMin', e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Duration Range */}
-                            <div className="filter-section" style={{ margin: 0, padding: 0, border: 'none', background: 'transparent' }}>
-                                <h3 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-primary)' }}>Duración</h3>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <input
-                                        type="number"
-                                        placeholder="Mín"
-                                        className="search-input"
-                                        style={{ flex: 1, padding: '0.4rem', textAlign: 'center', minWidth: '0' }}
-                                        value={currentFilters.durationMin || ''}
-                                        onChange={(e) => handleChange('durationMin', e.target.value)}
-                                    />
-                                    <span style={{ color: 'var(--text-secondary)' }}>-</span>
-                                    <input
-                                        type="number"
-                                        placeholder="Máx"
-                                        className="search-input"
-                                        style={{ flex: 1, padding: '0.4rem', textAlign: 'center', minWidth: '0' }}
-                                        value={currentFilters.durationMax || ''}
-                                        onChange={(e) => handleChange('durationMax', e.target.value)}
-                                    />
-                                </div>
-                                <div className="custom-select-wrapper" style={{ marginTop: '0.5rem', minWidth: '100px' }}>
-                                    <CustomDropdown
-                                        options={[
-                                            { label: 'Único', value: 'unique' },
-                                            { label: 'Días', value: 'days' },
-                                            { label: 'Semanas', value: 'weeks' },
-                                            { label: 'Meses', value: 'months' },
-                                            { label: 'Años', value: 'years' }
-                                        ]}
-                                        value={currentFilters.durationUnit || 'months'}
-                                        onChange={(val) => handleChange('durationUnit', val)}
-                                        placeholder="Unidad"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Actions Inline - Reset to Bottom */}
-                <div className="filter-actions" style={{ marginTop: '1rem', width: '100%', justifyContent: 'flex-end', display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={handleClear} className="btn-filter-action btn-clear">
-                        Limpiar
-                    </button>
-                    <button onClick={handleSearchTrigger} className="btn-filter-action btn-apply">
-                        Buscar
-                    </button>
-                </div>
-
             </div>
 
+            {/* 2.5 Row 2 for Companies & Teams */}
+            {(variant === 'company' || variant === 'team') && (
+                <div className={`filter-options-grid is-${variant} secondary-row`}>
+                    {/* Team Specific: Member Count Range (Moved here) */}
+                    {variant === 'team' && (
+                        <div className="filter-item miembros-col">
+                            <label>MIEMBROS</label>
+                            <div className="compact-range">
+                                <input
+                                    type="number"
+                                    placeholder="Mín"
+                                    value={currentFilters.memberCountMin}
+                                    onChange={(e) => handleChange('memberCountMin', e.target.value)}
+                                />
+                                <span className="sep">-</span>
+                                <input
+                                    type="number"
+                                    placeholder="Máx"
+                                    value={currentFilters.memberCountMax}
+                                    onChange={(e) => handleChange('memberCountMax', e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Shared: Duration */}
+                    <div className="filter-item duration-col">
+                        <label>DURACIÓN ESTIMADA</label>
+                        <div className="duration-picker-group">
+                            <div className="compact-range">
+                                <input
+                                    type="number"
+                                    placeholder="De"
+                                    value={currentFilters.durationMin}
+                                    onChange={(e) => handleChange('durationMin', e.target.value)}
+                                />
+                                <span className="sep">-</span>
+                                <input
+                                    type="number"
+                                    placeholder="A"
+                                    value={currentFilters.durationMax}
+                                    onChange={(e) => handleChange('durationMax', e.target.value)}
+                                />
+                            </div>
+                            <div className="unit-selector">
+                                <CustomDropdown
+                                    options={durationUnits}
+                                    value={currentFilters.durationUnit}
+                                    onChange={(val) => handleChange('durationUnit', val)}
+                                    placeholder="Unidad"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Shared: Settlement Frequency for Commission */}
+                    {currentFilters.paymentFrequency?.includes('commission') && (
+                        <div className="filter-item commission-freq-col animate-in">
+                            <label>LIQUIDACIÓN DE %</label>
+                            <CustomDropdown
+                                options={frequencyOptions.filter(f => f.value !== 'commission')}
+                                value={currentFilters.commissionFrequency}
+                                onChange={(val) => handleChange('commissionFrequency', val)}
+                                placeholder="Frecuencia..."
+                            />
+                        </div>
+                    )}
+
+                    {/* Payment Methods */}
+                    <div className="filter-item payment-methods-col">
+                        <label>MÉTODOS DE PAGO</label>
+                        <CustomDropdown
+                            options={paymentOptions}
+                            value={currentFilters.paymentMethods}
+                            onChange={(val) => handleChange('paymentMethods', val)}
+                            placeholder="Elegir..."
+                            multiple={true}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* 3. Logical Group (Row 2): Subcategory + Specialties */}
+            {currentFilters.category && (
+                <div className="subcat-specialties-row">
+                    <div className="filter-item subcat-col">
+                        <label>SUBCATEGORÍA</label>
+                        <CustomDropdown
+                            options={Object.keys((typeof serviceCategories[currentFilters.category] === 'object' && !Array.isArray(serviceCategories[currentFilters.category])) ? serviceCategories[currentFilters.category] : {}).map(s => ({ label: s, value: s }))}
+                            value={currentFilters.subcategory || ''}
+                            onChange={(val) => handleChange('subcategory', val)}
+                            placeholder="Todas"
+                        />
+                    </div>
+                    
+                    <div className="filter-item specialties-col">
+                        <label>ESPECIALIDADES</label>
+                        <div className="compact-specs-flex">
+                            {currentFilters.subcategory ? (
+                                (serviceCategories[currentFilters.category]?.[currentFilters.subcategory] || []).map(spec => {
+                                    const isSelected = (currentFilters.specialties || []).includes(spec);
+                                    return (
+                                        <button
+                                            key={spec}
+                                            className={`spec-pill ${isSelected ? 'active' : ''}`}
+                                            onClick={() => {
+                                                const current = currentFilters.specialties || [];
+                                                const newSpecs = current.includes(spec) 
+                                                    ? current.filter(s => s !== spec) 
+                                                    : [...current, spec];
+                                                handleChange('specialties', newSpecs);
+                                            }}
+                                        >
+                                            {spec}
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <span className="helper-text">Elige subcategoría para ver especialidades</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 4. Location Row (Georef) */}
+            {currentFilters.workMode.includes('presential') && (
+                <div className="location-expansion-row animate-in">
+                    <div className="expansion-grid">
+                        <div className="filter-item">
+                            <label>PROVINCIAS DE ARGENTINA (MÁX 3)</label>
+                            <CustomDropdown
+                                options={argProvinces.map(p => ({ label: p, value: p }))}
+                                value={currentFilters.province}
+                                onChange={(val) => handleChange('province', val)}
+                                placeholder={`Seleccionar (${currentFilters.province?.length || 0}/3)`}
+                                searchable={true}
+                                multiple={true}
+                                maxSelections={3}
+                                disabled={isLoadingLoc && argProvinces.length === 0}
+                            />
+                        </div>
+                        <div className="filter-item">
+                            <label>CIUDADES (MÁX 5)</label>
+                            <CustomDropdown
+                                options={argCities.map(c => ({ label: c, value: c }))}
+                                value={currentFilters.city}
+                                onChange={(val) => handleChange('city', val)}
+                                placeholder={isLoadingLoc ? "Cargando..." : `Seleccionar (${currentFilters.city?.length || 0}/5)`}
+                                searchable={true}
+                                multiple={true}
+                                maxSelections={5}
+                                disabled={!currentFilters.province || currentFilters.province.length === 0 || isLoadingLoc}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 5. Footer Actions */}
+            <div className="filter-footer-row">
+                <div className="rating-horizontal">
+                    <label>RATING</label>
+                    <div className="stars-mini">{renderStars()}</div>
+                </div>
+                <div className="action-buttons">
+                    <button onClick={handleClear} className="btn-clear-flat">Limpiar</button>
+                    <button onClick={handleSearchTrigger} className="btn-search-violet">Buscar</button>
+                </div>
+            </div>
+                </div>
+            )}
         </div>
     );
 };

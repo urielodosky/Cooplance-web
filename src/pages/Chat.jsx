@@ -11,7 +11,7 @@ import '../styles/pages/Chat.scss';
 const Chat = () => {
     const { chatId } = useParams();
     const { user } = useAuth();
-    const { getUserChats, getChatById, sendMessage, toggleChatBlock, fetchMessages } = useChat();
+    const { getUserChats, getChatById, sendMessage, toggleChatBlock, deleteChat, fetchMessages, purgeDuplicateChats, isCleaning } = useChat();
     const { jobs, extendJobDeadline, updateJobStatus } = useJobs();
     const navigate = useNavigate();
 
@@ -24,6 +24,7 @@ const Chat = () => {
     const [showExtensionModal, setShowExtensionModal] = useState(false);
     const [extensionDays, setExtensionDays] = useState('2');
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [purgeResult, setPurgeResult] = useState(null);
     const messagesEndRef = useRef(null);
 
     // --- MERGE CHATS LOGIC ---
@@ -41,12 +42,18 @@ const Chat = () => {
 
     useEffect(() => {
         if (!chatId) {
+            setActiveChat(null);
             if (filteredChats.length > 0) navigate(`/chat/${filteredChats[0].id}`);
             return;
         }
 
         const chat = getChatById(chatId);
-        if (chat) setActiveChat(chat);
+        if (chat) {
+            setActiveChat(chat);
+        } else {
+            setActiveChat(null);
+            navigate('/chat');
+        }
     }, [chatId, userChats, filterTab, getChatById, navigate]);
 
     // FETCH MESSAGES & SUBSCRIBE
@@ -63,22 +70,38 @@ const Chat = () => {
 
         const channel = supabase
             .channel(`chat:${chatId}`)
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
                 table: 'messages',
                 filter: `chat_id=eq.${chatId}`
             }, (payload) => {
-                const newMsg = {
-                    id: payload.new.id,
-                    senderId: payload.new.sender_id,
-                    senderName: payload.new.sender_name,
-                    text: payload.new.content,
-                    attachments: payload.new.attachments || [],
-                    timestamp: payload.new.created_at,
-                    isSystem: payload.new.is_system
-                };
-                setMessages(prev => [...prev, newMsg]);
+                setMessages(prev => {
+                    const exists = prev.find(m => 
+                        (m.id === payload.new.id) || 
+                        (m.isOptimistic && m.text === payload.new.content && String(m.senderId) === String(payload.new.sender_id))
+                    );
+                    if (exists) {
+                        return prev.map(m => (m.isOptimistic && m.text === payload.new.content) ? {
+                            id: payload.new.id,
+                            senderId: payload.new.sender_id,
+                            senderName: payload.new.sender_name,
+                            text: payload.new.content,
+                            attachments: payload.new.attachments || [],
+                            timestamp: payload.new.created_at,
+                            isSystem: payload.new.is_system
+                        } : m);
+                    }
+                    return [...prev, {
+                        id: payload.new.id,
+                        senderId: payload.new.sender_id,
+                        senderName: payload.new.sender_name,
+                        text: payload.new.content,
+                        attachments: payload.new.attachments || [],
+                        timestamp: payload.new.created_at,
+                        isSystem: payload.new.is_system
+                    }];
+                });
             })
             .subscribe();
 
@@ -97,12 +120,41 @@ const Chat = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const handleSendMessage = (e) => {
+    // AUTO-PURGE on load if too many duplicates
+    useEffect(() => {
+        if (allChats.length > 15 && !isCleaning) {
+            console.log("[Chat] Detectados demasiados chats, lanzando auto-purga...");
+            purgeDuplicateChats();
+        }
+    }, [allChats.length]);
+
+    const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!activeChat || !messageInput.trim()) return;
 
-        sendMessage(activeChat.id, messageInput);
+        const text = messageInput.trim();
         setMessageInput('');
+
+        // UI Optimista: Añadir el mensaje localmente al instante
+        const optimisticMsg = {
+            id: 'temp-' + Date.now(),
+            chatId: activeChat.id,
+            senderId: user.id,
+            senderName: user.username || user.first_name || 'Tú',
+            text: text,
+            timestamp: new Date().toISOString(),
+            isOptimistic: true 
+        };
+
+        setMessages(prev => [...prev, optimisticMsg]);
+
+        try {
+            await sendMessage(activeChat.id, text);
+        } catch (error) {
+            console.error("Error al enviar mensaje:", error);
+            setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+            alert("No se pudo enviar el mensaje. Inténtalo de nuevo.");
+        }
     };
 
     // Helper to calculate time remaining
@@ -202,12 +254,12 @@ const Chat = () => {
     // ... helper unchanged ...
     const getChatName = (chat) => {
         if (!chat) return 'Chat';
-        return chat.context_title || 'Conversación';
+        return chat.displayName || chat.context_title || 'Conversación';
     };
 
     const getOtherUserVacation = (chat) => {
         // ... (This would now need a join on profiles table to be accurate)
-        return false; 
+        return false;
     };
 
     if (!user) return <div className="container" style={{ padding: '4rem' }}>Inicia sesión para ver tus mensajes.</div>;
@@ -217,10 +269,28 @@ const Chat = () => {
         navigate('/chat/' + id);
     };
 
-    // Handle block action
-    const handleBlock = (chatId) => {
-        toggleChatBlock(chatId);
-        setActiveMenuId(null);
+    // Handle delete action
+    const handleDelete = async (chatId) => {
+        if (window.confirm("¿Estás seguro de que quieres borrar esta conversación? Se eliminarán todos los mensajes de forma permanente.")) {
+            const success = await deleteChat(chatId);
+            if (success) {
+                setActiveMenuId(null);
+                if (chatId === activeChat?.id) {
+                    navigate('/chat');
+                }
+            }
+        }
+    };
+
+    const handlePurge = async () => {
+        if (isCleaning) return;
+        try {
+            const count = await purgeDuplicateChats();
+            setPurgeResult(count);
+            setTimeout(() => setPurgeResult(null), 3000);
+        } catch (error) {
+            console.error("Error en la purga:", error);
+        }
     };
 
     // Expired Jobs Logic
@@ -258,7 +328,39 @@ const Chat = () => {
             <div className="chat-layout glass" style={{ height: '100%', width: '100%' }}>
                 {/* Sidebar */}
                 <div className="chat-sidebar">
-                    <h3 className="chat-header">Mensajes</h3>
+                    <div className="sidebar-header" style={{ padding: '1rem', borderBottom: '1px solid var(--border)', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Mensajes</h2>
+                            <button 
+                                className="btn-sweep"
+                                onClick={handlePurge}
+                                disabled={isCleaning}
+                                title="Limpiar chats duplicados"
+                                style={{
+                                    background: purgeResult !== null ? 'rgba(34, 197, 94, 0.15)' : 'rgba(139, 92, 246, 0.1)',
+                                    border: `1px solid ${purgeResult !== null ? '#22c55e' : 'var(--primary)'}`,
+                                    borderRadius: '8px',
+                                    color: purgeResult !== null ? '#22c55e' : 'var(--primary)',
+                                    padding: '0.4rem 0.8rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    transition: 'all 0.3s ease',
+                                    opacity: isCleaning ? 0.5 : 1,
+                                    fontWeight: 'bold',
+                                    fontSize: '0.75rem'
+                                }}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 12h18"></path>
+                                    <path d="M3 6h18"></path>
+                                    <path d="M3 18h18"></path>
+                                </svg>
+                                {isCleaning ? 'Limpiando...' : purgeResult !== null ? `¡Limpio! (${purgeResult})` : 'Limpiar'}
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Tabs */}
                     <div className="chat-filters">
@@ -339,6 +441,11 @@ const Chat = () => {
                                                     </>
                                                 )}
                                             </button>
+                                            <hr style={{ margin: '4px 0', borderColor: 'var(--border)', opacity: 0.2 }} />
+                                            <button onClick={() => handleDelete(chat.id)} style={{ color: '#ef4444' }}>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                Borrar chat
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -374,14 +481,18 @@ const Chat = () => {
 
                             <div className="messages-container">
                                 {isLoadingMessages ? (
-                                    <div className="empty-messages"><p>Cargando mensajes...</p></div>
+                                    <div className="skeleton-messages">
+                                        {[1, 2, 3, 4, 5].map(i => (
+                                            <div key={i} className={`skeleton-bubble ${i % 2 === 0 ? 'mine' : 'theirs'}`} />
+                                        ))}
+                                    </div>
                                 ) : messages.length === 0 ? (
                                     <div className="empty-messages">
                                         <p>¡Este es el comienzo de tu historial de mensajes!</p>
                                     </div>
                                 ) : (
                                     messages.map((msg, index) => {
-                                        const isMe = msg.senderId === user.id;
+                                        const isMe = String(msg.senderId) === String(user.id);
                                         const msgDate = new Date(msg.timestamp);
                                         const prevMsg = messages[index - 1];
                                         const prevDate = prevMsg ? new Date(prevMsg.timestamp) : null;
@@ -392,7 +503,7 @@ const Chat = () => {
                                             <React.Fragment key={msg.id}>
                                                 {showDateDivider && (
                                                     <div className="date-divider">
-                                                        <span>{msgDate.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                                                        <span>{msgDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^\w/, (c) => c.toUpperCase())}</span>
                                                     </div>
                                                 )}
 
@@ -426,7 +537,7 @@ const Chat = () => {
                                                         )}
                                                         {msg.text && <span className="message-text">{msg.text}</span>}
                                                         <span className="message-time">
-                                                            {msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            {msgDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     </div>
                                                 )}

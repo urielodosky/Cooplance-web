@@ -28,8 +28,8 @@ export const validateCreateTeam = async (userId) => {
     if (user.role === 'freelancer' && (user.level || 1) < 3) {
         throw new Error("Nivel insuficiente. Requieres Nivel 3 para crear una Coop.");
     }
-    if (user.role === 'client' && (user.level || 1) < 10) {
-        throw new Error("Nivel insuficiente. Requieres Nivel 10 para crear un Equipo Preferido.");
+    if ((user.role === 'client' || user.role === 'buyer' || user.role === 'company') && (user.level || 1) < 6) {
+        throw new Error("Nivel insuficiente. Requieres Nivel 6 para gestionar equipos.");
     }
 
     const { data: foundedTeams } = await supabase

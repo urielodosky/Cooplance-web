@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { otpService } from '../../../utils/otpService';
 import CustomDropdown from '../../../components/common/CustomDropdown';
 import '../../../styles/pages/Register.scss';
 
 const Register = () => {
+    const [searchParams] = useSearchParams();
     const [role, setRole] = useState('freelancer');
+
+    // Sync role from query param on mount
+    useEffect(() => {
+        const queryRole = searchParams.get('role')?.toLowerCase();
+        if (queryRole) {
+            // Map common synonyms for more flexibility
+            if (queryRole === 'client' || queryRole === 'comprador' || queryRole === 'compras' || queryRole === 'clientes' || queryRole === 'buyer') {
+                setRole('buyer');
+            } else if (queryRole === 'empresa' || queryRole === 'company' || queryRole === 'empresas') {
+                setRole('company');
+            } else if (queryRole === 'freelancer' || queryRole === 'talento' || queryRole === 'freelancers') {
+                setRole('freelancer');
+            }
+        }
+    }, [searchParams]);
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -33,12 +50,14 @@ const Register = () => {
         password: '',
         confirmPassword: '',
         documentType: 'dni',
+        dni: '',
         documentFile: '',
         gender: 'male', // Default gender
         country: 'Argentina',
         currency: 'ARS',
         emailVerified: false,
         phoneVerified: false,
+        termsAccepted: false,
         cvFile: '', // Base64 string for CV image
         profileImage: '', // Base64 string for Profile Image
         province: '', // for companies location
@@ -96,11 +115,18 @@ const Register = () => {
     }, [formData.province, formData.country, role]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        // DNI Validation: Only numbers
+        if (name === 'dni') {
+            if (value && !/^\d+$/.test(value)) return;
+        }
+
+        setFormData({ ...formData, [name]: value });
 
         // Calculate age when birthDate changes
-        if (e.target.name === 'birthDate' && e.target.value) {
-            const birthYear = new Date(e.target.value).getFullYear();
+        if (name === 'birthDate' && value) {
+            const birthYear = new Date(value).getFullYear();
             const currentYear = new Date().getFullYear();
 
             if (birthYear < 1920 || birthYear > currentYear) {
@@ -108,7 +134,7 @@ const Register = () => {
                 setCalculatedAge(null);
             } else {
                 setInvalidYear(false);
-                const age = calculateAge(e.target.value);
+                const age = calculateAge(value);
                 setCalculatedAge(age);
             }
         }
@@ -193,8 +219,18 @@ const Register = () => {
             }
         }
 
+        if (!formData.dni || formData.dni.length < 6) {
+            alert("Por favor ingresa un número de DNI / Documento válido.");
+            return;
+        }
+
         if (!formData.email) {
             alert("El correo electrónico es obligatorio.");
+            return;
+        }
+
+        if (!formData.termsAccepted) {
+            alert("Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.");
             return;
         }
 
@@ -205,22 +241,41 @@ const Register = () => {
         }
 
         setLoading(true);
+        console.log(" [REGISTER] Iniciando proceso de registro...");
+
+        // Watchdog: Force loading to false after 30s if everything hangs
+        const loadingWatchdog = setTimeout(() => {
+            console.warn(" [REGISTER] Watchdog activado: El proceso de registro ha excedido los 30s.");
+            setLoading(false);
+        }, 30000);
+
         try {
-            // Check for duplicate username/email in Local Storage
+            // Check for duplicate username/email in Database
+            console.log(" [REGISTER] Comprobando disponibilidad de usuario/email...");
             const { exists, field } = await checkUserExists({
                 username: cleanUsername || undefined,
                 email: formData.email,
             });
+
             if (exists) {
+                console.log(` [REGISTER] Conflicto detectado: ${field} ya existe.`);
                 let errorMsg = "El usuario ya existe.";
                 if (field === 'username') errorMsg = "El nombre de usuario ya está registrado.";
                 if (field === 'email') errorMsg = "El correo electrónico ya está registrado.";
                 alert(errorMsg);
+                clearTimeout(loadingWatchdog);
                 setLoading(false);
                 return;
             }
 
-            const { confirmPassword, ...registrationData } = formData;
+            const registrationData = {
+                ...formData,
+                dob: formData.birthDate,
+                dni: formData.dni,
+                terms_accepted: formData.termsAccepted,
+                profileImage: null, // 🚀 OPTIMIZATION: Do not send heavy images to auth metadata
+                cvFile: null
+            };
 
             // Set username default for companies
             if (role === 'company' && !cleanUsername) {
@@ -230,27 +285,49 @@ const Register = () => {
             }
             if (registrationData.email) registrationData.email = registrationData.email.toLowerCase();
 
+            // 1. INTENTO DE REGISTRO TEMPRANO
+            console.log(" [REGISTER] Llamando a supabase.auth.signUp...");
+            try {
+                await register(role, registrationData);
+            } catch (regErr) {
+                console.error(" [REGISTER] Fallo en signUp:", regErr);
+                // Si Supabase dice que ya existe, detenemos todo aquí
+                if (regErr.message.includes("User already registered") || regErr.message.includes("already exist")) {
+                    alert("Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.");
+                    clearTimeout(loadingWatchdog);
+                    setLoading(false);
+                    return;
+                }
+                throw regErr;
+            }
+
             // Store pending registration data temporarily
             sessionStorage.setItem('cooplance_pending_registration', JSON.stringify({
                 role,
                 data: registrationData
             }));
 
-            // Send OTP and show it on screen as requested
+            // Send OTP
+            console.log(" [REGISTER] Solicitando envío de OTP...");
             const otpResult = await otpService.sendOTP(registrationData.email);
             
             if (otpResult.success) {
+                console.log(" [REGISTER] OTP enviado con éxito.");
+                clearTimeout(loadingWatchdog);
                 alert(`¡Código de verificación enviado! \n\nCÓDIGO (para pruebas): ${otpResult.devOTP} \n\nRecuerda que expira en 3 minutos.`);
                 
                 navigate('/verify-email', {
-                    state: { email: registrationData.email, type: 'registration' }
+                    state: { email: registrationData.email, type: 'registration', initialDebugOtp: otpResult.devOTP }
                 });
             } else {
                 throw new Error(otpResult.message);
             }
         } catch (err) {
+            console.error(" [REGISTER] Error fatal durante el proceso:", err);
             alert(err.message || 'Error al procesar el registro. Inténtalo de nuevo.');
         } finally {
+            console.log(" [REGISTER] Finalizando estado de carga.");
+            clearTimeout(loadingWatchdog);
             setLoading(false);
         }
     };
@@ -267,7 +344,7 @@ const Register = () => {
                             onClick={() => setRole(r)}
                             className={`role-button ${role === r ? 'active' : 'inactive'}`}
                         >
-                            {r === 'freelancer' ? 'Freelancer' : r === 'buyer' ? 'Comprador' : 'Empresa'}
+                            {r === 'freelancer' ? 'Freelancer' : r === 'buyer' ? 'Cliente' : 'Empresa'}
                         </button>
                     ))}
                 </div>
@@ -316,20 +393,32 @@ const Register = () => {
                         </>
                     )}
 
-                    {/* 5. Identity Verification (For freelancers and companies) */}
-                    {(role === 'freelancer' || role === 'company') && (
-                        <div className="form-grid-2">
-                            <select name="documentType" onChange={handleChange}>
-                                <option value="dni">Verificación: DNI</option>
-                                <option value="passport">Verificación: Pasaporte</option>
-                                <option value="selfie">Verificación: Selfie + IA</option>
+                    {/* 5. Identity Verification (For all roles now as per user request) */}
+                    <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                        <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>Datos de Identidad (Obligatorio)</p>
+                        <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
+                            <select name="documentType" value={formData.documentType} onChange={handleChange} style={{ height: '45px' }}>
+                                <option value="dni">DNI</option>
+                                <option value="passport">Pasaporte</option>
+                                <option value="selfie">Cédula</option>
                             </select>
-                            <label className="custom-file-upload">
-                                <input type="file" name="documentFile" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                                <span>{documentFileName || 'Subir Documento'}</span>
-                            </label>
+                            <input
+                                type="text"
+                                name="dni"
+                                value={formData.dni}
+                                placeholder="Número de Documento"
+                                onChange={handleChange}
+                                required
+                                style={{ margin: 0, height: '45px' }}
+                            />
                         </div>
-                    )}
+                        {(role === 'freelancer' || role === 'company') && (
+                            <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <input type="file" name="documentFile" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                                <span>{documentFileName || 'Subir Foto del Documento (Frente)'}</span>
+                            </label>
+                        )}
+                    </div>
 
                     {/* 6. Country & Location */}
                     <div className="form-group" style={{ marginBottom: '0.75rem' }}>
@@ -346,7 +435,11 @@ const Register = () => {
                     {role === 'company' && (
                         <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                             <p className="field-label-sm">Ubicación física (opcional)</p>
-                            <div className="form-grid-2">
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: formData.country === 'Argentina' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', 
+                                gap: '1rem' 
+                            }}>
                                 {formData.country === 'Argentina' ? (
                                     <>
                                         <CustomDropdown
@@ -443,6 +536,26 @@ const Register = () => {
                     <div className="form-grid-2">
                         <input type="password" name="password" value={formData.password || ''} placeholder="Contraseña" onChange={handleChange} autoComplete="new-password" required />
                         <input type="password" name="confirmPassword" value={formData.confirmPassword || ''} placeholder="Repetir Contraseña" onChange={handleChange} autoComplete="new-password" required />
+                    </div>
+
+                    {/* 13. Terms & Privacy Checkbox */}
+                    <div 
+                        className="terms-container" 
+                        onClick={() => setFormData({ ...formData, termsAccepted: !formData.termsAccepted })}
+                    >
+                        <div className="checkbox-wrapper">
+                            <input 
+                                type="checkbox" 
+                                id="termsAccepted" 
+                                name="termsAccepted" 
+                                checked={formData.termsAccepted}
+                                onChange={() => {}} // Controlled component
+                            />
+                            <span className="checkmark"></span>
+                        </div>
+                        <div className="terms-text">
+                            He leído y acepto los <a href="/help?tab=terms" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</a> y la <a href="/help?tab=privacy" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Política de Privacidad</a> de Cooplance.
+                        </div>
                     </div>
 
                     <button

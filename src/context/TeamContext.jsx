@@ -130,6 +130,31 @@ export const TeamProvider = ({ children }) => {
     };
 
     // Helper for UI
+    const canCreateTeam = (user) => {
+        if (!user) return false;
+        const level = user.level || 1;
+        if (user.role === 'freelancer') return level >= 3;
+        return level >= 6; // Companies or others
+    };
+
+    const searchUser = async (query) => {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .or(`username.ilike.%${query}%,email.ilike.%${query}%`)
+            .limit(1)
+            .single();
+        
+        if (error) return null;
+        return {
+            id: data.id,
+            username: data.username,
+            firstName: data.first_name,
+            lastName: data.last_name,
+            avatar: data.avatar_url
+        };
+    };
+
     const canPerformAction = (teamId, action, targetUserId) => {
         return TeamService.canPerformAction(teamId, action, user.id, targetUserId);
     };
@@ -150,6 +175,8 @@ export const TeamProvider = ({ children }) => {
         submitEvaluation,
         updateTeam,
         respondToInvite,
+        canCreateTeam,
+        searchUser,
         canPerformAction
     };
 

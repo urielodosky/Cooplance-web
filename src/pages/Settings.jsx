@@ -21,8 +21,10 @@ const Settings = () => {
     const [paymentMethods, setPaymentMethods] = useState(user?.payment_methods || '');
     const [vacancies, setVacancies] = useState(user?.vacancies || '');
     const [isEditingBioInline, setIsEditingBioInline] = useState(false);
-    const [gender, setGender] = useState(user?.gender || 'male');
     const [isUpdating, setIsUpdating] = useState(false);
+    const [dni, setDni] = useState(user?.dni || '');
+    const [dob, setDob] = useState(user?.dob || '');
+    const [phone, setPhone] = useState(user?.phone || '');
     const [message, setMessage] = useState({ text: '', type: '' });
     const fileInputRef = useRef(null);
     const cvInputRef = useRef(null);
@@ -43,6 +45,9 @@ const Settings = () => {
             setPaymentMethods(user.payment_methods || '');
             setVacancies(user.vacancies || '');
             setGender(user.gender || 'male');
+            setDni(user.dni || '');
+            setDob(user.dob || '');
+            setPhone(user.phone || '');
         }
     }, [user]);
 
@@ -153,7 +158,10 @@ const Settings = () => {
                 work_hours: workHours || null,
                 payment_methods: paymentMethods || null,
                 vacancies: vacancies !== '' && vacancies !== null ? parseInt(vacancies) || 0 : 0,
-                gender: gender
+                gender: gender,
+                dni: dni || null,
+                dob: dob || null,
+                phone: phone || null
             });
 
             setIsUpdating(false);
@@ -373,6 +381,43 @@ const Settings = () => {
                                 </div>
                             </div>
                         )}
+
+                        <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
+                            <div className="form-group">
+                                <label className="field-label">DNI / Documento</label>
+                                <input
+                                    type="text"
+                                    value={dni}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val && !/^\d+$/.test(val)) return;
+                                        setDni(val);
+                                    }}
+                                    placeholder="Nro de Documento"
+                                    className="settings-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="field-label">Fecha de Nacimiento</label>
+                                <input
+                                    type="date"
+                                    value={dob}
+                                    onChange={(e) => setDob(e.target.value)}
+                                    className="settings-input"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                            <label className="field-label">Celular / Teléfono</label>
+                            <input
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder="Ej. +54 9 11 ..."
+                                className="settings-input"
+                            />
+                        </div>
 
                         {user.role === 'company' && (
                             <>

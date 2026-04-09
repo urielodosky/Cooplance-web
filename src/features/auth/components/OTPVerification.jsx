@@ -86,7 +86,7 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
             const result = await otpService.verifyOTP(email, fullCode);
 
             if (result.success) {
-                onVerify();
+                await onVerify(); // <--- Await the actual database confirmation
             } else {
                 setError(result.message);
             }

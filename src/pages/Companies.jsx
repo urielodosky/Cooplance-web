@@ -14,7 +14,7 @@ const Companies = () => {
     const [filters, setFilters] = useState({
         query: '',
         category: '',
-        subcategory: [],
+        subcategory: '',
         priceMin: '',
         priceMax: '',
         rating: 0,
@@ -22,8 +22,12 @@ const Companies = () => {
         level: '',
         location: '',
         paymentFrequency: [],
-        durationValue: '',
-        durationUnit: 'months'
+        durationMin: '',
+        durationMax: '',
+        durationUnit: 'months',
+        commissionMin: '',
+        commissionMax: '',
+        commissionFrequency: ''
     });
 
     // Helper to parse duration string to days
@@ -91,24 +95,46 @@ const Companies = () => {
 
         // 2. Custom Company Filters
         if (newFilters.paymentFrequency && newFilters.paymentFrequency.length > 0) {
-            results = results.filter(c => c.paymentFrequencies.some(f => newFilters.paymentFrequency.includes(f)));
+            results = results.filter(c => {
+                // c.paymentFrequencies is assumed to be an array of strings in the mock/db
+                return (c.paymentFrequencies || []).some(f => newFilters.paymentFrequency.includes(f.toLowerCase()));
+            });
         }
 
         if (newFilters.priceMin && newFilters.priceMin.trim() !== '') {
             const minVal = Number(newFilters.priceMin);
-            // Show companies that have AT LEAST ONE project with budget >= minVal
-            results = results.filter(c => c.projectBudgets.some(b => b >= minVal));
+            results = results.filter(c => (c.projectBudgets || []).some(b => b >= minVal));
         }
 
-        if (newFilters.durationValue) {
-            const val = Number(newFilters.durationValue);
-            let limitDays = 9999;
-            if (newFilters.durationUnit === 'days') limitDays = val;
-            if (newFilters.durationUnit === 'weeks') limitDays = val * 7;
-            if (newFilters.durationUnit === 'months') limitDays = val * 30;
+        if (newFilters.priceMax && newFilters.priceMax.trim() !== '') {
+            const maxVal = Number(newFilters.priceMax);
+            results = results.filter(c => (c.projectBudgets || []).some(b => b <= maxVal));
+        }
 
-            // Show companies that have AT LEAST ONE project with duration <= limitDays
-            results = results.filter(c => c.projectDurationDays.some(d => d <= limitDays));
+        // Duration Filter (Range)
+        if (newFilters.durationMin || newFilters.durationMax) {
+            const unit = newFilters.durationUnit || 'months';
+            let factor = 30; // default months
+            if (unit === 'days') factor = 1;
+            if (unit === 'weeks') factor = 7;
+            if (unit === 'years') factor = 365;
+
+            const minDays = newFilters.durationMin ? Number(newFilters.durationMin) * factor : 0;
+            const maxDays = newFilters.durationMax ? Number(newFilters.durationMax) * factor : 999999;
+
+            results = results.filter(c => (c.projectDurationDays || []).some(d => d >= minDays && d <= maxDays));
+        }
+
+        // Commission Filter (Range & Frequency)
+        if (newFilters.paymentFrequency?.includes('commission')) {
+            if (newFilters.commissionMin || newFilters.commissionMax) {
+                const minComm = newFilters.commissionMin ? Number(newFilters.commissionMin) : 0;
+                const maxComm = newFilters.commissionMax ? Number(newFilters.commissionMax) : 100;
+                results = results.filter(c => (c.commissions || []).some(com => com >= minComm && com <= maxComm));
+            }
+            if (newFilters.commissionFrequency) {
+                results = results.filter(c => (c.commissionFrequencies || []).some(f => f.toLowerCase() === newFilters.commissionFrequency.toLowerCase()));
+            }
         }
 
         setFilteredCompanies(results);

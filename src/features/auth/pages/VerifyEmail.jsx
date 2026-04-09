@@ -6,7 +6,7 @@ import OTPVerification from '../components/OTPVerification';
 const VerifyEmail = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { register, login } = useAuth();
+    const { confirmRegistration } = useAuth();
 
     const { email, role, type, userData, initialDebugOtp } = location.state || {};
 
@@ -17,24 +17,23 @@ const VerifyEmail = () => {
     }
 
     const handleVerifySuccess = async () => {
-        // Retrieve pending registration data from sessionStorage
-        const pendingData = JSON.parse(sessionStorage.getItem('cooplance_pending_registration'));
+        try {
+            // Confirm the already created user (this triggers the SQL profile creation)
+            await confirmRegistration();
 
-        if (pendingData) {
-            try {
-                const { role, data } = pendingData;
-                await register(role, data);
-
-                // Clean up
-                sessionStorage.removeItem('cooplance_pending_registration');
-                navigate('/dashboard');
-            } catch (error) {
-                console.error('Error during Supabase registration:', error);
-                alert('Error al crear la cuenta en la Base de Datos: ' + error.message);
+            // Clean up
+            sessionStorage.removeItem('cooplance_pending_registration');
+            navigate('/dashboard');
+        } catch (error) {
+            console.error('Error during registration confirmation:', error);
+            
+            // Helpful error if user switched ports/sessions
+            if (error.message.includes("No hay una sesión activa")) {
+                alert("🔴 ERROR DE SESIÓN: Parece que estás en un puerto distinto (ej. 5173 vs 5174). \n\nPor favor, cierra todas las pestañas de Cooplance, abre solo UNA y vuelve a intentar el código.");
+            } else {
+                // The error message might already be user-friendly from AuthContext
+                alert('No pudimos completar tu registro: ' + error.message);
             }
-        } else {
-            console.error('No pending registration found in sessionStorage');
-            navigate('/register');
         }
     };
 

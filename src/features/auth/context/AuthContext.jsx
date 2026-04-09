@@ -10,27 +10,25 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const handleSession = async (session) => {
+        if (session?.user) {
+            await fetchProfile(session.user.id);
+        } else {
+            setUser(null);
+            setLoading(false);
+        }
+    };
+
     // ─── Bootstrap: Load from Supabase ─────────────────────────────────────
     useEffect(() => {
         let isMounted = true;
-
-        const handleSession = async (session) => {
-            if (!isMounted) return;
-            
-            if (session?.user) {
-                await fetchProfile(session.user.id);
-            } else {
-                setUser(null);
-                setLoading(false);
-            }
-        };
 
         // Initialize state via getSession AND subscribe to future changes safely
         const initializeAuth = async () => {
             const { data: { session }, error } = await supabase.auth.getSession();
             if (error) console.error("getSession error:", error);
             
-            await handleSession(session);
+            if (isMounted) await handleSession(session);
         };
 
         initializeAuth();
@@ -44,10 +42,10 @@ export const AuthProvider = ({ children }) => {
         // SAFETY FALLBACK: If Supabase initialization hangs entirely, force load
         const fallbackTimer = setTimeout(() => {
             if (isMounted) {
-                console.warn("AuthContext initialization timed out (3s). Forcing UI to load.");
+                console.warn("AuthContext initialization timed out (5s). Forcing UI to load.");
                 setLoading(false);
             }
-        }, 3000);
+        }, 5000);
 
         return () => {
             isMounted = false;
@@ -57,20 +55,40 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const fetchProfile = async (userId) => {
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-            
-            if (error) throw error;
-            setUser(data);
-        } catch (err) {
-            console.error('Error fetching profile:', err);
-        } finally {
-            setLoading(false);
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (attempts < maxAttempts) {
+            try {
+                const { data, error } = await withTimeout(
+                    supabase.from('profiles').select('*').eq('id', userId).single(),
+                    15000,
+                    "Obtener perfil"
+                );
+                
+                if (data) {
+                    setUser(data);
+                    setLoading(false);
+                    return; // Éxito
+                }
+
+                if (error) {
+                    // Si el error no es "no encontrado", lanzamos
+                    if (error.code !== 'PGRST116') throw error;
+                }
+            } catch (err) {
+                console.error(`Intento ${attempts + 1} de fetchProfile falló:`, err);
+            }
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                // Esperar un poco antes de reintentar (dar tiempo al trigger SQL)
+                await new Promise(resolve => setTimeout(resolve, 800));
+            }
         }
+        
+        console.error("No se pudo obtener el perfil después de varios intentos.");
+        setLoading(false);
     };
 
     // Utility for safely timing out hanging Supabase requests
@@ -81,11 +99,10 @@ export const AuthProvider = ({ children }) => {
         ]);
     };
 
-    // ─── REGISTER (Final step after verification) ───────────────────────────────
+    // ─── REGISTER (Now called early to check availability) ───────────────────────────
     const register = async (role, registrationData) => {
-        const { email, password, username, first_name, last_name, gender, company_name, responsible_name, location, country, work_hours, payment_methods, vacancies } = registrationData;
+        const { email, password, username, first_name, last_name, gender, company_name, responsible_name, location, country, work_hours, payment_methods, vacancies, dni, dob, phone, terms_accepted } = registrationData;
 
-        // Ensure metadata is passed for the SQL trigger handle_new_user()
         const { data, error } = await withTimeout(supabase.auth.signUp({
             email,
             password,
@@ -102,7 +119,12 @@ export const AuthProvider = ({ children }) => {
                     country: country || null,
                     work_hours: work_hours || null,
                     payment_methods: payment_methods || null,
-                    vacancies: vacancies ? parseInt(vacancies) : 0
+                    vacancies: vacancies ? parseInt(vacancies) : 0,
+                    dni: dni || null,
+                    dob: dob || null,
+                    phone: phone || null,
+                    terms_accepted: terms_accepted || false,
+                    email_verified: false // <--- Guard until OTP is valid
                 }
             }
         }), 10000, "Registro");
@@ -111,8 +133,36 @@ export const AuthProvider = ({ children }) => {
             throw new Error(error.message);
         }
         
-        // DON'T call fetchProfile here - onAuthStateChange handles it.
         return data.user;
+    };
+
+    // ─── CONFIRM REGISTRATION (Triggers SQL profile creation) ───────────────────
+    const confirmRegistration = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No hay una sesión activa para confirmar.");
+
+        try {
+            const { error } = await withTimeout(supabase.auth.updateUser({
+                data: { email_verified: true } // <--- This triggers the SQL Profile creation
+            }), 30000, "Confirmación de Perfil");
+
+            if (error) {
+                // If it's a conflict error, maybe the profile already exists. We try to continue.
+                if (error.message.includes("already registered") || error.message.includes("already exist")) {
+                    console.warn("Profile already exists or conflict during confirmation. Attempting to fetch anyway.");
+                } else {
+                    throw error;
+                }
+            }
+        } catch (err) {
+            console.error("Confirmation error details:", err);
+            // Re-throw if it's a critical error (like timeout), otherwise try to fetch profile
+            if (err.message.includes("Timeout")) throw err;
+        }
+        
+        // Final sync of profile (even if metadata update failed, the trigger might have worked previously)
+        await fetchProfile(user.id);
+        return user;
     };
 
     // ─── LOGIN ──────────────────────────────────────────────────────────────────
@@ -120,14 +170,16 @@ export const AuthProvider = ({ children }) => {
         const { data, error } = await withTimeout(supabase.auth.signInWithPassword({
             email,
             password
-        }), 10000, "Iniciar sesión");
+        }), 30000, "Iniciar sesión");
         
         if (error) {
             throw new Error(error.message);
         }
         
-        // DON'T call fetchProfile here - onAuthStateChange handles it.
-        // Calling it here causes a localStorage lock collision with gotrue-js.
+        if (data.session) {
+            await handleSession(data.session);
+        }
+        
         return data.user;
     };
 
@@ -193,27 +245,34 @@ export const AuthProvider = ({ children }) => {
 
     // ─── CHECK IF USER EXISTS ────────────────────────────────────────────────────
     const checkUserExists = async ({ username, email }, excludeId = null) => {
-        if (username) {
-            let query = supabase.from('profiles').select('id').ilike('username', username);
-            if (excludeId) query = query.neq('id', excludeId);
-            const { data } = await query;
-            if (data && data.length > 0) return { exists: true, field: 'username' };
-        }
-        
-        if (email) {
-            let query = supabase.from('profiles').select('id').ilike('email', email);
-            if (excludeId) query = query.neq('id', excludeId);
-            const { data } = await query;
-            if (data && data.length > 0) return { exists: true, field: 'email' };
+        try {
+            if (username) {
+                let query = supabase.from('profiles').select('id').ilike('username', username);
+                if (excludeId) query = query.neq('id', excludeId);
+                const { data, error } = await withTimeout(query, 10000, "Verificar nombre de usuario");
+                if (error) throw error;
+                if (data && data.length > 0) return { exists: true, field: 'username' };
+            }
+            
+            if (email) {
+                let query = supabase.from('profiles').select('id').ilike('email', email);
+                if (excludeId) query = query.neq('id', excludeId);
+                const { data, error } = await withTimeout(query, 10000, "Verificar correo");
+                if (error) throw error;
+                if (data && data.length > 0) return { exists: true, field: 'email' };
+            }
+        } catch (err) {
+            console.error("Error in checkUserExists:", err);
+            // If timeout or other error, we let the process continue OR throw based on preference.
+            // Here we throw to avoid creating duplicates if the DB is just slow.
+            throw err;
         }
 
         return { exists: false, field: null };
     };
 
-    console.log("AuthContext Render! loading:", loading, "user:", user ? user.id : 'null');
-
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, updateBalance, checkUserExists, deleteAccount }}>
+        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, updateBalance, checkUserExists, deleteAccount, confirmRegistration }}>
             {loading ? <InitialLoader /> : children}
         </AuthContext.Provider>
     );

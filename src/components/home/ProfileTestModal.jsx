@@ -1,6 +1,58 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const SVGIcons = {
+    rocket: (color) => (
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+            <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+            <path d="M9 12H4s.55-3.03 2-5c1.62-2.2 5-3 5-3"/>
+            <path d="M12 15v5s3.03-.55 5-2c2.2-1.62 3-5 3-5"/>
+        </svg>
+    ),
+    briefcase: (color) => (
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+    ),
+    user: (color) => (
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+        </svg>
+    ),
+    building: (color) => (
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>
+            <path d="M9 22v-4h6v4"/>
+            <path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/>
+        </svg>
+    ),
+    chart: (color) => (
+        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m3 3 18 18"/><path d="M21 11V3h-8"/><path d="M7 12 3 20h21l-4-8-4 8-3-6-3 6Z"/>
+        </svg>
+    ),
+    shopping: (color) => (
+        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+        </svg>
+    ),
+    house: (color) => (
+        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+    ),
+    monitor: (color) => (
+        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+    )
+};
+
 const ProfileTestModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
@@ -26,7 +78,13 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
 
     const handleNavigate = () => {
         onClose();
-        navigate('/register');
+        // Contextual registration mapping
+        let roleParam = 'freelancer'; // default
+        if (result === 'company_seller' || result === 'company_buyer') roleParam = 'company';
+        if (result === 'buyer') roleParam = 'buyer';
+        if (result === 'freelancer') roleParam = 'freelancer';
+        
+        navigate(`/register?role=${roleParam}`);
     };
 
     const renderRolesInfo = () => {
@@ -35,28 +93,28 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                 return {
                     title: '¡Tu cuenta ideal es Freelancer!',
                     desc: 'Como profesional independiente o equipo pequeño, esta cuenta te permite ofrecer tus servicios, formar Coops (agencias de hasta 5 miembros), ganar XP y conseguir clientes de todo el mundo.',
-                    icon: '🚀',
+                    icon: SVGIcons.rocket('#8b5cf6'),
                     color: '#8b5cf6'
                 };
             case 'company_seller':
                 return {
-                    title: '¡Tu cuenta ideal es Empresa Vendedora!',
+                    title: '¡Tu cuenta ideal es Empresa!',
                     desc: 'Al ser una agencia o consultora constituida, esta cuenta te permitirá vender servicios a gran escala, gestionar equipos más grandes (Coops de hasta 10 miembros) y acceder a herramientas avanzadas para organizar tu talento.',
-                    icon: '💼',
+                    icon: SVGIcons.briefcase('#10b981'),
                     color: '#10b981'
                 };
             case 'buyer':
                 return {
                     title: '¡Tu cuenta ideal es Cliente!',
                     desc: 'Perfecto para cuando necesitas algo puntual y rápido. Explorá nuestro catálogo para contratar servicios para tu hogar, recibir asesorías o resolver proyectos personales sin complicaciones.',
-                    icon: '👤',
+                    icon: SVGIcons.user('#f59e0b'),
                     color: '#f59e0b'
                 };
             case 'company_buyer':
                 return {
-                    title: '¡Tu cuenta ideal es Empresa Compradora!',
+                    title: '¡Tu cuenta ideal es Empresa!',
                     desc: 'Si buscas talento a largo plazo o para tu negocio, esta cuenta te permitirá publicar ofertas de trabajo corporativo, gestionar contratos fijos y armar equipos dedicados para escalar tu empresa.',
-                    icon: '🏢',
+                    icon: SVGIcons.building('#06b6d4'),
                     color: '#06b6d4'
                 };
             default:
@@ -73,7 +131,7 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                 background: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '16px',
-                padding: '2rem 1.5rem',
+                padding: '1.5rem',
                 cursor: 'pointer',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
@@ -95,8 +153,10 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                 e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
             }}
         >
-            <span style={{ fontSize: '3rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))', flexShrink: 0 }}>{icon}</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: '500', color: '#fff', lineHeight: '1.4' }}>{title}</span>
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {typeof icon === 'string' ? <span style={{ fontSize: '2.5rem' }}>{icon}</span> : icon}
+            </div>
+            <span style={{ fontSize: '1.1rem', fontWeight: '500', color: '#fff', lineHeight: '1.4' }}>{title}</span>
         </div>
     );
 
@@ -162,12 +222,12 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                                 </p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                                     <OptionCard 
-                                        icon="💼" 
+                                        icon={SVGIcons.briefcase('#8b5cf6')} 
                                         title="Quiero ofrecer servicios y ganar dinero" 
                                         onClick={() => handleAnswerStep1('sell')} 
                                     />
                                     <OptionCard 
-                                        icon="🛍️" 
+                                        icon={SVGIcons.shopping('#06b6d4')} 
                                         title="Quiero contratar talento para un proyecto" 
                                         onClick={() => handleAnswerStep1('buy')} 
                                     />
@@ -182,12 +242,12 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                                 </p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                                     <OptionCard 
-                                        icon="💻" 
+                                        icon={SVGIcons.monitor('#8b5cf6')} 
                                         title="Soy profesional independiente o tengo un equipo pequeño" 
                                         onClick={() => handleAnswerStep2('freelancer')} 
                                     />
                                     <OptionCard 
-                                        icon="🏢" 
+                                        icon={SVGIcons.building('#10b981')} 
                                         title="Somos una agencia, consultora o empresa constituida" 
                                         onClick={() => handleAnswerStep2('company_seller')} 
                                     />
@@ -198,16 +258,16 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                         {step === 2 && path === 'buy' && (
                             <div style={{ animation: 'slideInRight 0.3s ease-out forwards' }}>
                                 <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: '2.5rem', fontWeight: '400' }}>
-                                    Perfecto. ¿Qué escala base necesitas?
+                                    Perfecto. ¿Qué escala necesitas?
                                 </p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                                     <OptionCard 
-                                        icon="🏠" 
+                                        icon={SVGIcons.house('#f59e0b')} 
                                         title="Algo puntual y rápido para mí" 
                                         onClick={() => handleAnswerStep2('buyer')} 
                                     />
                                     <OptionCard 
-                                        icon="📈" 
+                                        icon={SVGIcons.chart('#06b6d4')} 
                                         title="Busco talento a largo plazo o para mi negocio" 
                                         onClick={() => handleAnswerStep2('company_buyer')} 
                                     />
@@ -224,10 +284,12 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                 ) : (
                     <div style={{ animation: 'fadeInScale 0.4s ease-out forwards' }}>
                         <div style={{ 
-                            fontSize: '4.5rem', 
-                            marginBottom: '1.5rem', 
-                            display: 'inline-block',
-                            padding: '1.5rem',
+                            width: '120px',
+                            height: '120px',
+                            margin: '0 auto 1.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             background: `rgba(${resultData.color === '#8b5cf6' ? '139, 92, 246' : resultData.color === '#10b981' ? '16, 185, 129' : resultData.color === '#06b6d4' ? '6, 182, 212' : '245, 158, 11'}, 0.1)`,
                             borderRadius: '50%',
                             boxShadow: `0 0 30px rgba(${resultData.color === '#8b5cf6' ? '139, 92, 246' : resultData.color === '#10b981' ? '16, 185, 129' : resultData.color === '#06b6d4' ? '6, 182, 212' : '245, 158, 11'}, 0.2)`
@@ -243,8 +305,19 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                         
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                             <button 
-                                className="btn-secondary" 
-                                style={{ padding: '1rem 2rem', fontSize: '1.1rem', borderRadius: '50px', fontWeight: '600' }} 
+                                style={{ 
+                                    padding: '1rem 2rem', 
+                                    fontSize: '1.1rem', 
+                                    borderRadius: '50px', 
+                                    fontWeight: '600',
+                                    background: 'transparent',
+                                    border: '2px solid #8b5cf6',
+                                    color: '#8b5cf6',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }} 
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                 onClick={resetTest}
                             >
                                 Volver a intentar
@@ -258,7 +331,9 @@ const ProfileTestModal = ({ isOpen, onClose }) => {
                                     fontWeight: '700',
                                     background: resultData.color,
                                     borderColor: resultData.color,
-                                    boxShadow: `0 4px 15px ${resultData.color}40`
+                                    boxShadow: `0 4px 15px ${resultData.color}40`,
+                                    border: 'none',
+                                    cursor: 'pointer'
                                 }} 
                                 onClick={handleNavigate}
                             >

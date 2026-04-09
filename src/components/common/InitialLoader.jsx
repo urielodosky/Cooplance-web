@@ -7,7 +7,7 @@ const InitialLoader = () => {
     const messages = [
         { text: "Buscando los detalles del servicio...", size: '1.1rem' },
         { text: "Preparando el entorno...", size: '1.1rem' },
-        { text: "Casi listo...", size: '1.5rem' }
+        { text: "Casi listo...", size: '1.1rem' }
     ];
 
     useEffect(() => {
@@ -66,8 +66,8 @@ const InitialLoader = () => {
                             style={{
                                 ...textStyle,
                                 fontSize: messages[messageIndex].size,
-                                fontWeight: messageIndex === 2 ? '600' : '500',
-                                color: messageIndex === 2 ? '#E2E8F0' : '#94A3B8'
+                                fontWeight: '500',
+                                color: '#94A3B8'
                             }}
                         >
                             {messages[messageIndex].text}

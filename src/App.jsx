@@ -24,6 +24,7 @@ import ProjectDetail from './pages/ProjectDetail'
 import CompanyDetail from './pages/CompanyDetail'
 import ClientDetail from './pages/ClientDetail'
 import HelpCenter from './pages/HelpCenter'
+import ExploreTeams from './pages/ExploreTeams'
 import SupportChatbot from './components/common/SupportChatbot'
 import FreelancerDetail from './pages/FreelancerDetail'
 import CreateTeam from './features/teams/pages/CreateTeam'
@@ -83,6 +84,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/create-project" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
               <Route path="/create-team" element={<ProtectedRoute><CreateTeam /></ProtectedRoute>} />
+              <Route path="/explore-teams" element={<ExploreTeams />} />
               <Route path="/my-coops" element={<ProtectedRoute><TeamList /></ProtectedRoute>} />
               <Route path="/team/:teamId" element={<ProtectedRoute><TeamDashboard /></ProtectedRoute>} />
               <Route path="/team/:teamId/public" element={<TeamPublicProfile />} />

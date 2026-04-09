@@ -90,7 +90,7 @@ export const searchAndFilterItems = (items, filters = {}) => {
         // Specialties Match
         if (filters.specialties && filters.specialties.length > 0) {
             const filterSpecs = filters.specialties;
-            
+
             // Normalize item specialties/subcategories to array to support old data
             const itemSpecs = item.specialties || item.subcategories || item.subcategory || [];
             const itemSpecsArray = Array.isArray(itemSpecs) ? itemSpecs : [itemSpecs];
@@ -152,17 +152,19 @@ export const searchAndFilterItems = (items, filters = {}) => {
                 if (!itemCountry.includes(filterCountry) && !itemLoc.includes(filterCountry)) return false;
             }
 
-            // Province Filter (Best effort string match on location string)
-            if (filters.province) {
-                const filterProvince = filters.province.toLowerCase();
-                if (!itemLoc.includes(filterProvince)) return false;
+            // Province Filter (Support for Array from multi-select)
+            if (filters.province && (Array.isArray(filters.province) ? filters.province.length > 0 : filters.province)) {
+                const provinces = Array.isArray(filters.province) ? filters.province : [filters.province];
+                const hasProvinceMatch = provinces.some(p => itemLoc.includes(p.toLowerCase()));
+                if (!hasProvinceMatch) return false;
             }
 
-            // City Filter (Best effort string match)
-            // Fallback to legacy 'location' filter variable if 'city' is not used but present
-            const filterCity = (filters.city || filters.location || '').toLowerCase();
-            if (filterCity) {
-                if (!itemLoc.includes(filterCity)) return false;
+            // City Filter (Support for Array)
+            const cityFilter = filters.city || filters.location;
+            if (cityFilter && (Array.isArray(cityFilter) ? cityFilter.length > 0 : cityFilter)) {
+                const cities = Array.isArray(cityFilter) ? cityFilter : [cityFilter];
+                const hasCityMatch = cities.some(c => itemLoc.includes(c.toLowerCase()));
+                if (!hasCityMatch) return false;
             }
         }
 

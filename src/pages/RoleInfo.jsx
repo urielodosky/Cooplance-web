@@ -8,7 +8,7 @@ const roleData = {
     freelancers: {
         title: "Freelancers",
         heroTitle: "Trabaja con libertad y seguridad.",
-        description: "Únete a una comunidad donde tu talento es valorado. Cooplance te ofrece herramientas para gestionar tus proyectos, pagos seguros y crecimiento profesional.",
+        description: "Publicá tus servicios, forma agencias (Coops) con otros talentos y subí de nivel para reducir comisiones. Ideal para profesionales independientes. Únete a una comunidad donde tu talento es valorado.",
         features: [
             { title: "Pagos Garantizados", desc: "El cliente deposita los fondos antes de iniciar. Tu trabajo siempre está cubierto." },
             { title: "Sistema de Niveles", desc: "Gana XP, sube de nivel y desbloquea beneficios exclusivos y menores comisiones." },
@@ -20,7 +20,7 @@ const roleData = {
     empresas: {
         title: "Empresas",
         heroTitle: "Talento verificado para tu negocio.",
-        description: "Optimiza tus procesos de contratación. Encuentra profesionales calificados, gestiona equipos y factura de manera centralizada.",
+        description: "Publicá ofertas laborales a gran escala, reclutá talento y contratá agencias (Coops) completas para escalar tu negocio con herramientas exclusivas. Optimiza tus procesos de contratación y gestiona equipos.",
         features: [
             { title: "Facturación Centralizada", desc: "Una sola factura para todos tus contratistas freelance." },
             { title: "Talento Top", desc: "Acceso a freelancers verificados y con excelentes calificaciones." },
@@ -29,17 +29,17 @@ const roleData = {
         ctaText: "Registrar Empresa",
         ctaLink: "/register?role=company"
     },
-    compradores: {
+    clientes: {
         title: "Compradores",
         heroTitle: "Haz realidad tus ideas.",
-        description: "Ya sea un logo, una app o una consultoría, encuentra al experto ideal en minutos con seguridad total.",
+        description: "Explorá el catálogo de servicios, contactá freelancers y resolvé tus necesidades o proyectos personales de forma rápida y segura. Encuentra al experto ideal en minutos con seguridad total.",
         features: [
             { title: "Protección al Comprador", desc: "Si no recibes lo acordado, te devolvemos tu dinero." },
             { title: "Variedad de Servicios", desc: "Miles de categorías para cubrir cualquier necesidad." },
             { title: "Soporte 24/7", desc: "Estamos aquí para ayudarte en cada paso del proceso." }
         ],
         ctaText: "Empezar a Contratar",
-        ctaLink: "/register?role=client" // Assuming client = buyer
+        ctaLink: "/register?role=buyer" // Maps to buyer/client
     }
 };
 

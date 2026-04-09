@@ -18,6 +18,21 @@ export const getProjects = async () => {
     return (data || []).map(mapFromDB);
 };
 
+export const getProjectsByClient = async (clientId) => {
+    const { data, error } = await supabase
+        .from('projects')
+        .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role)')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('[ProjectService] Error fetching projects by client:', error);
+        return [];
+    }
+
+    return (data || []).map(mapFromDB);
+};
+
 export const getProjectById = async (id) => {
     const { data, error } = await supabase
         .from('projects')

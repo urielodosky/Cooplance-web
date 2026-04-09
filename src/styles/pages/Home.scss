@@ -37,9 +37,10 @@
 
 .hero-title {
     font-size: 4rem;
-    line-height: 1.1;
+    line-height: 1.25;
     font-weight: 800;
     color: var(--text-primary);
+    padding-bottom: 0.1em; // Prevents clipping of descenders with background-clip: text
 }
 
 .highlight-text {
@@ -49,6 +50,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     display: inline-block;
+    padding-bottom: 0.1em; // Security padding for gradient effects
 }
 
 .hero-description {
@@ -68,15 +70,27 @@
     font-size: 1.1rem;
     padding: 0.8rem 2.2rem;
     text-decoration: none;
-    background: #8B5CF6; // Solid violet
-    color: white;
+    background: #8B5CF6 !important; // Forced Solid violet (Dark Mode)
+    color: white !important;
     border-radius: var(--radius-full);
     border: none;
-    transition: background 0.2s, transform 0.2s;
+    transition: all 0.2s;
+    font-weight: 600;
+    box-shadow: none !important;
+
+    [data-theme='light'] & {
+        background: #2563eb !important; // Forced Solid Blue (Light Mode)
+    }
 
     &:hover {
-        background: #7c4dff;
+        background: #7c4dff !important;
         transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4) !important;
+
+        [data-theme='light'] & {
+            background: #1d4ed8 !important;
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3) !important;
+        }
     }
 }
 
@@ -87,10 +101,24 @@
     border-radius: var(--radius-full);
     color: var(--text-primary);
     text-decoration: none;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    font-weight: 500;
+
+    [data-theme='light'] & {
+        background: #1e293b; // Deep Dark Slate background for max contrast
+        border-color: #1e293b;
+        color: #ffffff; // White text
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
 
     &:hover {
         background: rgba(255, 255, 255, 0.05);
+
+        [data-theme='light'] & {
+            background: #334155; // Slightly lighter on hover
+            border-color: #334155;
+            transform: translateY(-1px);
+        }
     }
 }
 

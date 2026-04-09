@@ -28,19 +28,21 @@ const Dashboard = () => {
     if (!user) return null;
 
     const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [myPublishedProjects, setMyPublishedProjects] = useState([]);
     const [myProposals, setMyProposals] = useState([]);
     const [activeProposalTab, setActiveProposalTab] = useState('active'); // 'active' or 'history'
     const [openMenuId, setOpenMenuId] = useState(null);
+    const [isCreatingChat, setIsCreatingChat] = useState(false);
 
     // Load Projects & Proposals Logic
     useEffect(() => {
         const loadData = async () => {
+            if (!user?.id) return;
             setLoading(true);
             try {
-                // 1. My Published Projects (Client/Company) from Supabase
-                const allProjects = await getProjects();
-                const myProjects = allProjects.filter(p => p.clientId === user.id);
+                // 1. My Published Projects (Client/Company) from Supabase - Filtered by DB
+                const myProjects = await getProjectsByClient(user.id);
                 setMyPublishedProjects(myProjects);
 
                 // 2. My Proposals (Freelancer) - from Supabase
@@ -54,7 +56,7 @@ const Dashboard = () => {
             }
         };
         loadData();
-    }, [user.id]);
+    }, [user?.id]);
 
     // Automated Gamification Processing (Inactivity, Decays, Vacation Reset)
     useEffect(() => {
@@ -68,10 +70,10 @@ const Dashboard = () => {
         }
     }, [user, updateUser]);
 
-    // Computed Data
-    const myWork = jobs.filter(j => j.freelancerId === user.id);
-    const myServices = services.filter(s => s.freelancerId === user.id);
-    const myOrders = jobs.filter(j => j.buyerId === user.id);
+    // Computed Data - Optimized with Memoization
+    const myWork = React.useMemo(() => (jobs || []).filter(j => j.freelancerId === user.id), [jobs, user.id]);
+    const myServices = React.useMemo(() => (services || []).filter(s => s.freelancerId === user.id), [services, user.id]);
+    const myOrders = React.useMemo(() => (jobs || []).filter(j => j.buyerId === user.id), [jobs, user.id]);
 
     // Level Logic
     const currentLevel = user.level || 1;
@@ -243,6 +245,20 @@ const Dashboard = () => {
                 projectTitle={selectedProjectForProposals?.title}
                 onAccept={handleAcceptProposal}
             />
+
+            {loading && (
+                <div className="dashboard-loading-overlay">
+                    <div className="spinner"></div>
+                    <p>Cargando tus datos...</p>
+                </div>
+            )}
+
+            {isCreatingChat && (
+                <div className="dashboard-loading-overlay" style={{ zIndex: 10000, background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)' }}>
+                    <div className="spinner" style={{ borderColor: 'var(--primary) transparent var(--primary) transparent' }}></div>
+                    <p style={{ marginTop: '1rem', fontWeight: '600', letterSpacing: '0.5px' }}>Conectando con el chat...</p>
+                </div>
+            )}
 
 
             {/* Header */}
@@ -437,14 +453,14 @@ const Dashboard = () => {
                                     <div className="help-tooltip" style={{ width: '220px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'normal', textAlign: 'left', bottom: '100%', marginBottom: '10px' }}>
                                         <strong>Ganancia de XP por Trabajo:</strong>
                                         <ul style={{ paddingLeft: '1rem', marginTop: '0.5rem', marginBottom: 0, fontSize: '0.8rem' }}>
-                                            <li>Mayor a $100: <strong>80 XP</strong></li>
-                                            <li>Mayor a $50: <strong>40 XP</strong></li>
-                                            <li>Mayor a $20: <strong>30 XP</strong></li>
-                                            <li>De $5 a $20: <strong>10 XP</strong></li>
+                                            <li>Mayor a $100.000: <strong>80 XP</strong></li>
+                                            <li>De $45.000 a $100.000: <strong>40 XP</strong></li>
+                                            <li>De $15.000 a $45.000: <strong>30 XP</strong></li>
+                                            <li>De $5.000 a $15.000: <strong>10 XP</strong></li>
                                         </ul>
                                         {currentLevel === 1 && (
                                             <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#fbbf24' }}>
-                                                * Nivel 1: Menos de $100 otorga 40 XP fijos.
+                                                * Nivel 1: Menos de $100.000 otorga 40 XP fijos.
                                             </p>
                                         )}
                                     </div>
@@ -473,13 +489,24 @@ const Dashboard = () => {
                         <h3 className="section-title">Pedidos / Trabajos Recibidos</h3>
                         <div className="jobs-list">
                             {myWork.length > 0 ? myWork.map(job => (
-                                <div key={job.id} className="glass job-card order-card" style={{ display: 'grid', gridTemplateColumns: '60px 1fr auto', gap: '1rem', alignItems: 'center' }}>
+                                <div key={job.id} className="glass job-card order-card" style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: '70px 1fr auto', 
+                                    gap: '1.5rem', 
+                                    alignItems: 'center',
+                                    padding: '1.5rem',
+                                    borderRadius: '20px',
+                                    marginBottom: '1rem',
+                                    background: 'var(--bg-card)',
+                                    border: '1px solid var(--border)'
+                                }}>
                                     <div style={{
-                                        width: '60px',
-                                        height: '60px',
+                                        width: '70px',
+                                        height: '70px',
                                         borderRadius: '50%',
                                         overflow: 'hidden',
-                                        border: '2px solid var(--border)',
+                                        border: '3px solid var(--primary)',
+                                        boxShadow: '0 0 15px rgba(139, 92, 246, 0.3)',
                                         position: 'relative'
                                     }}>
                                         <img
@@ -490,38 +517,140 @@ const Dashboard = () => {
                                     </div>
 
                                     <div className="job-details">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{job.buyerName}</h4>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.4rem' }}>
+                                            <h4 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                                                {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'} 
+                                                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>
+                                                    ({job.buyerRealName || job.buyerName})
+                                                </span>
+                                            </h4>
                                             <span style={{
                                                 fontSize: '0.7rem',
-                                                padding: '2px 8px',
-                                                borderRadius: '12px',
-                                                background: job.buyerRole === 'company' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(139, 92, 246, 0.2)',
-                                                color: job.buyerRole === 'company' ? 'var(--secondary)' : 'var(--primary)',
-                                                border: '1px solid currentColor'
+                                                padding: '3px 10px',
+                                                borderRadius: '20px',
+                                                background: job.buyerRole === 'company' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(139, 92, 246, 0.15)',
+                                                color: job.buyerRole === 'company' ? '#06b6d4' : '#8b5cf6',
+                                                border: `1px solid ${job.buyerRole === 'company' ? '#22d3ee' : '#a78bfa'}`,
+                                                textTransform: 'uppercase',
+                                                fontWeight: 'bold',
+                                                letterSpacing: '0.5px'
                                             }}>
                                                 {job.buyerRole === 'company' ? 'Empresa' : 'Particular'}
                                             </span>
                                         </div>
-                                        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                            Ha contratado: <strong>{job.serviceTitle}</strong> ({job.tier || 'Estándar'})
+                                        <p style={{ margin: '0.2rem 0', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                                            Ha contratado: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong> ({job.tier || 'Estándar'})
                                         </p>
-                                        <p className="job-meta" style={{ marginTop: '0.25rem' }}>
-                                            Estado: <span className={`status-badge ${job.status}`}>{job.status}</span>
-                                        </p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.5rem' }}>
+                                            <span style={{ 
+                                                fontSize: '0.8rem', 
+                                                padding: '4px 12px', 
+                                                borderRadius: '12px',
+                                                background: 'rgba(0,0,0,0.05)',
+                                                color: 'var(--text-secondary)',
+                                                border: '1px solid var(--border)'
+                                            }}>
+                                                Estado: <strong style={{ 
+                                                    color: job.status === 'active' ? '#10b981' : 
+                                                           job.status === 'pending_approval' ? '#fbbf24' : 
+                                                           job.status === 'delivered' ? '#3b82f6' : 'var(--text-secondary)' 
+                                                }}>
+                                                    {job.status === 'pending_approval' ? 'Pendiente' : 
+                                                     job.status === 'active' ? 'En Progreso' : 
+                                                     job.status === 'delivered' ? 'Entregado' : job.status}
+                                                </strong>
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>${job.amount}</div>
-                                        {job.status === 'active' && (
-                                            <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'delivered')} style={{ fontSize: '0.85rem' }}>Entregar</button>
-                                        )}
-                                        {job.status === 'delivered' && (
-                                            <span className="waiting-approval" style={{ fontSize: '0.8rem' }}>En revisión</span>
-                                        )}
-                                        {job.status === 'completed' && (
-                                            <span style={{ color: '#10b981', fontSize: '0.9rem' }}>✓ Completado</span>
-                                        )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem' }}>
+                                        <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)' }}>${job.amount}</div>
+                                        
+                                        <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                            {/* Chat Button for Seller - Premium Outline Style */}
+                                            <button 
+                                                className="btn-secondary" 
+                                                onClick={async () => {
+                                                    setIsCreatingChat(true);
+                                                    try {
+                                                        const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
+                                                        if (chatId) {
+                                                            navigate(`/chat/${chatId}`);
+                                                        } else {
+                                                            setIsCreatingChat(false);
+                                                        }
+                                                    } catch (err) {
+                                                        console.error("Chat navigation error:", err);
+                                                        setIsCreatingChat(false);
+                                                    }
+                                                }}
+                                                style={{ 
+                                                    padding: '0.6rem 1.2rem', 
+                                                    borderRadius: '12px', 
+                                                    fontSize: '0.85rem', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '0.5rem',
+                                                    background: 'rgba(139, 92, 246, 0.05)',
+                                                    border: '1.5px solid var(--primary)',
+                                                    color: 'var(--primary)',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                onMouseOver={e => {
+                                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
+                                                    e.currentTarget.style.boxShadow = '0 0 15px rgba(139, 92, 246, 0.3)';
+                                                }}
+                                                onMouseOut={e => {
+                                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)';
+                                                    e.currentTarget.style.boxShadow = 'none';
+                                                }}
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                                Chat
+                                            </button>
+
+                                            {job.status === 'pending_approval' && (
+                                                <>
+                                                    <button 
+                                                        className="btn-primary" 
+                                                        onClick={() => updateJobStatus(job.id, 'active')}
+                                                        style={{ padding: '0.6rem 1.2rem', borderRadius: '12px', fontSize: '0.85rem' }}
+                                                    >
+                                                        Aceptar Servicio
+                                                    </button>
+                                                    <button 
+                                                        className="btn-secondary" 
+                                                        onClick={() => updateJobStatus(job.id, 'canceled')}
+                                                        style={{ padding: '0.6rem 1.2rem', borderRadius: '12px', fontSize: '0.85rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}
+                                                    >
+                                                        Rechazar
+                                                    </button>
+                                                </>
+                                            )}
+                                            
+                                            {job.status === 'active' && (
+                                                <button 
+                                                    className="btn-primary" 
+                                                    onClick={() => updateJobStatus(job.id, 'delivered')}
+                                                    style={{ padding: '0.6rem 1.2rem', borderRadius: '12px', fontSize: '0.85rem' }}
+                                                >
+                                                    Entregar Trabajo
+                                                </button>
+                                            )}
+                                            
+                                            {job.status === 'delivered' && (
+                                                <span style={{ color: '#3b82f6', fontSize: '0.9rem', background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid #3b82f6' }}>
+                                                    ⏰ Esperando revisión
+                                                </span>
+                                            )}
+                                            
+                                            {job.status === 'completed' && (
+                                                <span style={{ color: '#10b981', fontSize: '0.9rem', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid #10b981' }}>
+                                                    ✓ Completado
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )) : (
@@ -673,7 +802,7 @@ const Dashboard = () => {
                                         minHeight: '300px', // Match ServiceCard height
                                         border: '2px dashed var(--border)',
                                         cursor: 'pointer',
-                                        backgroundColor: 'rgba(255,255,255,0.02)',
+                                        backgroundColor: 'var(--bg-card)',
                                         transition: 'all 0.2s ease'
                                     }}
                                 >
@@ -767,59 +896,163 @@ const Dashboard = () => {
                         </>
                     )}
 
-                    <h3 className="section-title">Mis Pedidos (Compras)</h3>
-                    <div className="jobs-list">
+                    <h3 className="section-title" style={{ marginTop: '2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                        Mis Pedidos (Compras)
+                    </h3>
+                    <div className="jobs-list" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.2rem' }}>
                         {myOrders.length > 0 ? myOrders.map(job => (
-                            <div key={job.id} className="glass job-card order-card" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'center', padding: '1.5rem', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}>
-                                <div className="job-details">
-                                    <h4 style={{ fontSize: '1.2rem', marginBottom: '0.4rem', color: 'var(--text-primary)', fontWeight: '600' }}>{job.serviceTitle}</h4>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                        Freelancer: <strong style={{ color: 'var(--primary)' }}>{job.freelancerName}</strong>
-                                    </p>
-                                    <p className="job-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Estado del Pedido:</span>
-                                        <span className={`status-badge ${job.status}`} style={{ padding: '4px 10px', fontSize: '0.8rem', borderRadius: '20px' }}>{job.status === 'active' ? 'Activo' : job.status === 'completed' ? 'Completado' : job.status === 'delivered' ? 'Entregado' : job.status}</span>
-                                    </p>
+                            <div key={job.id} className="glass job-card order-card" style={{ 
+                                display: 'flex', 
+                                gap: '1.5rem', 
+                                alignItems: 'center', 
+                                padding: '1.2rem', 
+                                borderRadius: '18px', 
+                                background: 'var(--bg-card)', 
+                                border: '1px solid var(--border)', 
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.background = 'var(--bg-card)'; e.currentTarget.style.borderColor = 'var(--primary-soft)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'var(--bg-card)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
+                                
+                                {/* Freelancer Avatar */}
+                                <div style={{ 
+                                    width: '60px', 
+                                    height: '60px', 
+                                    borderRadius: '16px', 
+                                    overflow: 'hidden', 
+                                    flexShrink: 0,
+                                    border: '2px solid var(--primary-soft)',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                                }}>
+                                    <img 
+                                        src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} 
+                                        alt={job.freelancerName} 
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.3rem' }}>
+                                        <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: '#fff' }}>{job.serviceTitle}</h4>
+                                        <span style={{ 
+                                            fontSize: '0.75rem', 
+                                            background: 'rgba(59, 130, 246, 0.1)', 
+                                            color: '#60a5fa', 
+                                            padding: '2px 10px', 
+                                            borderRadius: '20px', 
+                                            border: '1px solid rgba(59, 130, 246, 0.2)',
+                                            textTransform: 'capitalize'
+                                        }}>{job.tier}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                        <span style={{ opacity: 0.7 }}>Para:</span>
+                                        <strong style={{ color: 'var(--primary-soft)' }}>{job.freelancerName}</strong>
+                                        <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>@{job.freelancerUsername || 'user'}</span>
+                                    </div>
+                                    <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <span style={{ 
+                                            fontSize: '0.8rem', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '0.4rem',
+                                            color: job.status === 'active' ? '#10b981' : 
+                                                   job.status === 'delivered' ? '#3b82f6' : 
+                                                   job.status === 'completed' ? '#a78bfa' : 'var(--text-muted)'
+                                        }}>
+                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor' }}></span>
+                                            {job.status === 'active' ? 'En Progreso' : 
+                                             job.status === 'delivered' ? 'Entregado (Revisar)' : 
+                                             job.status === 'completed' ? 'Finalizado' : job.status}
+                                        </span>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                            {new Date(job.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}>
+                                    <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' }}>${job.amount}</div>
+                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                        {/* Chat Button - Now Outline Style */}
                                         <button
                                             className="btn-secondary"
-                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                                            onClick={() => navigate(`/service/${job.serviceId}`)}
-                                        >
-                                            Ver Servicio
-                                        </button>
-                                        <button
-                                            className="btn-primary"
-                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                                            onClick={() => {
-                                                const chatId = createChat([user.id, job.freelancerName], 'order', job.id, job.serviceTitle);
-                                                navigate(`/chat/${chatId}`);
+                                            style={{ 
+                                                padding: '0.5rem 1.2rem', 
+                                                fontSize: '0.8rem', 
+                                                borderRadius: '12px', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '0.4rem',
+                                                background: 'rgba(139, 92, 246, 0.05)',
+                                                border: '1.5px solid var(--primary)',
+                                                color: 'var(--primary)',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseOver={e => {
+                                                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
+                                            }}
+                                            onMouseOut={e => {
+                                                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)';
+                                            }}
+                                            onClick={async () => {
+                                                setIsCreatingChat(true);
+                                                try {
+                                                    const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
+                                                    if (chatId) {
+                                                        navigate(`/chat/${chatId}`);
+                                                    } else {
+                                                        setIsCreatingChat(false);
+                                                    }
+                                                } catch (err) {
+                                                    console.error("Chat navigation error:", err);
+                                                    setIsCreatingChat(false);
+                                                }
                                             }}
                                         >
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px' }}>
-                                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                            </svg>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                             Chat
                                         </button>
-                                    </div>
 
+                                        {/* Ver Detalle - Now Solid Style */}
+                                        <button
+                                            className="btn-primary"
+                                            style={{ 
+                                                padding: '0.5rem 1.2rem', 
+                                                fontSize: '0.8rem', 
+                                                borderRadius: '12px',
+                                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.2)'
+                                            }}
+                                            onClick={() => navigate(`/service/${job.serviceId}`)}
+                                        >
+                                            Ver Detalle
+                                        </button>
+                                    </div>
+                                    
                                     {job.status === 'delivered' && (
                                         <button
                                             className="btn-primary"
                                             onClick={() => updateJobStatus(job.id, 'completed')}
-                                            style={{ marginTop: '0.5rem', width: '100%' }}
+                                            style={{ 
+                                                width: '100%', 
+                                                marginTop: '0.2rem', 
+                                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                                                border: 'none',
+                                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                                            }}
                                         >
-                                            Aprobar y Liberar
+                                            Aprobar Entrega
                                         </button>
                                     )}
                                 </div>
                             </div>
                         )) : (
-                            <div className="glass" style={{ padding: '1rem', color: 'var(--text-muted)' }}>
-                                <p>No has realizado pedidos recientes.</p>
+                            <div className="glass" style={{ padding: '3rem', color: 'var(--text-muted)', textAlign: 'center', borderRadius: '18px', border: '1px dashed var(--border)' }}>
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.3, marginBottom: '1rem' }}><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                                <p>No has realizado pedidos aún. ¡Explora servicios para comenzar!</p>
+                                <button className="btn-primary" onClick={() => navigate('/explore')} style={{ marginTop: '1rem' }}>Explorar Servicios</button>
                             </div>
                         )}
                     </div>

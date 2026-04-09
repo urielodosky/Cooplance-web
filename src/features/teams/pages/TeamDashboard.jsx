@@ -15,9 +15,9 @@ const TeamDashboard = () => {
     const navigate = useNavigate();
 
     // Custom Hooks
-    const { teams, sendMessage, simulateDistribution, clearChat, deleteMessage, leaveTeam, addMemberToTeam, updateMemberRole, dissolveCoop, toggleService, addServiceToTeam, closeProject, updateRules, submitEvaluation, updateTeam, canPerformAction, acceptRules } = useTeams();
-    const { user } = useAuth();
-    const { createChat } = useChat();
+    const { teams, simulateDistribution, clearChat, deleteMessage, leaveTeam, addMemberToTeam, updateMemberRole, dissolveCoop, toggleService, addServiceToTeam, closeProject, updateRules, submitEvaluation, updateTeam, canPerformAction, acceptRules } = useTeams();
+    const { user, updateUser } = useAuth();
+    const { createChat, sendMessage: sendChatMessage } = useChat();
 
     // --- 2. DERIVED STATE ---
     // Ensure activeTeam is derived from updated teams list
@@ -123,12 +123,15 @@ const TeamDashboard = () => {
         }
     };
 
-    const handlePrivateMessage = (memberId) => {
+    const handlePrivateMessage = async (memberUserId) => {
         if (!user) return;
-        createChat([user.id, memberId], 'direct').then(newChatId => {
+        try {
+            const newChatId = await createChat([user.id, memberUserId], 'direct');
             navigate(`/chat/${newChatId}`);
             setOpenMenuId(null);
-        });
+        } catch (error) {
+            console.error("Error al crear chat privado:", error);
+        }
     };
 
     const handleFileSelect = (e) => {
@@ -144,12 +147,12 @@ const TeamDashboard = () => {
         reader.readAsDataURL(file);
     };
 
-    const handleSendMessage = (e) => {
+    const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!activeTeam || (!messageInput.trim() && !attachment)) return;
 
         try {
-            sendMessage(activeTeam.id, messageInput, attachment, 'internal');
+            await sendChatMessage(null, messageInput, attachment ? [attachment] : [], { teamId: activeTeam.id });
             setMessageInput('');
             setAttachment(null);
         } catch (error) {

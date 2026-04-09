@@ -144,46 +144,56 @@ create policy "Users can view their own messages." on public.messages for select
 create policy "Users can send messages." on public.messages for insert with check (auth.uid() = sender_id);
 
 
--- FUNCTION: auto-create a profile on signup
-create or replace function public.handle_new_user()
+-- FUNCTION: auto-create a profile on signup (ONLY ONCE CONFIRMED)
+create or replace function public.handle_user_confirmation()
 returns trigger as $$
 begin
-    insert into public.profiles (
-        id, 
-        username, 
-        first_name, 
-        last_name, 
-        email, 
-        role,
-        gender,
-        company_name,
-        responsible_name,
-        location,
-        country,
-        work_hours,
-        payment_methods,
-        vacancies
-    )
-    values (
-        new.id,
-        coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
-        coalesce(new.raw_user_meta_data->>'first_name', ''),
-        coalesce(new.raw_user_meta_data->>'last_name', ''),
-        new.email,
-        coalesce(new.raw_user_meta_data->>'role', 'client'),
-        new.raw_user_meta_data->>'gender',
-        new.raw_user_meta_data->>'company_name',
-        new.raw_user_meta_data->>'responsible_name',
-        new.raw_user_meta_data->>'location',
-        new.raw_user_meta_data->>'country',
-        new.raw_user_meta_data->>'work_hours',
-        new.raw_user_meta_data->>'payment_methods',
-        (new.raw_user_meta_data->>'vacancies')::integer
-    );
+    -- Only proceed if email is confirmed AND profile doesn't exist yet
+    if (new.email_confirmed_at is not null) and not exists (select 1 from public.profiles where id = new.id) then
+        insert into public.profiles (
+            id, 
+            username, 
+            first_name, 
+            last_name, 
+            email, 
+            role,
+            gender,
+            company_name,
+            responsible_name,
+            location,
+            country,
+            work_hours,
+            payment_methods,
+            vacancies
+        )
+        values (
+            new.id,
+            coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+            coalesce(new.raw_user_meta_data->>'first_name', ''),
+            coalesce(new.raw_user_meta_data->>'last_name', ''),
+            new.email,
+            coalesce(new.raw_user_meta_data->>'role', 'client'),
+            new.raw_user_meta_data->>'gender',
+            new.raw_user_meta_data->>'company_name',
+            new.raw_user_meta_data->>'responsible_name',
+            new.raw_user_meta_data->>'location',
+            new.raw_user_meta_data->>'country',
+            new.raw_user_meta_data->>'work_hours',
+            new.raw_user_meta_data->>'payment_methods',
+            (new.raw_user_meta_data->>'vacancies')::integer
+        );
+    end if;
     return new;
 end;
 $$ language plpgsql security definer;
 
-create or replace trigger on_auth_user_created
+-- Trigger to handle both instant confirmation (OAuth) and delayed confirmation (Email)
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
     after insert on auth.users
-    for each row execute procedure public.handle_new_user();
+    for each row execute procedure public.handle_user_confirmation();
+
+drop trigger if exists on_auth_user_updated on auth.users;
+create trigger on_auth_user_updated
+    after update on auth.users
+    for each row execute procedure public.handle_user_confirmation();
