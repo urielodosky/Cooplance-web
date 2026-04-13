@@ -50,8 +50,15 @@ const Login = () => {
     };
 
     const handleOtpVerify = async (code) => {
-        await loginVerifyOtp(email, code);
-        // If successful, the useEffect will navigate to dashboard
+        try {
+            await loginVerifyOtp(email, code);
+            console.log("[Login] OTP verified successfully. Clearing otpStep.");
+            setOtpStep(false);
+        } catch (err) {
+            console.error("[Login] OTP verification failed:", err);
+            // Error is handled by the OTPVerification component's UI
+            throw err;
+        }
     };
 
     const handleOtpResend = async () => {

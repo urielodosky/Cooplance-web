@@ -244,7 +244,7 @@ export const AuthProvider = ({ children }) => {
 
     // ─── LOGIN VERIFY OTP (Step 2: verify code and create session) ───────
     const loginVerifyOtp = async (email, token) => {
-        console.log("[AuthContext] Verifying login OTP (Universal Strategy)...");
+        console.log("[AuthContext V3] Verifying login OTP (Universal Strategy)...");
         
         let result;
         let lastError;
@@ -260,7 +260,17 @@ export const AuthProvider = ({ children }) => {
             if (result.error) throw result.error;
         } catch (err) {
             lastError = err;
-            console.warn("[AuthContext V3] Type 'email' failed, retrying with type 'signup'...");
+            console.warn("[AuthContext V3] Type 'email' failed, checking if session was created anyway...");
+            
+            // Critical check: if we already have a session, ignore HTTP error
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                console.log("[AuthContext V3] Active session detected! Bypassing error.");
+                await fetchProfile(session.user.id);
+                return session.user;
+            }
+
+            console.warn("[AuthContext V3] No session found, retrying with type 'signup'...");
             
             // Fallback to type 'signup' (Unconfirmed User confirmation)
             try {
@@ -271,12 +281,19 @@ export const AuthProvider = ({ children }) => {
                 );
                 if (result.error) throw result.error;
             } catch (err2) {
+                // Last check for session
+                const { data: { session: sessionFinal } } = await supabase.auth.getSession();
+                if (sessionFinal?.user) {
+                    console.log("[AuthContext V3] Session found on last retry! Bypassing.");
+                    await fetchProfile(sessionFinal.user.id);
+                    return sessionFinal.user;
+                }
                 console.error("[AuthContext V3] Universal OTP verification failed.");
                 throw new Error(err2.message || lastError.message);
             }
         }
 
-        console.log("[AuthContext] Login OTP verified successfully.");
+        console.log("[AuthContext V3] Login OTP verified successfully.");
 
         if (result.data?.user) {
             await fetchProfile(result.data.user.id);
