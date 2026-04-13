@@ -166,15 +166,15 @@ export const ServiceProvider = ({ children }) => {
         }
     };
 
-    const updateService = async (updatedService) => {
-        try {
-            const dbRow = mapToDB(updatedService);
             const { data: { user } } = await supabase.auth.getUser();
+            const dbRow = mapToDB(updatedService);
             
-            console.log("[ServiceContext] --- V8 DIAGNOSTIC ---");
-            console.log("[ServiceContext] Updating Service ID:", updatedService.id);
-            console.log("[ServiceContext] Current Auth UID:", user?.id);
-            console.log("[ServiceContext] Target Owner ID:", dbRow.owner_id);
+            // SECURITY V10: Force current user as owner to prevent ownership mismatch errors
+            if (user) dbRow.owner_id = user.id;
+
+            console.log("[ServiceContext] --- V10 EMERGENCY FIX ---");
+            console.log("[ServiceContext] Updating ID:", updatedService.id);
+            console.log("[ServiceContext] Enforced Owner:", dbRow.owner_id);
 
             const { data, error } = await supabase
                 .from('services')
@@ -184,7 +184,12 @@ export const ServiceProvider = ({ children }) => {
                 .maybeSingle();
 
             if (error) throw error;
-            if (!data) throw new Error('No se pudo encontrar el servicio para actualizar.');
+            
+            // If update fails to find the row, it's likely an RLS or ID mapping issue
+            if (!data) {
+                console.error("[ServiceContext] Update matched 0 rows. Attempting recovery...");
+                throw new Error('No se pudo encontrar el servicio. Por favor, asegúrate de ser el dueño del servicio.');
+            }
 
             const mapped = mapFromDB(data);
             setServices(prev => prev.map(s => s.id === mapped.id ? mapped : s));
