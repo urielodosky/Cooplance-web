@@ -8,7 +8,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    console.log("--- COOPLANCE AUTH V3 ACTIVADO ---");
+    console.log("--- COOPLANCE AUTH V4 ACTIVADO ---");
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -81,7 +81,12 @@ export const AuthProvider = ({ children }) => {
         
         while (attempts < maxAttempts) {
             try {
-                const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+                // V4: Add timeout to the DB query itself to avoid hanging forever
+                const { data, error } = await withTimeout(
+                    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+                    8000,
+                    "Cargar Perfil (DB)"
+                );
                 
                 if (data) {
                     setUser(data);
@@ -202,6 +207,7 @@ export const AuthProvider = ({ children }) => {
                         persistSession: false,
                         autoRefreshToken: false,
                         detectSessionInUrl: false,
+                        storageKey: 'cooplance-ghost-v4', // V4: Unique key to avoid storage deadlocks
                         // Use an isolated dummy storage to prevent localStorage leakage
                         storage: {
                             getItem: () => null,
@@ -244,56 +250,56 @@ export const AuthProvider = ({ children }) => {
 
     // ─── LOGIN VERIFY OTP (Step 2: verify code and create session) ───────
     const loginVerifyOtp = async (email, token) => {
-        console.log("[AuthContext V3] Verifying login OTP (Universal Strategy)...");
+        console.log("[AuthContext V4] Verifying login OTP (Universal Strategy)...");
         
         let result;
         let lastError;
 
         // Try type 'email' first (Standard Login OTP)
         try {
-            console.log("[AuthContext V3] Attempting verify with type: 'email'...");
+            console.log("[AuthContext V4] Attempting verify with type: 'email'...");
             result = await withTimeout(
                 supabase.auth.verifyOtp({ email, token, type: 'email' }),
                 60000,
-                "Verificar (V3-email)"
+                "Verificar (V4-email)"
             );
             if (result.error) throw result.error;
         } catch (err) {
             lastError = err;
-            console.warn("[AuthContext V3] Type 'email' failed, checking if session was created anyway...");
+            console.warn("[AuthContext V4] Type 'email' failed, checking if session was created anyway...");
             
             // Critical check: if we already have a session, ignore HTTP error
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                console.log("[AuthContext V3] Active session detected! Bypassing error.");
+                console.log("[AuthContext V4] Active session detected! Bypassing error.");
                 await fetchProfile(session.user.id);
                 return session.user;
             }
 
-            console.warn("[AuthContext V3] No session found, retrying with type 'signup'...");
+            console.warn("[AuthContext V4] No session found, retrying with type 'signup'...");
             
             // Fallback to type 'signup' (Unconfirmed User confirmation)
             try {
                 result = await withTimeout(
                     supabase.auth.verifyOtp({ email, token, type: 'signup' }),
                     60000,
-                    "Verificar (V3-signup)"
+                    "Verificar (V4-signup)"
                 );
                 if (result.error) throw result.error;
             } catch (err2) {
                 // Last check for session
                 const { data: { session: sessionFinal } } = await supabase.auth.getSession();
                 if (sessionFinal?.user) {
-                    console.log("[AuthContext V3] Session found on last retry! Bypassing.");
+                    console.log("[AuthContext V4] Session found on last retry! Bypassing.");
                     await fetchProfile(sessionFinal.user.id);
                     return sessionFinal.user;
                 }
-                console.error("[AuthContext V3] Universal OTP verification failed.");
+                console.error("[AuthContext V4] Universal OTP verification failed.");
                 throw new Error(err2.message || lastError.message);
             }
         }
 
-        console.log("[AuthContext V3] Login OTP verified successfully.");
+        console.log("[AuthContext V4] Login OTP verified successfully.");
 
         if (result.data?.user) {
             await fetchProfile(result.data.user.id);
