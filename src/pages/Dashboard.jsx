@@ -11,7 +11,7 @@ import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
 import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, registerActivity, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
-import { getProjects } from '../lib/projectService';
+import { getProjects, getProjectsByClient } from '../lib/projectService';
 import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
 import '../styles/pages/Dashboard.scss';
 // Assuming Dashboard might have inline styles per original file, or use global CSS.

@@ -108,9 +108,8 @@ export const processGamificationRules = (user) => {
     // 1. Vacation Logic (Reset credits yearly)
     const g = updatedUser.gamification;
     const oneYear = 365 * 24 * 60 * 60 * 1000;
-    
-    // Annual Reset
-    if (now - g.vacation.lastReset > oneYear) {
+    // 1. Vacation Reset (Annual Policy V3) - ONLY if vacation exists
+    if (g.vacation?.lastReset && now - g.vacation.lastReset > oneYear) {
         g.vacation.credits = 4;
         g.vacation.lastReset = now;
         g.vacation.policyV3 = true; // Mark as reset under the new policy
@@ -131,7 +130,7 @@ export const processGamificationRules = (user) => {
     // 2. Check Vacation Expiry (15 days duration)
     const fifteenDaysDuration = 15 * 24 * 60 * 60 * 1000;
     if (g.vacation.active) {
-        if (now - g.vacation.startDate > fifteenDaysDuration) {
+        if (now - new Date(g.vacation.startDate).getTime() > fifteenDaysDuration) {
             g.vacation.active = false;
             g.vacation.startDate = null;
             hasChanges = true;
@@ -184,17 +183,16 @@ export const processGamificationRules = (user) => {
     // 4. Inactivity Penalty (2 months) -> Drop Level (down to 5)
     // "si hay inactividad ... se reste un nivel cada 2 meses hasta el nivel 5"
     if (updatedUser.level > 5) {
-        const twoMonths = 60 * 24 * 60 * 60 * 1000;
-        const timeSinceActivity = now - g.lastActivity;
-
-        if (timeSinceActivity >= twoMonths) {
+        const oneMonth = 30 * 24 * 60 * 60 * 1000;
+        // 2. XP Decay (Inactivity) - ONLY for active freelancers not on vacation
+        if (!g.vacation?.active && now - (user.last_activity || now) > oneMonth) {
             // Drop Level logic
             // Should we check if we already penalized for this period? 
             // We reset lastActivity after penalizing? Or track "lastInactivityPenalty"?
             // To prevent instant double-drop, we can update lastActivity to "now" (simulating a 'reset' of the timer)
             // or better: track `lastInactivityPenalty`.
 
-            if (!g.lastInactivityPenalty || (now - g.lastInactivityPenalty >= twoMonths)) {
+            if (!g.lastInactivityPenalty || (now - g.lastInactivityPenalty >= oneMonth)) {
                 const oldLevel = updatedUser.level;
                 updatedUser.level = Math.max(5, oldLevel - 1);
 
@@ -227,10 +225,11 @@ export const registerActivity = (user) => {
 
 export const activateVacation = (user) => {
     if (!user) return user;
-    const g = user.gamification || {};
+    const g = user.gamification || { vacation: { active: false, credits: 4, lastReset: Date.now() } };
 
     if (g.vacation && g.vacation.active) return user; // Already active
-    if (!g.vacation || g.vacation.credits <= 0) {
+    if (!g.vacation) g.vacation = { active: false, credits: 4, lastReset: Date.now() };
+    if ((g.vacation.credits || 0) <= 0) {
         // No credits
         return user;
     }
@@ -242,8 +241,8 @@ export const activateVacation = (user) => {
             vacation: {
                 ...g.vacation,
                 active: true,
-                startDate: Date.now(),
-                credits: g.vacation.credits - 1
+                startDate: new Date().toISOString(),
+                credits: (g.vacation.credits || 0) - 1
             }
         }
     };
