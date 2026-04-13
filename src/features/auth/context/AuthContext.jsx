@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }) => {
             if (isMounted && !isInitComplete) {
                 console.warn("[AuthContext] Watchdog timeout (10s). Forcing UI.");
                 setLoading(false);
+                setIsInitialized(true);
             }
         }, 10000);
 
