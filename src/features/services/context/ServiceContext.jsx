@@ -174,9 +174,11 @@ export const ServiceProvider = ({ children }) => {
                 .update(dbRow)
                 .eq('id', updatedService.id)
                 .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender)')
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
+            if (!data) throw new Error('No se pudo encontrar el servicio para actualizar.');
+
             const mapped = mapFromDB(data);
             setServices(prev => prev.map(s => s.id === mapped.id ? mapped : s));
             return mapped;
