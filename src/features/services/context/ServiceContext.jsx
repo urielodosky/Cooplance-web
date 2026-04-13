@@ -169,6 +169,13 @@ export const ServiceProvider = ({ children }) => {
     const updateService = async (updatedService) => {
         try {
             const dbRow = mapToDB(updatedService);
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            console.log("[ServiceContext] --- V8 DIAGNOSTIC ---");
+            console.log("[ServiceContext] Updating Service ID:", updatedService.id);
+            console.log("[ServiceContext] Current Auth UID:", user?.id);
+            console.log("[ServiceContext] Target Owner ID:", dbRow.owner_id);
+
             const { data, error } = await supabase
                 .from('services')
                 .update(dbRow)

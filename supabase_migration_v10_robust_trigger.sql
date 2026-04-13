@@ -67,20 +67,21 @@ BEGIN
             0
         )
         ON CONFLICT (id) DO UPDATE SET
-            first_name = EXCLUDED.first_name,
-            last_name = EXCLUDED.last_name,
-            role = EXCLUDED.role,
-            gender = EXCLUDED.gender,
-            company_name = EXCLUDED.company_name,
-            responsible_name = EXCLUDED.responsible_name,
-            location = EXCLUDED.location,
-            country = EXCLUDED.country,
-            work_hours = EXCLUDED.work_hours,
-            payment_methods = EXCLUDED.payment_methods,
-            vacancies = EXCLUDED.vacancies,
-            dni = EXCLUDED.dni,
-            dob = EXCLUDED.dob,
-            phone = EXCLUDED.phone;
+            username = COALESCE(NULLIF(EXCLUDED.username, ''), public.profiles.username),
+            first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), public.profiles.first_name),
+            last_name = COALESCE(NULLIF(EXCLUDED.last_name, ''), public.profiles.last_name),
+            role = COALESCE(NULLIF(EXCLUDED.role, ''), public.profiles.role),
+            gender = COALESCE(NULLIF(EXCLUDED.gender, ''), public.profiles.gender),
+            company_name = COALESCE(NULLIF(EXCLUDED.company_name, ''), public.profiles.company_name),
+            responsible_name = COALESCE(NULLIF(EXCLUDED.responsible_name, ''), public.profiles.responsible_name),
+            location = COALESCE(NULLIF(EXCLUDED.location, ''), public.profiles.location),
+            country = COALESCE(NULLIF(EXCLUDED.country, ''), public.profiles.country),
+            work_hours = COALESCE(NULLIF(EXCLUDED.work_hours, ''), public.profiles.work_hours),
+            payment_methods = COALESCE(NULLIF(EXCLUDED.payment_methods, ''), public.profiles.payment_methods),
+            vacancies = COALESCE(EXCLUDED.vacancies, public.profiles.vacancies),
+            dni = COALESCE(NULLIF(EXCLUDED.dni, ''), public.profiles.dni),
+            dob = COALESCE(EXCLUDED.dob, public.profiles.dob),
+            phone = COALESCE(NULLIF(EXCLUDED.phone, ''), public.profiles.phone);
         
         RAISE LOG '[Cooplance V10] Profile UPSERT successful for user %', NEW.id;
     END IF;
