@@ -13,14 +13,11 @@ export const AuthProvider = ({ children }) => {
     const [isInitialized, setIsInitialized] = useState(false);
 
     const handleSession = async (session) => {
+        console.log("[AuthContext] Handling session:", session?.user ? "User detected" : "No user");
         if (session?.user) {
-            if (session.user.email_confirmed_at) {
-                await fetchProfile(session.user.id, session.user);
-            } else {
-                console.log("[AuthContext] Email not confirmed. Session rejected.");
-                setUser(null);
-                setLoading(false);
-            }
+            // Seamos más permisivos: si hay usuario, intentamos cargar perfil.
+            // La confirmación de email ya la gestiona Supabase en el login.
+            await fetchProfile(session.user.id, session.user);
         } else {
             setUser(null);
             setLoading(false);

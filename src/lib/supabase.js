@@ -10,9 +10,15 @@ if (!isConfigured) {
   console.warn("⚠️ [Supabase] Faltan las variables de entorno: VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY. La aplicación entrará en modo de configuración requerida.");
 }
 
-// Inicializar con valores vacíos si faltan para no romper el código que importa la instancia,
-// pero el flag isConfigured permitirá a la UI bloquear el acceso.
+// Inicializar el cliente principal de Supabase con persistencia activa
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder'
+  supabaseAnonKey || 'placeholder',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
 );
