@@ -8,6 +8,7 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
+    console.log("--- COOPLANCE AUTH V3 ACTIVADO ---");
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -146,7 +147,7 @@ export const AuthProvider = ({ children }) => {
             email: registrationData.email,
             password: registrationData.password,
             options: { data: payload }
-        }), 15000, "Registro");
+        }), 60000, "Registro V3");
 
         if (error) throw new Error(error.message);
         return data.user;
@@ -159,8 +160,8 @@ export const AuthProvider = ({ children }) => {
         
         const { data, error } = await withTimeout(
             supabase.auth.verifyOtp({ email, token, type: 'signup' }),
-            45000,
-            "Verificar OTP"
+            60000,
+            "Verificar OTP V3"
         );
 
         if (error) throw new Error(error.message);
@@ -182,8 +183,8 @@ export const AuthProvider = ({ children }) => {
     const resendOtp = async (email) => {
         const { error } = await withTimeout(
             supabase.auth.resend({ type: 'signup', email }),
-            10000,
-            "Reenviar OTP"
+            60000,
+            "Reenviar OTP V3"
         );
         if (error) throw new Error(error.message);
     };
@@ -250,27 +251,27 @@ export const AuthProvider = ({ children }) => {
 
         // Try type 'email' first (Standard Login OTP)
         try {
-            console.log("[AuthContext] Attempting verify with type: 'email'...");
+            console.log("[AuthContext V3] Attempting verify with type: 'email'...");
             result = await withTimeout(
                 supabase.auth.verifyOtp({ email, token, type: 'email' }),
-                45000,
-                "Verificar código (email)"
+                60000,
+                "Verificar (V3-email)"
             );
             if (result.error) throw result.error;
         } catch (err) {
             lastError = err;
-            console.warn("[AuthContext] Type 'email' failed, retrying with type 'signup'...");
+            console.warn("[AuthContext V3] Type 'email' failed, retrying with type 'signup'...");
             
             // Fallback to type 'signup' (Unconfirmed User confirmation)
             try {
                 result = await withTimeout(
                     supabase.auth.verifyOtp({ email, token, type: 'signup' }),
-                    45000,
-                    "Verificar código (signup)"
+                    60000,
+                    "Verificar (V3-signup)"
                 );
                 if (result.error) throw result.error;
             } catch (err2) {
-                console.error("[AuthContext] Universal OTP verification failed.");
+                console.error("[AuthContext V3] Universal OTP verification failed.");
                 throw new Error(err2.message || lastError.message);
             }
         }

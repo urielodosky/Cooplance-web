@@ -12,6 +12,7 @@ const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
     const inputRefs = useRef([]);
 
     useEffect(() => {
+        console.log("[OTP V3] Component loaded");
         // Timer for expiration
         const expirationTimer = setInterval(() => {
             setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -83,8 +84,8 @@ const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
         // Watchdog: unlock after 25s if hung
         const watchdog = setTimeout(() => {
             setLoading(false);
-            setError('La verificación tardó demasiado. Intenta de nuevo.');
-        }, 45000);
+            setError('Fallo V3: La verificación tardó demasiado. Intenta de nuevo.');
+        }, 60000);
 
         try {
             await onVerify(fullCode);
