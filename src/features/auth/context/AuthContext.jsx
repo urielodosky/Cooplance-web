@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
+    const isManualLoginInProgress = React.useRef(false);
 
     const handleSession = async (session) => {
         if (session?.user) {
@@ -55,6 +56,14 @@ export const AuthProvider = ({ children }) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             console.log("[AuthContext] Auth event:", _event);
             if (_event === 'INITIAL_SESSION') return;
+            
+            // SKIP global state updates if we are in the middle of a manual 2-step login
+            // and the event is a technical sign-in or sign-out from that sequence.
+            if (isManualLoginInProgress.current && (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT')) {
+                console.log("[AuthContext] Skipping global update during manual login dance...");
+                return;
+            }
+
             if (isMounted) await handleSession(session);
         });
 
@@ -190,30 +199,37 @@ export const AuthProvider = ({ children }) => {
 
     // ─── LOGIN (Step 1: validate credentials, then send OTP) ──────────────
     const login = async ({ email, password }) => {
-        // 1. Validate credentials
-        const { data, error } = await withTimeout(
-            supabase.auth.signInWithPassword({ email, password }),
-            15000,
-            "Validar credenciales"
-        );
-        
-        if (error) throw new Error(error.message);
+        isManualLoginInProgress.current = true;
+        try {
+            // 1. Validate credentials
+            const { data, error } = await withTimeout(
+                supabase.auth.signInWithPassword({ email, password }),
+                15000,
+                "Validar credenciales"
+            );
+            
+            if (error) throw new Error(error.message);
 
-        // 2. Credentials are correct — sign out immediately so the session
-        //    is only created after OTP verification
-        await supabase.auth.signOut();
+            // 2. Credentials are correct — sign out immediately so the session
+            //    is only created after OTP verification
+            await supabase.auth.signOut();
 
-        // 3. Send OTP to the user's email
-        const { error: otpError } = await withTimeout(
-            supabase.auth.signInWithOtp({ email }),
-            10000,
-            "Enviar código de verificación"
-        );
+            // 3. Send OTP to the user's email
+            const { error: otpError } = await withTimeout(
+                supabase.auth.signInWithOtp({ email }),
+                10000,
+                "Enviar código de verificación"
+            );
 
-        if (otpError) throw new Error(otpError.message);
+            if (otpError) throw new Error(otpError.message);
 
-        // Return the email so the caller can navigate to the verify page
-        return { email, requiresOtp: true };
+            return { email, requiresOtp: true };
+        } finally {
+            // Important: Keep it true for a bit more or let the caller reset it?
+            // If we reset it instantly, the next microtask might trigger handleSession.
+            // We only reset it once the caller starts the OTP verify or fails.
+            setTimeout(() => { isManualLoginInProgress.current = false; }, 2000);
+        }
     };
 
     // ─── LOGIN VERIFY OTP (Step 2: verify code and create session) ───────
