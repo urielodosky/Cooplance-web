@@ -385,27 +385,17 @@ const Settings = () => {
 
                         <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
                             <div className="form-group">
-                                <label className="field-label">DNI / Documento</label>
-                                <input
-                                    type="text"
-                                    value={dni}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val && !/^\d+$/.test(val)) return;
-                                        setDni(val);
-                                    }}
-                                    placeholder="Nro de Documento"
-                                    className="settings-input"
-                                />
-                            </div>
-                            <div className="form-group">
                                 <label className="field-label">Fecha de Nacimiento</label>
                                 <input
                                     type="date"
                                     value={dob}
-                                    onChange={(e) => setDob(e.target.value)}
-                                    className="settings-input"
+                                    readOnly
+                                    className="settings-input input-readonly"
+                                    style={{ cursor: 'not-allowed', opacity: 0.8 }}
                                 />
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', display: 'block' }}>
+                                    La fecha de nacimiento no puede ser modificada.
+                                </span>
                             </div>
                         </div>
 
