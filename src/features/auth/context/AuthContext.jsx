@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { processGamificationRules } from '../../../utils/gamification';
 import { supabase } from '../../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import InitialLoader from '../../../components/common/InitialLoader';
 
 const AuthContext = createContext();
@@ -10,14 +11,8 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
-    const isManualLoginInProgress = React.useRef(false);
 
     const handleSession = async (session) => {
-        const isLocked = localStorage.getItem('cooplance_manual_login_lock');
-        if (isManualLoginInProgress.current || isLocked) {
-            console.log("[AuthContext] ABORTING handleSession: Manual login dance in progress (Locked)");
-            return;
-        }
         if (session?.user) {
             if (session.user.email_confirmed_at) {
                 await fetchProfile(session.user.id, session.user);
@@ -62,13 +57,6 @@ export const AuthProvider = ({ children }) => {
             console.log("[AuthContext] Auth event:", _event);
             if (_event === 'INITIAL_SESSION') return;
             
-            // SKIP global state updates if we are in the middle of a manual 2-step login
-            // and the event is a technical sign-in or sign-out from that sequence.
-            if (isManualLoginInProgress.current && (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT')) {
-                console.log("[AuthContext] Skipping global update during manual login dance...");
-                return;
-            }
-
             if (isMounted) await handleSession(session);
         });
 
@@ -204,26 +192,32 @@ export const AuthProvider = ({ children }) => {
 
     // ─── LOGIN (Step 1: validate credentials, then send OTP) ──────────────
     const login = async ({ email, password }) => {
-        isManualLoginInProgress.current = true;
-        localStorage.setItem('cooplance_manual_login_lock', 'true');
-        
         try {
-            // 1. Validate credentials
+            // A. Create a ghost/technical client that doesn't persist sessions
+            //    or trigger global app listeners.
+            const technicalSupabase = createClient(
+                import.meta.env.VITE_SUPABASE_URL,
+                import.meta.env.VITE_SUPABASE_ANON_KEY,
+                {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                }
+            );
+
+            // 1. Validate credentials silenty (Ghost Connection)
             const { data, error } = await withTimeout(
-                supabase.auth.signInWithPassword({ email, password }),
-                15000,
+                technicalSupabase.auth.signInWithPassword({ email, password }),
+                10000,
                 "Validar credenciales"
             );
             
             if (error) throw new Error(error.message);
 
-            // Give the system a small breath to handle the session internal state
-            await new Promise(r => setTimeout(r, 300));
-
-            // 2. Credentials are correct — sign out immediately
-            await supabase.auth.signOut();
-
-            // 3. Send OTP to the user's email
+            // 2. Credentials correct. Now trigger OTP via main client.
+            //    Since we used the technical client, nobody noticed the login.
             const { error: otpError } = await withTimeout(
                 supabase.auth.signInWithOtp({ email }),
                 10000,
@@ -233,12 +227,9 @@ export const AuthProvider = ({ children }) => {
             if (otpError) throw new Error(otpError.message);
 
             return { email, requiresOtp: true };
-        } finally {
-            // Keep the lock for a safety window
-            setTimeout(() => { 
-                isManualLoginInProgress.current = false; 
-                localStorage.removeItem('cooplance_manual_login_lock');
-            }, 3000);
+        } catch (err) {
+            console.error("[AuthContext] Ghost Login error:", err);
+            throw err;
         }
     };
 

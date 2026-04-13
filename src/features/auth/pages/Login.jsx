@@ -14,9 +14,8 @@ const Login = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // ONLY redirect if we are NOT in the middle of the login ritual or OTP step
+        // Only redirect if there is a stable user session and no pending login steps
         if (user && !loading && !otpStep) {
-            console.log("[Login] User detected and no pending steps, navigating to dashboard");
             navigate('/dashboard');
         }
     }, [user, navigate, loading, otpStep]);
