@@ -13,8 +13,9 @@ export const AuthProvider = ({ children }) => {
     const isManualLoginInProgress = React.useRef(false);
 
     const handleSession = async (session) => {
-        if (isManualLoginInProgress.current) {
-            console.log("[AuthContext] ABORTING handleSession: Manual login dance in progress");
+        const isLocked = localStorage.getItem('cooplance_manual_login_lock');
+        if (isManualLoginInProgress.current || isLocked) {
+            console.log("[AuthContext] ABORTING handleSession: Manual login dance in progress (Locked)");
             return;
         }
         if (session?.user) {
@@ -204,6 +205,8 @@ export const AuthProvider = ({ children }) => {
     // ─── LOGIN (Step 1: validate credentials, then send OTP) ──────────────
     const login = async ({ email, password }) => {
         isManualLoginInProgress.current = true;
+        localStorage.setItem('cooplance_manual_login_lock', 'true');
+        
         try {
             // 1. Validate credentials
             const { data, error } = await withTimeout(
@@ -214,8 +217,10 @@ export const AuthProvider = ({ children }) => {
             
             if (error) throw new Error(error.message);
 
-            // 2. Credentials are correct — sign out immediately so the session
-            //    is only created after OTP verification
+            // Give the system a small breath to handle the session internal state
+            await new Promise(r => setTimeout(r, 300));
+
+            // 2. Credentials are correct — sign out immediately
             await supabase.auth.signOut();
 
             // 3. Send OTP to the user's email
@@ -229,10 +234,11 @@ export const AuthProvider = ({ children }) => {
 
             return { email, requiresOtp: true };
         } finally {
-            // Important: Keep it true for a bit more or let the caller reset it?
-            // If we reset it instantly, the next microtask might trigger handleSession.
-            // We only reset it once the caller starts the OTP verify or fails.
-            setTimeout(() => { isManualLoginInProgress.current = false; }, 2000);
+            // Keep the lock for a safety window
+            setTimeout(() => { 
+                isManualLoginInProgress.current = false; 
+                localStorage.removeItem('cooplance_manual_login_lock');
+            }, 3000);
         }
     };
 
