@@ -202,7 +202,13 @@ export const AuthProvider = ({ children }) => {
                     auth: {
                         persistSession: false,
                         autoRefreshToken: false,
-                        detectSessionInUrl: false
+                        detectSessionInUrl: false,
+                        // Use an isolated dummy storage to prevent localStorage leakage
+                        storage: {
+                            getItem: () => null,
+                            setItem: () => {},
+                            removeItem: () => {}
+                        }
                     }
                 }
             );
