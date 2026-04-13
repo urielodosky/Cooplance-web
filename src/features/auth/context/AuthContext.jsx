@@ -12,12 +12,13 @@ export const AuthProvider = ({ children }) => {
 
     const handleSession = async (session) => {
         if (session?.user) {
-            // Only fetch profile if the email has been confirmed
+            // Keep at least basic auth info while fetching profile
+            setUser(prev => prev || { id: session.user.id, email: session.user.email, is_loading_profile: true });
+            
             if (session.user.email_confirmed_at) {
-                await fetchProfile(session.user.id);
+                await fetchProfile(session.user.id, session.user);
             } else {
-                // Signed in but not confirmed yet — don't load profile
-                console.log("[AuthContext] User signed in but email not confirmed. Skipping profile fetch.");
+                console.log("[AuthContext] Email not confirmed. Using basic user info.");
                 setLoading(false);
             }
         } else {
@@ -73,40 +74,39 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
-    const fetchProfile = async (userId) => {
+    const fetchProfile = async (userId, authUser = null) => {
         let attempts = 0;
         const maxAttempts = 3;
         
         while (attempts < maxAttempts) {
             try {
-                const { data, error } = await withTimeout(
-                    supabase.from('profiles').select('*').eq('id', userId).single(),
-                    15000,
-                    "Obtener perfil"
-                );
+                const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
                 
                 if (data) {
                     setUser(data);
                     setLoading(false);
                     return;
                 }
-
-                if (error && error.code !== 'PGRST116') throw error;
-                // PGRST116 = not found — trigger may not have fired yet, retry
+                
+                // If not found, it might be the trigger lagging
+                console.log(`[AuthContext] Profile not found (attempt ${attempts + 1})...`);
+                await new Promise(r => setTimeout(r, 1500));
             } catch (err) {
                 console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
             }
-
             attempts++;
-            if (attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 1200));
-            }
         }
-        
-        console.error("[AuthContext] Error fetching profile:", userId, err);
-        // Don't set user to null immediately if we already have a session but profile is missing
-        // This prevents the "flash logout" if the DB trigger is slow.
-        if (!user) setUser(null); 
+
+        console.warn("[AuthContext] Could not reach profile row. Using auth fallback.");
+        if (authUser) {
+            setUser({
+                id: authUser.id,
+                email: authUser.email,
+                username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
+                role: authUser.raw_user_meta_data?.role || 'freelancer',
+                is_partial: true
+            });
+        }
         setLoading(false);
     };
 
