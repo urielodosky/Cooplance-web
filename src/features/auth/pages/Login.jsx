@@ -30,14 +30,19 @@ const Login = () => {
         }
 
         setLoading(true);
+        console.log("[Login] Starting handleSubmit...");
         try {
             const result = await login({ email, password });
+            console.log("[Login] Login result received:", result);
             
-            if (result.requiresOtp) {
-                // Credentials valid — show OTP step
+            if (result && result.requiresOtp) {
+                console.log("[Login] Credentials valid — setting otpStep to true");
                 setOtpStep(true);
+            } else {
+                console.warn("[Login] Login result did not require OTP or result is null");
             }
         } catch (err) {
+            console.error("[Login] Error during login:", err);
             setError(err.message || 'Error al iniciar sesión.');
         } finally {
             setLoading(false);

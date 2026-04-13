@@ -208,24 +208,24 @@ export const AuthProvider = ({ children }) => {
             );
 
             // 1. Validate credentials silenty (Ghost Connection)
-            const { data, error } = await withTimeout(
-                technicalSupabase.auth.signInWithPassword({ email, password }),
-                10000,
-                "Validar credenciales"
-            );
+            const { data, error } = await technicalSupabase.auth.signInWithPassword({ email, password });
             
-            if (error) throw new Error(error.message);
+            if (error) {
+                console.error("[AuthContext] Ghost Credential Error:", error);
+                throw new Error(error.message);
+            }
+            
+            console.log("[AuthContext] Silent credential check PASSED. Triggering OTP...");
 
             // 2. Credentials correct. Now trigger OTP via main client.
-            //    Since we used the technical client, nobody noticed the login.
-            const { error: otpError } = await withTimeout(
-                supabase.auth.signInWithOtp({ email }),
-                10000,
-                "Enviar código de verificación"
-            );
+            const { error: otpError } = await supabase.auth.signInWithOtp({ email });
 
-            if (otpError) throw new Error(otpError.message);
+            if (otpError) {
+                console.error("[AuthContext] OTP Trigger Error:", otpError);
+                throw new Error(otpError.message);
+            }
 
+            console.log("[AuthContext] OTP sent successfully. Returning to Login page.");
             return { email, requiresOtp: true };
         } catch (err) {
             console.error("[AuthContext] Ghost Login error:", err);
