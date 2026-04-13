@@ -52,7 +52,6 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
         revisions: initialData?.revisions || '',
         imageUrl: initialData?.imageUrl || '',
         videoUrl: initialData?.videoUrl || '',
-        price: initialData?.price || '',
         country: initialData?.country || 'Argentina',
         province: initialData?.province || [],
         city: initialData?.city || [],
@@ -588,7 +587,9 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                     : 'Remoto',
                 paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
                     ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
-                    : null
+                    : null,
+                participantMode: participantMode,
+                fixedParticipants: participantMode === 'fixed' ? fixedParticipants : []
             };
 
             setLoadingStatus('Guardando servicio...');
