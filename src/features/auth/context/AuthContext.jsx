@@ -12,13 +12,11 @@ export const AuthProvider = ({ children }) => {
 
     const handleSession = async (session) => {
         if (session?.user) {
-            // Keep at least basic auth info while fetching profile
-            setUser(prev => prev || { id: session.user.id, email: session.user.email, is_loading_profile: true });
-            
             if (session.user.email_confirmed_at) {
                 await fetchProfile(session.user.id, session.user);
             } else {
-                console.log("[AuthContext] Email not confirmed. Using basic user info.");
+                console.log("[AuthContext] Email not confirmed. Session rejected.");
+                setUser(null);
                 setLoading(false);
             }
         } else {
