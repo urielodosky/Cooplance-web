@@ -10,6 +10,15 @@ import CustomDropdown from '../../../components/common/CustomDropdown';
 import BookingConfigForm from '../../../components/booking/BookingConfigForm';
 import '../../../styles/components/ServiceCreateForm.scss';
 
+const withTimeout = (promise, ms, actionName) => {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`Timeout: "${actionName}" excedió el tiempo límite.`)), ms)
+        )
+    ]);
+};
+
 const ServiceCreateForm = ({ onCancel, initialData }) => {
     const { addService, updateService } = useServices();
     const { user } = useAuth();
@@ -508,9 +517,13 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                     const response = await fetch(img);
                     const blob = await response.blob();
                     const fileName = `${user.id}/${Date.now()}_${i}.jpg`;
-                    const { error: uploadErr } = await supabase.storage
-                        .from('service-media')
-                        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+                    const { error: uploadErr } = await withTimeout(
+                        supabase.storage
+                            .from('service-media')
+                            .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true }),
+                        30000,
+                        "Subir imagen"
+                    );
                     if (uploadErr) {
                         console.error('Upload error:', uploadErr);
                         // Fallback: keep base64
@@ -537,9 +550,13 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 } else if (vid.type === 'file' && vid.file) {
                     const ext = vid.file.name.split('.').pop();
                     const fileName = `${user.id}/video_${Date.now()}_${i}.${ext}`;
-                    const { error: uploadErr } = await supabase.storage
-                        .from('service-media')
-                        .upload(fileName, vid.file, { contentType: vid.file.type, upsert: true });
+                    const { error: uploadErr } = await withTimeout(
+                        supabase.storage
+                            .from('service-media')
+                            .upload(fileName, vid.file, { contentType: vid.file.type, upsert: true }),
+                        45000,
+                        "Subir video"
+                    );
 
                     if (uploadErr) {
                         console.error('Upload video error:', uploadErr);
@@ -582,15 +599,13 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 city: formData.city,
                 professionalLicense: formData.category === 'Profesionales Matriculados' ? formData.professionalLicense : null,
                 professionalBody: formData.category === 'Profesionales Matriculados' ? formData.professionalBody : null,
-                location: formData.workMode.includes('presential')
-                    ? `${formData.city}, ${formData.province}, ${formData.country}`
-                    : 'Remoto',
-                paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
-                    ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
-                    : null,
-                participantMode: participantMode,
-                fixedParticipants: participantMode === 'fixed' ? fixedParticipants : []
-            };
+                    location: formData.workMode.includes('presential')
+                        ? `${formData.city}, ${formData.province}, ${formData.country}`
+                        : 'Remoto',
+                    paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
+                        ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
+                        : null
+                };
 
             setLoadingStatus('Guardando servicio...');
             if (initialData) {
