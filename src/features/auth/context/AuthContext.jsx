@@ -103,8 +103,10 @@ export const AuthProvider = ({ children }) => {
             }
         }
         
-        console.error("[AuthContext] Could not fetch profile after retries.");
-        setUser(null);
+        console.error("[AuthContext] Error fetching profile:", userId, err);
+        // Don't set user to null immediately if we already have a session but profile is missing
+        // This prevents the "flash logout" if the DB trigger is slow.
+        if (!user) setUser(null); 
         setLoading(false);
     };
 
@@ -120,34 +122,30 @@ export const AuthProvider = ({ children }) => {
     // With Supabase native OTP: signUp creates the user but Supabase will NOT
     // create a session until the email is confirmed via verifyOtp.
     const register = async (role, registrationData) => {
-        const { email, password, username, first_name, last_name, gender, 
-                company_name, responsible_name, location, country, 
-                work_hours, payment_methods, vacancies, dni, dob, phone, 
-                terms_accepted } = registrationData;
+        // Map frontend camelCase to backend snake_case
+        const payload = {
+            role: role,
+            username: (registrationData.username || registrationData.email?.split('@')[0])?.toLowerCase(),
+            first_name: registrationData.firstName || registrationData.first_name || '',
+            last_name: registrationData.lastName || registrationData.last_name || '',
+            gender: registrationData.gender || 'male',
+            company_name: registrationData.companyName || registrationData.company_name || null,
+            responsible_name: registrationData.responsibleName || registrationData.responsible_name || null,
+            location: registrationData.location || null,
+            country: registrationData.country || 'Argentina',
+            work_hours: registrationData.workHours || registrationData.work_hours || null,
+            payment_methods: registrationData.paymentMethods || registrationData.payment_methods || null,
+            vacancies: registrationData.vacancies ? parseInt(registrationData.vacancies) : 0,
+            dni: registrationData.dni || null,
+            dob: registrationData.dob || registrationData.birthDate || null,
+            phone: registrationData.phone || null,
+            terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
+        };
 
         const { data, error } = await withTimeout(supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    role,
-                    username,
-                    first_name: first_name || '',
-                    last_name: last_name || '',
-                    gender,
-                    company_name: company_name || null,
-                    responsible_name: responsible_name || null,
-                    location: location || null,
-                    country: country || null,
-                    work_hours: work_hours || null,
-                    payment_methods: payment_methods || null,
-                    vacancies: vacancies ? parseInt(vacancies) : 0,
-                    dni: dni || null,
-                    dob: dob || null,
-                    phone: phone || null,
-                    terms_accepted: terms_accepted || false,
-                }
-            }
+            email: registrationData.email,
+            password: registrationData.password,
+            options: { data: payload }
         }), 15000, "Registro");
 
         if (error) throw new Error(error.message);
@@ -190,16 +188,52 @@ export const AuthProvider = ({ children }) => {
         if (error) throw new Error(error.message);
     };
 
-    // ─── LOGIN ──────────────────────────────────────────────────────────────
+    // ─── LOGIN (Step 1: validate credentials, then send OTP) ──────────────
     const login = async ({ email, password }) => {
+        // 1. Validate credentials
         const { data, error } = await withTimeout(
             supabase.auth.signInWithPassword({ email, password }),
-            30000,
-            "Iniciar sesión"
+            15000,
+            "Validar credenciales"
         );
         
         if (error) throw new Error(error.message);
-        if (data.session) await handleSession(data.session);
+
+        // 2. Credentials are correct — sign out immediately so the session
+        //    is only created after OTP verification
+        await supabase.auth.signOut();
+
+        // 3. Send OTP to the user's email
+        const { error: otpError } = await withTimeout(
+            supabase.auth.signInWithOtp({ email }),
+            10000,
+            "Enviar código de verificación"
+        );
+
+        if (otpError) throw new Error(otpError.message);
+
+        // Return the email so the caller can navigate to the verify page
+        return { email, requiresOtp: true };
+    };
+
+    // ─── LOGIN VERIFY OTP (Step 2: verify code and create session) ───────
+    const loginVerifyOtp = async (email, token) => {
+        console.log("[AuthContext] Verifying login OTP...");
+        
+        const { data, error } = await withTimeout(
+            supabase.auth.verifyOtp({ email, token, type: 'email' }),
+            15000,
+            "Verificar código de login"
+        );
+
+        if (error) throw new Error(error.message);
+
+        console.log("[AuthContext] Login OTP verified. Session created.");
+
+        if (data.user) {
+            await fetchProfile(data.user.id);
+        }
+
         return data.user;
     };
 
@@ -280,7 +314,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{ 
             user, loading, login, register, logout, updateUser, 
             updateBalance, checkUserExists, deleteAccount, 
-            verifyOtp, resendOtp 
+            verifyOtp, resendOtp, loginVerifyOtp 
         }}>
             {loading ? <InitialLoader /> : children}
         </AuthContext.Provider>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import OTPVerification from '../components/OTPVerification';
 import '../../../styles/pages/Login.scss';
 
 const Login = () => {
@@ -8,7 +9,8 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, user } = useAuth();
+    const [otpStep, setOtpStep] = useState(false); // Show OTP form after credentials validated
+    const { login, loginVerifyOtp, resendOtp, user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -26,23 +28,46 @@ const Login = () => {
 
         setLoading(true);
         try {
-            await login({ email, password });
-            // El useEffect se encargará de navegar si el usuario se carga
+            const result = await login({ email, password });
+            
+            if (result.requiresOtp) {
+                // Credentials valid — show OTP step
+                setOtpStep(true);
+            }
         } catch (err) {
             setError(err.message || 'Error al iniciar sesión.');
-            setLoading(false);
         } finally {
-            // No quitamos el loading inmediatamente aquí si fue exitoso 
-            // para evitar que el botón parpadee antes de navegar,
-            // pero si en 5 segundos no hemos navegado, lo liberamos por seguridad.
-            setTimeout(() => {
-                if (window.location.pathname === '/login') {
-                    setLoading(false);
-                }
-            }, 5000);
+            setLoading(false);
         }
     };
 
+    const handleOtpVerify = async (code) => {
+        await loginVerifyOtp(email, code);
+        // If successful, the useEffect will navigate to dashboard
+    };
+
+    const handleOtpResend = async () => {
+        // Re-send OTP via signInWithOtp
+        const { supabase } = await import('../../../lib/supabase');
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        if (error) throw new Error(error.message);
+    };
+
+    // ─── OTP Step ──────────────────────────────────────────────────────
+    if (otpStep) {
+        return (
+            <div className="container" style={{ paddingTop: '8rem' }}>
+                <OTPVerification
+                    email={email}
+                    onVerify={handleOtpVerify}
+                    onResend={handleOtpResend}
+                    onCancel={() => setOtpStep(false)}
+                />
+            </div>
+        );
+    }
+
+    // ─── Login Form ────────────────────────────────────────────────────
     return (
         <div className="container login-container">
             <div className="glass login-card">
@@ -89,7 +114,7 @@ const Login = () => {
                         style={{ width: '100%', marginTop: '1rem' }}
                         disabled={loading}
                     >
-                        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                        {loading ? 'Verificando...' : 'Iniciar Sesión'}
                     </button>
                 </form>
 

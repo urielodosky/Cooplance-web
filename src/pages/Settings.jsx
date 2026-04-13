@@ -25,6 +25,7 @@ const Settings = () => {
     const [dni, setDni] = useState(user?.dni || '');
     const [dob, setDob] = useState(user?.dob || '');
     const [phone, setPhone] = useState(user?.phone || '');
+    const [gender, setGender] = useState(user?.gender || 'male');
     const [message, setMessage] = useState({ text: '', type: '' });
     const fileInputRef = useRef(null);
     const cvInputRef = useRef(null);
@@ -618,6 +619,7 @@ const Settings = () => {
                         onMouseEnter={(e) => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = '#fff'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
                     >
+                        {isUpdating ? 'Eliminando...' : 'Eliminar mi cuenta permanentemente'}
                     </button>
                 </div>
             </div>
