@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }) => {
         
         const { data, error } = await withTimeout(
             supabase.auth.verifyOtp({ email, token, type: 'signup' }),
-            15000,
+            45000,
             "Verificar OTP"
         );
 
@@ -243,7 +243,7 @@ export const AuthProvider = ({ children }) => {
         
         const { data, error } = await withTimeout(
             supabase.auth.verifyOtp({ email, token, type: 'email' }),
-            15000,
+            45000,
             "Verificar código de login"
         );
 
