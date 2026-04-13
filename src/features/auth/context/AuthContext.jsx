@@ -13,6 +13,10 @@ export const AuthProvider = ({ children }) => {
     const isManualLoginInProgress = React.useRef(false);
 
     const handleSession = async (session) => {
+        if (isManualLoginInProgress.current) {
+            console.log("[AuthContext] ABORTING handleSession: Manual login dance in progress");
+            return;
+        }
         if (session?.user) {
             if (session.user.email_confirmed_at) {
                 await fetchProfile(session.user.id, session.user);
