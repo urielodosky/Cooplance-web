@@ -219,43 +219,69 @@ export const AuthProvider = ({ children }) => {
                 throw new Error(error.message);
             }
             
-            console.log("[AuthContext] Silent credential check PASSED. Triggering OTP...");
+            const isConfirmed = !!data.user?.email_confirmed_at;
+            console.log(`[AuthContext] Credentials OK. User confirmed: ${isConfirmed}. Triggering OTP...`);
 
-            // 2. Credentials correct. Now trigger OTP via main client.
-            const { error: otpError } = await supabase.auth.signInWithOtp({ email });
-
-            if (otpError) {
-                console.error("[AuthContext] OTP Trigger Error:", otpError);
-                throw new Error(otpError.message);
+            // 2. Trigger OTP based on confirmation status
+            if (!isConfirmed) {
+                console.log("[AuthContext] User unconfirmed. Using 'signup' resend...");
+                const { error: resendErr } = await supabase.auth.resend({ type: 'signup', email });
+                if (resendErr) throw new Error(resendErr.message);
+            } else {
+                console.log("[AuthContext] User confirmed. Using 'email' OTP...");
+                const { error: otpError } = await supabase.auth.signInWithOtp({ email });
+                if (otpError) throw new Error(otpError.message);
             }
 
-            console.log("[AuthContext] OTP sent successfully. Returning to Login page.");
-            return { email, requiresOtp: true };
+            console.log("[AuthContext] OTP sent successfully.");
+            return { email, requiresOtp: true, isConfirmed };
         } catch (err) {
-            console.error("[AuthContext] Ghost Login error:", err);
+            console.error("[AuthContext] Login error:", err);
             throw err;
         }
     };
 
     // ─── LOGIN VERIFY OTP (Step 2: verify code and create session) ───────
     const loginVerifyOtp = async (email, token) => {
-        console.log("[AuthContext] Verifying login OTP...");
+        console.log("[AuthContext] Verifying login OTP (Universal Strategy)...");
         
-        const { data, error } = await withTimeout(
-            supabase.auth.verifyOtp({ email, token, type: 'email' }),
-            45000,
-            "Verificar código de login"
-        );
+        let result;
+        let lastError;
 
-        if (error) throw new Error(error.message);
-
-        console.log("[AuthContext] Login OTP verified. Session created.");
-
-        if (data.user) {
-            await fetchProfile(data.user.id);
+        // Try type 'email' first (Standard Login OTP)
+        try {
+            console.log("[AuthContext] Attempting verify with type: 'email'...");
+            result = await withTimeout(
+                supabase.auth.verifyOtp({ email, token, type: 'email' }),
+                45000,
+                "Verificar código (email)"
+            );
+            if (result.error) throw result.error;
+        } catch (err) {
+            lastError = err;
+            console.warn("[AuthContext] Type 'email' failed, retrying with type 'signup'...");
+            
+            // Fallback to type 'signup' (Unconfirmed User confirmation)
+            try {
+                result = await withTimeout(
+                    supabase.auth.verifyOtp({ email, token, type: 'signup' }),
+                    45000,
+                    "Verificar código (signup)"
+                );
+                if (result.error) throw result.error;
+            } catch (err2) {
+                console.error("[AuthContext] Universal OTP verification failed.");
+                throw new Error(err2.message || lastError.message);
+            }
         }
 
-        return data.user;
+        console.log("[AuthContext] Login OTP verified successfully.");
+
+        if (result.data?.user) {
+            await fetchProfile(result.data.user.id);
+        }
+
+        return result.data?.user;
     };
 
     // ─── LOGOUT ─────────────────────────────────────────────────────────────

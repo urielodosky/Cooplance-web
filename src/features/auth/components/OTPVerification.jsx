@@ -84,7 +84,7 @@ const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
         const watchdog = setTimeout(() => {
             setLoading(false);
             setError('La verificación tardó demasiado. Intenta de nuevo.');
-        }, 25000);
+        }, 45000);
 
         try {
             await onVerify(fullCode);
