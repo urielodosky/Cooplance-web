@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { otpService } from '../../../utils/otpService';
 import CustomDropdown from '../../../components/common/CustomDropdown';
 import '../../../styles/pages/Register.scss';
 
@@ -301,27 +300,14 @@ const Register = () => {
                 throw regErr;
             }
 
-            // Store pending registration data temporarily
-            sessionStorage.setItem('cooplance_pending_registration', JSON.stringify({
-                role,
-                data: registrationData
-            }));
-
-            // Send OTP
-            console.log(" [REGISTER] Solicitando envío de OTP...");
-            const otpResult = await otpService.sendOTP(registrationData.email);
+            // Supabase sends the OTP email automatically on signUp
+            // Navigate to the verification page
+            console.log(" [REGISTER] SignUp exitoso. Supabase enviará el OTP al email.");
+            clearTimeout(loadingWatchdog);
             
-            if (otpResult.success) {
-                console.log(" [REGISTER] OTP enviado con éxito.");
-                clearTimeout(loadingWatchdog);
-                alert(`¡Código de verificación enviado! \n\nCÓDIGO (para pruebas): ${otpResult.devOTP} \n\nRecuerda que expira en 3 minutos.`);
-                
-                navigate('/verify-email', {
-                    state: { email: registrationData.email, type: 'registration', initialDebugOtp: otpResult.devOTP }
-                });
-            } else {
-                throw new Error(otpResult.message);
-            }
+            navigate('/verify-email', {
+                state: { email: registrationData.email, type: 'registration' }
+            });
         } catch (err) {
             console.error(" [REGISTER] Error fatal durante el proceso:", err);
             alert(err.message || 'Error al procesar el registro. Inténtalo de nuevo.');

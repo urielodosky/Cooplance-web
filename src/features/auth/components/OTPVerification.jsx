@@ -1,41 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { otpService } from '../../../utils/otpService';
 import '../../../styles/components/OTPVerification.scss';
 
-const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
+const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
-    const [timeLeft, setTimeLeft] = useState(180); // 3 minutes in seconds
+    const [timeLeft, setTimeLeft] = useState(600); // 10 minutes (Supabase default)
     const [canResend, setCanResend] = useState(false);
-    const [cooldown, setCooldown] = useState(0);
+    const [cooldown, setCooldown] = useState(60); // Initial 60s cooldown after first send
     const [error, setError] = useState('');
-    const [debugOtp, setDebugOtp] = useState(initialDebugOtp || '');
     const [loading, setLoading] = useState(false);
     const [resendCount, setResendCount] = useState(0);
     const inputRefs = useRef([]);
 
     useEffect(() => {
-        // Initial cooldown check
-        const initialCooldown = otpService.getResendCooldown(email);
-        setCooldown(initialCooldown);
-        setCanResend(initialCooldown === 0);
-
-        // Timer for 3 minute expiration
+        // Timer for expiration
         const expirationTimer = setInterval(() => {
             setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
         }, 1000);
 
-        // Try to find debug OTP in localStorage if not provided
-        if (!debugOtp) {
-            const stored = localStorage.getItem(`otp_demo_${email}`);
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    setDebugOtp(parsed.code);
-                } catch (e) {}
-            }
-        }
-
-        // Timer for 30s resend cooldown
+        // Timer for resend cooldown
         const cooldownTimer = setInterval(() => {
             setCooldown((prev) => {
                 if (prev <= 1) {
@@ -50,7 +32,7 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
             clearInterval(expirationTimer);
             clearInterval(cooldownTimer);
         };
-    }, [email, debugOtp]);
+    }, []);
 
     const handleChange = (index, value) => {
         if (isNaN(value)) return;
@@ -66,9 +48,25 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
     };
 
     const handleKeyDown = (index, e) => {
-        // Move to previous input on backspace
         if (e.key === 'Backspace' && !otp[index] && index > 0) {
             inputRefs.current[index - 1].focus();
+        }
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        if (pastedData.length > 0) {
+            const newOtp = [...otp];
+            for (let i = 0; i < pastedData.length; i++) {
+                newOtp[i] = pastedData[i];
+            }
+            setOtp(newOtp);
+            // Focus on the next empty input or last one
+            const nextIndex = Math.min(pastedData.length, 5);
+            if (inputRefs.current[nextIndex]) {
+                inputRefs.current[nextIndex].focus();
+            }
         }
     };
 
@@ -82,45 +80,43 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
         setLoading(true);
         setError('');
 
-        try {
-            const result = await otpService.verifyOTP(email, fullCode);
+        // Watchdog: unlock after 25s if hung
+        const watchdog = setTimeout(() => {
+            setLoading(false);
+            setError('La verificación tardó demasiado. Intenta de nuevo.');
+        }, 25000);
 
-            if (result.success) {
-                await onVerify(); // <--- Await the actual database confirmation
-            } else {
-                setError(result.message);
-            }
+        try {
+            await onVerify(fullCode);
+            // If onVerify succeeds, the parent component will navigate away
         } catch (err) {
-            setError('Error de conexión con el servidor.');
+            console.error('[OTP] Verification error:', err);
+            setError(err.message || 'Código incorrecto o expirado.');
         } finally {
+            clearTimeout(watchdog);
             setLoading(false);
         }
     };
 
     const handleResend = async () => {
-        if (!canResend || resendCount >= 2) return;
+        if (!canResend || resendCount >= 3) return;
 
         setLoading(true);
-        const result = await otpService.sendOTP(email, 'resend');
+        setError('');
 
-        if (result.success) {
-            // Update debug OTP if present in resend response
-            if (result.devOTP) setDebugOtp(result.devOTP);
-
-            otpService.markAsSent(email);
+        try {
+            await onResend();
             setResendCount(prev => prev + 1);
             setCanResend(false);
-            setCooldown(30);
-            setTimeLeft(180);
+            setCooldown(60);
+            setTimeLeft(600);
             setOtp(['', '', '', '', '', '']);
-            if (inputRefs.current[0]) {
-                inputRefs.current[0].focus();
-            }
-            setError('');
-        } else {
-            setError(result.message);
+            if (inputRefs.current[0]) inputRefs.current[0].focus();
+        } catch (err) {
+            setError(err.message || 'Error al reenviar el código.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const formatTime = (seconds) => {
@@ -132,7 +128,12 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
     return (
         <div className="otp-container">
             <h3>Verificación de Correo</h3>
-            <p className="otp-subtitle">Hemos enviado un código de 6 dígitos a: <strong>{email}</strong></p>
+            <p className="otp-subtitle">
+                Hemos enviado un código de 6 dígitos a: <strong>{email}</strong>
+            </p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '-0.5rem' }}>
+                Revisa tu bandeja de entrada y la carpeta de spam.
+            </p>
 
             <div className="otp-inputs">
                 {otp.map((digit, index) => (
@@ -140,29 +141,16 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
                         key={index}
                         ref={(el) => (inputRefs.current[index] = el)}
                         type="text"
+                        inputMode="numeric"
                         maxLength="1"
                         value={digit}
                         onChange={(e) => handleChange(index, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(index, e)}
+                        onPaste={index === 0 ? handlePaste : undefined}
                         autoFocus={index === 0}
                     />
                 ))}
             </div>
-
-            {debugOtp && (
-                <div style={{
-                    marginTop: '1rem',
-                    padding: '0.8rem',
-                    background: 'rgba(99, 102, 241, 0.1)',
-                    border: '1px dashed var(--primary)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.85rem',
-                    color: 'var(--primary)',
-                    textAlign: 'center'
-                }}>
-                    🛠️ MODO DEBUG: Tu código es <strong>{debugOtp}</strong>
-                </div>
-            )}
 
             {error && <p className="otp-error">{error}</p>}
 
@@ -182,9 +170,14 @@ const OTPVerification = ({ email, onVerify, onCancel, initialDebugOtp }) => {
                 <button
                     className="btn-secondary"
                     onClick={handleResend}
-                    disabled={!canResend || resendCount >= 2}
+                    disabled={!canResend || resendCount >= 3 || loading}
                 >
-                    {resendCount >= 2 ? 'Límite de reenvíos superado' : canResend ? 'Reenviar Código' : `Reenviar en ${cooldown}s`}
+                    {resendCount >= 3 
+                        ? 'Límite de reenvíos alcanzado' 
+                        : canResend 
+                            ? 'Reenviar Código' 
+                            : `Reenviar en ${cooldown}s`
+                    }
                 </button>
 
                 <button className="btn-text" onClick={onCancel}>

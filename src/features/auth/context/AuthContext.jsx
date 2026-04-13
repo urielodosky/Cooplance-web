@@ -12,48 +12,67 @@ export const AuthProvider = ({ children }) => {
 
     const handleSession = async (session) => {
         if (session?.user) {
-            await fetchProfile(session.user.id);
+            // Only fetch profile if the email has been confirmed
+            if (session.user.email_confirmed_at) {
+                await fetchProfile(session.user.id);
+            } else {
+                // Signed in but not confirmed yet — don't load profile
+                console.log("[AuthContext] User signed in but email not confirmed. Skipping profile fetch.");
+                setLoading(false);
+            }
         } else {
             setUser(null);
             setLoading(false);
         }
     };
 
-    // ─── Bootstrap: Load from Supabase ─────────────────────────────────────
+    // ─── Bootstrap ─────────────────────────────────────────────────────────
     useEffect(() => {
         let isMounted = true;
+        let isInitComplete = false;
 
-        // Initialize state via getSession AND subscribe to future changes safely
         const initializeAuth = async () => {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (error) console.error("getSession error:", error);
-            
-            if (isMounted) await handleSession(session);
+            console.log("[AuthContext] Initializing...");
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    console.error("[AuthContext] getSession error:", error);
+                    if (isMounted) setLoading(false);
+                    return;
+                }
+                if (isMounted) await handleSession(session);
+            } catch (err) {
+                console.error("[AuthContext] Critical init error:", err);
+                if (isMounted) setLoading(false);
+            } finally {
+                isInitComplete = true;
+            }
         };
 
         initializeAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            console.log("Auth state changed:", _event);
-            if (_event === 'INITIAL_SESSION') return; // We handled it in getSession
-            await handleSession(session);
+            console.log("[AuthContext] Auth event:", _event);
+            if (_event === 'INITIAL_SESSION') return;
+            if (isMounted) await handleSession(session);
         });
 
-        // SAFETY FALLBACK: If Supabase initialization hangs entirely, force load
-        const fallbackTimer = setTimeout(() => {
-            if (isMounted) {
-                console.warn("AuthContext initialization timed out (5s). Forcing UI to load.");
+        // Watchdog: force UI load if init hangs
+        const fallback = setTimeout(() => {
+            if (isMounted && !isInitComplete) {
+                console.warn("[AuthContext] Watchdog timeout (10s). Forcing UI.");
                 setLoading(false);
             }
-        }, 5000);
+        }, 10000);
 
         return () => {
             isMounted = false;
-            clearTimeout(fallbackTimer);
-            subscription.unsubscribe();
+            clearTimeout(fallback);
+            if (subscription) subscription.unsubscribe();
         };
     }, []);
 
+    // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = async (userId) => {
         let attempts = 0;
         const maxAttempts = 3;
@@ -69,39 +88,42 @@ export const AuthProvider = ({ children }) => {
                 if (data) {
                     setUser(data);
                     setLoading(false);
-                    return; // Éxito
+                    return;
                 }
 
-                if (error) {
-                    // Si el error no es "no encontrado", lanzamos
-                    if (error.code !== 'PGRST116') throw error;
-                }
+                if (error && error.code !== 'PGRST116') throw error;
+                // PGRST116 = not found — trigger may not have fired yet, retry
             } catch (err) {
-                console.error(`Intento ${attempts + 1} de fetchProfile falló:`, err);
+                console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
             }
 
             attempts++;
             if (attempts < maxAttempts) {
-                // Esperar un poco antes de reintentar (dar tiempo al trigger SQL)
-                await new Promise(resolve => setTimeout(resolve, 800));
+                await new Promise(resolve => setTimeout(resolve, 1200));
             }
         }
         
-        console.error("No se pudo obtener el perfil después de varios intentos.");
+        console.error("[AuthContext] Could not fetch profile after retries.");
+        setUser(null);
         setLoading(false);
     };
 
-    // Utility for safely timing out hanging Supabase requests
-    const withTimeout = (promise, ms, operationName) => {
+    // ─── TIMEOUT UTILITY ────────────────────────────────────────────────────
+    const withTimeout = (promise, ms, opName) => {
         return Promise.race([
             promise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: La operación "${operationName}" excedió el tiempo límite. Intenta recargar la página.`)), ms))
+            new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: "${opName}" excedió el tiempo límite.`)), ms))
         ]);
     };
 
-    // ─── REGISTER (Now called early to check availability) ───────────────────────────
+    // ─── REGISTER ───────────────────────────────────────────────────────────
+    // With Supabase native OTP: signUp creates the user but Supabase will NOT
+    // create a session until the email is confirmed via verifyOtp.
     const register = async (role, registrationData) => {
-        const { email, password, username, first_name, last_name, gender, company_name, responsible_name, location, country, work_hours, payment_methods, vacancies, dni, dob, phone, terms_accepted } = registrationData;
+        const { email, password, username, first_name, last_name, gender, 
+                company_name, responsible_name, location, country, 
+                work_hours, payment_methods, vacancies, dni, dob, phone, 
+                terms_accepted } = registrationData;
 
         const { data, error } = await withTimeout(supabase.auth.signUp({
             email,
@@ -124,78 +146,73 @@ export const AuthProvider = ({ children }) => {
                     dob: dob || null,
                     phone: phone || null,
                     terms_accepted: terms_accepted || false,
-                    email_verified: false // <--- Guard until OTP is valid
                 }
             }
-        }), 10000, "Registro");
+        }), 15000, "Registro");
 
-        if (error) {
-            throw new Error(error.message);
-        }
-        
+        if (error) throw new Error(error.message);
         return data.user;
     };
 
-    // ─── CONFIRM REGISTRATION (Triggers SQL profile creation) ───────────────────
-    const confirmRegistration = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("No hay una sesión activa para confirmar.");
-
-        try {
-            const { error } = await withTimeout(supabase.auth.updateUser({
-                data: { email_verified: true } // <--- This triggers the SQL Profile creation
-            }), 30000, "Confirmación de Perfil");
-
-            if (error) {
-                // If it's a conflict error, maybe the profile already exists. We try to continue.
-                if (error.message.includes("already registered") || error.message.includes("already exist")) {
-                    console.warn("Profile already exists or conflict during confirmation. Attempting to fetch anyway.");
-                } else {
-                    throw error;
-                }
-            }
-        } catch (err) {
-            console.error("Confirmation error details:", err);
-            // Re-throw if it's a critical error (like timeout), otherwise try to fetch profile
-            if (err.message.includes("Timeout")) throw err;
-        }
+    // ─── VERIFY OTP (Supabase native) ───────────────────────────────────────
+    // This confirms the email, creates a session, and triggers profile creation
+    const verifyOtp = async (email, token) => {
+        console.log("[AuthContext] Verifying OTP via Supabase...");
         
-        // Final sync of profile (even if metadata update failed, the trigger might have worked previously)
-        await fetchProfile(user.id);
-        return user;
+        const { data, error } = await withTimeout(
+            supabase.auth.verifyOtp({ email, token, type: 'signup' }),
+            15000,
+            "Verificar OTP"
+        );
+
+        if (error) throw new Error(error.message);
+
+        console.log("[AuthContext] OTP verified successfully. Session created.");
+
+        // Give the DB trigger a moment to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Fetch the newly created profile
+        if (data.user) {
+            await fetchProfile(data.user.id);
+        }
+
+        return data.user;
     };
 
-    // ─── LOGIN ──────────────────────────────────────────────────────────────────
+    // ─── RESEND OTP ─────────────────────────────────────────────────────────
+    const resendOtp = async (email) => {
+        const { error } = await withTimeout(
+            supabase.auth.resend({ type: 'signup', email }),
+            10000,
+            "Reenviar OTP"
+        );
+        if (error) throw new Error(error.message);
+    };
+
+    // ─── LOGIN ──────────────────────────────────────────────────────────────
     const login = async ({ email, password }) => {
-        const { data, error } = await withTimeout(supabase.auth.signInWithPassword({
-            email,
-            password
-        }), 30000, "Iniciar sesión");
+        const { data, error } = await withTimeout(
+            supabase.auth.signInWithPassword({ email, password }),
+            30000,
+            "Iniciar sesión"
+        );
         
-        if (error) {
-            throw new Error(error.message);
-        }
-        
-        if (data.session) {
-            await handleSession(data.session);
-        }
-        
+        if (error) throw new Error(error.message);
+        if (data.session) await handleSession(data.session);
         return data.user;
     };
 
-    // ─── LOGOUT ─────────────────────────────────────────────────────────────────
+    // ─── LOGOUT ─────────────────────────────────────────────────────────────
     const logout = async () => {
         await supabase.auth.signOut();
         setUser(null);
     };
 
-    // ─── UPDATE USER PROFILE ─────────────────────────────────────────────────────
+    // ─── UPDATE USER PROFILE ────────────────────────────────────────────────
     const updateUser = async (updatedData) => {
         if (!user) return;
-
         const processed = processGamificationRules(updatedData);
-        
-        // Remove unwanted fields from update (like id, createdAt which shouldn't change)
         const { id, auth_id, created_at, email, ...updatePayload } = processed;
         
         const { error } = await supabase
@@ -207,15 +224,13 @@ export const AuthProvider = ({ children }) => {
             console.error('Error updating profile:', error);
             throw error;
         }
-
-        // Refetch profile to get newest data
         await fetchProfile(user.id);
     };
 
-    // ─── UPDATE BALANCE ──────────────────────────────────────────────────────────
+    // ─── UPDATE BALANCE ─────────────────────────────────────────────────────
     const updateBalance = async (amount, type = 'credit') => {
         if (!user) return;
-        let newBalance = parseFloat(user.points || user.balance || 0); // Assuming we use points as balance as per schema
+        let newBalance = parseFloat(user.points || user.balance || 0);
         newBalance = type === 'credit' ? newBalance + parseFloat(amount) : newBalance - parseFloat(amount);
         
         try {
@@ -226,24 +241,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // ─── DELETE ACCOUNT ──────────────────────────────────────────────────────────
+    // ─── DELETE ACCOUNT ─────────────────────────────────────────────────────
     const deleteAccount = async () => {
         if (!user) return;
-        
-        const { error } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', user.id);
-
+        const { error } = await supabase.from('profiles').delete().eq('id', user.id);
         if (error) {
             console.error('Error deleting account:', error);
         } else {
-            // After deleting profile, log them out.
             logout();
         }
     };
 
-    // ─── CHECK IF USER EXISTS ────────────────────────────────────────────────────
+    // ─── CHECK IF USER EXISTS ───────────────────────────────────────────────
     const checkUserExists = async ({ username, email }, excludeId = null) => {
         try {
             if (username) {
@@ -253,7 +262,6 @@ export const AuthProvider = ({ children }) => {
                 if (error) throw error;
                 if (data && data.length > 0) return { exists: true, field: 'username' };
             }
-            
             if (email) {
                 let query = supabase.from('profiles').select('id').ilike('email', email);
                 if (excludeId) query = query.neq('id', excludeId);
@@ -263,16 +271,17 @@ export const AuthProvider = ({ children }) => {
             }
         } catch (err) {
             console.error("Error in checkUserExists:", err);
-            // If timeout or other error, we let the process continue OR throw based on preference.
-            // Here we throw to avoid creating duplicates if the DB is just slow.
             throw err;
         }
-
         return { exists: false, field: null };
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, updateBalance, checkUserExists, deleteAccount, confirmRegistration }}>
+        <AuthContext.Provider value={{ 
+            user, loading, login, register, logout, updateUser, 
+            updateBalance, checkUserExists, deleteAccount, 
+            verifyOtp, resendOtp 
+        }}>
             {loading ? <InitialLoader /> : children}
         </AuthContext.Provider>
     );

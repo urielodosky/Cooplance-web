@@ -101,35 +101,42 @@ export const ServiceProvider = ({ children }) => {
     const fetchServices = useCallback(async () => {
         let isComplete = false;
         
-        // Watchdog: If Supabase takes > 7s, unlock the UI
+        // Watchdog: If Supabase takes > 10s, unlock the UI
         const watchdog = setTimeout(() => {
-            if (!isComplete) {
-                console.warn('[ServiceContext v1.5] WATCHDOG TIMEOUT. Forcing loading = false.');
+            if (!isComplete && isMounted.current) {
+                console.warn('[ServiceContext v1.6] WATCHDOG TIMEOUT. Unblocking UI. Check Supabase connection.');
                 setLoading(false);
             }
-        }, 7000);
+        }, 10000);
 
         try {
-            console.log('[ServiceContext v1.5] fetchServices START');
+            console.log('[ServiceContext v1.6] fetchServices START');
             const { data, error } = await supabase
                 .from('services')
                 .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender)')
                 .eq('active', true)
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            if (error) {
+                console.error('[ServiceContext v1.6] DATABASE ERROR:', error);
+                throw error;
+            }
             
-            console.info(`[ServiceContext v1.5] SUCCESS. Rows: ${data?.length || 0}`);
-            setServices((data || []).map(mapFromDB));
+            console.info(`[ServiceContext v1.6] SUCCESS. Rows: ${data?.length || 0}`);
+            if (isMounted.current) {
+                setServices((data || []).map(mapFromDB));
+            }
         } catch (err) {
-            console.error('[ServiceContext v1.5] FETCH ERROR:', err);
+            console.error('[ServiceContext v1.6] FETCH EXCEPTION:', err);
         } finally {
             isComplete = true;
             clearTimeout(watchdog);
-            console.log('[ServiceContext v1.5] fetchServices FINISHED. setLoading(false)');
-            setLoading(false);
+            if (isMounted.current) {
+                console.log('[ServiceContext v1.6] fetchServices FINISHED. setLoading(false)');
+                setLoading(false);
+            }
         }
-    }, []);
+    }, [isMounted]);
 
     useEffect(() => {
         fetchServices();
