@@ -3,7 +3,7 @@ import '../../../styles/components/OTPVerification.scss';
 
 const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
-    const [timeLeft, setTimeLeft] = useState(600); // 10 minutes (Supabase default)
+    const [timeLeft, setTimeLeft] = useState(180); // 3 minutes
     const [canResend, setCanResend] = useState(false);
     const [cooldown, setCooldown] = useState(60); // Initial 60s cooldown after first send
     const [error, setError] = useState('');
@@ -109,7 +109,7 @@ const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
             setResendCount(prev => prev + 1);
             setCanResend(false);
             setCooldown(60);
-            setTimeLeft(600);
+            setTimeLeft(180);
             setOtp(['', '', '', '', '', '']);
             if (inputRefs.current[0]) inputRefs.current[0].focus();
         } catch (err) {
@@ -131,9 +131,6 @@ const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
             <p className="otp-subtitle">
                 Hemos enviado un código de 6 dígitos a: <strong>{email}</strong>
             </p>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '-0.5rem' }}>
-                Revisa tu bandeja de entrada y la carpeta de spam.
-            </p>
 
             <div className="otp-inputs">
                 {otp.map((digit, index) => (
@@ -151,6 +148,10 @@ const OTPVerification = ({ email, onVerify, onResend, onCancel }) => {
                     />
                 ))}
             </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                Revisa tu bandeja de entrada y la carpeta de spam.
+            </p>
 
             {error && <p className="otp-error">{error}</p>}
 
