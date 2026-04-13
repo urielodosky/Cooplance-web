@@ -80,7 +80,7 @@ const Login = () => {
         <div className="container login-container">
             <div className="glass login-card">
                 <div className="login-header">
-                    <h2 className="login-title">Bienvenido</h2>
+                    <h2 className="login-title">Bienvenido a Cooplance</h2>
                     <p>Ingresa a tu cuenta para continuar</p>
                 </div>
 
