@@ -9,6 +9,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     const handleSession = async (session) => {
         if (session?.user) {
@@ -45,6 +46,7 @@ export const AuthProvider = ({ children }) => {
                 if (isMounted) setLoading(false);
             } finally {
                 isInitComplete = true;
+                if (isMounted) setIsInitialized(true);
             }
         };
 
@@ -314,7 +316,7 @@ export const AuthProvider = ({ children }) => {
             updateBalance, checkUserExists, deleteAccount, 
             verifyOtp, resendOtp, loginVerifyOtp 
         }}>
-            {loading ? <InitialLoader /> : children}
+            {!isInitialized ? <InitialLoader /> : children}
         </AuthContext.Provider>
     );
 };
