@@ -3,66 +3,61 @@
  * Connects to the Node.js backend for email delivery.
  */
 
-const API_URL = 'http://127.0.0.1:5000/api/otp';
+const API_URL = import.meta.env?.VITE_API_URL || 'https://cooplance-api.onrender.com/api/otp';
 
 export const otpService = {
     /**
      * Calls backend to send an OTP to an email address
-     * UPDATED: Fully Offline/Mock Mode for consistent demo experience
      */
     sendOTP: async (email, type = 'registration') => {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        console.warn(' [OTP SERVICE] Running in OFFLINE DEMO MODE');
-        const fakeOtp = Math.floor(100000 + Math.random() * 900000).toString();
-
-        // Store in localStorage for verification with timestamp
-        const otpData = {
-            code: fakeOtp,
-            timestamp: Date.now()
-        };
-        localStorage.setItem(`otp_demo_${email}`, JSON.stringify(otpData));
-
-        return {
-            success: true,
-            message: 'Código enviado (Simulación)',
-            devOTP: fakeOtp
-        };
+        try {
+            console.log(` [OTP SERVICE] Requesting OTP from backend for ${email}`);
+            const response = await fetch(`${API_URL}/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, type })
+            });
+            const data = await response.json();
+            
+            if (data.devFallback && data.otp) {
+                console.warn(`[DEV FALLBACK] Your code is: ${data.otp}`);
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('[OTP SERVICE] Error connecting to backend:', error);
+            return {
+                success: false,
+                message: 'No se pudo conectar con el servidor de correos.'
+            };
+        }
     },
 
     /**
      * Calls backend to verify the OTP provided by the user
      */
     verifyOTP: async (email, code) => {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        const storedData = localStorage.getItem(`otp_demo_${email}`);
-        if (!storedData && code !== '123456') {
-            return { success: false, message: 'No se encontró código para este email.' };
-        }
-
-        // Magic code 123456 bypasses expiration for dev ease
-        if (code === '123456') {
-            return { success: true, message: 'Verificación exitosa (Bypass).' };
-        }
-
-        const { code: storedOtp, timestamp } = JSON.parse(storedData);
-
-        // CHECK EXPIRATION: 3 minutes = 180,000 ms
-        const isExpired = Date.now() - timestamp > 180000;
-
-        if (isExpired) {
-            localStorage.removeItem(`otp_demo_${email}`);
-            return { success: false, message: 'El código ha expirado (duración 3 min). Solicita uno nuevo.' };
-        }
-
-        if (code === storedOtp) {
-            localStorage.removeItem(`otp_demo_${email}`); // Clear after use
-            return { success: true, message: 'Verificación exitosa.' };
-        } else {
-            return { success: false, message: 'Código incorrecto.' };
+        try {
+            console.log(` [OTP SERVICE] Verifying code for ${email}`);
+            
+            // Magic code 123456 bypasses for dev ease
+            if (code === '123456') {
+                return { success: true, message: 'Verificación exitosa (Bypass).' };
+            }
+            
+            const response = await fetch(`${API_URL}/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code })
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('[OTP SERVICE] Error verifying code:', error);
+            return {
+                success: false,
+                message: 'Error de conexión al verificar el código.'
+            };
         }
     },
 
