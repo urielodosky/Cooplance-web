@@ -521,7 +521,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                         supabase.storage
                             .from('service-media')
                             .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true }),
-                        30000,
+                        90000, // V18: 90 seconds for images
                         "Subir imagen"
                     );
                     if (uploadErr) {
@@ -543,7 +543,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             // Upload Videos to Supabase Storage
             const finalVideos = [];
             for (let i = 0; i < videos.length; i++) {
-                setLoadingStatus(`Subiendo video ${i + 1}/${videos.length}...`);
+                setLoadingStatus(`Subiendo video ${i + 1}/${videos.length} (Esto puede tardar unos minutos dependiendo de tu conexión)...`);
                 const vid = videos[i];
                 if (vid.type === 'url') {
                     finalVideos.push(vid);
@@ -554,7 +554,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                         supabase.storage
                             .from('service-media')
                             .upload(fileName, vid.file, { contentType: vid.file.type, upsert: true }),
-                        45000,
+                        300000, // V18: 5 minutes for videos 
                         "Subir video"
                     );
 
