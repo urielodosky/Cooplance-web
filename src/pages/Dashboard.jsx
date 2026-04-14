@@ -265,12 +265,7 @@ const Dashboard = () => {
                 onAccept={handleAcceptProposal}
             />
 
-            {loading && myPublishedProjects.length === 0 && myProposals.length === 0 && (
-                <div className="dashboard-loading-overlay">
-                    <div className="spinner"></div>
-                    <p>Cargando tu panel de control...</p>
-                </div>
-            )}
+            {/* V20: Removed blocking loading overlay to prevent "Cargando tus datos" hang */}
 
             {isCreatingChat && (
                 <div className="dashboard-loading-overlay" style={{ zIndex: 10000, background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)' }}>
