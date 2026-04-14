@@ -166,11 +166,13 @@ export const ServiceProvider = ({ children }) => {
         }
     };
 
-            const { data: { user } } = await supabase.auth.getUser();
+    const updateService = async (updatedService) => {
+        try {
+            const { data: { user: sessionUser } } = await supabase.auth.getUser();
             const dbRow = mapToDB(updatedService);
             
             // SECURITY V10: Force current user as owner to prevent ownership mismatch errors
-            if (user) dbRow.owner_id = user.id;
+            if (sessionUser) dbRow.owner_id = sessionUser.id;
 
             console.log("[ServiceContext] --- V10 EMERGENCY FIX ---");
             console.log("[ServiceContext] Updating ID:", updatedService.id);
