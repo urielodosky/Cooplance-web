@@ -263,6 +263,7 @@ const Navbar = () => {
 
                             <Link to="/community" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Comunidad</Link>
                             <Link to="/events" className="mobile-nav-link" style={{ color: '#3b82f6', fontWeight: 'bold' }} onClick={() => setIsMobileMenuOpen(false)}>Eventos</Link>
+                            <button className="mobile-nav-link" onClick={() => { setIsMobileMenuOpen(false); window.dispatchEvent(new Event('openSupportChatbot')); }} style={{ background: 'none', border: 'none', textAlign: 'left', padding: 0, width: '100%', fontFamily: 'inherit', color: 'inherit', marginTop: '0.5rem', cursor: 'pointer', display: 'block' }}>Soporte / Asistente</button>
 
                             {user && (user.role === 'buyer' || user.role === 'company') && (
                                 <Link to="/create-project" className="btn-primary mobile-create-btn" onClick={() => setIsMobileMenuOpen(false)}>

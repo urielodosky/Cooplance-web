@@ -76,10 +76,10 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                 <ListSkeleton />
             ) : myWork.length > 0 ? (
                 myWork.map(job => (
-                    <div key={job.id} className="glass job-card order-card" style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: '70px 1fr auto', 
-                        gap: '1.5rem', 
+                    <div key={job.id} className="glass job-card order-card" style={{
+                        display: 'grid',
+                        gridTemplateColumns: '70px 1fr auto',
+                        gap: '1.5rem',
                         alignItems: 'center',
                         padding: '1.5rem',
                         borderRadius: '20px',
@@ -94,7 +94,7 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                         </div>
                         <div className="job-details">
                             <h4 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
-                                {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'} 
+                                {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'}
                                 <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>({job.buyerRealName || job.buyerName})</span>
                             </h4>
                             <p style={{ margin: '0.2rem 0', color: 'var(--text-primary)', fontSize: '0.95rem' }}>Contrató: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong> ({job.tier || 'Estándar'})</p>
@@ -306,7 +306,7 @@ const Dashboard = () => {
             const cachedProposals = localStorage.getItem(`cooplance_proposals_${user.id}`);
             if (cachedProjects) setMyPublishedProjects(JSON.parse(cachedProjects));
             if (cachedProposals) setMyProposals(JSON.parse(cachedProposals));
-            
+
             try {
                 const projects = await getProjectsByClient(user.id);
                 const proposals = await getProposalsByUser(user.id);
@@ -441,7 +441,7 @@ const Dashboard = () => {
     return (
         <div className="dashboard-container">
             <ProposalListModal isOpen={!!selectedProjectForProposals} onClose={() => setSelectedProjectForProposals(null)} projectId={selectedProjectForProposals?.id} projectTitle={selectedProjectForProposals?.title} onAccept={handleAcceptProposal} />
-            
+
             {isCreatingChat && (
                 <div className="dashboard-loading-overlay">
                     <div className="spinner"></div>
@@ -465,30 +465,29 @@ const Dashboard = () => {
             </div>
 
             <div className="dashboard-stats-grid">
-                    <div className="glass stat-card">
-                        <h4>Nivel Actual</h4>
-                        <p className="stat-value primary">{currentLevel}</p>
-                        <p className="stat-subtitle" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '-0.5rem', fontWeight: '600' }}>
-                            {currentLevelName}
-                        </p>
-                        {user.id === 'cfb3e724-ce3d-4bd1-bc02-a289ef050b89' && (
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                                <button
-                                    onClick={handleDemoLevelUp}
-                                    style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: 0.8 }}
-                                >
-                                    {isMaxLevel ? '+XP' : 'Up'}
-                                </button>
-                                <button
-                                    onClick={handleDemoLevelDown}
-                                    style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'var(--text-secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: 0.8 }}
-                                >
-                                    Down
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                )}
+                <div className="glass stat-card">
+                    <h4>Nivel Actual</h4>
+                    <p className="stat-value primary">{currentLevel}</p>
+                    <p className="stat-subtitle" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '-0.5rem', fontWeight: '600' }}>
+                        {currentLevelName}
+                    </p>
+                    {user.id === 'cfb3e724-ce3d-4bd1-bc02-a289ef050b89' && (
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={handleDemoLevelUp}
+                                style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: 0.8 }}
+                            >
+                                {isMaxLevel ? '+XP' : 'Up'}
+                            </button>
+                            <button
+                                onClick={handleDemoLevelDown}
+                                style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'var(--text-secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: 0.8 }}
+                            >
+                                Down
+                            </button>
+                        </div>
+                    )}
+                </div>
                 {user.role === 'freelancer' && (
                     <div className="glass stat-card">
                         <div className="vacation-header">
