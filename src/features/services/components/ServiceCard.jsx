@@ -14,6 +14,7 @@ const ServiceCard = ({ service }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { deleteService } = useServices();
+    const [isDeleting, setIsDeleting] = React.useState(false);
     
     // Check if current user is owner
     const isOwner = user && user.id === service.freelancerId;
@@ -64,10 +65,20 @@ const ServiceCard = ({ service }) => {
                 {isOwner && (
                     <button 
                         className="delete-service-btn"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                             e.stopPropagation();
-                            if (window.confirm('¿Borrar este servicio?')) deleteService(service.id);
+                            if (!window.confirm('¿Borrar este servicio definitivamente?')) return;
+                            
+                            setIsDeleting(true);
+                            try {
+                                await deleteService(service.id);
+                                // The context will update the list
+                            } catch (err) {
+                                alert(`Error al borrar: ${err.message}`);
+                                setIsDeleting(false);
+                            }
                         }}
+                        disabled={isDeleting}
                         style={{
                             position: 'absolute',
                             top: '10px',
@@ -86,7 +97,12 @@ const ServiceCard = ({ service }) => {
                             boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
                         }}
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        {isDeleting ? (
+                            <div className="sync-spinner" style={{ width: '16px', height: '16px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        )}
+                        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                     </button>
                 )}
             </div>

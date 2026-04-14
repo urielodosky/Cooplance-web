@@ -204,13 +204,22 @@ export const ServiceProvider = ({ children }) => {
 
     const deleteService = async (serviceId) => {
         try {
-            const { error } = await supabase
+            console.log(`[ServiceContext] Attempting to delete service: ${serviceId}`);
+            const { error, count } = await supabase
                 .from('services')
-                .delete()
+                .delete({ count: 'exact' }) // V16: Request exact count to verify deletion
                 .eq('id', serviceId);
 
             if (error) throw error;
+            
+            if (count === 0) {
+                console.warn("[ServiceContext] Delete matched 0 rows. Likely RLS policy mismatch.");
+                throw new Error("No tienes permiso para borrar este servicio o el servicio no existe.");
+            }
+
+            console.log("[ServiceContext] Service deleted successfully from DB.");
             setServices(prev => prev.filter(s => s.id !== serviceId));
+            return true;
         } catch (err) {
             console.error('[ServiceContext] Error deleting service:', err);
             throw err;
