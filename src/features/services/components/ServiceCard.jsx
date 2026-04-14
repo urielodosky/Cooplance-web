@@ -8,9 +8,15 @@ import { useAuth } from '../../auth/context/AuthContext';
 import { getProfilePicture } from '../../../utils/avatarUtils'; // Make sure this util exists or create mocked
 import '../../../styles/components/ServiceCard.scss';
 import { formatLocation } from '../../../utils/locationFormat';
+import { useServices } from '../context/ServiceContext';
 
 const ServiceCard = ({ service }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const { deleteService } = useServices();
+    
+    // Check if current user is owner
+    const isOwner = user && user.id === service.freelancerId;
 
     // Mock data if missing
     const rating = service.rating || 0;
@@ -55,6 +61,34 @@ const ServiceCard = ({ service }) => {
         >
             <div className="service-image-container">
                 <img src={service.image} alt={service.title} className="service-image" />
+                {isOwner && (
+                    <button 
+                        className="delete-service-btn"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('¿Borrar este servicio?')) deleteService(service.id);
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            background: 'rgba(239, 68, 68, 0.9)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            zIndex: 10,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                        }}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                )}
             </div>
 
             <div className="service-content">

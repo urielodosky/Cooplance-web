@@ -14,7 +14,7 @@ import '../../../styles/pages/ServiceDetail.scss';
 const ServiceDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { services, loading } = useServices();
+    const { services, loading, deleteService } = useServices();
     const { user, updateBalance } = useAuth();
     const { createJob } = useJobs();
 
@@ -159,6 +159,20 @@ const ServiceDetail = () => {
         navigate('/dashboard');
     };
 
+    const handleDelete = async () => {
+        const confirm = window.confirm('¿Estás seguro de que deseas eliminar este servicio definitivamente? Esta acción no se puede deshacer.');
+        if (confirm) {
+            try {
+                await deleteService(service.id);
+                alert('Servicio eliminado correctamente.');
+                navigate('/dashboard');
+            } catch (err) {
+                console.error("Error al borrar servicio:", err);
+                alert('Error al eliminar el servicio. Inténtalo de nuevo.');
+            }
+        }
+    };
+
     return (
         <div className="container service-detail-container">
             {isOwner && (
@@ -173,9 +187,24 @@ const ServiceDetail = () => {
                     alignItems: 'center'
                 }}>
                     <span><strong>Es tu servicio.</strong> Así es como lo ven los demás.</span>
-                    <button className="btn-secondary" onClick={() => setShowEditForm(true)} style={{ fontSize: '0.9rem', padding: '0.4rem 1rem' }}>
-                        Editar Servicio
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.8rem' }}>
+                        <button className="btn-secondary" onClick={() => setShowEditForm(true)} style={{ fontSize: '0.9rem', padding: '0.4rem 1rem' }}>
+                            Editar Servicio
+                        </button>
+                        <button 
+                            className="btn-secondary" 
+                            onClick={handleDelete} 
+                            style={{ 
+                                fontSize: '0.9rem', 
+                                padding: '0.4rem 1rem', 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                border: '1px solid #ef4444', 
+                                color: '#ef4444' 
+                            }}
+                        >
+                            Borrar
+                        </button>
+                    </div>
                 </div>
             )}
 
