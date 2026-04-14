@@ -459,13 +459,15 @@ const Settings = () => {
                         <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
                             <div className="form-group">
                                 <label className="field-label">Fecha de Nacimiento</label>
-                                <input
-                                    type="date"
-                                    value={dob}
-                                    readOnly
-                                    className="settings-input input-readonly"
-                                    style={{ cursor: 'not-allowed', opacity: 0.8 }}
-                                />
+                                <div 
+                                    className="datepicker-input glass input-readonly" 
+                                    style={{ cursor: 'not-allowed', opacity: 0.8, background: 'rgba(255,255,255,0.02)' }}
+                                >
+                                    <span className="value">
+                                        {dob ? dob.split('-').reverse().join('/') : 'No definida'}
+                                    </span>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                </div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', display: 'block' }}>
                                     La fecha de nacimiento no puede ser modificada.
                                 </span>

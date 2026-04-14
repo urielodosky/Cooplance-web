@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CustomDropdown from '../../../components/common/CustomDropdown';
+import CustomDatePicker from '../../../components/common/CustomDatePicker';
 import '../../../styles/pages/Register.scss';
 
 const Register = () => {
@@ -359,8 +360,26 @@ const Register = () => {
 
                     {/* 4. Birth Date (Only for freelancer and buyer) */}
                     {role !== 'company' && (
-                        <>
-                            <input type="date" name="birthDate" onChange={handleChange} required />
+                        <div className="form-group">
+                            <CustomDatePicker
+                                label="Fecha de Nacimiento"
+                                selected={formData.birthDate}
+                                onChange={(val) => {
+                                    setFormData(p => ({ ...p, birthDate: val }));
+                                    // Trigger age calculation logic
+                                    const birthYear = new Date(val).getFullYear();
+                                    const currentYear = new Date().getFullYear();
+                                    if (birthYear < 1920 || birthYear > currentYear) {
+                                        setInvalidYear(true);
+                                        setCalculatedAge(null);
+                                    } else {
+                                        setInvalidYear(false);
+                                        setCalculatedAge(calculateAge(val));
+                                    }
+                                }}
+                                required={true}
+                                maxDate={new Date().toISOString().split('T')[0]}
+                            />
                             {invalidYear && (
                                 <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.25rem' }}>
                                     Por favor ingresa una fecha de nacimiento válida (año entre 1920 y {new Date().getFullYear()}).
@@ -376,7 +395,7 @@ const Register = () => {
                                     Al ser menor de 18 años, puedes registrarte como freelancer pero no podrás postularte a empresas.
                                 </p>
                             )}
-                        </>
+                        </div>
                     )}
 
                     {/* 5. Identity Verification (For all roles now as per user request) */}

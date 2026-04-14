@@ -378,8 +378,20 @@ const Dashboard = () => {
     };
 
     const handleCreateServiceClick = () => {
-        const max = currentLevel >= 5 ? 5 : currentLevel;
-        if (myServices.length >= max) return alert("Límite de servicios alcanzado.");
+        const currentLevel = user.level || 1;
+        const maxServices = currentLevel >= 5 ? 5 : currentLevel;
+
+        if (myServices.length >= maxServices) {
+            let msg = `Has alcanzado el límite de servicios activos (${maxServices}) para tu Nivel ${currentLevel}.`;
+            if (currentLevel < 5) {
+                msg += `\n\n¡Sube de nivel completando trabajos para desbloquear más espacios! (Máximo 5 en Nivel 5)`;
+            } else {
+                msg += `\n\nHas alcanzado el máximo de servicios permitidos. A partir del Nivel 6, tus beneficios mejorarán las comisiones.`;
+            }
+            alert(msg);
+            return;
+        }
+
         navigate('/create-service');
     };
 

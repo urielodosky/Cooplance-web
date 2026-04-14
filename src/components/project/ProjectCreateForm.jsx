@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CustomDropdown from '../common/CustomDropdown';
+import CustomDatePicker from '../common/CustomDatePicker';
 import '../../styles/components/ProjectCreateForm.scss';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/context/AuthContext';
@@ -515,13 +516,11 @@ const ProjectCreateForm = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <input
-                                    type="date"
-                                    name="deadline"
-                                    value={formData.deadline}
-                                    onChange={handleChange}
-                                    min={minDate}
-                                    required
+                                <CustomDatePicker
+                                    selected={formData.deadline}
+                                    onChange={(val) => handleDropdownChange('deadline', val)}
+                                    minDate={minDate}
+                                    required={true}
                                     disabled={user?.role !== 'company' && !!formData.executionTime}
                                     placeholder="Sin fecha límite"
                                 />
@@ -539,13 +538,11 @@ const ProjectCreateForm = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <input
-                                        type="date"
-                                        name="contractStartDate"
-                                        value={formData.contractStartDate || ''}
-                                        onChange={handleChange}
-                                        min={formData.deadline || minDate}
-                                        required
+                                    <CustomDatePicker
+                                        selected={formData.contractStartDate || ''}
+                                        onChange={(val) => handleDropdownChange('contractStartDate', val)}
+                                        minDate={formData.deadline || minDate}
+                                        required={true}
                                         placeholder="dd/mm/aaaa"
                                     />
                                 </div>

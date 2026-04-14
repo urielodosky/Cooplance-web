@@ -102,6 +102,17 @@ select:-webkit-autofill:focus {
     padding: 0 var(--spacing-md);
 }
 
+@media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    main {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
 /* Gender Selector Component */
 .gender-selector {
     display: flex;

@@ -295,24 +295,19 @@ const ServiceDetail = () => {
 
                             {/* Thumbnail strip */}
                             {mediaItems.length > 1 && (
-                                <div style={{ display: 'flex', gap: '6px', padding: '8px 0', overflowX: 'auto' }}>
+                                <div className="detail-thumbnail-strip">
                                     {mediaItems.map((item, index) => (
                                         <button
                                             key={index}
                                             type="button"
                                             onClick={() => setActiveMediaIndex(index)}
-                                            style={{
-                                                flexShrink: 0, width: '64px', height: '48px', borderRadius: '6px', overflow: 'hidden',
-                                                border: index === activeMediaIndex ? '2px solid var(--primary)' : '2px solid transparent',
-                                                opacity: index === activeMediaIndex ? 1 : 0.6, cursor: 'pointer', padding: 0,
-                                                background: '#0a0a1a', transition: 'all 0.2s', position: 'relative'
-                                            }}
+                                            className={`thumbnail-btn ${index === activeMediaIndex ? 'active' : ''}`}
                                         >
                                             {item.type === 'image' ? (
-                                                <img src={item.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <img src={item.src} alt="" />
                                             ) : (
-                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #1a1a2e, #16213e)' }}>
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                                <div className="video-thumb-placeholder">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                                 </div>
                                             )}
                                         </button>

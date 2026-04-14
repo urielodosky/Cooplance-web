@@ -40,6 +40,25 @@
     transform: scale(1.05);
 }
 
+@media (max-width: 768px) {
+    .service-image-container {
+        padding-top: 0;
+        height: 180px;
+    }
+    
+    .service-image {
+        position: relative;
+        height: 180px;
+        object-fit: cover;
+    }
+    
+    .delete-service-btn {
+        top: 15px !important;
+        right: 15px !important;
+        padding: 5px; /* Larger tap area if needed */
+    }
+}
+
 /* Content Section */
 .service-content {
     padding: 1rem;

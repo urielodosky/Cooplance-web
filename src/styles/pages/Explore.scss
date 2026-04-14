@@ -32,8 +32,8 @@
 /* Make grid responsive to remaining space */
 .services-grid-explore {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
 }
 
 @media (max-width: 1024px) {
@@ -51,6 +51,16 @@
         width: 100%;
         position: static;
         flex: none;
+    }
+
+    .services-grid-explore {
+        grid-template-columns: 1fr !important;
+        gap: 2rem !important;
+    }
+
+    .explore-header {
+        padding: 0 1rem;
+        text-align: center;
     }
 }
 

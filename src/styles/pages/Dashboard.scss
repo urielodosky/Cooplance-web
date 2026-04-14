@@ -131,23 +131,58 @@
     margin-bottom: 2rem;
 }
 
+@media (max-width: 1024px) {
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .dashboard-intro {
         flex-direction: column;
         text-align: center;
         gap: 1.5rem;
+        align-items: center;
     }
 
     .intro-left {
         flex-direction: column;
+        text-align: center;
     }
 
+    .dashboard-actions-inline {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Horizontal Carousel for Stats */
     .dashboard-stats-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        overflow-x: auto;
+        gap: 1rem;
+        padding: 0.5rem 0.2rem 1.5rem 0.2rem;
+        margin: 0 -0.5rem 1rem -0.5rem;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        grid-template-columns: none; /* Reset grid */
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .stat-card {
+        min-width: 240px;
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        padding: 1.5rem !important;
     }
 
     .services-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
+        gap: 2rem !important;
     }
 
     .order-card {
@@ -156,17 +191,14 @@
     }
 
     .order-card>div:first-child {
-        /* Avatar container */
         margin: 0 auto;
     }
 
     .order-card .job-details>div {
-        /* Title and badge row */
         justify-content: center;
     }
 
     .order-card>div:last-child {
-        /* Price and actions */
         text-align: center !important;
         margin-top: 1rem;
         padding-top: 1rem;
@@ -253,8 +285,8 @@
 
 .services-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
 }
 
 /* XP PROGRESS BAR */
