@@ -27,6 +27,15 @@ const ServiceDetail = () => {
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [freelancerInternal, setFreelancerInternal] = useState(null);
     const [profileLoading, setProfileLoading] = useState(true);
+    
+    // Missing states that caused crashes
+    const [showEditForm, setShowEditForm] = useState(false);
+    const [existingBookings, setExistingBookings] = useState([]);
+    const [selectedBooking, setSelectedBooking] = useState({ date: null, time: null, dates: [] });
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedTierForPayment, setSelectedTierForPayment] = useState(null);
+    const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+    const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
 
     useEffect(() => {
         if (service?.bookingConfig?.requiresBooking) {
