@@ -95,7 +95,7 @@ const NotificationDropdown = () => {
         <div className="notification-dropdown-container" ref={dropdownRef}>
             <button
                 className={`notification-bell-btn ${unreadCount > 0 ? 'has-unread' : ''} ${isOpen ? 'active' : ''}`}
-                onClick={toggleDropdown}
+                onClick={() => navigate('/notifications')}
                 title="Notificaciones"
             >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

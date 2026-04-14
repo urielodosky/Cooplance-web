@@ -223,14 +223,72 @@
 // --- Responsive Benefits (NUEVO) ---
 
 // Desktop Table Enhancements
-.benefits-table {
+.benefits-table-wrapper {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+
+            &:nth-child(1) { width: 60px; text-align: center; }
+            &:nth-child(2) { width: 35%; }
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            vertical-align: middle;
+            font-size: 0.95rem;
+
+            &:first-child { text-align: center; }
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        // Subtle alternating row tint
+        tbody tr:nth-child(even) td {
+            background: rgba(255, 255, 255, 0.015);
+        }
+    }
+
     .title-cell {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
-        
-        strong { font-size: 1.05rem; color: var(--text-primary); }
-        .level-desc { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; font-style: italic; }
+        gap: 0.15rem;
+
+        strong { font-size: 1rem; color: var(--text-primary); }
+        .level-desc { font-size: 0.8rem; color: var(--text-muted); font-weight: 400; font-style: italic; }
+    }
+
+    .benefits-list {
+        margin: 0;
+        padding-left: 1.1rem;
+
+        li {
+            margin-bottom: 0.2rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+
+            &:last-child { margin-bottom: 0; }
+        }
     }
 }
 

@@ -192,9 +192,9 @@ const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }
                     {myServices.map(service => (
                         <ServiceCard key={service.id} service={{ ...service, level: user.level || 1 }} />
                     ))}
-                    <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-card)' }}>
-                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>+</div>
-                        <h4 style={{ color: 'var(--primary)' }}>Crear Nuevo</h4>
+                    <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-card)', padding: '1.5rem 1rem' }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.6rem', fontSize: '1.3rem' }}>+</div>
+                        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', margin: 0 }}>Crear Nuevo</h4>
                     </div>
                 </>
             ) : (

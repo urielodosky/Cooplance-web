@@ -41,21 +41,66 @@
 }
 
 @media (max-width: 768px) {
+    .service-card {
+        border-radius: 14px;
+    }
+
     .service-image-container {
         padding-top: 0;
-        height: 180px;
+        height: 140px;
     }
     
     .service-image {
         position: relative;
-        height: 180px;
+        height: 140px;
         object-fit: cover;
+    }
+
+    .service-content {
+        padding: 0.75rem;
+        gap: 0.4rem;
+    }
+
+    .service-title {
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+
+    .freelancer-info {
+        gap: 0.35rem;
+    }
+
+    .freelancer-avatar {
+        width: 20px;
+        height: 20px;
+    }
+
+    .freelancer-name {
+        font-size: 0.78rem;
+    }
+
+    .service-footer {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .service-price {
+        font-size: 0.95rem;
+    }
+
+    .modality-badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
     }
     
     .delete-service-btn {
-        top: 15px !important;
-        right: 15px !important;
-        padding: 5px; /* Larger tap area if needed */
+        top: 10px !important;
+        right: 10px !important;
+        padding: 5px;
+    }
+
+    /* "Crear Nuevo" placeholder card in dashboard */
+    .service-card.clickable[style*="dashed"] {
+        min-height: 120px !important;
     }
 }
 
