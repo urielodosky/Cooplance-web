@@ -35,22 +35,41 @@ const Dashboard = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
 
-    // Load Projects & Proposals Logic
+    // V15: Load data from cache instantly
+    useEffect(() => {
+        if (!user?.id) return;
+        const cachedProjects = localStorage.getItem(`cooplance_projects_${user.id}`);
+        const cachedProposals = localStorage.getItem(`cooplance_proposals_${user.id}`);
+        
+        if (cachedProjects || cachedProposals) {
+            console.log("[Dashboard] Instant boot from cache.");
+            if (cachedProjects) setMyPublishedProjects(JSON.parse(cachedProjects));
+            if (cachedProposals) setMyProposals(JSON.parse(cachedProposals));
+            setLoading(false); // Hide blocker immediately
+        }
+    }, [user?.id]);
+
+    // Load Projects & Proposals Logic (Background Sync)
     useEffect(() => {
         const loadData = async () => {
             if (!user?.id) return;
-            setLoading(true);
+            // Only show loader if we have NO data at all
+            if (myPublishedProjects.length === 0 && myProposals.length === 0) {
+                setLoading(true);
+            }
+            
             try {
-                // 1. My Published Projects (Client/Company) from Supabase - Filtered by DB
+                // 1. My Published Projects (Silent Fetch)
                 const myProjects = await getProjectsByClient(user.id);
                 setMyPublishedProjects(myProjects);
+                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(myProjects));
 
-                // 2. My Proposals (Freelancer) - from Supabase
+                // 2. My Proposals (Silent Fetch)
                 const supabaseProposals = await getProposalsByUser(user.id);
                 setMyProposals(supabaseProposals);
+                localStorage.setItem(`cooplance_proposals_${user.id}`, JSON.stringify(supabaseProposals));
             } catch (err) {
                 console.error('Error loading dashboard data:', err);
-                setMyProposals([]);
             } finally {
                 setLoading(false);
             }
@@ -246,10 +265,10 @@ const Dashboard = () => {
                 onAccept={handleAcceptProposal}
             />
 
-            {loading && (
+            {loading && myPublishedProjects.length === 0 && myProposals.length === 0 && (
                 <div className="dashboard-loading-overlay">
                     <div className="spinner"></div>
-                    <p>Cargando tus datos...</p>
+                    <p>Cargando tu panel de control...</p>
                 </div>
             )}
 
