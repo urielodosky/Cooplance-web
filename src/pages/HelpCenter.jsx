@@ -1,23 +1,118 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FREELANCER_BENEFITS, CLIENT_BENEFITS } from '../data/levelBenefits';
 import '../styles/pages/HelpCenter.scss';
 
 const HelpCenter = () => {
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'freelancers');
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
+    const [showMobileDetail, setShowMobileDetail] = useState(false);
+
+    // Initial sync and resize listener
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 900);
+        window.addEventListener('resize', handleResize);
+        
+        // On desktop, if no tab is selected, default to freelancers
+        if (window.innerWidth >= 900 && !searchParams.get('tab')) {
+            setActiveTab('freelancers');
+        }
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, [searchParams]);
 
     // Sync tab with URL param
     useEffect(() => {
         const tab = searchParams.get('tab');
         if (tab) {
             setActiveTab(tab);
+        } else if (!isMobile) {
+            setActiveTab('freelancers');
         }
-    }, [searchParams]);
+    }, [searchParams, isMobile]);
 
     const handleTabChange = (newTab) => {
         setActiveTab(newTab);
         setSearchParams({ tab: newTab });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleBackToIndex = () => {
+        setActiveTab(null);
+        setSearchParams({});
+    };
+
+    const categories = [
+        { id: 'freelancers', title: 'Freelancers', desc: 'Guía sobre niveles, beneficios y cómo crecer en la plataforma.', icon: '👤' },
+        { id: 'clients', title: 'Clientes', desc: 'Encuentra talento, publica proyectos y gestiona tus contrataciones.', icon: '🤝' },
+        { id: 'companies', title: 'Empresas', desc: 'Herramientas avanzadas para reclutamiento y gestión de equipos.', icon: '🏢' },
+        { id: 'coops', title: 'Coops (Equipos)', desc: 'Todo sobre el trabajo colaborativo y la distribución por niveles.', icon: '👥' },
+        { id: 'terms', title: 'Términos y Condiciones', desc: 'Reglas de uso, comisiones y responsabilidades.', icon: '📜' },
+        { id: 'privacy', title: 'Política de Privacidad', desc: 'Cómo protegemos tus datos y los de tu organización.', icon: '🛡️' }
+    ];
+
+    const renderBenefitsTable = (benefitsObj, role = 'freelancer') => {
+        if (isMobile) {
+            return (
+                <div className="benefits-mobile-list">
+                    {Object.entries(benefitsObj).map(([level, data]) => (
+                        <div key={level} className="benefit-mobile-card glass-panel">
+                            <div className="card-header">
+                                <span className={`level-badge ${role === 'client' ? 'client' : ''}`}>{level}</span>
+                                <div className="header-info">
+                                    <h4>{data.name}</h4>
+                                    <p>{data.description}</p>
+                                </div>
+                            </div>
+                            <div className="card-body">
+                                <h5>Beneficios:</h5>
+                                <ul className="benefits-list">
+                                    {data.benefits.map((benefit, i) => (
+                                        <li key={i}>{benefit}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        return (
+            <div className="benefits-table-wrapper">
+                <table className="benefits-table">
+                    <thead>
+                        <tr>
+                            <th>Nivel</th>
+                            <th>Título Profesional</th>
+                            <th>Beneficios e Impacto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {Object.entries(benefitsObj).map(([level, data]) => (
+                            <tr key={level}>
+                                <td><span className={`level-badge ${role === 'client' ? 'client' : ''}`}>{level}</span></td>
+                                <td>
+                                    <div className="title-cell">
+                                        <strong>{data.name}</strong>
+                                        <span className="level-desc">{data.description}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <ul className="benefits-list">
+                                        {data.benefits.map((benefit, i) => (
+                                            <li key={i}>{benefit}</li>
+                                        ))}
+                                    </ul>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
     };
 
     const renderFreelancerGuide = () => (
@@ -31,34 +126,9 @@ const HelpCenter = () => {
             </div>
 
             <div className="help-section">
-                <h3>Sistema de Niveles y Beneficios</h3>
-                <p>Tu progreso se mide en niveles (del 1 al 10). Subes de nivel acumulando XP (Experiencia) al completar trabajos y recibir buenas calificaciones.</p>
-                <div className="benefits-table-wrapper">
-                    <table className="benefits-table">
-                        <thead>
-                            <tr>
-                                <th>Nivel</th>
-                                <th>Título</th>
-                                <th>Beneficios Clave</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {Object.entries(FREELANCER_BENEFITS).map(([level, data]) => (
-                                <tr key={level}>
-                                    <td><span className="level-badge">{level}</span></td>
-                                    <td><strong>{data.name}</strong></td>
-                                    <td>
-                                        <ul className="benefits-list">
-                                            {data.benefits.map((benefit, i) => (
-                                                <li key={i}>{benefit}</li>
-                                            ))}
-                                        </ul>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <h3>Escala de Reconocimiento Profesional</h3>
+                <p>Tu trayectoria se valida a través de 10 niveles honoríficos. Cada ascenso desbloquea mayores capacidades técnicas y beneficios económicos.</p>
+                {renderBenefitsTable(FREELANCER_BENEFITS, 'freelancer')}
             </div>
 
             <div className="help-section">
@@ -120,51 +190,27 @@ const HelpCenter = () => {
             </div>
 
             <div className="help-section">
-                <h3>Niveles de Cliente</h3>
-                <p>Los clientes también tienen niveles que desbloquean capacidades de gestión y contratación simultánea.</p>
-                <div className="benefits-table-wrapper">
-                    <table className="benefits-table">
-                        <thead>
-                            <tr>
-                                <th>Nivel</th>
-                                <th>Título</th>
-                                <th>Capacidades</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {Object.entries(CLIENT_BENEFITS).map(([level, data]) => (
-                                <tr key={level}>
-                                    <td><span className="level-badge client">{level}</span></td>
-                                    <td><strong>{data.name}</strong></td>
-                                    <td>
-                                        <ul className="benefits-list">
-                                            {data.benefits.map((benefit, i) => (
-                                                <li key={i}>{benefit}</li>
-                                            ))}
-                                        </ul>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="help-section">
-                    <h3>Contratar Nuevos Talentos</h3>
-                    <p>Te animamos a contratar freelancers de niveles más bajos (Novatos). Muchas veces son talentos increíbles buscando sus primeros trabajos para conseguir reputación en la plataforma, y ​​pueden ofrecer presupuestos mucho más accesibles mientras demuestran de qué son capaces.</p>
-                    <p>Al completarse y calificar este trabajo exitosamente, <strong>los clientes reciben el doble de experiencia (XP)</strong> al comprar de freelancers novatos (Niveles 1 a 3).</p>
-                </div>
+                <h3>Niveles de Reconocimiento al Cliente</h3>
+                <p>Los clientes también ascienden en una escala de prestigio que desbloquea mayores capacidades de gestión, seguridad y descuentos exclusivos.</p>
+                {renderBenefitsTable(CLIENT_BENEFITS, 'client')}
+            </div>
 
-                <div className="help-section">
-                    <h3>Ganancias y Experiencia (XP) al Contratar</h3>
-                    <p>Al igual que los freelancers, al contratar recurrentemente subes de nivel como cliente. La plataforma te brinda una guía de referencia de precios para ganar experiencia:</p>
-                    <ul>
-                        <li>Mayor a $140.000: <strong>80 XP</strong></li>
-                        <li>Mayor a $70.000: <strong>40 XP</strong></li>
-                        <li>Mayor a $28.000: <strong>30 XP</strong></li>
-                        <li>De $7.000 a $28.000: <strong>10 XP</strong></li>
-                    </ul>
-                    <p><em>* Contratar a niveles 1, 2 o 3 duplica estos valores.</em></p>
-                </div>
+            <div className="help-section">
+                <h3>Contratar Nuevos Talentos</h3>
+                <p>Te animamos a contratar freelancers de niveles más bajos (Iniciantes). Muchas veces son talentos increíbles buscando sus primeros trabajos para conseguir reputación, y pueden ofrecer presupuestos más accesibles.</p>
+                <p>Al completarse y calificar este trabajo exitosamente, <strong>los clientes reciben el doble de experiencia (XP)</strong> al comprar de nuevos talentos (Niveles 1 a 3).</p>
+            </div>
+
+            <div className="help-section">
+                <h3>Ganancias y Experiencia (XP) al Contratar</h3>
+                <p>Al igual que los freelancers, al contratar recurrentemente subes de nivel como cliente. La plataforma te brinda una guía de referencia de precios para ganar experiencia:</p>
+                <ul>
+                    <li>Mayor a $140.000: <strong>80 XP</strong></li>
+                    <li>Mayor a $70.000: <strong>40 XP</strong></li>
+                    <li>Mayor a $28.000: <strong>30 XP</strong></li>
+                    <li>De $7.000 a $28.000: <strong>10 XP</strong></li>
+                </ul>
+                <p><em>* Contratar a niveles 1, 2 o 3 duplica estos valores.</em></p>
             </div>
         </div>
     );
@@ -351,7 +397,7 @@ const HelpCenter = () => {
                     <li><strong>Datos de registro generales:</strong> A todos los Usuarios que crean una cuenta en Cooplance les solicitamos información obligatoria que incluye su nombre real, apellido, fecha de nacimiento (para verificar la edad mínima requerida) y una dirección de correo electrónico válida.</li>
                     <li><strong>Información de Freelancers (Profesionales y Oficios):</strong> Identidad: Solicitamos el número de DNI de forma obligatoria para verificar la identidad del profesional. Profesiones reguladas: Para los profesionales que ejerzan labores matriculadas (por ejemplo, Psicología, Arquitectura, etc.), es obligatorio proporcionar el número de matrícula correspondiente y el nombre de la Universidad o institución donde cursaron sus estudios.</li>
                     <li><strong>Información de Clientes:</strong> La provisión del DNI no es obligatoria para los usuarios que se registran exclusivamente para contratar servicios, a menos que la naturaleza de la transacción lo requiera por motivos de facturación o seguridad.</li>
-                    <li><strong>Cuentas de Empresa:</strong> Si el registro se realiza en nombre de una persona jurídica o empresa (ya sea para contratar o para ofrecer servicios), solicitamos de forma obligatoria el nombre de la empresa, el CUIT, y el nombre del propietario, representante legal o titular a nombre de quien está registrada la empresa.</li>
+                    <li><strong>Cuentas de Empresa:</strong> Si el registro se realiza en nombre de una persona jurídica o empresa (ya sea para contratar o para ofrecer servicios), solicitamos de forma obligatoria el nombre de la empresa, el CUIT, y el nombre del responsable o titular a nombre de quien está registrada la empresa.</li>
                     <li><strong>Datos de ubicación y contacto (Servicios Presenciales):</strong> El número de teléfono celular y los datos de ubicación exacta son opcionales para la mayoría de los usuarios. Sin embargo, para la coordinación y ejecución de trabajos presenciales, proporcionar la ubicación geográfica es de carácter obligatorio.</li>
                 </ul>
 
@@ -433,62 +479,74 @@ const HelpCenter = () => {
     );
 
     return (
-        <div className="help-center-container fade-in">
-            {/* Sidebar Navigation */}
-            <aside className="help-sidebar glass-panel">
-                <div className="help-menu-title">Centro de Ayuda</div>
-                <nav className="help-nav">
-                    <button
-                        className={`help-nav-item ${activeTab === 'freelancers' ? 'active' : ''}`}
-                        onClick={() => handleTabChange('freelancers')}
-                    >
-                        Freelancers
-                    </button>
-                    <button
-                        className={`help-nav-item ${activeTab === 'clients' ? 'active' : ''}`}
-                        onClick={() => handleTabChange('clients')}
-                    >
-                        Clientes
-                    </button>
-                    <button
-                        className={`help-nav-item ${activeTab === 'companies' ? 'active' : ''}`}
-                        onClick={() => handleTabChange('companies')}
-                    >
-                        Empresas
-                    </button>
-                    <button
-                        className={`help-nav-item ${activeTab === 'coops' ? 'active' : ''}`}
-                        onClick={() => handleTabChange('coops')}
-                    >
-                        Coops (Equipos)
-                    </button>
+        <div className={`help-center-container fade-in ${isMobile ? (activeTab ? 'detail-mode' : 'index-mode') : 'desktop-mode'}`}>
+            {isMobile ? (
+                // MOBILE VIEW: Index (Cards) or Detail (Selected Guide)
+                !activeTab ? (
+                    <div className="help-index-wrapper">
+                        <h1 className="help-index-title">CENTRO DE AYUDA</h1>
+                        <div className="help-category-grid">
+                            {categories.map((cat) => (
+                                <div 
+                                    key={cat.id} 
+                                    className="help-category-card glass-panel"
+                                    onClick={() => handleTabChange(cat.id)}
+                                >
+                                    <div className="card-icon">{cat.icon}</div>
+                                    <h3 className="card-title">{cat.title}</h3>
+                                    <p className="card-desc">{cat.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="help-detail-wrapper">
+                        <button className="back-btn-premium" onClick={handleBackToIndex}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            Volver al Centro de Ayuda
+                        </button>
+                        
+                        <main className="help-main glass-panel">
+                            {activeTab === 'freelancers' && renderFreelancerGuide()}
+                            {activeTab === 'clients' && renderClientGuide()}
+                            {activeTab === 'companies' && renderCompanyGuide()}
+                            {activeTab === 'coops' && renderCoopsGuide()}
+                            {activeTab === 'terms' && renderTerms()}
+                            {activeTab === 'privacy' && renderPrivacy()}
+                        </main>
+                    </div>
+                )
+            ) : (
+                // DESKTOP VIEW: Sidebar + Content Side-by-Side
+                <>
+                    <aside className="help-sidebar glass-panel">
+                        <div className="help-menu-title">Centro de Ayuda</div>
+                        <nav className="help-nav">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    className={`help-nav-item ${activeTab === cat.id ? 'active' : ''}`}
+                                    onClick={() => handleTabChange(cat.id)}
+                                >
+                                    {cat.icon} {cat.title}
+                                </button>
+                            ))}
+                        </nav>
+                    </aside>
 
-                    <div className="separator"></div>
-
-                    <button
-                        className={`help-nav-item ${activeTab === 'terms' ? 'active' : ''}`}
-                        onClick={() => handleTabChange('terms')}
-                    >
-                        Términos y Condiciones
-                    </button>
-                    <button
-                        className={`help-nav-item ${activeTab === 'privacy' ? 'active' : ''}`}
-                        onClick={() => handleTabChange('privacy')}
-                    >
-                        Política de Privacidad
-                    </button>
-                </nav>
-            </aside>
-
-            {/* Main Content Area */}
-            <main className="help-main glass-panel">
-                {activeTab === 'freelancers' && renderFreelancerGuide()}
-                {activeTab === 'clients' && renderClientGuide()}
-                {activeTab === 'companies' && renderCompanyGuide()}
-                {activeTab === 'coops' && renderCoopsGuide()}
-                {activeTab === 'terms' && renderTerms()}
-                {activeTab === 'privacy' && renderPrivacy()}
-            </main>
+                    <main className="help-main glass-panel">
+                        {activeTab === 'freelancers' && renderFreelancerGuide()}
+                        {activeTab === 'clients' && renderClientGuide()}
+                        {activeTab === 'companies' && renderCompanyGuide()}
+                        {activeTab === 'coops' && renderCoopsGuide()}
+                        {activeTab === 'terms' && renderTerms()}
+                        {activeTab === 'privacy' && renderPrivacy()}
+                    </main>
+                </>
+            )}
         </div>
     );
 };

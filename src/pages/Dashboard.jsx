@@ -11,6 +11,7 @@ import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
 import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
+import { getBenefitsForRole } from '../data/levelBenefits';
 import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
 import { getProjectsByClient } from '../lib/projectService';
 import '../styles/pages/Dashboard.scss';
@@ -338,7 +339,8 @@ const Dashboard = () => {
     const isMaxLevel = currentLevel >= MAX_LEVEL;
     const xpPercentage = isMaxLevel ? Math.min(Math.max(0, (currentXP - 10000) / MAX_BUFFER_XP) * 100, 100) : Math.min((currentXP / nextLevelXP) * 100, 100);
     const xpDisplayText = isMaxLevel ? `${currentXP - 10000} / ${MAX_BUFFER_XP} Buffer XP` : `${currentXP} / ${nextLevelXP} XP`;
-    const levelLabel = isMaxLevel ? "Nivel Máximo (10)" : `Progreso al Nivel ${currentLevel + 1}`;
+    const levelLabel = isMaxLevel ? `Nivel Máximo (10) - ${getBenefitsForRole(user.role)[10]?.name}` : `Hacia Nivel ${currentLevel + 1}: ${getBenefitsForRole(user.role)[currentLevel + 1]?.name}`;
+    const currentLevelName = getBenefitsForRole(user.role)[currentLevel]?.name || '';
 
     const handleDemoLevelUp = () => {
         if ((user.level || 1) >= MAX_LEVEL) {
@@ -463,10 +465,12 @@ const Dashboard = () => {
             </div>
 
             <div className="dashboard-stats-grid">
-                {user.role !== 'company' && (
                     <div className="glass stat-card">
                         <h4>Nivel Actual</h4>
                         <p className="stat-value primary">{currentLevel}</p>
+                        <p className="stat-subtitle" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '-0.5rem', fontWeight: '600' }}>
+                            {currentLevelName}
+                        </p>
                         {user.id === 'cfb3e724-ce3d-4bd1-bc02-a289ef050b89' && (
                             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
                                 <button

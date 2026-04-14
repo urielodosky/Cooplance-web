@@ -1,7 +1,7 @@
 export const FREELANCER_BENEFITS = {
     1: {
-        name: 'Nuevo',
-        description: 'Recién ingresado, enfocado en aprender y generar confianza.',
+        name: 'Nuevo Talento',
+        description: 'Perfil en fase de inicio, enfocado en construir reputación.',
         benefits: [
             '1 Proyecto a la vez',
             'Publicar 1 servicio',
@@ -9,32 +9,32 @@ export const FREELANCER_BENEFITS = {
         ]
     },
     2: {
-        name: 'Inicial',
-        description: 'Ya tienes experiencia básica dentro de Cooplance.',
+        name: 'Asociado Junior',
+        description: 'Trayectoria inicial confirmada con experiencia básica.',
         benefits: [
             'Manejar hasta 3 proyectos simultáneos',
             'Publicar hasta 2 servicios'
         ]
     },
     3: {
-        name: 'Activo',
-        description: 'Freelancer constante.',
+        name: 'Asociado Senior',
+        description: 'Colaborador recurrente con flujo de trabajo constante.',
         benefits: [
             'Manejar hasta 5 proyectos a la vez',
             'Publicar hasta 3 servicios'
         ]
     },
     4: {
-        name: 'Consolidado',
-        description: 'Freelancer con experiencia comprobada.',
+        name: 'Profesional Independiente',
+        description: 'Especialista con experiencia comprobada en múltiples proyectos.',
         benefits: [
             'Manejar hasta 10 proyectos activos',
             'Publicar hasta 4 servicios'
         ]
     },
     5: {
-        name: 'Profesional',
-        description: 'Perfil estable dentro de la plataforma.',
+        name: 'Profesional Consolidado',
+        description: 'Perfil de alto rendimiento y estabilidad en la plataforma.',
         benefits: [
             'Sin límite de proyectos activos',
             'Publicar hasta 5 servicios',
@@ -42,8 +42,8 @@ export const FREELANCER_BENEFITS = {
         ]
     },
     6: {
-        name: 'Avanzado',
-        description: 'Reconocimiento y mejores ganancias.',
+        name: 'Especialista',
+        description: 'Reconocimiento avanzado y optimización de márgenes.',
         benefits: [
             'Comisión reducida al 11%',
             '¡Cuidado! Se desbloquea la pérdida de XP por inactividad',
@@ -51,29 +51,29 @@ export const FREELANCER_BENEFITS = {
         ]
     },
     7: {
-        name: 'Experto',
-        description: 'Un referente en su campo.',
+        name: 'Especialista Senior',
+        description: 'Referente técnico con prioridad de mercado.',
         benefits: [
             'Comisión reducida al 10%'
         ]
     },
     8: {
-        name: 'Referente',
-        description: 'Liderando el mercado.',
+        name: 'Consultor Estratégico',
+        description: 'Liderazgo y excelencia en la ejecución de servicios.',
         benefits: [
             'Comisión reducida al 9%'
         ]
     },
     9: {
-        name: 'Élite',
-        description: 'La cima de la excelencia.',
+        name: 'Socio de Élite',
+        description: 'Máximo prestigio y beneficios exclusivos de plataforma.',
         benefits: [
             'Comisión reducida al 8%'
         ]
     },
     10: {
-        name: 'Legendario',
-        description: 'Nivel máximo. Una leyenda de Cooplance.',
+        name: 'Maestro Cooplance',
+        description: 'Máximo rango honorífico. Una leyenda del ecosistema.',
         benefits: [
             'Comisión reducida al 6%',
             'Estrella destacada en todos tus servicios'
@@ -83,16 +83,16 @@ export const FREELANCER_BENEFITS = {
 
 export const CLIENT_BENEFITS = {
     1: {
-        name: 'Nuevo',
-        description: 'Bienvenido a la comunidad de talento.',
+        name: 'Cliente Iniciador',
+        description: 'Bienvenido al ecosistema de gestión de talento.',
         benefits: [
             '1-2 Pedidos activos simultáneos',
             'Acceso básico al buscador'
         ]
     },
     2: {
-        name: 'Explorador',
-        description: 'Descubriendo el potencial del talento freelance.',
+        name: 'Promotor de Talento',
+        description: 'Descubriendo y potenciando el talento independiente.',
         benefits: [
             'Historial y Registro de Freelancers',
             'Puedes publicar hasta 2 pedidos a la vez',
@@ -100,24 +100,24 @@ export const CLIENT_BENEFITS = {
         ]
     },
     3: {
-        name: 'Colaborador',
-        description: 'Empezando a construir relaciones.',
+        name: 'Colaborador Activo',
+        description: 'Construyendo relaciones sólidas con profesionales.',
         benefits: [
             'Puedes publicar hasta 3 pedidos a la vez',
             'Puedes Mantener activos hasta 5 pedidos'
         ]
     },
     4: {
-        name: 'Cliente Frecuente',
-        description: 'Un socio habitual para nuestros freelancers.',
+        name: 'Socio Recurrente',
+        description: 'Adquisición constante de servicios de calidad.',
         benefits: [
             'Puedes publicar hasta 4 pedidos a la vez',
             'Puedes Mantener activos hasta 10 pedidos'
         ]
     },
     5: {
-        name: 'Impulsor de Talento',
-        description: 'Fomentando el crecimiento profesional.',
+        name: 'Impulsor Estratégico',
+        description: 'Fomentando el crecimiento profesional a gran escala.',
         benefits: [
             'Puedes publicar hasta 5 pedidos a la vez',
             'Puedes Mantener activos los pedidos que quieras'
@@ -125,7 +125,7 @@ export const CLIENT_BENEFITS = {
     },
     6: {
         name: 'Inversor de Talento',
-        description: 'Apostando fuerte por la calidad.',
+        description: 'Socio avanzado con herramientas de gestión premium.',
         benefits: [
             'Puedes dejar en favoritos a los freelancer',
             'Puedes crear tus propios Coops (Equipos de Trabajo)',
@@ -133,29 +133,29 @@ export const CLIENT_BENEFITS = {
         ]
     },
     7: {
-        name: 'Partner Cooplance',
-        description: 'Un aliado clave en el ecosistema.',
+        name: 'Aliado Regional',
+        description: 'Presencia e impacto significativo en la comunidad.',
         benefits: [
             'Recibes un 2% de dto. al contratar freelancers nivel 1-2'
         ]
     },
     8: {
-        name: 'Cliente Elite',
-        description: 'Gestión de talento a gran escala.',
+        name: 'Aliado Global',
+        description: 'Liderazgo organizacional y contratación de alto nivel.',
         benefits: [
             'Recibes 2% de dto. al contratar freelancers nivel 1-3'
         ]
     },
     9: {
-        name: 'Aliado Estratégico',
-        description: 'Construyendo el futuro del trabajo.',
+        name: 'Socio de Élite',
+        description: 'Estatus preferencial con beneficios máximos.',
         benefits: [
-            'Mismos Beneficios'
+            'Mismos Beneficios con soporte priorizado'
         ]
     },
     10: {
-        name: 'Legendario',
-        description: 'El máximo estatus para una organización.',
+        name: 'Mecenas Cooplance',
+        description: 'Máximo estatus institucional y reconocimiento global.',
         benefits: [
             'Pedidos resaltados (1h) y prioritarios',
             'Recibes un descuento del 3% en todas tus compras',
@@ -166,5 +166,5 @@ export const CLIENT_BENEFITS = {
 
 export const getBenefitsForRole = (role) => {
     if (role === 'freelancer') return FREELANCER_BENEFITS;
-    return CLIENT_BENEFITS; // Default for buyer/company
+    return CLIENT_BENEFITS;
 };

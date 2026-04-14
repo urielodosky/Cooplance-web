@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { serviceCategories } from '../../features/services/data/categories';
 import CustomDropdown from './CustomDropdown';
+import { getArgentinaProvinces, getArgentinaCities } from '../../utils/locationUtils';
 import '../../styles/components/SidebarFilter.scss';
 
 const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
@@ -48,17 +49,10 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
     // Fetch Provinces on Mount (Fixed to Argentina)
     useEffect(() => {
         const fetchProvinces = async () => {
-            try {
-                setIsLoadingLoc(true);
-                const res = await fetch('https://apis.datos.gob.ar/georef/api/provincias?campos=nombre&max=100');
-                const data = await res.json();
-                const names = data.provincias.map(p => p.nombre).sort();
-                setArgProvinces(names);
-            } catch (error) {
-                console.error("Error fetching provinces:", error);
-            } finally {
-                setIsLoadingLoc(false);
-            }
+            setIsLoadingLoc(true);
+            const provinces = await getArgentinaProvinces();
+            setArgProvinces(provinces);
+            setIsLoadingLoc(false);
         };
         fetchProvinces();
     }, []);
@@ -68,22 +62,15 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
         const selectedProvinces = currentFilters.province || [];
         if (Array.isArray(selectedProvinces) && selectedProvinces.length > 0) {
             const fetchCities = async () => {
-                try {
-                    setIsLoadingLoc(true);
-                    let allCities = [];
-                    for (const prov of selectedProvinces) {
-                        const res = await fetch(`https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(prov)}&campos=nombre,provincia.nombre&max=1000`);
-                        const data = await res.json();
-                        const cityNames = data.localidades.map(m => `${m.nombre} (${m.provincia.nombre})`);
-                        allCities = [...allCities, ...cityNames];
-                    }
-                    const names = [...new Set(allCities)].sort();
-                    setArgCities(names);
-                } catch (error) {
-                    console.error("Error fetching cities:", error);
-                } finally {
-                    setIsLoadingLoc(false);
+                setIsLoadingLoc(true);
+                let allCities = [];
+                for (const prov of selectedProvinces) {
+                    const cities = await getArgentinaCities(prov);
+                    allCities = [...allCities, ...cities];
                 }
+                const names = [...new Set(allCities)].sort();
+                setArgCities(names);
+                setIsLoadingLoc(false);
             };
             fetchCities();
         } else {
@@ -94,7 +81,12 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
     const categories = Object.keys(serviceCategories || {}).sort();
 
     const handleChange = (name, value) => {
-        const newFilters = { ...currentFilters, [name]: value };
+        let newValue = value;
+
+        // If "Comisión (Por Venta)" is selected, we just pass the value 'commission'
+        // and handle the expansion in searchUtils for better UI cleanliness
+
+        const newFilters = { ...currentFilters, [name]: newValue };
         if (name === 'category') {
             newFilters.subcategory = '';
             newFilters.specialties = [];
@@ -190,8 +182,7 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
         { label: 'Semanal', value: 'weekly' },
         { label: 'Quincenal', value: 'biweekly' },
         { label: 'Mensual', value: 'monthly' },
-        { label: 'Por Venta', value: 'per_sale' },
-        { label: 'Comisión', value: 'commission' }
+        { label: 'Comisión (Por Venta)', value: 'commission' }
     ];
 
     const durationUnits = [

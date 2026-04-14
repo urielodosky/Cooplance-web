@@ -647,3 +647,125 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* --- MOBILE OPTIMIZATION --- */
+@media (max-width: 768px) {
+    .sidebar-filter.premium-compact {
+        padding: 1.2rem;
+        gap: 1.2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .filter-search-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+
+        .search-wrapper {
+            width: 100%;
+            padding: 0.1rem 1rem;
+            
+            .search-input {
+                font-size: 0.9rem;
+                padding: 0.7rem 0;
+            }
+        }
+
+        .search-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            width: 100%;
+
+            button {
+                flex: 1;
+                justify-content: center;
+                padding: 0;
+            }
+        }
+    }
+
+    .filter-options-grid, 
+    .secondary-row, 
+    .filter-options-grid.is-company, 
+    .filter-options-grid.is-team {
+        grid-template-columns: 1fr !important;
+        gap: 1.2rem;
+    }
+
+    .compact-box-selectors {
+        flex-wrap: wrap;
+        
+        .selection-box-sm {
+            min-width: calc(50% - 0.4rem);
+        }
+    }
+
+    .compact-range {
+        input {
+            padding: 0.6rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    .subcat-specialties-row {
+        gap: 1.2rem;
+        padding-top: 1.2rem;
+    }
+
+    .location-expansion-row {
+        padding: 1rem;
+        
+        .expansion-grid {
+            grid-template-columns: 1fr;
+            gap: 1.2rem;
+        }
+    }
+
+    .filter-footer-row {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: stretch;
+        margin-top: 1.5rem;
+
+        .rating-horizontal {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            width: 100%;
+            
+            .btn-search-violet {
+                padding: 0.8rem 1rem;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar-filter.premium-compact {
+        padding: 1rem;
+        border-radius: 14px;
+    }
+
+    .compact-box-selectors {
+        .selection-box-sm {
+            min-width: 100%;
+        }
+    }
+
+    .filter-footer-row .action-buttons {
+        grid-template-columns: 1fr;
+        
+        .btn-clear-flat {
+            order: 2;
+        }
+        .btn-search-violet {
+            order: 1;
+        }
+    }
+}

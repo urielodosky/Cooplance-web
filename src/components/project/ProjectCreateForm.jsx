@@ -8,6 +8,7 @@ import { serviceCategories } from '../../features/services/data/categories';
 import { locations } from '../../features/services/data/locations';
 import { supabase } from '../../lib/supabase';
 import { createProject } from '../../lib/projectService';
+import { getArgentinaProvinces, getArgentinaCities } from '../../utils/locationUtils';
 
 const ProjectCreateForm = () => {
     const navigate = useNavigate();
@@ -55,41 +56,30 @@ const ProjectCreateForm = () => {
     useEffect(() => {
         if (formData.country === 'Argentina') {
             const fetchProvinces = async () => {
-                try {
-                    setIsLoadingLoc(true);
-                    const res = await fetch('https://apis.datos.gob.ar/georef/api/provincias?campos=nombre&max=100');
-                    const data = await res.json();
-                    const names = data.provincias.map(p => p.nombre).sort();
-                    setArgProvinces(names);
-                } catch (error) {
-                    console.error("Error fetching provinces:", error);
-                } finally {
-                    setIsLoadingLoc(false);
-                }
+                setIsLoadingLoc(true);
+                const provinces = await getArgentinaProvinces();
+                setArgProvinces(provinces);
+                setIsLoadingLoc(false);
             };
             fetchProvinces();
         }
     }, [formData.country]);
 
     useEffect(() => {
-        if (formData.country === 'Argentina' && formData.province && formData.province.length > 0) {
+        if (formData.country === 'Argentina' && formData.province) {
             const fetchCities = async () => {
-                try {
-                    setIsLoadingLoc(true);
-                    let allCities = [];
-                    for (const prov of formData.province) {
-                        const res = await fetch(`https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(prov)}&campos=nombre,provincia.nombre&max=1000`);
-                        const data = await res.json();
-                        const cityNames = data.localidades.map(m => `${m.nombre} (${m.provincia.nombre})`);
-                        allCities = [...allCities, ...cityNames];
-                    }
-                    const names = [...new Set(allCities)].sort();
-                    setArgCities(names);
-                } catch (error) {
-                    console.error("Error fetching cities:", error);
-                } finally {
-                    setIsLoadingLoc(false);
+                setIsLoadingLoc(true);
+                // In ProjectCreateForm, province is a string. We handle it safely.
+                const provinces = Array.isArray(formData.province) ? formData.province : [formData.province];
+                let allCities = [];
+                for (const prov of provinces) {
+                    if (!prov) continue;
+                    const cities = await getArgentinaCities(prov);
+                    allCities = [...allCities, ...cities];
                 }
+                const names = [...new Set(allCities)].sort();
+                setArgCities(names);
+                setIsLoadingLoc(false);
             };
             fetchCities();
         } else {

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CustomDropdown from '../../../components/common/CustomDropdown';
 import CustomDatePicker from '../../../components/common/CustomDatePicker';
+import { getArgentinaProvinces, getArgentinaCities } from '../../../utils/locationUtils';
 import '../../../styles/pages/Register.scss';
 
 const Register = () => {
@@ -77,17 +78,10 @@ const Register = () => {
     useEffect(() => {
         if (formData.country === 'Argentina' && role === 'company') {
             const fetchProvinces = async () => {
-                try {
-                    setIsLoadingLoc(true);
-                    const res = await fetch('https://apis.datos.gob.ar/georef/api/provincias?campos=nombre&max=100');
-                    const data = await res.json();
-                    const names = data.provincias.map(p => p.nombre).sort();
-                    setArgProvinces(names);
-                } catch (error) {
-                    console.error("Error fetching provinces:", error);
-                } finally {
-                    setIsLoadingLoc(false);
-                }
+                setIsLoadingLoc(true);
+                const provinces = await getArgentinaProvinces();
+                setArgProvinces(provinces);
+                setIsLoadingLoc(false);
             };
             fetchProvinces();
         }
@@ -96,17 +90,13 @@ const Register = () => {
     useEffect(() => {
         if (formData.country === 'Argentina' && formData.province && role === 'company') {
             const fetchCities = async () => {
-                try {
-                    setIsLoadingLoc(true);
-                    const res = await fetch(`https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(formData.province)}&campos=nombre&max=1000`);
-                    const data = await res.json();
-                    const names = data.localidades.map(m => m.nombre).sort();
-                    setArgCities([...new Set(names)]);
-                } catch (error) {
-                    console.error("Error fetching cities:", error);
-                } finally {
-                    setIsLoadingLoc(false);
-                }
+                setIsLoadingLoc(true);
+                // Strip the province name from the city format "City (Province)" if needed, 
+                // but getArgentinaCities handles the full format.
+                const cities = await getArgentinaCities(formData.province);
+                // For Register, we might want just the city name or keep the format for consistency
+                setArgCities(cities);
+                setIsLoadingLoc(false);
             };
             fetchCities();
         } else {

@@ -45,22 +45,30 @@
 @media (max-width: 768px) {
     .explore-page-layout {
         flex-direction: column;
+        padding-top: 1rem;
     }
 
     .explore-sidebar {
         width: 100%;
         position: static;
         flex: none;
+        padding: 0 1rem;
     }
 
     .services-grid-explore {
         grid-template-columns: 1fr !important;
-        gap: 2rem !important;
+        gap: 1.5rem !important;
+        padding: 0 1rem;
     }
 
     .explore-header {
         padding: 0 1rem;
-        text-align: center;
+        text-align: left;
+        margin-bottom: 1.5rem;
+        
+        .explore-title {
+            font-size: 1.75rem;
+        }
     }
 }
 

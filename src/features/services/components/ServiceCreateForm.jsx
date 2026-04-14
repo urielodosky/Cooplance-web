@@ -8,6 +8,7 @@ import { locations } from '../data/locations';
 import universitiesData from '../data/universidades_limpias.json';
 import CustomDropdown from '../../../components/common/CustomDropdown';
 import BookingConfigForm from '../../../components/booking/BookingConfigForm';
+import { getArgentinaProvinces, getArgentinaCities } from '../../../utils/locationUtils';
 import '../../../styles/components/ServiceCreateForm.scss';
 
 const withTimeout = (promise, ms, actionName) => {
@@ -113,17 +114,10 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
     useEffect(() => {
         if (formData.country === 'Argentina') {
             const fetchProvinces = async () => {
-                try {
-                    setIsLoadingLoc(true);
-                    const res = await fetch('https://apis.datos.gob.ar/georef/api/provincias?campos=nombre&max=100');
-                    const data = await res.json();
-                    const names = data.provincias.map(p => p.nombre).sort();
-                    setArgProvinces(names);
-                } catch (error) {
-                    console.error("Error fetching provinces:", error);
-                } finally {
-                    setIsLoadingLoc(false);
-                }
+                setIsLoadingLoc(true);
+                const provinces = await getArgentinaProvinces();
+                setArgProvinces(provinces);
+                setIsLoadingLoc(false);
             };
             fetchProvinces();
         }
@@ -132,25 +126,17 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
     useEffect(() => {
         if (formData.country === 'Argentina' && formData.province && formData.province.length > 0) {
             const fetchCities = async () => {
-                try {
-                    setIsLoadingLoc(true);
-                    let allCities = [];
-                    // Fetch cities for each selected province
-                    for (const prov of formData.province) {
-                        const res = await fetch(`https://apis.datos.gob.ar/georef/api/localidades?provincia=${encodeURIComponent(prov)}&campos=nombre,provincia.nombre&max=1000`);
-                        const data = await res.json();
-                        // Append province name to city name to distinguish them when multiple provinces are selected
-                        const cityNames = data.localidades.map(m => `${m.nombre} (${m.provincia.nombre})`);
-                        allCities = [...allCities, ...cityNames];
-                    }
-
-                    const names = [...new Set(allCities)].sort();
-                    setArgCities(names);
-                } catch (error) {
-                    console.error("Error fetching cities:", error);
-                } finally {
-                    setIsLoadingLoc(false);
+                setIsLoadingLoc(true);
+                let allCities = [];
+                // Fetch cities for each selected province using robust utility
+                for (const prov of formData.province) {
+                    const cities = await getArgentinaCities(prov);
+                    allCities = [...allCities, ...cities];
                 }
+
+                const names = [...new Set(allCities)].sort();
+                setArgCities(names);
+                setIsLoadingLoc(false);
             };
             fetchCities();
         } else {

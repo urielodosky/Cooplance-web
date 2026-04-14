@@ -195,6 +195,32 @@ export const searchAndFilterItems = (items, filters = {}) => {
             if (!matches) return false;
         }
 
+        // Payment Frequency Filter
+        if (filters.paymentFrequency && filters.paymentFrequency.length > 0) {
+            const selectedFreqs = [...filters.paymentFrequency];
+            // Internal mapping: commission filter also matches per_sale items
+            if (selectedFreqs.includes('commission')) selectedFreqs.push('per_sale');
+
+            const itemFreq = item.paymentFrequency || item.payment_frequency;
+            
+            if (itemFreq) {
+                // If it's single selection (string)
+                if (typeof itemFreq === 'string') {
+                    if (!selectedFreqs.includes(itemFreq)) return false;
+                }
+                // If it's an array (rare but possible in some data structures)
+                else if (Array.isArray(itemFreq)) {
+                    if (!itemFreq.some(f => selectedFreqs.includes(f))) return false;
+                }
+            } else {
+                // If item has no frequency but we are filtering for specific ones, 
+                // we should probably hide it unless 'unique' is selected and it's basically a fixed project.
+                // However, robustness suggests being lenient if no data exists.
+                // FOR NOW: If no frequency data, only pass if filtering by 'unique' or no specific freq is selected.
+                if (!selectedFreqs.includes('unique')) return false;
+            }
+        }
+
         return true;
     });
 
