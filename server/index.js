@@ -2,12 +2,40 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
 const app = express();
-app.use(cors()); // Allow all for local testing
-app.use(express.json());
+
+// 1. HELMET: Adds secure HTTP headers
+app.use(helmet());
+
+// 2. CORS: Strict configuration
+const allowedOrigins = [
+    'https://cooplance.vercel.app', 
+    'http://localhost:5173', // Vite Frontend local
+    'http://localhost:3000'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, postman, server-to-server) 
+        // or strictly allowed origins
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS (Política estricta)'));
+        }
+    },
+    methods: ['POST', 'OPTIONS'], // Limitar métodos (el microservicio solo usa POST actualmente)
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
+// 3. SIZE LIMIT. Previne Buffer Overflow DOS. Sanitiza el tamaño del body.
+app.use(express.json({ limit: '10kb' })); 
 
 // Log all requests
 app.use((req, res, next) => {
@@ -41,10 +69,38 @@ transporter.verify().then(() => {
     console.error(' [NODEMAILER ERROR] Error de conexion:', err.message);
 });
 
+// 4. RATE LIMITING GENERAL
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // max 100 peticiones por IP en 15 mins
+    message: { success: false, message: 'Demasiadas peticiones a la API desde esta IP, por favor intenta de nuevo en 15 minutos.' },
+    standardHeaders: true, 
+    legacyHeaders: false, 
+});
+
+app.use(generalLimiter);
+
+// 5. RATE LIMITING ESPECÍFICO PARA ENVÍO DE CORREOS
+const otpLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hora
+    max: 5, // Límite estricto: máximo 5 correos enviados por IP cada hora
+    message: { success: false, message: 'Has excedido el límite de solicitudes de códigos. Por seguridad, intenta de nuevo más tarde.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Endpoint: Send OTP
-app.post('/api/otp/send', async (req, res) => {
+app.post('/api/otp/send', otpLimiter, async (req, res) => {
     const { email, type } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: 'Email requerido' });
+    
+    // 6. SANITIZACIÓN ESTRICTA DEL INPUT
+    if (!email || typeof email !== 'string' || email.length > 254) {
+        return res.status(400).json({ success: false, message: 'Email inválido o requerido' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ success: false, message: 'Formato de email incorrecto' });
+    }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 min
@@ -78,21 +134,15 @@ app.post('/api/otp/send', async (req, res) => {
     try {
         await transporter.sendMail(mailOptions);
         console.log(` [OTP SENT] [${type}] Código ${otp} enviado a ${email}`);
-        // Return OTP even on success for Demo/Testing purposes
         res.json({ success: true, message: 'Código enviado con éxito', otp: otp, devFallback: true });
     } catch (error) {
         console.error(' [SEND ERROR] No se pudo enviar el email. Verificando red...', error.message);
-
-        // FALLBACK: In development/local, we log the OTP to the console so the user can continue
         console.log(`\n [DEV FALLBACK] >>> EL EMAIL FALLÓ, PERO AQUÍ ESTÁ TU CÓDIGO: ${otp} <<<\n`);
-
-        // We still return success: true but with a warning, OR we can return success but inform the user.
-        // For now, let's allow them to continue if it's a local test
         res.json({
             success: true,
             message: 'Código generado (ver consola del servidor)',
             devFallback: true,
-            otp: otp // Sending it back in response for easier local testing if SMTP fails
+            otp: otp 
         });
     }
 });
@@ -100,6 +150,12 @@ app.post('/api/otp/send', async (req, res) => {
 // Endpoint: Verify OTP
 app.post('/api/otp/verify', (req, res) => {
     const { email, code } = req.body;
+    
+    // BASIC SANITIZATION
+    if (!email || typeof email !== 'string' || !code || typeof code !== 'string') {
+         return res.status(400).json({ success: false, message: 'Parámetros inválidos' });
+    }
+
     const entry = otpStore.get(email);
 
     if (!entry) {
