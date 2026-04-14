@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
@@ -90,9 +90,9 @@ const Dashboard = () => {
     }, [user, updateUser]);
 
     // Computed Data - Optimized with Memoization
-    const myWork = React.useMemo(() => (jobs || []).filter(j => j.freelancerId === user.id), [jobs, user.id]);
-    const myServices = React.useMemo(() => (services || []).filter(s => s.freelancerId === user.id), [services, user.id]);
-    const myOrders = React.useMemo(() => (jobs || []).filter(j => j.buyerId === user.id), [jobs, user.id]);
+    const myWork = useMemo(() => (jobs || []).filter(j => j.freelancerId === user.id), [jobs, user.id]);
+    const myServices = useMemo(() => (services || []).filter(s => s.freelancerId === user.id), [services, user.id]);
+    const myOrders = useMemo(() => (jobs || []).filter(j => j.buyerId === user.id), [jobs, user.id]);
 
     // Level Logic
     const currentLevel = user.level || 1;

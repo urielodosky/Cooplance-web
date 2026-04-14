@@ -9,7 +9,7 @@ import { supabase } from './supabase';
 export const getProposalsByProject = async (projectId) => {
     const { data, error } = await supabase
         .from('proposals')
-        .select('*, profiles:user_id(username, first_name, last_name, avatar_url, level, role)')
+        .select('*, profiles:freelancer_id(username, first_name, last_name, avatar_url, level, role)')
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
@@ -21,7 +21,7 @@ export const getProposalsByProject = async (projectId) => {
     return (data || []).map(row => ({
         id: row.id,
         projectId: row.project_id,
-        userId: row.user_id,
+        userId: row.freelancer_id,
         userName: row.user_name || (row.profiles?.first_name
             ? `${row.profiles.first_name} ${row.profiles.last_name || ''}`.trim()
             : row.profiles?.username || 'Usuario'),
@@ -40,7 +40,7 @@ export const getProposalsByUser = async (userId) => {
     const { data, error } = await supabase
         .from('proposals')
         .select('*')
-        .eq('user_id', userId)
+        .eq('freelancer_id', userId)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -51,7 +51,7 @@ export const getProposalsByUser = async (userId) => {
     return (data || []).map(row => ({
         id: row.id,
         projectId: row.project_id,
-        userId: row.user_id,
+        userId: row.freelancer_id,
         userName: row.user_name,
         userRole: row.user_role,
         coverLetter: row.cover_letter,
@@ -67,7 +67,7 @@ export const hasUserApplied = async (projectId, userId) => {
         .from('proposals')
         .select('id')
         .eq('project_id', projectId)
-        .eq('user_id', userId)
+        .eq('freelancer_id', userId)
         .limit(1);
 
     if (error) {
@@ -85,7 +85,7 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
         .from('proposals')
         .insert({
             project_id: projectId,
-            user_id: userId,
+            freelancer_id: userId,
             user_name: userName,
             user_role: userRole,
             cover_letter: coverLetter,

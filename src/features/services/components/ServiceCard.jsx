@@ -1,8 +1,4 @@
-
-
-
-
-
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/context/AuthContext';
 import { getProfilePicture } from '../../../utils/avatarUtils'; // Make sure this util exists or create mocked
@@ -14,7 +10,7 @@ const ServiceCard = ({ service }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { deleteService } = useServices();
-    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     
     // Check if current user is owner
     const isOwner = user && user.id === service.freelancerId;
