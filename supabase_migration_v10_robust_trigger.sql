@@ -35,6 +35,8 @@ BEGIN
             dni,
             dob,
             phone,
+            terms_accepted,
+            is_partial,
             xp,
             points
         )
@@ -63,6 +65,8 @@ BEGIN
                 ELSE NULL 
             END,
             COALESCE(m->>'phone', ''),
+            COALESCE((m->>'terms_accepted')::boolean, (m->>'termsAccepted')::boolean, FALSE),
+            COALESCE((m->>'is_partial')::boolean, (m->>'isPartial')::boolean, TRUE),
             0,
             0
         )
@@ -81,7 +85,9 @@ BEGIN
             vacancies = COALESCE(EXCLUDED.vacancies, public.profiles.vacancies),
             dni = COALESCE(NULLIF(EXCLUDED.dni, ''), public.profiles.dni),
             dob = COALESCE(EXCLUDED.dob, public.profiles.dob),
-            phone = COALESCE(NULLIF(EXCLUDED.phone, ''), public.profiles.phone);
+            phone = COALESCE(NULLIF(EXCLUDED.phone, ''), public.profiles.phone),
+            terms_accepted = COALESCE(EXCLUDED.terms_accepted, public.profiles.terms_accepted),
+            is_partial = COALESCE(EXCLUDED.is_partial, public.profiles.is_partial);
         
         RAISE LOG '[Cooplance V10] Profile UPSERT successful for user %', NEW.id;
     END IF;
