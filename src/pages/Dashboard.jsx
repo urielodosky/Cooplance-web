@@ -340,10 +340,41 @@ const Dashboard = () => {
     const xpDisplayText = isMaxLevel ? `${currentXP - 10000} / ${MAX_BUFFER_XP} Buffer XP` : `${currentXP} / ${nextLevelXP} XP`;
     const levelLabel = isMaxLevel ? "Nivel Máximo (10)" : `Progreso al Nivel ${currentLevel + 1}`;
 
+    const handleDemoLevelUp = () => {
+        if ((user.level || 1) >= MAX_LEVEL) {
+            const currentXP = user.xp || 0;
+            const newXP = Math.min(currentXP + 1000, 10000 + MAX_BUFFER_XP);
+            updateUser({ ...user, xp: newXP });
+            alert(`¡XP sumada al Buffer! Total: ${newXP}`);
+            return;
+        }
+        const newLevel = (user.level || 1) + 1;
+        const newXp = calculateNextLevelXP(newLevel);
+        updateUser({ ...user, level: newLevel, xp: newXp });
+        setShowLevelUpModal(true);
+    };
+
+    const handleDemoLevelDown = () => {
+        const currentLevel = user.level || 1;
+        if (currentLevel <= 1) return;
+        const newLevel = currentLevel - 1;
+        const newXp = newLevel > 1 ? XP_TABLE[newLevel - 1] : 0;
+        updateUser({ ...user, level: newLevel, xp: newXp });
+    };
+
     const handleVacationClick = () => {
         const g = user.gamification || {};
-        if (g.vacation?.active || (g.vacation?.credits || 0) <= 0) return;
-        if (window.confirm('¿Activar modo vacaciones?')) updateUser(activateVacation(user));
+        if (g.vacation?.active) {
+            alert("Ya estás en modo vacaciones.");
+            return;
+        }
+        if ((g.vacation?.credits || 0) <= 0) {
+            alert("No tienes créditos de vacaciones disponibles.");
+            return;
+        }
+        if (window.confirm(`¿Activar modo vacaciones? Se pausará el decaimiento de XP. Te quedan ${g.vacation?.credits} usos.`)) {
+            updateUser(activateVacation(user));
+        }
     };
 
     const handleCreateServiceClick = () => {
@@ -357,7 +388,6 @@ const Dashboard = () => {
         if (!project) return;
         try {
             await updateProposalStatus(proposal.id, 'accepted');
-            // Logic to create job...
             alert('Propuesta aceptada.');
             window.location.reload();
         } catch (err) { alert(err.message); }
@@ -423,20 +453,74 @@ const Dashboard = () => {
             <div className="dashboard-stats-grid">
                 {user.role !== 'company' && (
                     <div className="glass stat-card">
-                        <h4>Nivel</h4>
-                        <p className="stat-value">{currentLevel}</p>
+                        <h4>Nivel Actual</h4>
+                        <p className="stat-value primary">{currentLevel}</p>
+                        {user.id === 'cfb3e724-ce3d-4bd1-bc02-a289ef050b89' && (
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                                <button
+                                    onClick={handleDemoLevelUp}
+                                    style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: 0.8 }}
+                                >
+                                    {isMaxLevel ? '+XP' : 'Up'}
+                                </button>
+                                <button
+                                    onClick={handleDemoLevelDown}
+                                    style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'var(--text-secondary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', opacity: 0.8 }}
+                                >
+                                    Down
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
                 {user.role === 'freelancer' && (
                     <div className="glass stat-card">
-                        <h4>Vacaciones</h4>
-                        <p className="stat-value">{user.gamification?.vacation?.active ? 'ON' : 'OFF'}</p>
-                        <button disabled={user.gamification?.vacation?.active} onClick={handleVacationClick} className="btn-small">Activar</button>
+                        <div className="vacation-header">
+                            <h4>Vacaciones</h4>
+                            <div className="help-icon">?</div>
+                            <span className="help-tooltip">Mientras estés de vacaciones no se perderá experiencia.</span>
+                        </div>
+                        <p className="stat-value" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+                            {user.gamification?.vacation?.active ? 'ON' : 'OFF'}
+                        </p>
+                        <button
+                            onClick={handleVacationClick}
+                            disabled={user.gamification?.vacation?.active || (user.gamification?.vacation?.credits || 0) <= 0}
+                            style={{
+                                fontSize: '0.7rem',
+                                padding: '0.4rem',
+                                background: user.gamification?.vacation?.active ? '#10b981' : 'var(--primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: user.gamification?.vacation?.active ? 'default' : 'pointer',
+                                width: '100%'
+                            }}
+                        >
+                            {user.gamification?.vacation?.active ? 'Disfrutando' : 'Activar'}
+                        </button>
+                        <p style={{ fontSize: '0.7rem', marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
+                            Restante: {user.gamification?.vacation?.credits || 0} usos
+                        </p>
                     </div>
                 )}
                 <div className="glass stat-card">
-                    <h4>Activos</h4>
-                    <p className="stat-value">{myWork.filter(j => j.status === 'active').length + myOrders.filter(j => j.status === 'active').length}</p>
+                    <h4>Trabajos Activos</h4>
+                    <p className="stat-value">
+                        {(user.role === 'freelancer' || user.role === 'company')
+                            ? myWork.filter(j => j.status === 'active').length
+                            : myOrders.filter(j => j.status === 'active').length
+                        }
+                    </p>
+                </div>
+                <div className="glass stat-card">
+                    <h4>Completados</h4>
+                    <p className="stat-value">
+                        {(user.role === 'freelancer' || user.role === 'company')
+                            ? myWork.filter(j => j.status === 'completed').length
+                            : myOrders.filter(j => j.status === 'completed').length
+                        }
+                    </p>
                 </div>
             </div>
 
