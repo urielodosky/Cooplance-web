@@ -66,14 +66,14 @@ export const AuthProvider = ({ children }) => {
             if (isMounted) await handleSession(session);
         });
 
-        // Watchdog: force UI load if init hangs
+        // Watchdog: force UI load if init hangs (V19: Increased to 45s)
         const fallback = setTimeout(() => {
             if (isMounted && !isInitComplete) {
-                console.warn("[AuthContext] Watchdog timeout (10s). Forcing UI.");
+                console.warn("[AuthContext] Watchdog timeout (45s). Forcing UI.");
                 setLoading(false);
                 setIsInitialized(true);
             }
-        }, 10000);
+        }, 45000);
 
         return () => {
             isMounted = false;
@@ -336,10 +336,13 @@ export const AuthProvider = ({ children }) => {
     // ─── UPDATE USER PROFILE ────────────────────────────────────────────────
     const updateUser = async (updatedData) => {
         if (!user) return;
-        if (user.is_partial) {
-            const errorMsg = "Error Crítico: No puedes guardar cambios si tu perfil no se ha sincronizado correctamente. Recarga la página.";
+        if (user.is_partial && !user.id) {
+            const errorMsg = "Error Crítico: No se pudo identificar al usuario. Recarga la página.";
             console.error(errorMsg);
             throw new Error(errorMsg);
+        }
+        if (user.is_partial) {
+            console.warn("[AuthContext] Update attempted on partial profile. Proceeding but with caution.");
         }
         const processed = processGamificationRules(updatedData);
         const { id, auth_id, created_at, email, ...updatePayload } = processed;

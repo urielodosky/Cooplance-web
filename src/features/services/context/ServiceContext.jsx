@@ -101,13 +101,13 @@ export const ServiceProvider = ({ children }) => {
     const fetchServices = useCallback(async () => {
         let isComplete = false;
         
-        // Watchdog: If Supabase takes > 10s, unlock the UI
+        // Watchdog: If Supabase takes > 45s, unlock the UI (V19)
         const watchdog = setTimeout(() => {
             if (!isComplete && isMounted.current) {
-                console.warn('[ServiceContext v1.6] WATCHDOG TIMEOUT. Unblocking UI. Check Supabase connection.');
+                console.warn('[ServiceContext v1.6] WATCHDOG TIMEOUT (45s). Unblocking UI. Check Supabase connection.');
                 setLoading(false);
             }
-        }, 10000);
+        }, 45000);
 
         try {
             console.log('[ServiceContext v1.6] fetchServices START');
