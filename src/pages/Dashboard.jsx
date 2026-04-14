@@ -836,7 +836,7 @@ const Dashboard = () => {
                                     <h4 style={{ color: 'var(--primary)', margin: '0 0 0.5rem 0' }}>Crear Nuevo Servicio</h4>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '0 1rem' }}>
                                         {myServices.length >= ((user.level || 1) >= 5 ? 5 : (user.level || 1))
-                                            ? `Límite alcanzado (Máx 5)`
+                                            ? `Límite alcanzado (Máx ${((user.level || 1) >= 5 ? 5 : (user.level || 1))})`
                                             : 'Amplía tu oferta'}
                                     </p>
                                 </div>

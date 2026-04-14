@@ -164,7 +164,7 @@ const ServiceCard = ({ service }) => {
                                     <div className="help-tooltip" style={{ width: 'auto', minWidth: '120px', bottom: '100%', marginBottom: '5px', left: '50%', transform: 'translateX(-50%)' }}>
                                         <div style={{ fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>{tooltipTitle}</div>
                                         <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.8rem', textAlign: 'left', listStyleType: 'disc' }}>
-                                            {items.map((item, i) => (
+                                            {items?.map?.((item, i) => (
                                                 <li key={i}>{item}</li>
                                             ))}
                                         </ul>
@@ -176,10 +176,10 @@ const ServiceCard = ({ service }) => {
                     })()}
 
                     <span className="modality-badge" style={{
-                        background: service.workMode && service.workMode.includes('presential') ? 'rgba(139, 92, 246, 0.1)' : 'rgba(6, 182, 212, 0.1)',
-                        color: service.workMode && service.workMode.includes('presential') ? '#8b5cf6' : 'var(--secondary)'
+                        background: service.workMode && service.workMode?.includes?.('presential') ? 'rgba(139, 92, 246, 0.1)' : 'rgba(6, 182, 212, 0.1)',
+                        color: service.workMode && service.workMode?.includes?.('presential') ? '#8b5cf6' : 'var(--secondary)'
                     }}>
-                        {service.workMode && service.workMode.includes('presential') ? (() => {
+                        {service.workMode && service.workMode?.includes?.('presential') ? (() => {
                             const locationText = service.location || '';
                             const { display, tooltip } = formatLocation(locationText);
 
@@ -209,14 +209,14 @@ const ServiceCard = ({ service }) => {
                                         }}>
                                             <div style={{ fontSize: '0.75rem', fontWeight: '600', marginBottom: '8px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ubicaciones</div>
                                             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(tooltip.length, 3)}, 1fr)`, gap: '12px' }}>
-                                                {tooltip.map((group, i) => (
+                                                {tooltip?.map?.((group, i) => (
                                                     <div key={i} style={{ borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.08)' : 'none', paddingLeft: i > 0 ? '12px' : '0' }}>
                                                         <div style={{ fontSize: '0.78rem', fontWeight: '700', color: '#818cf8', marginBottom: '5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                                                             {group.province}
                                                         </div>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '2px' }}>
-                                                            {group.cities.map((city, j) => (
+                                                            {group?.cities?.map?.((city, j) => (
                                                                 <span key={j} style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', lineHeight: '1.4' }}>{city}</span>
                                                             ))}
                                                         </div>
