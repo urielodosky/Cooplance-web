@@ -206,7 +206,36 @@ const Settings = () => {
                     </div>
                 )}
 
-                {isSyncError && (
+                {user?.is_cached && (
+                    <div
+                        style={{
+                            padding: '0.8rem',
+                            marginBottom: '1.5rem',
+                            borderRadius: '8px',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            color: '#60a5fa',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.8rem',
+                            fontSize: '0.9rem'
+                        }}
+                    >
+                        <div className="sync-spinner" style={{ 
+                            width: '16px', 
+                            height: '16px', 
+                            border: '2px solid #60a5fa', 
+                            borderTopColor: 'transparent', 
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                        }}></div>
+                        Usando datos guardados localmente. Sincronizando con el servidor...
+                        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    </div>
+                )}
+
+                {isSyncError && !user?.is_cached && (
                     <div
                         className="message-banner error"
                         style={{
@@ -224,17 +253,16 @@ const Settings = () => {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            Error de Sincronización
+                            Error de Conexión
                         </div>
                         <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                            No hemos podido cargar tus datos reales del servidor. 
-                            <strong> Por seguridad, la edición está deshabilitada.</strong>
+                            No logramos conectar con el servidor. Revisa tu internet o intenta más tarde.
                         </p>
                         <button 
                             onClick={() => window.location.reload()}
                             style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '0.5rem' }}
                         >
-                            Reintentar Conexión
+                            Reintentar ahora
                         </button>
                     </div>
                 )}
@@ -557,12 +585,12 @@ const Settings = () => {
                             style={{ 
                                 width: '100%', 
                                 margin: '2rem 0',
-                                opacity: (isUpdating || isSyncError) ? 0.6 : 1,
-                                cursor: (isUpdating || isSyncError) ? 'not-allowed' : 'pointer'
+                                opacity: (isUpdating || (isSyncError && !user?.is_cached)) ? 0.6 : 1,
+                                cursor: (isUpdating || (isSyncError && !user?.is_cached)) ? 'not-allowed' : 'pointer'
                             }}
-                            disabled={isUpdating || isSyncError}
+                            disabled={isUpdating || (isSyncError && !user?.is_cached)}
                         >
-                            {isSyncError ? 'Esperando Sincronización...' : isUpdating ? 'Actualizando...' : 'Guardar Cambios'}
+                            {(isSyncError && !user?.is_cached) ? 'Sin Conexión' : isUpdating ? 'Actualizando...' : 'Guardar Cambios'}
                         </button>
                     </form>
                 </div>

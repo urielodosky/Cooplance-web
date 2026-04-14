@@ -16,8 +16,13 @@ export const AuthProvider = ({ children }) => {
     const handleSession = async (session) => {
         console.log("[AuthContext] Handling session:", session?.user ? "User detected" : "No user");
         if (session?.user) {
-            // Seamos más permisivos: si hay usuario, intentamos cargar perfil.
-            // La confirmación de email ya la gestiona Supabase en el login.
+            // V13: Carga instantánea desde caché local
+            const cachedProfile = localStorage.getItem(`cooplance_profile_${session.user.id}`);
+            if (cachedProfile) {
+                console.log("[AuthContext] Instant boot from cache.");
+                setUser({ ...JSON.parse(cachedProfile), is_cached: true });
+                setLoading(false);
+            }
             await fetchProfile(session.user.id, session.user);
         } else {
             setUser(null);
@@ -77,47 +82,49 @@ export const AuthProvider = ({ children }) => {
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = async (userId, authUser = null) => {
         let attempts = 0;
-        const maxAttempts = 5; // Increased attempts
+        const maxAttempts = 3; 
         
         while (attempts < maxAttempts) {
             try {
-                console.log(`[AuthContext] Fetching profile for ${userId} (Attempt ${attempts + 1})...`);
+                console.log(`[AuthContext] Syncing profile for ${userId} (Attempt ${attempts + 1})...`);
                 const { data, error } = await withTimeout(
                     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-                    10000,
+                    30000, // V13: Increased to 30s for slow networks
                     "Cargar Perfil (DB)"
                 );
                 
                 if (error) {
-                    console.error("[AuthContext] Supabase DB Error:", error.message, error.details);
+                    console.error("[AuthContext] Supabase DB Error:", error.message);
                     throw error;
                 }
 
                 if (data) {
-                    console.log("[AuthContext] Profile loaded successfully:", data.username);
-                    setUser({ ...data, is_partial: false });
+                    console.log("[AuthContext] Profile synced successfully.");
+                    const finalUser = { ...data, is_partial: false, is_cached: false };
+                    setUser(finalUser);
+                    // V13: Save to cache
+                    localStorage.setItem(`cooplance_profile_${userId}`, JSON.stringify(finalUser));
                     setLoading(false);
                     return;
                 }
                 
-                // If not found, it might be the trigger lagging
-                console.warn(`[AuthContext] Profile row NOT FOUND in DB (attempt ${attempts + 1}). Trigger might be slow.`);
+                console.warn(`[AuthContext] Profile NOT FOUND (attempt ${attempts + 1}).`);
                 await new Promise(r => setTimeout(r, 2000));
             } catch (err) {
-                console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} fatal error:`, err);
+                console.error(`[AuthContext] fetchProfile synchronization error:`, err);
             }
             attempts++;
         }
 
-        console.error("[AuthContext] ALL ATTEMPTS FAILED. Profile is unreachable.");
-        if (authUser) {
+        console.error("[AuthContext] Sync failed. Staying with cache/fallback.");
+        if (authUser && !user) {
             setUser({
                 id: authUser.id,
                 email: authUser.email,
                 username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
                 role: authUser.raw_user_meta_data?.role || 'freelancer',
                 is_partial: true,
-                sync_error: true // Added flag for UI warning
+                sync_error: true 
             });
         }
         setLoading(false);
@@ -317,7 +324,9 @@ export const AuthProvider = ({ children }) => {
 
     // ─── LOGOUT ─────────────────────────────────────────────────────────────
     const logout = async () => {
+        const userId = user?.id;
         await supabase.auth.signOut();
+        if (userId) localStorage.removeItem(`cooplance_profile_${userId}`);
         setUser(null);
     };
 
