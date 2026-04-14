@@ -97,12 +97,12 @@ DROP POLICY IF EXISTS "Freelancers can insert proposals." ON public.proposals;
 
 CREATE POLICY "Proposals SELECT" ON public.proposals FOR SELECT USING (
     auth.uid() = freelancer_id OR 
-    auth.uid() IN (SELECT client_id FROM public.projects WHERE id = project_id)
+    auth.uid() IN (SELECT client_id FROM public.jobs WHERE id = job_id)
 );
 CREATE POLICY "Proposals INSERT" ON public.proposals FOR INSERT WITH CHECK (auth.uid() = freelancer_id);
 CREATE POLICY "Proposals UPDATE/DELETE" ON public.proposals FOR ALL USING (
     auth.uid() = freelancer_id OR 
-    auth.uid() IN (SELECT client_id FROM public.projects WHERE id = project_id)
+    auth.uid() IN (SELECT client_id FROM public.jobs WHERE id = job_id)
 );
 
 -- 10. TRANSACTIONS (Wallet)
