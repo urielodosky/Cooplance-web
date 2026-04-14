@@ -6,7 +6,6 @@ import ProjectSkeleton from '../components/project/ProjectSkeleton';
 import { searchAndFilterItems } from '../utils/searchUtils';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { registerActivity } from '../utils/gamification';
-import { seedDatabase } from '../utils/seedData';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
 import { getProjects } from '../lib/projectService';
 import '../styles/pages/Explore.scss';
@@ -123,21 +122,8 @@ const ExploreClients = () => {
                             Encuentra oportunidades publicadas por clientes particulares.
                         </p>
                     </div>
-                    <button
-                        onClick={() => {
-                            if (window.confirm('¿Estás seguro? Se borrarán los datos actuales y se cargarán los nuevos ejemplos (Presencial/Remoto, Ratings, etc).')) {
-                                seedDatabase();
-                                window.location.reload();
-                            }
-                        }}
-                        className="btn-secondary"
-                        style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
-                        Recargar Datos de Prueba
-                    </button>
+                    </div>
                 </div>
-            </div>
 
             <SidebarFilter filters={filters} onFilterChange={handleFilterChange} />
 

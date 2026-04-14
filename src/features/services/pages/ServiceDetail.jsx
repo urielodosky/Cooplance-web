@@ -8,6 +8,8 @@ import { getProfilePicture } from '../../../utils/avatarUtils';
 import PaymentModal from '../../../components/common/PaymentModal';
 import { formatLocationDetail } from '../../../utils/locationFormat';
 import BookingPicker from '../../../components/booking/BookingPicker';
+import { getServiceReviews } from '../../../services/ReviewService';
+import { supabase } from '../../../lib/supabase';
 import '../../../styles/pages/ServiceDetail.scss';
 
 
@@ -20,34 +22,65 @@ const ServiceDetail = () => {
 
     const service = services.find(s => String(s.id) === String(id));
 
-    const [showEditForm, setShowEditForm] = useState(false);
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [selectedTierForPayment, setSelectedTierForPayment] = useState(null);
-    const [selectedBooking, setSelectedBooking] = useState({ date: null, time: null });
-    const [existingBookings, setExistingBookings] = useState([]);
-    const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
-    const [desiredSessions, setDesiredSessions] = useState(1);
-    const [activeMediaIndex, setActiveMediaIndex] = useState(0);
     const [isGalleryHovered, setIsGalleryHovered] = useState(false);
+    const [reviews, setReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [freelancerInternal, setFreelancerInternal] = useState(null);
+    const [profileLoading, setProfileLoading] = useState(true);
 
     useEffect(() => {
         if (service?.bookingConfig?.requiresBooking) {
-            try {
-                const jobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
-                const bookings = jobs
-                    .filter(j => j.serviceId === service.id || j.id === service.id)
-                    .filter(j => j.bookingDate && j.bookingTime && j.status !== 'cancelled')
-                    .map(j => ({
-                        date: j.bookingDate,
-                        time: j.bookingTime,
+            const fetchBookings = async () => {
+                const { data } = await supabase
+                    .from('jobs')
+                    .select('booking_date, booking_time')
+                    .eq('service_id', service.id)
+                    .neq('status', 'canceled');
+                
+                if (data) {
+                    setExistingBookings(data.map(j => ({
+                        date: j.booking_date,
+                        time: j.booking_time,
                         duration: service.bookingConfig.sessionDetails.slotDurationMinutes
-                    }));
-                setExistingBookings(bookings);
-            } catch(e) {
-                console.error("Error fetching bookings", e);
-            }
+                    })));
+                }
+            };
+            fetchBookings();
         }
     }, [service]);
+
+    // Load Reviews & Profile
+    useEffect(() => {
+        if (!service?.id) return;
+
+        const loadContent = async () => {
+            setReviewsLoading(true);
+            setProfileLoading(true);
+            try {
+                // 1. Fetch Reviews
+                const data = await getServiceReviews(service.id);
+                setReviews(data);
+
+                // 2. Fetch Freelancer Profile (if not already included in services which usually includes it via profiles join)
+                // ServiceContext already joins with profiles!owner_id
+                // But let's ensure we have full gamification data if needed
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', service.freelancerId)
+                    .single();
+                
+                if (profile) setFreelancerInternal(profile);
+            } catch (err) {
+                console.error("Error loading service content:", err);
+            } finally {
+                setReviewsLoading(false);
+                setProfileLoading(false);
+            }
+        };
+
+        loadContent();
+    }, [service?.id, service?.freelancerId]);
 
     if (!service) {
         return (
@@ -70,22 +103,13 @@ const ServiceDetail = () => {
     allVideos.forEach((vid, i) => mediaItems.push({ type: 'video', src: vid.src || vid, videoType: vid.type || 'url', label: vid.name || `Video ${i + 1}` }));
 
     // Helper to get freelancer details for display
-    const getFreelancerDetails = () => {
-        try {
-            const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-            const foundUser = allUsers.find(u => u.id === service.freelancerId);
-            return foundUser || {};
-        } catch (e) {
-            return {};
-        }
-    };
-    const freelancerUser = getFreelancerDetails();
+    const freelancerUser = freelancerInternal || {};
     const displayUsername = freelancerUser.username || service.freelancerName?.replace(/\s+/g, '_').toLowerCase();
-    const displayRealName = service.freelancerName;
+    const displayRealName = freelancerUser.first_name ? `${freelancerUser.first_name} ${freelancerUser.last_name || ''}`.trim() : service.freelancerName;
     const displayLevel = Math.min(10, Math.max(1, freelancerUser.level || service.level || 1));
     const displayAvatar = getProfilePicture({
         role: 'freelancer',
-        avatar: freelancerUser.avatar || service.freelancerAvatar,
+        avatar: freelancerUser.avatar_url || service.freelancerAvatar,
         gender: freelancerUser.gender || 'male'
     });
 
@@ -445,12 +469,9 @@ const ServiceDetail = () => {
                             </div>
                         )}
 
-                        {/* FAQs Section - Main Column but Compact Size */}
+                        {/* FAQs Section */}
                         {(() => {
-                            const displayFaqs = (service.faqs && service.faqs.length > 0) ? service.faqs : [
-                                { question: "¿Qué incluye el paquete básico?", answer: "Incluye el diseño del logo en formato PNG y JPG con 2 revisiones." },
-                                { question: "¿Haces diseños personalizados?", answer: "Sí, contáctame para hablar de tu proyecto específico." }
-                            ];
+                            const displayFaqs = (service.faqs && service.faqs.length > 0) ? service.faqs : [];
 
                             if (displayFaqs.length === 0) return null;
 
@@ -462,8 +483,8 @@ const ServiceDetail = () => {
                                     <div className="detail-faqs" style={{ gap: '0.5rem' }}>
                                         {displayFaqs.map((faq, index) => (
                                             <div key={index} className="faq-item" style={{ padding: '0.6rem' }}>
-                                                <div className="faq-question" style={{ marginBottom: '0.2rem', fontSize: '0.9rem' }}>{faq.question}</div>
-                                                <div className="faq-answer" style={{ fontSize: '0.85rem' }}>{faq.answer}</div>
+                                                <div className="faq-question" style={{ marginBottom: '0.2rem', fontSize: '0.9rem' }}>{faq.question || faq.q}</div>
+                                                <div className="faq-answer" style={{ fontSize: '0.85rem' }}>{faq.answer || faq.a}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -612,30 +633,38 @@ const ServiceDetail = () => {
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                             Reseñas del Servicio
                         </h4>
-                        {(() => {
-                            const mockReviews = [
-                                { id: 1, user: "Juan López", rating: 5, comment: "Excelente servicio, muy rápido y profesional.", date: "Hace 2 días" },
-                                { id: 2, user: "Empresa ABC", rating: 4, comment: "Buen trabajo, cumplió con lo esperado.", date: "Hace 1 semana" }
-                            ];
-                            // In a real app we would use getMockReviews filtered by service.id
-                            // For this demo specific to this file I'll just map mockReviews
-
-                            return (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {mockReviews.map(review => (
-                                        <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{review.user}</span>
-                                                <span style={{ display: 'flex', alignItems: 'center', color: '#fbbf24', fontSize: '0.8rem' }}>
-                                                    ★ {review.rating}
-                                                </span>
-                                            </div>
-                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>"{review.comment}"</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {reviewsLoading ? (
+                                // Review Skeleton Loaders
+                                [1, 2].map(i => (
+                                    <div key={i} className="review-skeleton" style={{ paddingBottom: '0.8rem', opacity: 0.5 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <div style={{ width: '80px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
+                                            <div style={{ width: '40px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
                                         </div>
-                                    ))}
-                                </div>
-                            );
-                        })()}
+                                        <div style={{ width: '100%', height: '12px', background: 'var(--border)', borderRadius: '4px', marginBottom: '0.3rem' }} className="skeleton-pulse"></div>
+                                        <div style={{ width: '60%', height: '12px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
+                                    </div>
+                                ))
+                            ) : reviews.length > 0 ? (
+                                reviews.map(review => (
+                                    <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{review.reviewerName}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', color: '#fbbf24', fontSize: '0.8rem' }}>
+                                                ★ {review.rating}
+                                            </span>
+                                        </div>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>"{review.comment}"</p>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem', display: 'block' }}>
+                                            {new Date(review.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>No hay reseñas aún para este servicio.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

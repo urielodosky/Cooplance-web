@@ -607,56 +607,6 @@ const Settings = () => {
 
                 <div className="settings-section" border="true" style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #ef4444' }}>
                     <h3 style={{ color: '#ef4444', marginBottom: '1rem' }}>Zona de Peligro</h3>
-                    <div style={{ marginBottom: '2rem' }}>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: '1.5' }}>
-                            <strong>Base de Datos Local:</strong> Controla los datos de la plataforma. La limpieza borrará todos tus usuarios y proyectos locales.
-                        </p>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (window.confirm('¿Estás seguro de que quieres limpiar todos los datos? La aplicación quedará vacía.')) {
-                                        localStorage.clear();
-                                        window.location.href = '/';
-                                    }
-                                }}
-                                className="btn-secondary"
-                                style={{
-                                    color: '#ef4444',
-                                    border: '1px solid #ef4444',
-                                    padding: '0.6rem 1.2rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    cursor: 'pointer',
-                                    flex: 1
-                                }}
-                            >
-                                Limpiar Base de Datos
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    // Use the imported seedDatabase if available, otherwise suggest reload
-                                    import('../utils/seedData').then(({ seedDatabase }) => {
-                                        seedDatabase();
-                                        localStorage.setItem('cooplance_seeded_v25', 'true');
-                                        alert('Datos de prueba cargados. La página se recargará.');
-                                        window.location.reload();
-                                    });
-                                }}
-                                className="btn-secondary"
-                                style={{
-                                    color: 'var(--text-primary)',
-                                    border: '1px solid var(--border)',
-                                    padding: '0.6rem 1.2rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    cursor: 'pointer',
-                                    flex: 1
-                                }}
-                            >
-                                Cargar Datos Ejemplos
-                            </button>
-                        </div>
-                    </div>
 
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
                         Al eliminar tu cuenta, todos tus datos serán borrados permanentemente del almacenamiento local. Esta acción es irreversible.
