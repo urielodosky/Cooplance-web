@@ -345,7 +345,17 @@ export const AuthProvider = ({ children }) => {
             console.warn("[AuthContext] Update attempted on partial profile. Proceeding but with caution.");
         }
         const processed = processGamificationRules(updatedData);
-        const { id, auth_id, created_at, email, ...updatePayload } = processed;
+        // V21: Strip internal flags that don't exist in the DB schema
+        const { 
+            id, 
+            auth_id, 
+            created_at, 
+            email, 
+            is_cached, 
+            is_partial, 
+            sync_error, 
+            ...updatePayload 
+        } = processed;
         
         const { error } = await supabase
             .from('profiles')
