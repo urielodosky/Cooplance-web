@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import '../styles/pages/Settings.scss';
 
 const Settings = () => {
-    const { user, updateUser, checkUserExists, deleteAccount } = useAuth();
+    const { user, updateUser, checkUserExists, deleteAccount, loading: authLoading } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [username, setUsername] = useState(user?.username || '');
     const [firstName, setFirstName] = useState(user?.first_name || '');
@@ -52,7 +52,17 @@ const Settings = () => {
         }
     }, [user]);
 
-    if (!user) {
+    if (authLoading && !user) {
+        return (
+            <div className="container" style={{ padding: '10rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <div className="sync-spinner" style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                <p style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>Cargando datos de tu cuenta...</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Esto solo debería tomar unos segundos.</p>
+            </div>
+        );
+    }
+
+    if (!user && !authLoading) {
         return <div className="container" style={{ padding: '8rem 2rem', textAlign: 'center' }}>Por favor inicia sesión para ver los ajustes.</div>;
     }
 

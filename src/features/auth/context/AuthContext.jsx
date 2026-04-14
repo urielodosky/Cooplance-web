@@ -22,8 +22,11 @@ export const AuthProvider = ({ children }) => {
                 console.log("[AuthContext] Instant boot from cache.");
                 setUser({ ...JSON.parse(cachedProfile), is_cached: true });
                 setLoading(false);
+            } else {
+                setLoading(true);
             }
-            await fetchProfile(session.user.id, session.user);
+            // V14: No bloqueamos el inicio de la App. Sincronizamos en segundo plano.
+            fetchProfile(session.user.id, session.user); 
         } else {
             setUser(null);
             setLoading(false);
@@ -44,7 +47,7 @@ export const AuthProvider = ({ children }) => {
                     if (isMounted) setLoading(false);
                     return;
                 }
-                if (isMounted) await handleSession(session);
+                if (isMounted) handleSession(session); // V14: Remove await here too
             } catch (err) {
                 console.error("[AuthContext] Critical init error:", err);
                 if (isMounted) setLoading(false);
@@ -117,7 +120,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         console.error("[AuthContext] Sync failed. Staying with cache/fallback.");
-        if (authUser && !user) {
+        if (authUser && (!user || user.is_partial)) {
             setUser({
                 id: authUser.id,
                 email: authUser.email,
