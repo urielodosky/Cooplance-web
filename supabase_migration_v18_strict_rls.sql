@@ -78,8 +78,8 @@ ALTER TABLE public.service_reviews ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Reviews are public." ON public.service_reviews;
 
 CREATE POLICY "Service Reviews SELECT" ON public.service_reviews FOR SELECT USING (true);
-CREATE POLICY "Service Reviews INSERT" ON public.service_reviews FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Service Reviews UPDATE/DELETE" ON public.service_reviews FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Service Reviews INSERT" ON public.service_reviews FOR INSERT WITH CHECK (auth.uid() = reviewer_id);
+CREATE POLICY "Service Reviews UPDATE/DELETE" ON public.service_reviews FOR ALL USING (auth.uid() = reviewer_id);
 
 -- 8. JOBS (Privados Estrictos)
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
