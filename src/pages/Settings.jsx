@@ -179,7 +179,9 @@ const Settings = () => {
 
     const profilePic = getProfilePicture(user && { ...user, gender });
 
-    console.log('Settings Render, Message:', message);
+    const isSyncError = user?.is_partial || user?.sync_error;
+
+    console.log('Settings Render, Message:', message, 'User isPartial:', user?.is_partial);
 
     return (
         <div className="container settings-page">
@@ -201,6 +203,39 @@ const Settings = () => {
                         }}
                     >
                         {message.text}
+                    </div>
+                )}
+
+                {isSyncError && (
+                    <div
+                        className="message-banner error"
+                        style={{
+                            padding: '1rem',
+                            marginBottom: '1.5rem',
+                            borderRadius: '8px',
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid #ef4444',
+                            color: '#f87171',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            Error de Sincronización
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                            No hemos podido cargar tus datos reales del servidor. 
+                            <strong> Por seguridad, la edición está deshabilitada.</strong>
+                        </p>
+                        <button 
+                            onClick={() => window.location.reload()}
+                            style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '0.5rem' }}
+                        >
+                            Reintentar Conexión
+                        </button>
                     </div>
                 )}
 
@@ -519,10 +554,15 @@ const Settings = () => {
                         <button
                             type="submit"
                             className="btn-primary"
-                            style={{ width: '100%', margin: '2rem 0' }}
-                            disabled={isUpdating}
+                            style={{ 
+                                width: '100%', 
+                                margin: '2rem 0',
+                                opacity: (isUpdating || isSyncError) ? 0.6 : 1,
+                                cursor: (isUpdating || isSyncError) ? 'not-allowed' : 'pointer'
+                            }}
+                            disabled={isUpdating || isSyncError}
                         >
-                            {isUpdating ? 'Actualizando...' : 'Guardar Cambios'}
+                            {isSyncError ? 'Esperando Sincronización...' : isUpdating ? 'Actualizando...' : 'Guardar Cambios'}
                         </button>
                     </form>
                 </div>

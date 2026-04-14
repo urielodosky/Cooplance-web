@@ -77,40 +77,47 @@ export const AuthProvider = ({ children }) => {
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = async (userId, authUser = null) => {
         let attempts = 0;
-        const maxAttempts = 3;
+        const maxAttempts = 5; // Increased attempts
         
         while (attempts < maxAttempts) {
             try {
-                // V4: Add timeout to the DB query itself to avoid hanging forever
+                console.log(`[AuthContext] Fetching profile for ${userId} (Attempt ${attempts + 1})...`);
                 const { data, error } = await withTimeout(
                     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-                    8000,
+                    10000,
                     "Cargar Perfil (DB)"
                 );
                 
+                if (error) {
+                    console.error("[AuthContext] Supabase DB Error:", error.message, error.details);
+                    throw error;
+                }
+
                 if (data) {
-                    setUser(data);
+                    console.log("[AuthContext] Profile loaded successfully:", data.username);
+                    setUser({ ...data, is_partial: false });
                     setLoading(false);
                     return;
                 }
                 
                 // If not found, it might be the trigger lagging
-                console.log(`[AuthContext] Profile not found (attempt ${attempts + 1})...`);
-                await new Promise(r => setTimeout(r, 1500));
+                console.warn(`[AuthContext] Profile row NOT FOUND in DB (attempt ${attempts + 1}). Trigger might be slow.`);
+                await new Promise(r => setTimeout(r, 2000));
             } catch (err) {
-                console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
+                console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} fatal error:`, err);
             }
             attempts++;
         }
 
-        console.warn("[AuthContext] Could not reach profile row. Using auth fallback.");
+        console.error("[AuthContext] ALL ATTEMPTS FAILED. Profile is unreachable.");
         if (authUser) {
             setUser({
                 id: authUser.id,
                 email: authUser.email,
                 username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
                 role: authUser.raw_user_meta_data?.role || 'freelancer',
-                is_partial: true
+                is_partial: true,
+                sync_error: true // Added flag for UI warning
             });
         }
         setLoading(false);
@@ -317,6 +324,11 @@ export const AuthProvider = ({ children }) => {
     // ─── UPDATE USER PROFILE ────────────────────────────────────────────────
     const updateUser = async (updatedData) => {
         if (!user) return;
+        if (user.is_partial) {
+            const errorMsg = "Error Crítico: No puedes guardar cambios si tu perfil no se ha sincronizado correctamente. Recarga la página.";
+            console.error(errorMsg);
+            throw new Error(errorMsg);
+        }
         const processed = processGamificationRules(updatedData);
         const { id, auth_id, created_at, email, ...updatePayload } = processed;
         
