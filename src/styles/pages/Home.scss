@@ -177,3 +177,60 @@
     color: var(--secondary);
     font-weight: 500;
 }
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .home-container {
+        padding: 2.5rem 1rem;
+    }
+
+    .hero-header {
+        padding: 1.5rem 0;
+        gap: 1.25rem;
+    }
+
+    .hero-title {
+        font-size: 2.25rem;
+        line-height: 1.2;
+    }
+
+    .hero-description {
+        font-size: 1rem;
+        padding: 0 0.5rem;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+        max-width: 300px;
+        gap: 0.75rem;
+        align-items: center; /* Enforce centering */
+
+        .btn-hero-primary, .btn-hero-secondary {
+            width: 100%;
+            text-align: center;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+    }
+
+    .test-cta-inline {
+        margin-bottom: 2.5rem;
+        font-size: 0.875rem;
+        text-align: center;
+    }
+
+    .roles-section {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        width: 100%;
+    }
+
+    .role-card {
+        padding: 1.25rem 1rem;
+        text-align: center; /* Center card content on mobile */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+}

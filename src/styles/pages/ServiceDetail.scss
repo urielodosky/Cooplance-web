@@ -345,25 +345,24 @@
 /* Responsive Styles */
 @media (max-width: 992px) {
     .detail-grid {
-        display: flex; /* Using flex for total control over stacking order */
-        flex-direction: column;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+        display: flex !important; /* Critical for stack order */
+        flex-direction: column !important;
+        gap: 2rem;
     }
 
     .detail-main {
-        order: 1; /* First: Gallery and Service Info */
+        order: 1 !important; /* Media Gallery + Info */
     }
 
     .detail-sidebar {
-        order: 2; /* Second: Pricing and Hiring button */
-        position: static;
-        margin-top: 0;
+        order: 2 !important; /* Pricing Box */
+        position: static !important;
+        width: 100% !important;
     }
 
     .detail-reviews-section {
-        order: 3; /* Third: All reviews and social proof */
-        margin-top: 0.5rem;
+        order: 3 !important; /* Reviews at the very end */
+        margin-top: 1rem;
     }
 
     .detail-title {

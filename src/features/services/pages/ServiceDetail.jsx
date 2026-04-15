@@ -16,7 +16,7 @@ import '../../../styles/pages/ServiceDetail.scss';
 const ServiceDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { services, loading, deleteService } = useServices();
+    const { services, deleteService } = useServices();
     const { user, updateBalance } = useAuth();
     const { createJob } = useJobs();
 
@@ -26,16 +26,13 @@ const ServiceDetail = () => {
     const [reviews, setReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [freelancerInternal, setFreelancerInternal] = useState(null);
-    const [profileLoading, setProfileLoading] = useState(true);
     
-    // Missing states that caused crashes
+    // UI states
     const [showEditForm, setShowEditForm] = useState(false);
     const [existingBookings, setExistingBookings] = useState([]);
     const [selectedBooking, setSelectedBooking] = useState({ date: null, time: null, dates: [] });
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [selectedTierForPayment, setSelectedTierForPayment] = useState(null);
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-    const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
 
     useEffect(() => {
         if (service?.bookingConfig?.requiresBooking) {
@@ -70,9 +67,7 @@ const ServiceDetail = () => {
                 const data = await getServiceReviews(service.id);
                 setReviews(data);
 
-                // 2. Fetch Freelancer Profile (if not already included in services which usually includes it via profiles join)
-                // ServiceContext already joins with profiles!owner_id
-                // But let's ensure we have full gamification data if needed
+                // 2. Fetch Freelancer Profile
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('*')
@@ -104,10 +99,8 @@ const ServiceDetail = () => {
 
     // Build media items array for gallery
     const mediaItems = [];
-    // Add images
     const allImages = service.images && service.images.length > 0 ? service.images : (service.image ? [service.image] : []);
     allImages.forEach((img, i) => mediaItems.push({ type: 'image', src: img, label: `Imagen ${i + 1}` }));
-    // Add videos
     const allVideos = service.videos && service.videos.length > 0 ? service.videos : (service.video ? [{ src: service.video, type: service.mediaType?.video || 'url' }] : []);
     allVideos.forEach((vid, i) => mediaItems.push({ type: 'video', src: vid.src || vid, videoType: vid.type || 'url', label: vid.name || `Video ${i + 1}` }));
 
@@ -122,7 +115,6 @@ const ServiceDetail = () => {
         gender: freelancerUser.gender || 'male'
     });
 
-
     if (showEditForm) {
         return (
             <div className="container" style={{ padding: '2rem 0' }}>
@@ -135,15 +127,12 @@ const ServiceDetail = () => {
         );
     }
 
-    // Identify if the current user is the owner
     const isOwner = user && (
         (service.freelancerId && service.freelancerId === user.id) ||
         service.freelancerName === (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user.companyName || user.username))
     );
 
-
-
-    const handleHire = (tierInfo) => {
+    const handleHire = () => {
         if (!user) {
             alert('Debes iniciar sesión para contratar.');
             navigate('/login');
@@ -159,10 +148,6 @@ const ServiceDetail = () => {
             return;
         }
 
-        const price = tierInfo ? tierInfo.price : service.price;
-        const tierName = tierInfo ? tierInfo.name : 'Estándar';
-
-        setSelectedTierForPayment({ ...tierInfo, price, name: tierName });
         setShowPaymentModal(true);
     };
 
@@ -246,7 +231,6 @@ const ServiceDetail = () => {
                     {/* MEDIA GALLERY */}
                     {mediaItems.length > 0 && (
                         <div className="glass detail-hero-section" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '1rem' }}>
-                            {/* Main viewer */}
                             <div 
                                 style={{ position: 'relative', background: '#0a0a1a', borderRadius: '8px', overflow: 'hidden', display: 'flex', justifyContent: 'center', height: '350px' }}
                                 onMouseEnter={() => setIsGalleryHovered(true)}
@@ -278,23 +262,17 @@ const ServiceDetail = () => {
                                     )
                                 ) : null}
 
-                                {/* Nav arrows */}
                                 {mediaItems.length > 1 && isGalleryHovered && (
                                     <>
                                         <button onClick={() => setActiveMediaIndex(prev => prev > 0 ? prev - 1 : mediaItems.length - 1)}
                                             style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', zIndex: 5 }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.8)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.6)'}
                                         >‹</button>
                                         <button onClick={() => setActiveMediaIndex(prev => prev < mediaItems.length - 1 ? prev + 1 : 0)}
                                             style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', zIndex: 5 }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.8)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.6)'}
                                         >›</button>
                                     </>
                                 )}
 
-                                {/* Counter badge */}
                                 {mediaItems.length > 1 && (
                                     <span style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.7)', color: 'white', padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
                                         {activeMediaIndex + 1} / {mediaItems.length}
@@ -302,7 +280,6 @@ const ServiceDetail = () => {
                                 )}
                             </div>
 
-                            {/* Thumbnail strip */}
                             {mediaItems.length > 1 && (
                                 <div className="detail-thumbnail-strip">
                                     {mediaItems.map((item, index) => (
@@ -411,143 +388,109 @@ const ServiceDetail = () => {
                         <div className="detail-section">
                             <h3>Categoría e Información</h3>
                             <div className="detail-tags" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.8rem' }}>
-                                {service.category && (
-                                    <div style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        padding: '0.4rem 0.8rem',
-                                        background: 'rgba(255,255,255,0.08)',
-                                        borderRadius: '6px',
-                                        border: '1px solid var(--border)',
-                                        fontWeight: '600'
-                                    }}>
-                                        {service.category}
-                                    </div>
-                                )}
-
+                                {service.category && <span className="detail-tag">{service.category}</span>}
                                 {service.subcategory && typeof service.subcategory === 'string' && (
-                                    <>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                                        <div style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            padding: '0.4rem 0.8rem',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            borderRadius: '6px',
-                                            border: '1px solid var(--border)',
-                                            color: 'var(--text-secondary)'
-                                        }}>
-                                            {service.subcategory}
-                                        </div>
-                                    </>
+                                    <span className="detail-tag">{service.subcategory}</span>
                                 )}
-
-                                {service.specialties && Array.isArray(service.specialties) && service.specialties.length > 0 && (
-                                    <>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                                        {service.specialties.map(spec => (
-                                            <span key={spec} className="detail-tag" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                                                {spec}
-                                            </span>
-                                        ))}
-                                    </>
-                                )}
-
-                                {/* Fallback in case they have legacy subcategory as array */}
-                                {Array.isArray(service.subcategory) && service.subcategory.map(sub => (
-                                    <span key={sub} className="detail-tag" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                                        {sub}
-                                    </span>
+                                {service.specialties && service.specialties.map(spec => (
+                                    <span key={spec} className="detail-tag highlight">{spec}</span>
                                 ))}
                             </div>
                         </div>
 
-                        {service.tags && service.tags.length > 0 && (
-                            <div className="detail-section">
-                                <h3>Etiquetas</h3>
-                                <div className="detail-tags">
-                                    {service.tags.map(tag => (
-                                        <span key={tag} className="detail-tag">{tag}</span>
+                        {service.faqs && service.faqs.length > 0 && (
+                            <div className="glass detail-section" style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '12px' }}>
+                                <h3>Preguntas Frecuentes</h3>
+                                <div className="detail-faqs">
+                                    {service.faqs.map((faq, idx) => (
+                                        <div key={idx} className="faq-item">
+                                            <div className="faq-question">{faq.question || faq.q}</div>
+                                            <div className="faq-answer">{faq.answer || faq.a}</div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
                         )}
-
-                        {/* FAQs Section */}
-                        {(() => {
-                            const displayFaqs = (service.faqs && service.faqs.length > 0) ? service.faqs : [];
-
-                            if (displayFaqs.length === 0) return null;
-
-                            return (
-                                <div className="glass detail-section" style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '12px' }}>
-                                    <h3 style={{ marginBottom: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.4rem', fontSize: '1rem' }}>
-                                        Preguntas Frecuentes
-                                    </h3>
-                                    <div className="detail-faqs" style={{ gap: '0.5rem' }}>
-                                        {displayFaqs.map((faq, index) => (
-                                            <div key={index} className="faq-item" style={{ padding: '0.6rem' }}>
-                                                <div className="faq-question" style={{ marginBottom: '0.2rem', fontSize: '0.9rem' }}>{faq.question || faq.q}</div>
-                                                <div className="faq-answer" style={{ fontSize: '0.85rem' }}>{faq.answer || faq.a}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
-
                     </div>
                 </div>
 
-                </div>
+                <div className="detail-sidebar">
+                    <div className="glass sidebar-sticky">
+                        <div className="pricing-box">
+                            <div className="price-header">
+                                <span className="price-amount">${service.price}</span>
+                                <span className="price-unit">por servicio</span>
+                            </div>
+                            <div className="price-features">
+                                <div className="feature-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Entrega en {service.deliveryTime} días
+                                </div>
+                                <div className="feature-item">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    Revisiones ilimitadas
+                                </div>
+                            </div>
+                            
+                            {service.bookingConfig?.requiresBooking && (
+                                <div className="booking-sidebar-section" style={{ margin: '1rem 0' }}>
+                                    <BookingPicker 
+                                        config={service.bookingConfig}
+                                        existingBookings={existingBookings}
+                                        onSelect={(selection) => setSelectedBooking(selection)}
+                                    />
+                                </div>
+                            )}
 
-                {/* SERVICE REVIEWS SECTION - Moved out of sidebar for better mobile stacking */}
-                <div className="glass detail-reviews-section" style={{ padding: '1.5rem' }}>
-                    <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                        Reseñas del Servicio
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {reviewsLoading ? (
-                            // Review Skeleton Loaders
-                            [1, 2].map(i => (
-                                <div key={i} className="review-skeleton" style={{ paddingBottom: '0.8rem', opacity: 0.5 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <div style={{ width: '80px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
-                                        <div style={{ width: '40px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
-                                    </div>
-                                    <div style={{ width: '100%', height: '12px', background: 'var(--border)', borderRadius: '4px', marginBottom: '0.3rem' }} className="skeleton-pulse"></div>
-                                    <div style={{ width: '60%', height: '12px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
-                                </div>
-                            ))
-                        ) : reviews.length > 0 ? (
-                            reviews.map(review => (
-                                <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{review.reviewerName}</span>
-                                        <span style={{ display: 'flex', alignItems: 'center', color: '#fbbf24', fontSize: '0.8rem' }}>
-                                            ★ {review.rating}
-                                        </span>
-                                    </div>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>"{review.comment}"</p>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem', display: 'block' }}>
-                                        {new Date(review.createdAt).toLocaleDateString()}
-                                    </span>
-                                </div>
-                            ))
-                        ) : (
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>No hay reseñas aún para este servicio.</p>
-                        )}
+                            <button
+                                className="btn-primary btn-block hire-button"
+                                onClick={handleHire}
+                                disabled={isOwner}
+                            >
+                                Contratar Servicio
+                            </button>
+                            {isOwner && (
+                                <p className="owner-hint" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.5rem' }}>
+                                    No puedes contratar tu propio servicio
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <div className="glass detail-reviews-section" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+                <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    Reseñas del Servicio
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {reviewsLoading ? (
+                        [1, 2].map(i => (
+                            <div key={i} className="review-skeleton" style={{ paddingBottom: '0.8rem', opacity: 0.5 }}>
+                                <div style={{ width: '80%', height: '12px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
+                            </div>
+                        ))
+                    ) : reviews.length > 0 ? (
+                        reviews.map(review => (
+                            <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{review.reviewerName}</span>
+                                    <span style={{ color: '#fbbf24', fontSize: '0.8rem' }}>★ {review.rating}</span>
+                                </div>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>"{review.comment}"</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>No hay reseñas aún.</p>
+                    )}
+                </div>
             </div>
 
             <PaymentModal
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}
-                amount={selectedTierForPayment ? selectedTierForPayment.price : service.price}
+                amount={service.price}
                 freelancerName={displayUsername}
                 onConfirm={handlePaymentSuccess}
                 allowedMethods={freelancerUser.paymentMethods}
