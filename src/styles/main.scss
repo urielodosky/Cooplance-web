@@ -4,13 +4,13 @@
 @use 'components/TeamChat';
 
 // Global styles (Legacy CSS compatibility)
-@import 'variables.css';
-@import 'global.css';
+@use 'variables.css';
+@use 'global.css';
 
 // Component styles to ensure single bundle consistency
-@import 'components/Navbar';
-@import 'components/ServiceCard';
-@import 'components/CustomDatePicker';
-@import 'pages/Dashboard';
-@import 'pages/Explore';
-@import 'pages/ServiceDetail';
+@use 'components/Navbar';
+@use 'components/ServiceCard';
+@use 'components/CustomDatePicker';
+@use 'pages/Dashboard';
+@use 'pages/Explore';
+@use 'pages/ServiceDetail';

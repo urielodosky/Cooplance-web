@@ -288,7 +288,7 @@ const Dashboard = () => {
     const { createChat } = useChat();
     const navigate = useNavigate();
 
-    if (!user) return null;
+
 
     const [showLevelUpModal, setShowLevelUpModal] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -301,6 +301,7 @@ const Dashboard = () => {
 
     // Initial load and sync
     useEffect(() => {
+        if (!user) return;
         const loadInitData = async () => {
             const cachedProjects = localStorage.getItem(`cooplance_projects_${user.id}`);
             const cachedProposals = localStorage.getItem(`cooplance_proposals_${user.id}`);
@@ -318,20 +319,22 @@ const Dashboard = () => {
             finally { setLoading(false); }
         };
         loadInitData();
-    }, [user.id]);
+    }, [user?.id]);
 
     // Gamification Process
     useEffect(() => {
-        if (user.role === 'freelancer' || user.role === 'company') {
+        if (user && (user.role === 'freelancer' || user.role === 'company')) {
             const processedUser = processGamificationRules(user);
             if (processedUser !== user) updateUser(processedUser);
         }
     }, [user, updateUser]);
 
     // Derived Data
-    const myWork = useMemo(() => (jobs || []).filter(j => j.freelancerId === user.id), [jobs, user.id]);
-    const myServices = useMemo(() => (services || []).filter(s => s.freelancerId === user.id), [services, user.id]);
-    const myOrders = useMemo(() => (jobs || []).filter(j => j.buyerId === user.id), [jobs, user.id]);
+    const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);
+    const myServices = useMemo(() => user ? (services || []).filter(s => s.freelancerId === user.id) : [], [services, user?.id]);
+    const myOrders = useMemo(() => user ? (jobs || []).filter(j => j.buyerId === user.id) : [], [jobs, user?.id]);
+
+    if (!user) return null;
 
     const currentLevel = user.level || 1;
     const currentXP = user.xp || 0;

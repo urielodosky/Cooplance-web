@@ -346,8 +346,7 @@
 
     .detail-sidebar {
         position: static;
-        order: -1;
-        /* Sidebar above content on mobile to see price first */
+        /* Removed order: -1 so sidebar stacks below the main content naturally on mobile */
     }
 
     .detail-title {

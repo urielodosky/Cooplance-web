@@ -15,8 +15,8 @@ const TeamDashboard = () => {
     const navigate = useNavigate();
 
     // Custom Hooks
-    const { teams, simulateDistribution, clearChat, deleteMessage, leaveTeam, addMemberToTeam, updateMemberRole, dissolveCoop, toggleService, addServiceToTeam, closeProject, updateRules, submitEvaluation, updateTeam, canPerformAction, acceptRules } = useTeams();
-    const { user, updateUser } = useAuth();
+    const { teams, simulateDistribution, clearChat, deleteMessage, leaveTeam, addMemberToTeam, updateMemberRole, dissolveCoop, toggleService, addServiceToTeam, closeProject, updateRules, submitEvaluation, updateTeam, acceptRules } = useTeams();
+    const { user } = useAuth();
     const { createChat, sendMessage: sendChatMessage } = useChat();
 
     // --- 2. DERIVED STATE ---
@@ -118,7 +118,8 @@ const TeamDashboard = () => {
 
     const handleWarnExpulsion = (memberId) => {
         if (window.confirm("¿Avisar expulsión en 2 días al miembro?\nSe le notificará inmediatamente.")) {
-            setMembers(prev => prev.map(m => m.userId === memberId ? { ...m, expulsionWarning: true } : m));
+            // Functionality temporarily disabled: requires database schema update for expulsion_warning
+            alert("Aviso registrado temporalmente.");
             setOpenMenuId(null);
         }
     };
@@ -190,26 +191,6 @@ const TeamDashboard = () => {
         }
     };
 
-    const toggleServiceStatus = async (id) => {
-        try {
-            await toggleService(activeTeam.id, id);
-        } catch (error) {
-            alert(error.message);
-        }
-    };
-
-    const handleAddService = async () => {
-        const title = prompt("Título del Servicio:");
-        if (!title) return;
-        const price = prompt("Precio (ej: 'Desde $500'):");
-        if (!price) return;
-
-        try {
-            await addServiceToTeam(activeTeam.id, { title, price });
-        } catch (error) {
-            alert(error.message);
-        }
-    };
 
     const handleDissolveTeam = async () => {
         if (window.confirm("¡PELIGRO! ¿Estás seguro de ELIMINAR definitivamente este equipo? Esta acción no se puede deshacer.")) {
