@@ -22,6 +22,11 @@
     align-items: start;
 }
 
+.detail-reviews-section {
+    grid-column: 1 / 2; /* Desktop: Under the main content column */
+    margin-top: 1rem;
+}
+
 /* Main Content Area */
 .detail-main {
     display: flex;
@@ -340,13 +345,25 @@
 /* Responsive Styles */
 @media (max-width: 992px) {
     .detail-grid {
+        display: flex; /* Using flex for total control over stacking order */
+        flex-direction: column;
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
 
+    .detail-main {
+        order: 1; /* First: Gallery and Service Info */
+    }
+
     .detail-sidebar {
+        order: 2; /* Second: Pricing and Hiring button */
         position: static;
-        /* Removed order: -1 so sidebar stacks below the main content naturally on mobile */
+        margin-top: 0;
+    }
+
+    .detail-reviews-section {
+        order: 3; /* Third: All reviews and social proof */
+        margin-top: 0.5rem;
     }
 
     .detail-title {

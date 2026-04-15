@@ -500,177 +500,48 @@ const ServiceDetail = () => {
                     </div>
                 </div>
 
-                <div className="detail-sidebar">
-                    {service.bookingConfig?.requiresBooking && (
-                        <BookingPicker 
-                            bookingConfig={service.bookingConfig}
-                            existingBookings={existingBookings}
-                            onSelect={(dateOrArray, time) => {
-                                if (Array.isArray(dateOrArray)) {
-                                    setSelectedBooking({ dates: dateOrArray });
-                                } else {
-                                    setSelectedBooking({ date: dateOrArray, time });
-                                }
-                            }}
-                            maxSlots={
-                                service.hasPackages && Array.isArray(service.packages) && service.packages[selectedPlanIndex]?.sessions
-                                    ? Number(service.packages[selectedPlanIndex].sessions)
-                                    : 1
-                            }
-                        />
-                    )}
+                </div>
 
-                    {service.hasPackages && Array.isArray(service.packages) && service.packages.length > 0 ? (
-                        <div className="glass single-price-box" style={{ padding: 0, overflow: 'hidden' }}>
-                            {/* Plan Tab Buttons */}
-                            <div style={{
-                                display: 'flex',
-                                borderBottom: '1px solid var(--border)',
-                                background: 'rgba(255,255,255,0.03)'
-                            }}>
-                                {service.packages.map((pkg, index) => (
-                                    <button
-                                        key={index}
-                                        type="button"
-                                        onClick={() => setSelectedPlanIndex(index)}
-                                        style={{
-                                            flex: selectedPlanIndex === index ? '1.5' : '1',
-                                            padding: '0.7rem 0.4rem',
-                                            background: selectedPlanIndex === index ? 'var(--primary)' : 'transparent',
-                                            color: selectedPlanIndex === index ? 'white' : 'var(--text-secondary)',
-                                            border: 'none',
-                                            borderRight: index < service.packages.length - 1 ? '1px solid var(--border)' : 'none',
-                                            cursor: 'pointer',
-                                            fontWeight: selectedPlanIndex === index ? 700 : 500,
-                                            fontSize: selectedPlanIndex === index ? '0.85rem' : '0.75rem',
-                                            transition: 'all 0.25s ease',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis'
-                                        }}
-                                    >
-                                        {pkg.name || `Plan ${index + 1}`}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Selected Plan Details */}
-                            {(() => {
-                                const pkg = service.packages[selectedPlanIndex];
-                                if (!pkg) return null;
-                                return (
-                                    <div style={{ padding: '1.2rem' }}>
-                                        <div className="package-price-row" style={{ marginBottom: '0.6rem' }}>
-                                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>{pkg.name || `Plan ${selectedPlanIndex + 1}`}</h4>
-                                            <span className="pkg-price" style={{ fontSize: '1.3rem' }}>${pkg.price} ARS</span>
-                                        </div>
-                                        {pkg.description && (
-                                            <p className="pkg-desc" style={{ margin: '0 0 0.8rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{pkg.description}</p>
-                                        )}
-                                        <div className="pkg-meta" style={{ marginBottom: '1rem' }}>
-                                            {pkg.sessions ? (
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                                    {pkg.sessions} sesiones incluidas
-                                                </span>
-                                            ) : (
-                                                <>
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                                        {pkg.deliveryTime} días
-                                                    </span>
-                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></svg>
-                                                        {pkg.revisions} revisiones
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
-                                        <button
-                                            className="btn-primary w-100"
-                                            onClick={() => handleHire({ ...pkg, name: pkg.name || `Plan ${selectedPlanIndex + 1}` })}
-                                            disabled={isOwner}
-                                            style={isOwner ? { opacity: 0.5, cursor: 'not-allowed', background: 'var(--text-muted)' } : {}}
-                                        >
-                                            {isOwner ? 'Tu Servicio' : `Continuar ($${pkg.price} ARS)`}
-                                        </button>
-                                        <p className="warranty-text" style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.6rem', marginBottom: 0 }}>Pago protegido por garantía de Cooplance.</p>
+                {/* SERVICE REVIEWS SECTION - Moved out of sidebar for better mobile stacking */}
+                <div className="glass detail-reviews-section" style={{ padding: '1.5rem' }}>
+                    <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        Reseñas del Servicio
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {reviewsLoading ? (
+                            // Review Skeleton Loaders
+                            [1, 2].map(i => (
+                                <div key={i} className="review-skeleton" style={{ paddingBottom: '0.8rem', opacity: 0.5 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                        <div style={{ width: '80px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
+                                        <div style={{ width: '40px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
                                     </div>
-                                );
-                            })()}
-
-
-                        </div>
-                    ) : (
-                        <div className="glass single-price-box">
-                            <div className="price-header">
-                                <span className="label">Precio del Servicio</span>
-                                <span className="value">${service.price} ARS</span>
-                            </div>
-                            <div className="pkg-meta">
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                    {service.deliveryTime ? `${service.deliveryTime} días` : 'Varios días'}
-                                </span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" /><path d="M16 21h5v-5" /></svg>
-                                    {service.revisions || '0'} revisiones
-                                </span>
-                            </div>
-                            <button
-                                className="btn-primary w-100"
-                                onClick={() => handleHire()}
-                                disabled={isOwner}
-                                style={isOwner ? { opacity: 0.5, cursor: 'not-allowed', background: 'var(--text-muted)' } : {}}
-                            >
-                                {isOwner ? 'No puedes contratar tu servicio' : `Contratar ahora ($${service.price} ARS)`}
-                            </button>
-                            <p className="warranty-text">Pago protegido por garantía de Cooplance.</p>
-                        </div>
-                    )}
-
-
-
-                    {/* SERVICE REVIEWS SIDEBAR */}
-                    <div className="glass detail-section" style={{ marginTop: '1.5rem', padding: '1.5rem' }}>
-                        <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                            Reseñas del Servicio
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {reviewsLoading ? (
-                                // Review Skeleton Loaders
-                                [1, 2].map(i => (
-                                    <div key={i} className="review-skeleton" style={{ paddingBottom: '0.8rem', opacity: 0.5 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                            <div style={{ width: '80px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
-                                            <div style={{ width: '40px', height: '14px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
-                                        </div>
-                                        <div style={{ width: '100%', height: '12px', background: 'var(--border)', borderRadius: '4px', marginBottom: '0.3rem' }} className="skeleton-pulse"></div>
-                                        <div style={{ width: '60%', height: '12px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
-                                    </div>
-                                ))
-                            ) : reviews.length > 0 ? (
-                                reviews.map(review => (
-                                    <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{review.reviewerName}</span>
-                                            <span style={{ display: 'flex', alignItems: 'center', color: '#fbbf24', fontSize: '0.8rem' }}>
-                                                ★ {review.rating}
-                                            </span>
-                                        </div>
-                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>"{review.comment}"</p>
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem', display: 'block' }}>
-                                            {new Date(review.createdAt).toLocaleDateString()}
+                                    <div style={{ width: '100%', height: '12px', background: 'var(--border)', borderRadius: '4px', marginBottom: '0.3rem' }} className="skeleton-pulse"></div>
+                                    <div style={{ width: '60%', height: '12px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
+                                </div>
+                            ))
+                        ) : reviews.length > 0 ? (
+                            reviews.map(review => (
+                                <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{review.reviewerName}</span>
+                                        <span style={{ display: 'flex', alignItems: 'center', color: '#fbbf24', fontSize: '0.8rem' }}>
+                                            ★ {review.rating}
                                         </span>
                                     </div>
-                                ))
-                            ) : (
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>No hay reseñas aún para este servicio.</p>
-                            )}
-                        </div>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, fontStyle: 'italic' }}>"{review.comment}"</p>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem', display: 'block' }}>
+                                        {new Date(review.createdAt).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>No hay reseñas aún para este servicio.</p>
+                        )}
                     </div>
                 </div>
+            </div>
             </div>
 
             <PaymentModal

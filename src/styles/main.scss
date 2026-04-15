@@ -1,11 +1,11 @@
-@use 'base/variables';
-@use 'base/reset';
-@use 'components/ui';
-@use 'components/TeamChat';
+@use 'base/variables' as *;
+@use 'base/reset' as *;
+@use 'components/ui' as *;
+@use 'components/TeamChat' as *;
 
 // Global styles (Legacy CSS compatibility)
-@use 'variables.css';
-@use 'global.css';
+@use 'variables.css' as *;
+@use 'global.css' as *;
 
 // Component styles to ensure single bundle consistency
 @use 'components/Navbar';

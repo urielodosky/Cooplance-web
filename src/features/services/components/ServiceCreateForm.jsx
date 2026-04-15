@@ -1201,156 +1201,127 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
 
                 {/* STEP 2: MULTIMEDIA */}
                 {currentStep === 2 && (
-                    <div className="step-content form-step-2" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="step-content form-step-2">
                         <h4>Paso 2: Multimedia</h4>
                         
                         {/* IMAGES SECTION */}
-                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <label style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
-                                    📷 Imágenes del Servicio
-                                </label>
-                                <span style={{ fontSize: '0.85rem', color: images.length >= 5 ? '#f87171' : 'var(--text-muted)', fontWeight: 600 }}>
+                        <div className="media-upload-section image-upload-wrapper">
+                            <div className="section-header">
+                                <label>📷 Imágenes del Servicio</label>
+                                <span className={images.length >= 5 ? 'limit-reached' : ''}>
                                     {images.length}/5
                                 </span>
                             </div>
 
                             {/* Image Preview Grid */}
                             {images.length > 0 && (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <div className="image-preview-grid">
                                     {images.map((img, index) => (
-                                        <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: index === 0 ? '2px solid var(--primary)' : '1px solid var(--border)', aspectRatio: '1' }}>
-                                            <img src={img} alt={`Imagen ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <div key={index} className={`image-preview-item ${index === 0 ? 'is-portada' : ''}`}>
+                                            <img src={img} alt={`Imagen ${index + 1}`} />
                                             {index === 0 && (
-                                                <span style={{ position: 'absolute', top: '4px', left: '4px', background: 'var(--primary)', color: 'white', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>PORTADA</span>
+                                                <span className="portada-badge">PORTADA</span>
                                             )}
-                                            <button type="button" onClick={() => handleRemoveImage(index)} style={{
-                                                position: 'absolute', top: '4px', right: '4px', background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none', borderRadius: '50%', width: '22px', height: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', lineHeight: 1
-                                            }}>×</button>
+                                            <button type="button" onClick={() => handleRemoveImage(index)} className="remove-media-btn">×</button>
                                         </div>
                                     ))}
                                 </div>
                             )}
 
                             {images.length < 5 && (
-                                <label style={{
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                    padding: '2rem', border: '2px dashed var(--border)', borderRadius: '10px', cursor: 'pointer',
-                                    background: 'rgba(99, 102, 241, 0.03)', transition: 'all 0.2s', minHeight: images.length === 0 ? '120px' : '60px'
-                                }}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'rgba(99, 102, 241, 0.03)'; }}
-                                >
+                                <label className="media-dropzone image-dropzone">
                                     <input type="file" accept="image/*" multiple onChange={handleAddImages} style={{ display: 'none' }} />
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                                    <span>
                                         {images.length === 0 ? 'Click o arrastrá imágenes aquí' : `Agregar más (${5 - images.length} restantes)`}
                                     </span>
                                 </label>
                             )}
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', marginBottom: 0 }}>La primera imagen será la portada del servicio.</p>
+                            <p className="section-help-text">La primera imagen será la portada del servicio.</p>
                         </div>
 
                         {/* VIDEOS SECTION */}
-                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                <label style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
-                                    🎬 Videos del Servicio
-                                </label>
-                                <span style={{ fontSize: '0.85rem', color: videos.length >= 2 ? '#f87171' : 'var(--text-muted)', fontWeight: 600 }}>
+                        <div className="media-upload-section video-upload-wrapper">
+                            <div className="section-header">
+                                <label>🎬 Videos del Servicio</label>
+                                <span className={videos.length >= 2 ? 'limit-reached' : ''}>
                                     {videos.length}/2
                                 </span>
                             </div>
 
                             {/* Video Previews */}
                             {videos.length > 0 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <div className="video-preview-list">
                                     {videos.map((vid, index) => (
-                                        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                        <div key={index} className="video-preview-item">
                                             {vid.type === 'file' ? (
-                                                <video src={vid.src} style={{ width: '120px', height: '68px', objectFit: 'cover', borderRadius: '6px', background: '#000' }} />
+                                                <video src={vid.src} className="video-thumb" />
                                             ) : (
-                                                <div style={{ width: '120px', height: '68px', background: 'linear-gradient(135deg, #1a1a2e, #16213e)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                                <div className="video-thumb-placeholder">
+                                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                                 </div>
                                             )}
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                            <div className="video-details">
+                                                <div className="video-name">
                                                     {vid.type === 'url' ? 'Video externo (URL)' : (vid.name || `Video ${index + 1}`)}
                                                 </div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                <div className="video-meta">
                                                     {vid.type === 'url' ? vid.src.substring(0, 40) + '...' : `${vid.duration || '?'}s`}
                                                 </div>
                                             </div>
-                                            <button type="button" onClick={() => handleRemoveVideo(index)} style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>Quitar</button>
+                                            <button type="button" onClick={() => handleRemoveVideo(index)} className="btn-remove-video-item">Quitar</button>
                                         </div>
                                     ))}
                                 </div>
                             )}
 
                             {videos.length < 2 && (
-                                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                    <label style={{
-                                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                                        padding: '1.2rem', border: '2px dashed var(--border)', borderRadius: '10px', cursor: 'pointer',
-                                        background: 'rgba(99, 102, 241, 0.03)', transition: 'all 0.2s'
-                                    }}
-                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
-                                    >
+                                <div className="video-upload-actions">
+                                    <label className="action-button upload-btn">
                                         <input type="file" accept="video/*" onChange={handleAddVideo} style={{ display: 'none' }} />
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Subir Video</span>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                                        <span>Subir Video</span>
                                     </label>
-                                    <button type="button" onClick={handleAddVideoUrl} style={{
-                                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                                        padding: '1.2rem', border: '2px dashed var(--border)', borderRadius: '10px', cursor: 'pointer',
-                                        background: 'rgba(99, 102, 241, 0.03)', transition: 'all 0.2s', color: 'var(--text-muted)', fontSize: '0.8rem'
-                                    }}
-                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                                        URL de YouTube/Vimeo
+                                    <button type="button" onClick={handleAddVideoUrl} className="action-button url-btn">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                        <span>URL de YouTube/Vimeo</span>
                                     </button>
                                 </div>
                             )}
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', marginBottom: 0 }}>Máximo 1 minuto por video. Formatos: MP4, WebM.</p>
+                            <p className="section-help-text">Máximo 1 minuto por video. Formatos: MP4, WebM.</p>
                         </div>
                     </div>
                 )}
 
                 {/* STEP 3: FAQ */}
                 {currentStep === 3 && (
-                    <div className="step-content form-step-3" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div className="faq-header" style={{ marginBottom: '0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h4 style={{ margin: 0 }}>Paso 3: Preguntas Frecuentes</h4>
-                            <button type="button" onClick={addFaq} className="btn-add-faq" style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', border: '1px solid var(--border)' }}>+ Agregar Pregunta</button>
+                    <div className="step-content form-step-3 faq-step">
+                        <div className="faq-header-wrapper">
+                            <h4>Paso 3: Preguntas Frecuentes</h4>
+                            <button type="button" onClick={addFaq} className="btn-add-faq-new">+ Agregar Pregunta</button>
                         </div>
-                        <div className="faq-section" style={{ marginTop: '0' }}>
+                        <div className="faq-list-container">
                             {faqs.map((faq, index) => (
-                                <div key={index} className="faq-item" style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '1rem' }}>
+                                <div key={index} className="faq-edit-card">
                                     <input
                                         type="text"
                                         placeholder="Pregunta (Ej. ¿Qué incluye este servicio?)"
                                         value={faq.question}
                                         onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
-                                        className="faq-input"
-                                        style={{ width: '100%', padding: '0.8rem', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }}
+                                        className="faq-input-field"
                                     />
                                     <textarea
                                         placeholder="Respuesta"
                                         value={faq.answer}
                                         onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
                                         rows="2"
-                                        className="faq-textarea"
-                                        style={{ width: '100%', padding: '0.8rem', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', resize: 'vertical' }}
+                                        className="faq-textarea-field"
                                     />
-                                    <button type="button" onClick={() => removeFaq(index)} className="btn-remove-faq" style={{ color: '#ff6b6b', background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem 0' }}>Eliminar Pregunta</button>
+                                    <button type="button" onClick={() => removeFaq(index)} className="btn-remove-faq-action">Eliminar Pregunta</button>
                                 </div>
                             ))}
                             {faqs.length === 0 && (
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center', padding: '2rem' }}>Añadir preguntas ayuda a tus clientes a decidir más rápido.</p>
+                                <p className="faq-empty-hint">Añadir preguntas ayuda a tus clientes a decidir más rápido.</p>
                             )}
                         </div>
                     </div>
@@ -1358,21 +1329,21 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
 
                 {/* STEP 4: PAYMENTS */}
                 {currentStep === 4 && (
-                    <div className="step-content form-step-4" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="step-content form-step-4">
                         <h4>Paso 4: Pagos y Publicación</h4>
-                        <div className="payment-methods-section" style={{ marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                            <label className="work-mode-label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '1.1rem' }}>Métodos de Pago Aceptados</label>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                        <div className="p-methods-wrapper">
+                            <label className="p-methods-label">Métodos de Pago Aceptados</label>
+                            <p className="p-methods-hint">
                                 Selecciona los métodos que aceptas para este servicio. Si no seleccionas ninguno, se asumirá que aceptas <strong>todos</strong> los configurados en tu billetera.
                             </p>
-                            <div className="checkbox-group" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                            <div className="p-methods-grid">
                                 {[
                                     { id: 'paypal', label: 'PayPal' },
                                     { id: 'mercadopago', label: 'Mercado Pago' },
                                     { id: 'binance', label: 'Binance Pay' },
                                     { id: 'card', label: 'Tarjeta (Plataforma)' }
                                 ].map(method => (
-                                    <label key={method.id} className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.03)', padding: '0.8rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                    <label key={method.id} className={`p-method-card ${(formData.paymentMethods || []).includes(method.id) ? 'active' : ''}`}>
                                         <input
                                             type="checkbox"
                                             checked={(formData.paymentMethods || []).includes(method.id)}
@@ -1386,9 +1357,10 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                                                 }
                                                 setFormData(prev => ({ ...prev, paymentMethods: newMethods }));
                                             }}
-                                            style={{ accentColor: 'var(--primary)', width: '20px', height: '20px' }}
                                         />
-                                        <span style={{ fontWeight: '500' }}>{method.label}</span>
+                                        <span className="p-method-info">
+                                            <span className="p-method-name">{method.label}</span>
+                                        </span>
                                     </label>
                                 ))}
                             </div>
