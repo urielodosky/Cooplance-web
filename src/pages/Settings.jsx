@@ -639,11 +639,21 @@ const Settings = () => {
                     </p>
                     <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                             if (window.confirm('¡CUIDADO! ¿Estás seguro de que quieres eliminar tu cuenta?')) {
                                 const confirmText = window.prompt('Para confirmar, escribe "ELIMINAR" en la caja de abajo:');
                                 if (confirmText === 'ELIMINAR') {
-                                    deleteAccount(user.id);
+                                    try {
+                                        setIsUpdating(true);
+                                        await deleteAccount();
+                                    } catch (err) {
+                                        setIsUpdating(false);
+                                        setMessage({ 
+                                            text: 'Error al eliminar cuenta: ' + (err.message || 'Error de base de datos'), 
+                                            type: 'error' 
+                                        });
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
                                 } else {
                                     alert('La palabra ingresada no coincide. Cancelando acción.');
                                 }

@@ -414,6 +414,7 @@ export const AuthProvider = ({ children }) => {
         const { error } = await supabase.from('profiles').delete().eq('id', user.id);
         if (error) {
             console.error('Error deleting account:', error);
+            throw error;
         } else {
             logout();
         }
