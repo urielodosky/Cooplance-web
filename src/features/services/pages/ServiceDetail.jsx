@@ -388,14 +388,36 @@ const ServiceDetail = () => {
 
                         <div className="detail-section">
                             <h3>Categoría e Información</h3>
-                            <div className="detail-tags" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.8rem' }}>
-                                {service.category && <span className="detail-tag">{service.category}</span>}
-                                {service.subcategory && typeof service.subcategory === 'string' && (
-                                    <span className="detail-tag">{service.subcategory}</span>
+                            <div className="category-info-layout">
+                                {(service.category || service.subcategory) && (
+                                    <div className="category-main-row">
+                                        {service.category && (
+                                            <div className="category-pill">
+                                                <span className="pill-label">Categoría</span>
+                                                <span className="pill-value">{service.category}</span>
+                                            </div>
+                                        )}
+                                        {service.subcategory && (
+                                            <div className="category-pill subcategory">
+                                                <span className="pill-label">Subcategoría</span>
+                                                <span className="pill-value">{service.subcategory}</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
-                                {service.specialties && service.specialties.map(spec => (
-                                    <span key={spec} className="detail-tag highlight">{spec}</span>
-                                ))}
+                                
+                                {service.specialties && service.specialties.length > 0 && (
+                                    <div className="specialties-section">
+                                        <h4 className="specialties-title">Especialidades</h4>
+                                        <div className="specialties-grid">
+                                            {service.specialties.map(spec => (
+                                                <span key={spec} className="specialty-tag">
+                                                    {spec}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -447,43 +469,120 @@ const ServiceDetail = () => {
                                 className="btn-primary btn-block hire-button"
                                 onClick={handleHire}
                                 disabled={isOwner}
+                                style={{
+                                    fontSize: isOwner ? '0.85rem' : '1rem',
+                                    whiteSpace: 'normal',
+                                    height: 'auto',
+                                    padding: '0.8rem'
+                                }}
                             >
-                                Contratar Servicio
+                                {isOwner ? 'No puedes contratar tu propio servicio' : 'Contratar Servicio'}
                             </button>
-                            {isOwner && (
-                                <p className="owner-hint" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.5rem' }}>
-                                    No puedes contratar tu propio servicio
-                                </p>
-                            )}
+                        </div>
+
+                        {/* REVIEWS IN SIDEBAR */}
+                        <div className="sidebar-reviews-section" style={{ 
+                            padding: '1.5rem', 
+                            borderTop: '1px solid var(--border)',
+                            background: 'rgba(255, 255, 255, 0.02)'
+                        }}>
+                            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                Reseñas del Servicio
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {reviewsLoading ? (
+                                    [1, 2].map(i => (
+                                        <div key={i} className="review-skeleton" style={{ paddingBottom: '0.8rem', opacity: 0.5 }}>
+                                            <div style={{ width: '80%', height: '10px', background: 'var(--border)', borderRadius: '4px', marginBottom: '4px' }} className="skeleton-pulse"></div>
+                                            <div style={{ width: '40%', height: '8px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
+                                        </div>
+                                    ))
+                                ) : reviews.length > 0 ? (
+                                    reviews.slice(0, 5).map(review => (
+                                        <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.reviewerName}</span>
+                                                <span style={{ color: '#fbbf24', fontSize: '0.75rem' }}>★ {review.rating}</span>
+                                            </div>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, lineBreak: 'anywhere' }}>"{review.comment}"</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>No hay reseñas aún.</p>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>¡Sé el primero en contratar este servicio!</p>
+                                    </div>
+                                )}
+                                {reviews.length > 5 && (
+                                    <button 
+                                        className="btn-text" 
+                                        onClick={() => document.getElementById('full-reviews-section').scrollIntoView({ behavior: 'smooth' })}
+                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.4rem' }}
+                                    >
+                                        Ver todas las reseñas
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="glass detail-reviews-section" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
-                <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    Reseñas del Servicio
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* FULL REVIEWS SECTION (Optional, keeping it at bottom or removing if redundant) */}
+            <div id="full-reviews-section" className="glass detail-reviews-section" style={{ padding: '2rem', marginTop: '2rem' }}>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    Experiencias de otros clientes
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {reviewsLoading ? (
-                        [1, 2].map(i => (
-                            <div key={i} className="review-skeleton" style={{ paddingBottom: '0.8rem', opacity: 0.5 }}>
-                                <div style={{ width: '80%', height: '12px', background: 'var(--border)', borderRadius: '4px' }} className="skeleton-pulse"></div>
+                        [1, 2, 3].map(i => (
+                            <div key={i} className="review-skeleton" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                                <div style={{ width: '150px', height: '14px', background: 'var(--border)', borderRadius: '4px', marginBottom: '10px' }}></div>
+                                <div style={{ width: '100%', height: '10px', background: 'var(--border)', borderRadius: '4px' }}></div>
                             </div>
                         ))
                     ) : reviews.length > 0 ? (
                         reviews.map(review => (
-                            <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{review.reviewerName}</span>
-                                    <span style={{ color: '#fbbf24', fontSize: '0.8rem' }}>★ {review.rating}</span>
+                            <div key={review.id} className="review-item-card" style={{ 
+                                padding: '1.5rem', 
+                                background: 'rgba(255,255,255,0.03)', 
+                                borderRadius: '16px', 
+                                border: '1px solid var(--border)' 
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                        {review.reviewerAvatar ? (
+                                            <img src={review.reviewerAvatar} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                                        ) : (
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                                                {review.reviewerName.charAt(0)}
+                                            </div>
+                                        )}
+                                        <span style={{ fontWeight: 600 }}>{review.reviewerName}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', color: '#fbbf24', gap: '2px' }}>
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                            <span key={i} style={{ opacity: i < review.rating ? 1 : 0.2 }}>★</span>
+                                        ))}
+                                    </div>
                                 </div>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>"{review.comment}"</p>
+                                <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>{review.comment}</p>
                             </div>
                         ))
                     ) : (
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>No hay reseñas aún.</p>
+                        <div className="empty-reviews-box" style={{ 
+                            padding: '3rem 1rem', 
+                            textAlign: 'center', 
+                            background: 'rgba(255,255,255,0.02)', 
+                            borderRadius: '16px',
+                            border: '1px dashed var(--border)'
+                        }}>
+                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem', opacity: 0.5 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Este servicio aún no tiene reseñas.</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>¡Sé el primero en contar tu experiencia!</p>
+                        </div>
                     )}
                 </div>
             </div>

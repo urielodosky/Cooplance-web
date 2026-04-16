@@ -182,19 +182,81 @@
     white-space: pre-wrap;
 }
 
-.detail-tags {
+.category-info-layout {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1rem;
 }
 
-.detail-tag {
-    background: rgba(255, 255, 255, 0.05);
+.category-main-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.category-pill {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem 1.2rem;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    min-width: 140px;
+
+    &.subcategory {
+        background: rgba(6, 182, 212, 0.05);
+        border: 1px solid rgba(6, 182, 212, 0.2);
+
+        .pill-label { color: #06b6d4; }
+    }
+
+    .pill-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 2px;
+    }
+
+    .pill-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+}
+
+.specialties-section {
+    .specialties-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.8rem;
+        padding-left: 0.2rem;
+    }
+
+    .specialties-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+}
+
+.specialty-tag {
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--radius-sm);
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-full);
     font-size: 0.85rem;
     color: var(--text-secondary);
+    transition: all 0.2s;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--text-muted);
+        transform: translateY(-1px);
+    }
 }
 
 .detail-faqs {
@@ -340,8 +402,9 @@
     }
 
     .detail-reviews-section {
-        order: 3 !important; /* Reviews at the very end */
+        order: 3 !important;
         margin-top: 1rem;
+        width: 100% !important;
     }
 
     .detail-title {
@@ -365,11 +428,17 @@
     }
 
     .detail-sidebar {
-        margin: 0 -1rem;
+        margin: 0;
+        width: 100% !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
         .sidebar-sticky {
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 500px; /* Limit width on mobile but keep it centered */
+            margin: 0 auto;
         }
     }
 
