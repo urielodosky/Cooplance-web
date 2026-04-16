@@ -137,4 +137,4 @@ DROP FUNCTION IF EXISTS public.handle_auth_user_change();
 DROP FUNCTION IF EXISTS public.handle_user_confirmation();
 DROP FUNCTION IF EXISTS public.shield_profile_data();
 
-RAISE NOTICE 'Migration V20: THE FINAL SHIELD deployed successfully.';
+-- Migration V20: THE FINAL SHIELD deployed successfully.
