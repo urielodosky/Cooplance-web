@@ -8,6 +8,8 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_change ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_verified ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_sync_insert ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_sync_update ON auth.users;
 DROP TRIGGER IF EXISTS ensure_data_persistence ON public.profiles;
 
 -- 2. CREATE THE FINAL SYNC FUNCTION
