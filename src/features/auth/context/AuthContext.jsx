@@ -165,6 +165,13 @@ export const AuthProvider = ({ children }) => {
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
         };
 
+        // Cleanup V20: Remove empty/null fields to prevent trigger failures
+        Object.keys(payload).forEach(key => {
+            if (payload[key] === null || payload[key] === '' || payload[key] === undefined) {
+                delete payload[key];
+            }
+        });
+
         const { data, error } = await withTimeout(supabase.auth.signUp({
             email: registrationData.email,
             password: registrationData.password,

@@ -1,0 +1,140 @@
+-- ============================================================
+-- COOPLANCE - MIGRATION V20: THE FINAL SHIELD (Failsafe Auth)
+-- ============================================================
+-- 1. Cleans up all previous redundant triggers
+-- 2. Implements a single, conflict-aware profile sync
+-- 3. Sanitizes all inputs to prevent 500 errors
+-- ============================================================
+
+-- 1. DROP ALL OLD TRIGGERS
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_change ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_verified ON auth.users;
+DROP TRIGGER IF EXISTS ensure_data_persistence ON public.profiles;
+
+-- 2. CREATE THE FINAL SYNC FUNCTION
+CREATE OR REPLACE FUNCTION public.handle_auth_user_sync()
+RETURNS TRIGGER AS $$
+DECLARE
+    m jsonb := NEW.raw_user_meta_data;
+    base_username text;
+    final_username text;
+    is_confirmed boolean;
+BEGIN
+    -- Determine confirmation status
+    is_confirmed := (NEW.email_confirmed_at IS NOT NULL) OR (m->>'email_verified' = 'true');
+
+    -- LOGIC: We create/update the profile regardless, but keep it as "partial" if not confirmed.
+    -- This ensures that if the Auth user exists, the Profile exists.
+    
+    -- 1. Generate Base Username
+    base_username := LOWER(COALESCE(
+        NULLIF(m->>'username', ''), 
+        split_part(NEW.email, '@', 1)
+    ));
+    final_username := base_username;
+
+    -- 2. Resolve Username Conflict (Safety Shield)
+    -- If the username exists for a DIFFERENT ID, append a suffix.
+    IF EXISTS (SELECT 1 FROM public.profiles WHERE username = final_username AND id != NEW.id) THEN
+        final_username := base_username || '_' || substr(NEW.id::text, 1, 4);
+    END IF;
+
+    -- 3. UPSERT INTO PROFILES
+    INSERT INTO public.profiles (
+        id, 
+        username, 
+        first_name, 
+        last_name, 
+        email, 
+        role,
+        gender,
+        company_name,
+        responsible_name,
+        location,
+        country,
+        work_hours,
+        payment_methods,
+        vacancies,
+        dni,
+        dob,
+        phone,
+        terms_accepted,
+        is_partial,
+        xp,
+        points,
+        created_at
+    )
+    VALUES (
+        NEW.id,
+        final_username,
+        COALESCE(NULLIF(m->>'first_name', ''), NULLIF(m->>'firstName', ''), ''),
+        COALESCE(NULLIF(m->>'last_name', ''), NULLIF(m->>'lastName', ''), ''),
+        lower(NEW.email),
+        COALESCE(NULLIF(m->>'role', ''), 'freelancer'),
+        COALESCE(NULLIF(m->>'gender', ''), 'male'),
+        COALESCE(NULLIF(m->>'company_name', ''), NULLIF(m->>'companyName', '')),
+        COALESCE(NULLIF(m->>'responsible_name', ''), NULLIF(m->>'responsibleName', '')),
+        COALESCE(NULLIF(m->>'location', ''), ''),
+        COALESCE(NULLIF(m->>'country', ''), 'Argentina'),
+        COALESCE(NULLIF(m->>'work_hours', ''), NULLIF(m->>'workHours', '')),
+        COALESCE(NULLIF(m->>'payment_methods', ''), NULLIF(m->>'paymentMethods', '')),
+        COALESCE(NULLIF(m->>'vacancies', '')::integer, 0),
+        COALESCE(NULLIF(m->>'dni', ''), ''),
+        CASE 
+            WHEN (NULLIF(m->>'dob', '') IS NOT NULL) THEN (m->>'dob')::date 
+            WHEN (NULLIF(m->>'birthDate', '') IS NOT NULL) THEN (m->>'birthDate')::date 
+            ELSE NULL 
+        END,
+        COALESCE(NULLIF(m->>'phone', ''), ''),
+        COALESCE(NULLIF(m->>'terms_accepted', '')::boolean, NULLIF(m->>'termsAccepted', '')::boolean, FALSE),
+        NOT is_confirmed, -- is_partial is true if email not confirmed
+        0,
+        0,
+        COALESCE(NEW.created_at, now())
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        username = EXCLUDED.username,
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        role = EXCLUDED.role,
+        gender = EXCLUDED.gender,
+        company_name = EXCLUDED.company_name,
+        responsible_name = EXCLUDED.responsible_name,
+        location = EXCLUDED.location,
+        country = EXCLUDED.country,
+        work_hours = EXCLUDED.work_hours,
+        payment_methods = EXCLUDED.payment_methods,
+        vacancies = EXCLUDED.vacancies,
+        dni = EXCLUDED.dni,
+        dob = EXCLUDED.dob,
+        phone = EXCLUDED.phone,
+        terms_accepted = EXCLUDED.terms_accepted,
+        is_partial = EXCLUDED.is_partial;
+
+    RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+    -- FINAL SAFETY: Log error but NEVER block auth.users operation
+    RAISE LOG '[Cooplance THE SHIELD] Error syncing user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 3. RE-ATTACH TO BOTH EVENTS
+-- This ensures profile creation on SignUp AND update on Verification
+CREATE TRIGGER on_auth_user_sync_insert
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE PROCEDURE public.handle_auth_user_sync();
+
+CREATE TRIGGER on_auth_user_sync_update
+    AFTER UPDATE ON auth.users
+    FOR EACH ROW EXECUTE PROCEDURE public.handle_auth_user_sync();
+
+-- 4. CLEANUP OLD FUNCTIONS (Optional but recommended)
+DROP FUNCTION IF EXISTS public.handle_email_confirmed();
+DROP FUNCTION IF EXISTS public.handle_auth_user_change();
+DROP FUNCTION IF EXISTS public.handle_user_confirmation();
+DROP FUNCTION IF EXISTS public.shield_profile_data();
+
+RAISE NOTICE 'Migration V20: THE FINAL SHIELD deployed successfully.';
