@@ -181,7 +181,8 @@
 /* Mobile Optimizations */
 @media (max-width: 768px) {
     .home-container {
-        padding: 2.5rem 1rem;
+        padding: 2rem 1rem 4rem;
+        overflow-x: hidden; // Security clamp
     }
 
     .hero-header {
@@ -190,47 +191,72 @@
     }
 
     .hero-title {
-        font-size: 2.25rem;
-        line-height: 1.2;
+        font-size: 2.75rem; // Increased from 2.25rem as requested
+        line-height: 1.15;
     }
 
     .hero-description {
-        font-size: 1rem;
-        padding: 0 0.5rem;
+        font-size: 1.15rem; // Increased from 1rem
+        padding: 0 0.25rem;
+        max-width: 100%;
+        line-height: 1.5;
     }
 
     .hero-buttons {
         flex-direction: column;
         width: 100%;
-        max-width: 300px;
-        gap: 0.75rem;
-        align-items: center; /* Enforce centering */
+        max-width: 280px;
+        gap: 0.85rem;
+        align-items: center;
 
         .btn-hero-primary, .btn-hero-secondary {
             width: 100%;
             text-align: center;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
+            padding: 0.85rem 1.5rem;
+            font-size: 1.05rem;
+            margin: 0 !important; // Reset inline styles
         }
     }
 
     .test-cta-inline {
-        margin-bottom: 2.5rem;
-        font-size: 0.875rem;
+        margin-bottom: 3rem;
+        font-size: 0.9rem;
         text-align: center;
+        padding: 0 1rem;
     }
 
+    // Role Slider Implementation
     .roles-section {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: row;
         gap: 1.25rem;
-        width: 100%;
+        overflow-x: auto;
+        padding: 1rem 1.5rem 2rem;
+        margin: 0 -1rem; // Full-width feel
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; // Hide for clean look
+
+        &::-webkit-scrollbar { display: none; }
+
+        &::after {
+            content: '';
+            flex: 0 0 1px; // Spacer at the end
+        }
     }
 
     .role-card {
-        padding: 1.25rem 1rem;
-        text-align: center; /* Center card content on mobile */
+        flex: 0 0 82%; // "Peeking" effect for next card
+        scroll-snap-align: center;
+        padding: 1.5rem;
+        text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
+        min-height: 220px;
+        justify-content: center;
+        
+        .role-title { font-size: 1.35rem; margin-bottom: 0.75rem; }
+        .role-description { font-size: 0.95rem; line-height: 1.4; margin-bottom: 1.25rem; }
     }
-}
+}

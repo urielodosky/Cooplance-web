@@ -26,6 +26,7 @@ const ServiceDetail = () => {
     const [reviews, setReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [freelancerInternal, setFreelancerInternal] = useState(null);
+    const [profileLoading, setProfileLoading] = useState(true);
     
     // UI states
     const [showEditForm, setShowEditForm] = useState(false);
