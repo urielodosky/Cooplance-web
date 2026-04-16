@@ -411,9 +411,15 @@ export const AuthProvider = ({ children }) => {
     // ─── DELETE ACCOUNT ─────────────────────────────────────────────────────
     const deleteAccount = async () => {
         if (!user) return;
-        const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+        
+        // Soft delete: Set deleted_at instead of deleting the row
+        const { error } = await supabase
+            .from('profiles')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('id', user.id);
+
         if (error) {
-            console.error('Error deleting account:', error);
+            console.error('Error soft-deleting account:', error);
             throw error;
         } else {
             logout();
