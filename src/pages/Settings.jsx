@@ -299,9 +299,33 @@ const Settings = () => {
                         style={{ display: 'none' }}
                         accept="image/*"
                     />
-                    <h3 className="settings-greeting">
+                    <h3 className="settings-greeting" style={{ marginBottom: user.cv_url ? '0.5rem' : '1rem' }}>
                         Hola, {user.role === 'company' ? (companyName || user.company_name) : (firstName || user.first_name || user.username)}
                     </h3>
+
+                    {user.cv_url && (
+                        <div style={{ marginBottom: '1rem' }}>
+                            <button 
+                                onClick={() => window.open(user.cv_url, '_blank')}
+                                className="btn-secondary"
+                                style={{ 
+                                    fontSize: '0.8rem', 
+                                    padding: '6px 16px', 
+                                    borderRadius: '12px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer',
+                                    background: 'rgba(255,255,255,0.03)',
+                                    border: '1px solid var(--border)',
+                                    color: 'var(--text-primary)'
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                Ver mi CV
+                            </button>
+                        </div>
+                    )}
 
                     <div style={{ margin: '1rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Tema:</span>
