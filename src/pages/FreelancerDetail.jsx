@@ -13,6 +13,8 @@ const FreelancerDetail = () => {
     const [freelancer, setFreelancer] = useState(null);
     const [freelancerServices, setFreelancerServices] = useState([]);
     const [freelancerJobs, setFreelancerJobs] = useState([]);
+    const [reviewsReceived, setReviewsReceived] = useState([]);
+    const [reviewsGiven, setReviewsGiven] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Calculate teams where this freelancer is a member
@@ -56,9 +58,24 @@ const FreelancerDetail = () => {
                 if (jError) throw jError;
                 setFreelancerJobs(jobsData || []);
 
+                // 4. Fetch Reviews Received
+                const { data: recData, error: recError } = await supabase
+                    .from('service_reviews')
+                    .select('*, reviewer:profiles!reviewer_id(username, first_name, last_name, avatar_url)')
+                    .in('service_id', servicesData.map(s => s.id));
+                
+                if (!recError) setReviewsReceived(recData || []);
+
+                // 5. Fetch Reviews Given
+                const { data: givData, error: givError } = await supabase
+                    .from('service_reviews')
+                    .select('*, service:services!service_id(title, owner:profiles!owner_id(username, first_name, last_name, avatar_url))')
+                    .eq('reviewer_id', id);
+                
+                if (!givError) setReviewsGiven(givData || []);
+
             } catch (err) {
                 console.error("Error loading freelancer data:", err);
-                // Fail silently or set error state
             } finally {
                 setLoading(false);
             }
@@ -68,11 +85,33 @@ const FreelancerDetail = () => {
     }, [id]);
 
     if (loading) {
-        return <div className="container" style={{ paddingTop: '6rem' }}>Cargando...</div>;
+        return (
+            <div className="container" style={{ paddingTop: '2rem' }}>
+                <div className="skeleton-pulse" style={{ width: '100px', height: '40px', marginBottom: '1.5rem', borderRadius: '8px' }}></div>
+                <div className="glass" style={{ borderRadius: '24px', padding: '3rem', marginBottom: '3rem', height: '300px' }}>
+                    <div style={{ display: 'flex', gap: '2rem' }}>
+                        <div className="skeleton-pulse" style={{ width: '140px', height: '140px', borderRadius: '50%' }}></div>
+                        <div style={{ flex: 1 }}>
+                            <div className="skeleton-pulse" style={{ height: '3rem', width: '60%', marginBottom: '1rem' }}></div>
+                            <div className="skeleton-pulse" style={{ height: '1.5rem', width: '40%', marginBottom: '1.5rem' }}></div>
+                            <div className="skeleton-pulse" style={{ height: '4rem', width: '100%', borderRadius: '12px' }}></div>
+                        </div>
+                    </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="skeleton-pulse" style={{ height: '200px', borderRadius: '16px' }}></div>
+                    ))}
+                </div>
+            </div>
+        );
     }
 
     if (!freelancer) {
-        return <div className="container" style={{ paddingTop: '6rem' }}>Freelancer no encontrado.</div>;
+        return <div className="container" style={{ paddingTop: '6rem', textAlign: 'center' }}>
+            <h2 style={{ opacity: 0.5 }}>Freelancer no encontrado.</h2>
+            <button onClick={() => navigate('/')} className="btn-primary" style={{ marginTop: '1rem' }}>Ir al Inicio</button>
+        </div>;
     }
 
     return (
@@ -105,8 +144,12 @@ const FreelancerDetail = () => {
                         flexShrink: 0
                     }}>
                         <img
-                            src={getProfilePicture({ role: 'freelancer', avatar: freelancer.avatar, gender: freelancer.gender })}
-                            alt={freelancer.firstName || 'Freelancer'}
+                            src={getProfilePicture({ 
+                                role: 'freelancer', 
+                                avatar: freelancer.avatar_url || freelancer.avatar, 
+                                gender: freelancer.gender 
+                            })}
+                            alt={freelancer.first_name || 'Freelancer'}
                             style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                         />
                     </div>
@@ -114,7 +157,7 @@ const FreelancerDetail = () => {
                     <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                             <h1 style={{ margin: 0, fontSize: '2.8rem', fontWeight: 800, lineHeight: 1.1 }}>
-                                {freelancer.firstName ? `${freelancer.firstName} ${freelancer.lastName || ''}` : freelancer.username}
+                                {freelancer.first_name ? `${freelancer.first_name} ${freelancer.last_name || ''}` : freelancer.username}
                             </h1>
                             <span style={{
                                 background: 'var(--primary)',
@@ -158,7 +201,7 @@ const FreelancerDetail = () => {
                         </div>
 
                         <p style={{ maxWidth: '800px', color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.7', background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                            {freelancer.bio || `Hola, soy ${freelancer.firstName || freelancer.username}. Especialista en ofrecer soluciones de alta calidad. Contáctame para discutir tu proyecto.`}
+                            {freelancer.bio || `Hola, soy ${freelancer.first_name || freelancer.username}. Especialista en ofrecer soluciones de alta calidad. Contáctame para discutir tu proyecto.`}
                         </p>
                     </div>
                 </div>
@@ -324,11 +367,8 @@ const FreelancerDetail = () => {
                     </h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem', width: '100%' }}>
-                        {[
-                            { id: 1, name: 'Tech Solutions Inc', role: 'Empresa', avatar: 'https://ui-avatars.com/api/?name=Tech+Solutions&background=6366f1&color=fff&size=128', link: '/company/201', text: 'Excelente profesional, muy recomendado. Entregó el trabajo a tiempo y con una calidad excepcional superior a lo esperado.', rating: 5.0 },
-                            { id: 2, name: 'María Gómez', role: 'Cliente', avatar: 'https://ui-avatars.com/api/?name=Maria+G&background=ec4899&color=fff&size=128', link: '/client/301', text: 'Gran comunicación y resultados increíbles. Entendió perfectamente la visión del proyecto. Trabajaremos juntos de nuevo seguro.', rating: 4.8 }
-                        ].map(review => (
+                    {reviewsReceived.length > 0 ? (
+                        reviewsReceived.map(review => (
                             <div key={review.id} className="glass" style={{
                                 borderRadius: '16px',
                                 padding: '1.75rem',
@@ -336,10 +376,7 @@ const FreelancerDetail = () => {
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div
-                                        style={{ display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                        onClick={() => navigate(review.link)}
-                                        onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                        onMouseLeave={e => e.currentTarget.style.opacity = 1}
+                                        style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}
                                     >
                                         <div style={{
                                             width: '56px',
@@ -347,17 +384,27 @@ const FreelancerDetail = () => {
                                             borderRadius: '50%',
                                             overflow: 'hidden',
                                             border: '1px solid var(--border)',
-                                            flexShrink: 0
+                                            flexShrink: 0,
+                                            background: 'var(--primary)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
                                         }}>
-                                            <img
-                                                src={review.avatar}
-                                                alt="Avatar"
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
+                                            {review.reviewer?.avatar_url ? (
+                                                <img
+                                                    src={review.reviewer.avatar_url}
+                                                    alt="Avatar"
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <span style={{ fontWeight: 'bold' }}>{review.reviewer?.username?.charAt(0).toUpperCase()}</span>
+                                            )}
                                         </div>
                                         <div>
-                                            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>{review.name}</h4>
-                                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{review.role}</span>
+                                            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                {review.reviewer?.first_name ? `${review.reviewer.first_name} ${review.reviewer.last_name || ''}` : review.reviewer?.username}
+                                            </h4>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cliente</span>
                                         </div>
                                     </div>
                                     <div style={{
@@ -381,11 +428,15 @@ const FreelancerDetail = () => {
                                     fontSize: '0.95rem',
                                     margin: 0
                                 }}>
-                                    "{review.text}"
+                                    "{review.comment}"
                                 </p>
                             </div>
-                        ))}
-                    </div>
+                        ))
+                    ) : (
+                        <div className="glass" style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+                            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Este freelancer aún no ha recibido reseñas.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -398,11 +449,8 @@ const FreelancerDetail = () => {
                     </h2>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem', width: '100%' }}>
-                        {[
-                            { id: 3, name: 'Lucas Pérez', role: 'Cliente', avatar: 'https://ui-avatars.com/api/?name=Lucas+P&background=10b981&color=fff&size=128', link: '/client/302', text: 'Un cliente muy claro con sus requerimientos y rápido en los pagos. Altamente recomendado.', rating: 5.0 },
-                            { id: 4, name: 'Creative Studio', role: 'Empresa', avatar: 'https://ui-avatars.com/api/?name=Creative+S&background=f59e0b&color=fff&size=128', link: '/company/202', text: 'Buena experiencia en general, buen equipo, aunque los tiempos de respuesta fueron un poco lentos.', rating: 4.0 }
-                        ].map(review => (
+                    {reviewsGiven.length > 0 ? (
+                        reviewsGiven.map(review => (
                             <div key={review.id} className="glass" style={{
                                 borderRadius: '16px',
                                 padding: '1.75rem',
@@ -410,10 +458,7 @@ const FreelancerDetail = () => {
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div
-                                        style={{ display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                        onClick={() => navigate(review.link)}
-                                        onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                        onMouseLeave={e => e.currentTarget.style.opacity = 1}
+                                        style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}
                                     >
                                         <div style={{
                                             width: '56px',
@@ -421,17 +466,29 @@ const FreelancerDetail = () => {
                                             borderRadius: '50%',
                                             overflow: 'hidden',
                                             border: '1px solid var(--border)',
-                                            flexShrink: 0
+                                            flexShrink: 0,
+                                            background: 'var(--primary)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
                                         }}>
-                                            <img
-                                                src={review.avatar}
-                                                alt="Avatar"
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
+                                            {review.service?.owner?.avatar_url ? (
+                                                <img
+                                                    src={review.service.owner.avatar_url}
+                                                    alt="Avatar"
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <span style={{ fontWeight: 'bold' }}>{review.service?.owner?.username?.charAt(0).toUpperCase()}</span>
+                                            )}
                                         </div>
                                         <div>
-                                            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>{review.name}</h4>
-                                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{review.role}</span>
+                                            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                En: {review.service?.title}
+                                            </h4>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                Para: {review.service?.owner?.first_name ? `${review.service.owner.first_name} ${review.service.owner.last_name || ''}` : review.service?.owner?.username}
+                                            </span>
                                         </div>
                                     </div>
                                     <div style={{
@@ -455,11 +512,15 @@ const FreelancerDetail = () => {
                                     fontSize: '0.95rem',
                                     margin: 0
                                 }}>
-                                    "{review.text}"
+                                    "{review.comment}"
                                 </p>
                             </div>
-                        ))}
-                    </div>
+                        ))
+                    ) : (
+                        <div className="glass" style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+                            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Este freelancer aún no ha dado reseñas.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

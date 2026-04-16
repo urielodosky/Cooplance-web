@@ -33,6 +33,7 @@ const ServiceDetail = () => {
     const [existingBookings, setExistingBookings] = useState([]);
     const [selectedBooking, setSelectedBooking] = useState({ date: null, time: null, dates: [] });
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showReviewsModal, setShowReviewsModal] = useState(false);
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
 
     useEffect(() => {
@@ -486,10 +487,21 @@ const ServiceDetail = () => {
                             borderTop: '1px solid var(--border)',
                             background: 'rgba(255, 255, 255, 0.02)'
                         }}>
-                            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                Reseñas del Servicio
-                            </h4>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h4 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                    Reseñas del Servicio
+                                </h4>
+                                {reviews.length > 0 && (
+                                    <button 
+                                        className="btn-text" 
+                                        onClick={() => setShowReviewsModal(true)}
+                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: '600', padding: '2px 8px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.1)' }}
+                                    >
+                                        Ver más
+                                    </button>
+                                )}
+                            </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {reviewsLoading ? (
                                     [1, 2].map(i => (
@@ -499,29 +511,31 @@ const ServiceDetail = () => {
                                         </div>
                                     ))
                                 ) : reviews.length > 0 ? (
-                                    reviews.slice(0, 5).map(review => (
-                                        <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.reviewerName}</span>
-                                                <span style={{ color: '#fbbf24', fontSize: '0.75rem' }}>★ {review.rating}</span>
+                                    <>
+                                        {reviews.slice(0, 5).map(review => (
+                                            <div key={review.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.8rem' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                                                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.reviewerName}</span>
+                                                    <span style={{ color: '#fbbf24', fontSize: '0.75rem' }}>★ {review.rating}</span>
+                                                </div>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, lineBreak: 'anywhere' }}>"{review.comment}"</p>
                                             </div>
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, lineBreak: 'anywhere' }}>"{review.comment}"</p>
-                                        </div>
-                                    ))
+                                        ))}
+                                        {reviews.length > 5 && (
+                                            <button 
+                                                className="btn-text" 
+                                                onClick={() => setShowReviewsModal(true)}
+                                                style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.4rem', textAlign: 'center', width: '100%' }}
+                                            >
+                                                Ver todas las reseñas ({reviews.length})
+                                            </button>
+                                        )}
+                                    </>
                                 ) : (
                                     <div style={{ textAlign: 'center', padding: '1rem 0' }}>
                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>No hay reseñas aún.</p>
                                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>¡Sé el primero en contratar este servicio!</p>
                                     </div>
-                                )}
-                                {reviews.length > 5 && (
-                                    <button 
-                                        className="btn-text" 
-                                        onClick={() => document.getElementById('full-reviews-section').scrollIntoView({ behavior: 'smooth' })}
-                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.4rem' }}
-                                    >
-                                        Ver todas las reseñas
-                                    </button>
                                 )}
                             </div>
                         </div>
@@ -529,63 +543,49 @@ const ServiceDetail = () => {
                 </div>
             </div>
 
-            {/* FULL REVIEWS SECTION (Optional, keeping it at bottom or removing if redundant) */}
-            <div id="full-reviews-section" className="glass detail-reviews-section" style={{ padding: '2rem', marginTop: '2rem' }}>
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    Experiencias de otros clientes
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {reviewsLoading ? (
-                        [1, 2, 3].map(i => (
-                            <div key={i} className="review-skeleton" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                                <div style={{ width: '150px', height: '14px', background: 'var(--border)', borderRadius: '4px', marginBottom: '10px' }}></div>
-                                <div style={{ width: '100%', height: '10px', background: 'var(--border)', borderRadius: '4px' }}></div>
-                            </div>
-                        ))
-                    ) : reviews.length > 0 ? (
-                        reviews.map(review => (
-                            <div key={review.id} className="review-item-card" style={{ 
-                                padding: '1.5rem', 
-                                background: 'rgba(255,255,255,0.03)', 
-                                borderRadius: '16px', 
-                                border: '1px solid var(--border)' 
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                        {review.reviewerAvatar ? (
-                                            <img src={review.reviewerAvatar} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-                                        ) : (
-                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
-                                                {review.reviewerName.charAt(0)}
-                                            </div>
-                                        )}
-                                        <span style={{ fontWeight: 600 }}>{review.reviewerName}</span>
+            {/* REVIEWS MODAL */}
+            {showReviewsModal && (
+                <div className="modal-overlay" onClick={() => setShowReviewsModal(false)} style={{ zIndex: 1000 }}>
+                    <div className="modal-content glass" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
+                        <button className="modal-close" onClick={() => setShowReviewsModal(false)}>&times;</button>
+                        
+                        <h3 style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            Experiencias de otros clientes
+                        </h3>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {reviews.map(review => (
+                                <div key={review.id} className="review-item-card" style={{ 
+                                    padding: '1.5rem', 
+                                    background: 'rgba(255,255,255,0.03)', 
+                                    borderRadius: '16px', 
+                                    border: '1px solid var(--border)' 
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                            {review.reviewerAvatar ? (
+                                                <img src={review.reviewerAvatar} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                                            ) : (
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                                                    {review.reviewerName.charAt(0)}
+                                                </div>
+                                            )}
+                                            <span style={{ fontWeight: 600 }}>{review.reviewerName}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', color: '#fbbf24', gap: '2px' }}>
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <span key={i} style={{ opacity: i < review.rating ? 1 : 0.4 }}>★</span>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', color: '#fbbf24', gap: '2px' }}>
-                                        {Array.from({ length: 5 }).map((_, i) => (
-                                            <span key={i} style={{ opacity: i < review.rating ? 1 : 0.2 }}>★</span>
-                                        ))}
-                                    </div>
+                                    <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>{review.comment}</p>
                                 </div>
-                                <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>{review.comment}</p>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="empty-reviews-box" style={{ 
-                            padding: '3rem 1rem', 
-                            textAlign: 'center', 
-                            background: 'rgba(255,255,255,0.02)', 
-                            borderRadius: '16px',
-                            border: '1px dashed var(--border)'
-                        }}>
-                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem', opacity: 0.5 }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Este servicio aún no tiene reseñas.</p>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>¡Sé el primero en contar tu experiencia!</p>
+                            ))}
                         </div>
-                    )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <PaymentModal
                 isOpen={showPaymentModal}

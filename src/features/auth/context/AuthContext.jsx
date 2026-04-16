@@ -341,10 +341,25 @@ export const AuthProvider = ({ children }) => {
             console.error(errorMsg);
             throw new Error(errorMsg);
         }
-        if (user.is_partial) {
-            console.warn("[AuthContext] Update attempted on partial profile. Proceeding but with caution.");
-        }
+
         const processed = processGamificationRules(updatedData);
+
+        // Map frontend camelCase to backend snake_case
+        const dbReady = { ...processed };
+        if (processed.firstName) { dbReady.first_name = processed.firstName; delete dbReady.firstName; }
+        if (processed.lastName) { dbReady.last_name = processed.lastName; delete dbReady.lastName; }
+        if (processed.avatar || processed.profileImage || processed.avatar_url) {
+            dbReady.avatar_url = processed.avatar || processed.profileImage || processed.avatar_url;
+            delete dbReady.avatar;
+            delete dbReady.profileImage;
+        }
+        if (processed.companyName) { dbReady.company_name = processed.companyName; delete dbReady.companyName; }
+        if (processed.responsibleName) { dbReady.responsible_name = processed.responsibleName; delete dbReady.responsibleName; }
+        if (processed.birthDate || processed.dob) {
+            dbReady.dob = processed.birthDate || processed.dob;
+            delete dbReady.birthDate;
+        }
+
         // V21: Strip internal flags that don't exist in the DB schema
         const { 
             id, 
@@ -355,7 +370,7 @@ export const AuthProvider = ({ children }) => {
             is_partial, 
             sync_error, 
             ...updatePayload 
-        } = processed;
+        } = dbReady;
         
         const { error } = await supabase
             .from('profiles')

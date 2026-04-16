@@ -72,12 +72,7 @@ export const calculateXPForJob = (amount, userLevel = 1, receiverRole = 'freelan
 // --- NEW ADVANCED LOGIC ---
 
 // Helper to get total XP needed to REACH a specific level from scratch
-// (Simplified: We usually just track current XP relative to next level or total accumulated?)
-// The strict interpretation of "5% del total de exp necesaria para alcanzar el nivel" likely means
-// if Level 7 needs 5000 XP (from lvl 6 to 7), the penalty is 5% of 5000 = 250 XP.
 const getLevelSeekXP = (level) => {
-    // If we are Level 6, we are seeking Level 7 (unless max).
-    // If we are Level 10, we are maintaining Level 10.
     if (level >= MAX_LEVEL) return XP_TABLE[9];
     return XP_TABLE[level] || 10000;
 };
@@ -89,6 +84,17 @@ export const processGamificationRules = (user) => {
     let updatedUser = { ...user };
     const now = Date.now();
     let hasChanges = false;
+
+    // 0. Automatic Level-Up (V3)
+    // Ensures level is always synced with total XP
+    const currentXP = updatedUser.xp || 0;
+    const currentLvl = updatedUser.level || 1;
+    const properLvl = getLevelFromXP(currentXP);
+    if (properLvl > currentLvl) {
+        updatedUser.level = properLvl;
+        hasChanges = true;
+        console.log(`[Gamification] Auto-Level Up: @${updatedUser.username} ${currentLvl} -> ${properLvl}`);
+    }
 
     // 0. Initialize missing fields
     if (!updatedUser.gamification) {
@@ -117,7 +123,6 @@ export const processGamificationRules = (user) => {
     }
 
     // LEGACY SYNC: If user has more than 4 credits (due to previous migration bugs), cap at 4.
-    // Also mark as policyV3 to avoid re-checking.
     if (!g.vacation.policyV3 || g.vacation.credits > 4) {
         if (g.vacation.credits > 4) {
             g.vacation.credits = 4;
@@ -134,11 +139,10 @@ export const processGamificationRules = (user) => {
             g.vacation.active = false;
             g.vacation.startDate = null;
             hasChanges = true;
-            // "Vacation over" notification could be handled here via a flag if needed
         } else {
             // If on vacation, SKIP decay and inactivity checks
             if (hasChanges) return updatedUser;
-            return user; // No changes if just waiting
+            return user;
         }
     }
 
@@ -148,32 +152,20 @@ export const processGamificationRules = (user) => {
         const timeSinceDecay = now - g.lastDecayCheck;
 
         if (timeSinceDecay >= fifteenDays) {
-            // How many 15-day periods passed? (Ideally run once, but handle missed periods?)
-            // Let's just run once per login for simplicity, or loop if multiple periods.
-            // Requirement: "cada 15 dias se pierde el 5%"
-
             const periods = Math.floor(timeSinceDecay / fifteenDays);
             if (periods > 0) {
-                // Calculate penalty basis
-                // "del total de exp necesaria para alcanzar el nivel"
-                // If I am Level 6, I achieved Level 6 by getting 2000xp (stats for lvl 5->6).
-                // OR likely means the XP required to complete the CURRENT level (seeking Level 7).
-                // Let's assume it's based on the XP requirement of the CURRENT level table entry.
                 const xpReq = getLevelSeekXP(updatedUser.level);
                 const penaltyPerPeriod = Math.floor(xpReq * 0.05);
                 const totalPenalty = penaltyPerPeriod * periods;
 
-                // Ensure XP doesn't go below 0
                 updatedUser.xp = Math.max(0, (updatedUser.xp || 0) - totalPenalty);
                 updatedUser.points = updatedUser.xp;
 
-                // Recalculate level based on new XP (Level drops if XP falls below threshold)
                 const properLevel = getLevelFromXP(updatedUser.xp);
                 if (properLevel < updatedUser.level) {
                     updatedUser.level = properLevel;
                 }
 
-                // Update check time
                 g.lastDecayCheck = now;
                 hasChanges = true;
             }
@@ -181,23 +173,12 @@ export const processGamificationRules = (user) => {
     }
 
     // 4. Inactivity Penalty (2 months) -> Drop Level (down to 5)
-    // "si hay inactividad ... se reste un nivel cada 2 meses hasta el nivel 5"
     if (updatedUser.level > 5) {
         const oneMonth = 30 * 24 * 60 * 60 * 1000;
-        // 2. XP Decay (Inactivity) - ONLY for active freelancers not on vacation
         if (!g.vacation?.active && now - (user.last_activity || now) > oneMonth) {
-            // Drop Level logic
-            // Should we check if we already penalized for this period? 
-            // We reset lastActivity after penalizing? Or track "lastInactivityPenalty"?
-            // To prevent instant double-drop, we can update lastActivity to "now" (simulating a 'reset' of the timer)
-            // or better: track `lastInactivityPenalty`.
-
             if (!g.lastInactivityPenalty || (now - g.lastInactivityPenalty >= oneMonth)) {
                 const oldLevel = updatedUser.level;
                 updatedUser.level = Math.max(5, oldLevel - 1);
-
-                // Sync XP to the minimum required for the new lower level
-                // (e.g., if dropping to level 5, set XP to level 4's requirement which is the start of level 5)
                 const startOfNewLevelXP = updatedUser.level > 1 ? XP_TABLE[updatedUser.level - 1] : 0;
                 updatedUser.xp = startOfNewLevelXP;
 
@@ -227,12 +208,9 @@ export const activateVacation = (user) => {
     if (!user) return user;
     const g = user.gamification || { vacation: { active: false, credits: 4, lastReset: Date.now() } };
 
-    if (g.vacation && g.vacation.active) return user; // Already active
+    if (g.vacation && g.vacation.active) return user;
     if (!g.vacation) g.vacation = { active: false, credits: 4, lastReset: Date.now() };
-    if ((g.vacation.credits || 0) <= 0) {
-        // No credits
-        return user;
-    }
+    if ((g.vacation.credits || 0) <= 0) return user;
 
     return {
         ...user,
