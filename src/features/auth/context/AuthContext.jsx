@@ -162,6 +162,9 @@ export const AuthProvider = ({ children }) => {
             dni: registrationData.dni || null,
             dob: registrationData.dob || registrationData.birthDate || null,
             phone: registrationData.phone || null,
+            bio: registrationData.bio || '',
+            avatar_url: registrationData.profileImage || null,
+            cv_url: registrationData.cvFile || null,
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
         };
 

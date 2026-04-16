@@ -168,6 +168,33 @@ const FreelancerDetail = () => {
                                 borderRadius: '12px',
                                 letterSpacing: '0.5px'
                             }}>FREELANCER NIVEL {freelancer.level || 1}</span>
+                             
+                             {freelancer.cv_url && (
+                                 <button 
+                                     onClick={() => {
+                                         const link = document.createElement('a');
+                                         link.href = freelancer.cv_url;
+                                         link.target = '_blank';
+                                         link.download = `CV_${freelancer.first_name || freelancer.username}.png`;
+                                         link.click();
+                                     }}
+                                     className="btn-secondary"
+                                     style={{ 
+                                         fontSize: '0.75rem', 
+                                         padding: '4px 12px', 
+                                         borderRadius: '10px',
+                                         display: 'flex',
+                                         alignItems: 'center',
+                                         gap: '0.5rem',
+                                         cursor: 'pointer',
+                                         background: 'rgba(255,255,255,0.05)',
+                                         border: '1px solid var(--border)'
+                                     }}
+                                 >
+                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                     Ver CV
+                                 </button>
+                             )}
                             {freelancer.gamification?.vacation?.active && (() => {
                                 const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - freelancer.gamification.vacation.startDate) / 86400000));
                                 return (
@@ -208,7 +235,7 @@ const FreelancerDetail = () => {
             </div>
 
             {/* CV Section */}
-            {freelancer.cvFile && (
+            {freelancer.cv_url && (
                 <div style={{ marginBottom: '3rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
                         <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
@@ -216,8 +243,8 @@ const FreelancerDetail = () => {
                             Hoja de Vida / CV
                         </h2>
                     </div>
-                    <div className="glass" style={{ padding: '1rem', borderRadius: '12px', overflow: 'hidden' }}>
-                        <img src={freelancer.cvFile} alt="Curriculum Vitae" style={{ width: '100%', borderRadius: '8px' }} />
+                    <div className="glass" style={{ padding: '1rem', borderRadius: '12px', overflow: 'hidden', textAlign: 'center' }}>
+                        <img src={freelancer.cv_url} alt="Curriculum Vitae" style={{ maxWidth: '100%', borderRadius: '8px', border: '1px solid var(--border)' }} />
                     </div>
                 </div>
             )}

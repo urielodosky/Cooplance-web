@@ -1,9 +1,6 @@
 -- ============================================================
 -- COOPLANCE - MIGRATION V20: THE FINAL SHIELD (Failsafe Auth)
--- ============================================================
--- 1. Cleans up all previous redundant triggers
--- 2. Implements a single, conflict-aware profile sync
--- 3. Sanitizes all inputs to prevent 500 errors
+-- UPDATED: Includes Bio, Avatar, and CV support
 -- ============================================================
 
 -- 1. DROP ALL OLD TRIGGERS
@@ -25,9 +22,6 @@ BEGIN
     -- Determine confirmation status
     is_confirmed := (NEW.email_confirmed_at IS NOT NULL) OR (m->>'email_verified' = 'true');
 
-    -- LOGIC: We create/update the profile regardless, but keep it as "partial" if not confirmed.
-    -- This ensures that if the Auth user exists, the Profile exists.
-    
     -- 1. Generate Base Username
     base_username := LOWER(COALESCE(
         NULLIF(m->>'username', ''), 
@@ -36,7 +30,6 @@ BEGIN
     final_username := base_username;
 
     -- 2. Resolve Username Conflict (Safety Shield)
-    -- If the username exists for a DIFFERENT ID, append a suffix.
     IF EXISTS (SELECT 1 FROM public.profiles WHERE username = final_username AND id != NEW.id) THEN
         final_username := base_username || '_' || substr(NEW.id::text, 1, 4);
     END IF;
@@ -60,6 +53,9 @@ BEGIN
         dni,
         dob,
         phone,
+        bio,
+        avatar_url,
+        cv_url,
         terms_accepted,
         is_partial,
         xp,
@@ -88,8 +84,11 @@ BEGIN
             ELSE NULL 
         END,
         COALESCE(NULLIF(m->>'phone', ''), ''),
+        COALESCE(NULLIF(m->>'bio', ''), ''),
+        COALESCE(NULLIF(m->>'avatar_url', ''), NULLIF(m->>'profileImage', ''), NULLIF(m->>'avatar', '')),
+        COALESCE(NULLIF(m->>'cv_url', ''), NULLIF(m->>'cvFile', '')),
         COALESCE(NULLIF(m->>'terms_accepted', '')::boolean, NULLIF(m->>'termsAccepted', '')::boolean, FALSE),
-        NOT is_confirmed, -- is_partial is true if email not confirmed
+        NOT is_confirmed,
         0,
         0,
         COALESCE(NEW.created_at, now())
@@ -110,19 +109,20 @@ BEGIN
         dni = EXCLUDED.dni,
         dob = EXCLUDED.dob,
         phone = EXCLUDED.phone,
+        bio = EXCLUDED.bio,
+        avatar_url = EXCLUDED.avatar_url,
+        cv_url = EXCLUDED.cv_url,
         terms_accepted = EXCLUDED.terms_accepted,
         is_partial = EXCLUDED.is_partial;
 
     RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
-    -- FINAL SAFETY: Log error but NEVER block auth.users operation
     RAISE LOG '[Cooplance THE SHIELD] Error syncing user %: %', NEW.id, SQLERRM;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. RE-ATTACH TO BOTH EVENTS
--- This ensures profile creation on SignUp AND update on Verification
+-- 3. RE-ATTACH TRIGGERS
 CREATE TRIGGER on_auth_user_sync_insert
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE PROCEDURE public.handle_auth_user_sync();
@@ -131,7 +131,7 @@ CREATE TRIGGER on_auth_user_sync_update
     AFTER UPDATE ON auth.users
     FOR EACH ROW EXECUTE PROCEDURE public.handle_auth_user_sync();
 
--- 4. CLEANUP OLD FUNCTIONS (Optional but recommended)
+-- 4. CLEANUP OLD FUNCTIONS
 DROP FUNCTION IF EXISTS public.handle_email_confirmed();
 DROP FUNCTION IF EXISTS public.handle_auth_user_change();
 DROP FUNCTION IF EXISTS public.handle_user_confirmation();

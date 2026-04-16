@@ -263,8 +263,8 @@ const Register = () => {
                 dob: formData.birthDate,
                 dni: formData.dni,
                 terms_accepted: formData.termsAccepted,
-                profileImage: null, // 🚀 OPTIMIZATION: Do not send heavy images to auth metadata
-                cvFile: null
+                profileImage: formData.profileImage, 
+                cvFile: formData.cvFile
             };
 
             // Set username default for companies
