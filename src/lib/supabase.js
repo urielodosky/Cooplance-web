@@ -1,24 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
+// 1. Imprimimos las variables para ver si Vercel las está inyectando bien al compilar
+console.log("=== TEST DE VARIABLES VERCEL ===");
+console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+// Solo verificamos si la llave existe (true/false) por seguridad, no la imprimimos entera
+console.log("Supabase Key existe:", !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+console.log("================================");
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validar si las variables están presentes para evitar cuelgues
-export const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
-
-if (!isConfigured) {
-  console.warn("⚠️ [Supabase] Faltan las variables de entorno: VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY. La aplicación entrará en modo de configuración requerida.");
-}
-
-// Inicializar el cliente principal de Supabase con persistencia activa
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder',
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  }
-);
+// 2. Creamos el Singleton (una única instancia del cliente para toda la app)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
