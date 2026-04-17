@@ -1201,128 +1201,166 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
 
                 {/* STEP 2: MULTIMEDIA */}
                 {currentStep === 2 && (
-                    <div className="step-content form-step-2">
-                        <h4>Paso 2: Multimedia</h4>
-                        
-                        {/* IMAGES SECTION */}
-                        <div className="media-upload-section image-upload-wrapper">
-                            <div className="section-header">
-                                <label>📷 Imágenes del Servicio</label>
-                                <span className={images.length >= 5 ? 'limit-reached' : ''}>
-                                    {images.length}/5
-                                </span>
-                            </div>
-
-                            {/* Image Preview Grid */}
-                            {images.length > 0 && (
-                                <div className="image-preview-grid">
+                    <div className="step-content form-step-2 fade-in">
+                        <div className="premium-form-section">
+                            <h4>Material Multimedia</h4>
+                            
+                            {/* IMAGES SECTION */}
+                            <div className="media-upload-section" style={{ marginBottom: '2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <label className="work-mode-label" style={{ margin: 0 }}>📷 Imágenes ({images.length}/5)</label>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>La primera será la portada</span>
+                                </div>
+                                
+                                <div className="category-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1.1rem', marginBottom: '1rem' }}>
                                     {images.map((img, index) => (
-                                        <div key={index} className={`image-preview-item ${index === 0 ? 'is-portada' : ''}`}>
-                                            <img src={img} alt={`Imagen ${index + 1}`} />
+                                        <div key={index} style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', aspectRatio: '1/1', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                                            <img src={img} alt={`Preview ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleRemoveImage(index)} 
+                                                style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold', zIndex: 2 }}
+                                            >
+                                                ×
+                                            </button>
                                             {index === 0 && (
-                                                <span className="portada-badge">PORTADA</span>
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--primary)', color: 'white', fontSize: '10px', textAlign: 'center', padding: '4px 0', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                                                    PORTADA
+                                                </div>
                                             )}
-                                            <button type="button" onClick={() => handleRemoveImage(index)} className="remove-media-btn">×</button>
                                         </div>
                                     ))}
+                                    {images.length < 5 && (
+                                        <label style={{ 
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+                                            aspectRatio: '1/1', border: '2px dashed var(--border)', borderRadius: '14px', 
+                                            cursor: 'pointer', transition: 'all 0.2s', background: 'rgba(255,255,255,0.02)',
+                                            gap: '0.5rem'
+                                        }} className="category-option">
+                                            <input type="file" accept="image/*" multiple onChange={handleAddImages} style={{ display: 'none' }} />
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                                <span style={{ fontSize: '20px', fontWeight: 'bold' }}>+</span>
+                                            </div>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 500 }}>Agregar</span>
+                                        </label>
+                                    )}
                                 </div>
-                            )}
-
-                            {images.length < 5 && (
-                                <label className="media-dropzone image-dropzone">
-                                    <input type="file" accept="image/*" multiple onChange={handleAddImages} style={{ display: 'none' }} />
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                                    <span>
-                                        {images.length === 0 ? 'Click o arrastrá imágenes aquí' : `Agregar más (${5 - images.length} restantes)`}
-                                    </span>
-                                </label>
-                            )}
-                            <p className="section-help-text">La primera imagen será la portada del servicio.</p>
-                        </div>
-
-                        {/* VIDEOS SECTION */}
-                        <div className="media-upload-section video-upload-wrapper">
-                            <div className="section-header">
-                                <label>🎬 Videos del Servicio</label>
-                                <span className={videos.length >= 2 ? 'limit-reached' : ''}>
-                                    {videos.length}/2
-                                </span>
                             </div>
 
-                            {/* Video Previews */}
-                            {videos.length > 0 && (
-                                <div className="video-preview-list">
+                            {/* VIDEOS SECTION */}
+                            <div className="media-upload-section">
+                                <label className="work-mode-label" style={{ marginBottom: '1rem', display: 'block' }}>🎬 Videos ({videos.length}/2)</label>
+                                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                    <button type="button" onClick={() => document.getElementById('video-upload-input').click()} className="category-option" style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>📁</span>
+                                        <span style={{ fontSize: '0.85rem' }}>Subir Archivo</span>
+                                    </button>
+                                    <button type="button" onClick={handleAddVideoUrl} className="category-option" style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>🔗</span>
+                                        <span style={{ fontSize: '0.85rem' }}>Vincular URL</span>
+                                    </button>
+                                    <input id="video-upload-input" type="file" accept="video/*" onChange={handleAddVideo} style={{ display: 'none' }} />
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                                     {videos.map((vid, index) => (
-                                        <div key={index} className="video-preview-item">
-                                            {vid.type === 'file' ? (
-                                                <video src={vid.src} className="video-thumb" />
-                                            ) : (
-                                                <div className="video-thumb-placeholder">
-                                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                                </div>
-                                            )}
-                                            <div className="video-details">
-                                                <div className="video-name">
-                                                    {vid.type === 'url' ? 'Video externo (URL)' : (vid.name || `Video ${index + 1}`)}
-                                                </div>
-                                                <div className="video-meta">
-                                                    {vid.type === 'url' ? vid.src.substring(0, 40) + '...' : `${vid.duration || '?'}s`}
-                                                </div>
+                                        <div key={index} style={{ 
+                                            display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', 
+                                            background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--border)',
+                                            transition: 'all 0.2s'
+                                        }}>
+                                            <div style={{ width: '44px', height: '44px', background: 'var(--primary)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
                                             </div>
-                                            <button type="button" onClick={() => handleRemoveVideo(index)} className="btn-remove-video-item">Quitar</button>
+                                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                                <div style={{ fontSize: '0.95rem', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{vid.name || (vid.type === 'url' ? 'Video Externo' : 'Video Local')}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{vid.type === 'url' ? vid.src.substring(0, 40) + '...' : 'Archivo de video'}</div>
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleRemoveVideo(index)} 
+                                                style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
-                            )}
-
-                            {videos.length < 2 && (
-                                <div className="video-upload-actions">
-                                    <label className="action-button upload-btn">
-                                        <input type="file" accept="video/*" onChange={handleAddVideo} style={{ display: 'none' }} />
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
-                                        <span>Subir Video</span>
-                                    </label>
-                                    <button type="button" onClick={handleAddVideoUrl} className="action-button url-btn">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                                        <span>URL de YouTube/Vimeo</span>
-                                    </button>
-                                </div>
-                            )}
-                            <p className="section-help-text">Máximo 1 minuto por video. Formatos: MP4, WebM.</p>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1.2rem', textAlign: 'center' }}>Máximo 1 minuto por video. Formatos sugeridos: MP4, WebM.</p>
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 3: FAQ */}
+                {/* STEP 3: PREGUNTAS POSIBLES */}
                 {currentStep === 3 && (
-                    <div className="step-content form-step-3 faq-step">
-                        <div className="faq-header-wrapper">
-                            <h4>Paso 3: Preguntas Frecuentes</h4>
-                            <button type="button" onClick={addFaq} className="btn-add-faq-new">+ Agregar Pregunta</button>
-                        </div>
-                        <div className="faq-list-container">
-                            {faqs.map((faq, index) => (
-                                <div key={index} className="faq-edit-card">
-                                    <input
-                                        type="text"
-                                        placeholder="Pregunta (Ej. ¿Qué incluye este servicio?)"
-                                        value={faq.question}
-                                        onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
-                                        className="faq-input-field"
-                                    />
-                                    <textarea
-                                        placeholder="Respuesta"
-                                        value={faq.answer}
-                                        onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
-                                        rows="2"
-                                        className="faq-textarea-field"
-                                    />
-                                    <button type="button" onClick={() => removeFaq(index)} className="btn-remove-faq-action">Eliminar Pregunta</button>
-                                </div>
-                            ))}
-                            {faqs.length === 0 && (
-                                <p className="faq-empty-hint">Añadir preguntas ayuda a tus clientes a decidir más rápido.</p>
-                            )}
+                    <div className="step-content form-step-3 fade-in">
+                        <div className="premium-form-section">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                <h4>Preguntas posibles</h4>
+                                <button type="button" onClick={addFaq} className="category-option" style={{ padding: '0.6rem 1.2rem', fontSize: '0.85rem' }}>+ Agregar Pregunta</button>
+                            </div>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                {faqs.map((faq, index) => (
+                                    <div key={index} style={{ 
+                                        padding: '1.5rem', 
+                                        background: 'rgba(255,255,255,0.02)', 
+                                        border: '1px solid var(--border)', 
+                                        borderRadius: '18px', 
+                                        position: 'relative',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '1.2rem',
+                                        boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+                                    }}>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => removeFaq(index)} 
+                                            style={{ 
+                                                position: 'absolute', top: '1rem', right: '1rem', 
+                                                background: 'rgba(239, 68, 68, 0.1)', border: 'none', 
+                                                color: '#ef4444', borderRadius: '50%', width: '30px', height: '30px', 
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                        >
+                                            ×
+                                        </button>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '4px' }}>Pregunta</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Ej: ¿Qué incluye el servicio?" 
+                                                value={faq.question} 
+                                                onChange={(e) => handleFaqChange(index, 'question', e.target.value)} 
+                                                style={{ borderRadius: '10px' }}
+                                            />
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '4px' }}>Respuesta</label>
+                                            <textarea 
+                                                placeholder="Describe la respuesta detalladamente..." 
+                                                value={faq.answer} 
+                                                onChange={(e) => handleFaqChange(index, 'answer', e.target.value)} 
+                                                rows="3" 
+                                                style={{ borderRadius: '10px' }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                                {faqs.length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '4rem 2rem', border: '1px dashed var(--border)', borderRadius: '20px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)' }}>
+                                        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🙋‍♂️</div>
+                                        <p style={{ margin: 0, fontWeight: 500 }}>No has agregado preguntas todavía.</p>
+                                        <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Las preguntas frecuentes ayudan a los usuarios a resolver dudas rápidamente sin tener que contactarte.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1366,25 +1404,16 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                     </div>
                 )}
 
-                <div className="form-actions" style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-                    {currentStep > 1 && (
-                        <button type="button" onClick={handlePrevStep} className="btn-cancel" style={{ padding: '0.8rem 1.5rem', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
-                            Anterior
-                        </button>
-                    )}
-
-                    {currentStep < totalSteps ? (
-                        <button type="submit" className="btn-primary" style={{ padding: '0.8rem 2.5rem', fontWeight: 'bold' }}>
-                            Siguiente
-                        </button>
+                {/* ACTIONS */}
+                <div className="form-actions" style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+                    {currentStep > 1 ? (
+                        <button type="button" onClick={handlePrevStep} className="category-option" style={{ minWidth: '120px', padding: '0.8rem 1.5rem' }}>Anterior</button>
                     ) : (
-                        <button type="submit" className="btn-primary" disabled={isSubmitting} style={{ padding: '0.8rem 2.5rem', fontWeight: 'bold', opacity: isSubmitting ? 0.7 : 1 }}>
-                            {isSubmitting ? (loadingStatus || 'Procesando...') : (initialData ? 'Actualizar Servicio' : 'Publicar Servicio')}
-                        </button>
+                        <button type="button" onClick={onCancel} className="category-option" style={{ minWidth: '120px', padding: '0.8rem 1.5rem' }}>Cancelar</button>
                     )}
-
-                    <button type="button" onClick={onCancel} className="btn-cancel" style={{ marginLeft: 'auto', padding: '0.8rem 1.5rem' }}>
-                        Cancelar
+                    
+                    <button type="submit" className="category-option selected" style={{ minWidth: '180px', fontWeight: 800, padding: '0.8rem 2rem' }} disabled={isSubmitting}>
+                        {isSubmitting ? (loadingStatus || 'Procesando...') : (currentStep < totalSteps ? 'Siguiente Paso' : (initialData ? 'Actualizar' : 'Publicar'))}
                     </button>
                 </div>
             </form>

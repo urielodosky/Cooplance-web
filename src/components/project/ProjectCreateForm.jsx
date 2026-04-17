@@ -33,7 +33,8 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
         budget: initialData?.budget || '',
         deadline: initialData?.deadline || '',
         executionTime: initialData?.executionTime || '',
-        imageUrl: initialData?.imageUrl || '',
+        images: initialData?.images || (initialData?.imageUrl ? [initialData.imageUrl] : []),
+        videos: initialData?.videos || (initialData?.videoUrl ? [{ type: 'url', src: initialData.videoUrl }] : []),
         subcategories: initialData?.subcategories || [], // Array of selected subcategories
         specialties: initialData?.specialties || [], // Array of selected specialties
         vacancies: initialData?.vacancies || 1,
@@ -101,31 +102,77 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
     const [mediaType, setMediaType] = useState({ image: 'file', video: 'url' });
     const [fileNames, setFileNames] = useState({ image: '', video: '' });
 
-    const handleChange = (e, type = 'text') => {
-        if (type === 'file') {
-            const file = e.target.files[0];
-            if (file) {
-                const mockUrl = URL.createObjectURL(file);
-                const fieldName = e.target.name === 'image' ? 'imageUrl' : 'videoUrl';
-                setFormData(prev => ({ ...prev, [fieldName]: mockUrl }));
-                setFileNames(prev => ({ ...prev, [e.target.name]: file.name }));
-                
-                if (e.target.name === 'image') setImageFile(file);
-                if (e.target.name === 'video') setVideoFile(file);
-            }
-        } else {
-            const { name, value } = e.target;
+    const handleAddImages = (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
 
-            setFormData(prev => {
-                const updates = { [name]: value };
-                // Mutual exclusivity logic only for clients
-                if (user?.role !== 'company') {
-                    if (name === 'deadline' && value) updates.executionTime = '';
-                    if (name === 'executionTime' && value) updates.deadline = '';
-                }
-                return { ...prev, ...updates };
-            });
+        const currentImages = formData.images || [];
+        const remaining = 5 - currentImages.length;
+        if (remaining <= 0) {
+            alert('Puedes subir hasta 5 imágenes.');
+            return;
         }
+
+        const newImages = files.slice(0, remaining).map(file => URL.createObjectURL(file));
+        // Note: For real persistence, you'd upload these files first.
+        setFormData(prev => ({ ...prev, images: [...(prev.images || []), ...newImages] }));
+    };
+
+    const handleRemoveImage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleAddVideo = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if ((formData.videos || []).length >= 2) {
+            alert('Puedes agregar hasta 2 videos.');
+            return;
+        }
+
+        const videoUrl = URL.createObjectURL(file);
+        setFormData(prev => ({
+            ...prev,
+            videos: [...(prev.videos || []), { type: 'file', src: videoUrl, name: file.name, file }]
+        }));
+    };
+
+    const handleAddVideoUrl = () => {
+        if ((formData.videos || []).length >= 2) {
+            alert('Puedes agregar hasta 2 videos.');
+            return;
+        }
+        const url = prompt('Ingresa la URL del video (YouTube, Vimeo, etc.):');
+        if (url) {
+            setFormData(prev => ({
+                ...prev,
+                videos: [...(prev.videos || []), { type: 'url', src: url }]
+            }));
+        }
+    };
+
+    const handleRemoveVideo = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            videos: prev.videos.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleChange = (e, type = 'text') => {
+        const { name, value } = e.target;
+        setFormData(prev => {
+            const updates = { [name]: value };
+            // Mutual exclusivity logic only for clients
+            if (user?.role !== 'company') {
+                if (name === 'deadline' && value) updates.executionTime = '';
+                if (name === 'executionTime' && value) updates.deadline = '';
+            }
+            return { ...prev, ...updates };
+        });
     };
 
     const toggleMediaType = (field, type) => {
@@ -322,8 +369,10 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                 clientAvatar: user.avatar_url,
                 clientRole: user.role,
                 status: 'open',
-                imageUrl: finalImageUrl,
-                videoUrl: finalVideoUrl,
+                imageUrl: (formData.images && formData.images.length > 0) ? formData.images[0] : null,
+                images: formData.images || [],
+                videos: formData.videos || [],
+                videoUrl: (formData.videos && formData.videos.length > 0) ? formData.videos[0].src : null,
                 faqs: faqs.filter(f => f.question && f.answer),
                 questions: user?.role === 'company' ? questions.filter(q => q.text.trim() !== '') : [],
                 location: formData.workMode.includes('presential')
@@ -628,36 +677,142 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                     <div className="step-content form-step-2 fade-in">
                         <div className="premium-form-section">
                             <h4>Material Multimedia</h4>
-                            <div className="form-group">
-                                <label className="work-mode-label">Imagen Destacada</label>
-                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                                    <button type="button" onClick={() => toggleMediaType('image', 'file')} className={`category-option ${mediaType.image === 'file' ? 'selected' : ''}`} style={{ flex: 1 }}>Subir</button>
-                                    <button type="button" onClick={() => toggleMediaType('image', 'url')} className={`category-option ${mediaType.image === 'url' ? 'selected' : ''}`} style={{ flex: 1 }}>URL</button>
+                            
+                            {/* IMAGES SECTION */}
+                            <div className="media-upload-section" style={{ marginBottom: '2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <label className="work-mode-label" style={{ margin: 0 }}>📷 Imágenes ({formData.images?.length || 0}/5)</label>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>La primera será la portada</span>
                                 </div>
-                                {mediaType.image === 'file' ? <input type="file" name="image" accept="image/*" onChange={(e) => handleChange(e, 'file')} /> : <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="https://..." />}
+                                
+                                <div className="category-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                                    {formData.images?.map((img, index) => (
+                                        <div key={index} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', aspectRatio: '1/1', border: '1px solid var(--border)' }}>
+                                            <img src={img} alt={`Preview ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleRemoveImage(index)} 
+                                                style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold' }}
+                                            >
+                                                ×
+                                            </button>
+                                            {index === 0 && (
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--primary)', color: 'white', fontSize: '10px', textAlign: 'center', padding: '2px 0', fontWeight: 'bold' }}>
+                                                    PORTADA
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {(!formData.images || formData.images.length < 5) && (
+                                        <label style={{ 
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+                                            aspectRatio: '1/1', border: '2px dashed var(--border)', borderRadius: '12px', 
+                                            cursor: 'pointer', transition: 'all 0.2s', background: 'rgba(255,255,255,0.02)' 
+                                        }} className="category-option">
+                                            <input type="file" accept="image/*" multiple onChange={handleAddImages} style={{ display: 'none' }} />
+                                            <span style={{ fontSize: '24px', marginBottom: '4px' }}>+</span>
+                                            <span style={{ fontSize: '12px' }}>Agregar</span>
+                                        </label>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* VIDEOS SECTION */}
+                            <div className="media-upload-section">
+                                <label className="work-mode-label" style={{ marginBottom: '1rem', display: 'block' }}>🎬 Videos ({formData.videos?.length || 0}/2)</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                                    <button type="button" onClick={() => document.getElementById('video-upload-input').click()} className="category-option" style={{ flex: 1, padding: '0.8rem' }}>Subir Archivo</button>
+                                    <button type="button" onClick={handleAddVideoUrl} className="category-option" style={{ flex: 1, padding: '0.8rem' }}>Vincular URL</button>
+                                    <input id="video-upload-input" type="file" accept="video/*" onChange={handleAddVideo} style={{ display: 'none' }} />
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                    {formData.videos?.map((vid, index) => (
+                                        <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                            <div style={{ width: '40px', height: '40px', background: 'var(--primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                                            </div>
+                                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{vid.name || (vid.type === 'url' ? 'Video Externo' : 'Video Local')}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{vid.type === 'url' ? vid.src.substring(0, 30) + '...' : 'Archivo de video'}</div>
+                                            </div>
+                                            <button type="button" onClick={() => handleRemoveVideo(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px' }}>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>Máximo 1 minuto por video. Formatos sugeridos: MP4, WebM.</p>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* STEP 3: FAQ */}
+                {/* STEP 3: PREGUNTAS POSIBLES */}
                 {currentStep === 3 && (
                     <div className="step-content form-step-3 fade-in">
                         <div className="premium-form-section">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h4>Dudas Comunes (FAQ)</h4>
-                                <button type="button" onClick={addFaq} className="category-option" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>+ Agregar</button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                <h4>Preguntas posibles</h4>
+                                <button type="button" onClick={addFaq} className="category-option" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>+ Agregar Pregunta</button>
                             </div>
-                            {faqs.map((faq, index) => (
-                                <div key={index} style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: '12px', position: 'relative' }}>
-                                    <button type="button" onClick={() => removeFaq(index)} style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: '#ef4444' }}>×</button>
-                                    <input type="text" placeholder="Pregunta" value={faq.question} onChange={(e) => handleFaqChange(index, 'question', e.target.value)} style={{ marginBottom: '0.5rem' }} />
-                                    <textarea placeholder="Respuesta" value={faq.answer} onChange={(e) => handleFaqChange(index, 'answer', e.target.value)} rows="2" />
-                                </div>
-                            ))}
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                {faqs.map((faq, index) => (
+                                    <div key={index} style={{ 
+                                        padding: '1.5rem', 
+                                        background: 'rgba(255,255,255,0.02)', 
+                                        border: '1px solid var(--border)', 
+                                        borderRadius: '16px', 
+                                        position: 'relative',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '1rem'
+                                    }}>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => removeFaq(index)} 
+                                            style={{ 
+                                                position: 'absolute', top: '1rem', right: '1rem', 
+                                                background: 'rgba(239, 68, 68, 0.1)', border: 'none', 
+                                                color: '#ef4444', borderRadius: '50%', width: '28px', height: '28px', 
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Pregunta</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Ej: ¿Qué incluye el servicio?" 
+                                                value={faq.question} 
+                                                onChange={(e) => handleFaqChange(index, 'question', e.target.value)} 
+                                            />
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Respuesta</label>
+                                            <textarea 
+                                                placeholder="Describe la respuesta detalladamente..." 
+                                                value={faq.answer} 
+                                                onChange={(e) => handleFaqChange(index, 'answer', e.target.value)} 
+                                                rows="3" 
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                                {faqs.length === 0 && (
+                                    <div style={{ textAlign: 'center', padding: '3rem', border: '1px dashed var(--border)', borderRadius: '16px', color: 'var(--text-muted)' }}>
+                                        No has agregado preguntas todavía. Ayudan a los usuarios a resolver dudas frecuentes.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
+
 
                 {/* STEP 4: FINALIZACIÓN */}
                 {currentStep === 4 && (
