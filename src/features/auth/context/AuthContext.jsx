@@ -277,19 +277,39 @@ export const AuthProvider = ({ children }) => {
         return data.user;
     };
 
-    // ─── DEFERRED PROFILE SYNC (V24 Robust Sytsem) ──────────────────────────
+    // ─── DEFERRED PROFILE SYNC (V25 Robust Sytsem) ──────────────────────────
     const applyDeferredProfileData = async (userId, heavyData) => {
         try {
-            console.log("[AuthContext] Applying deferred profile data (images/bio/dob)...");
+            console.log("[AuthContext] Applying deferred profile data (Storage/Bio/DOB)...");
             
             const updatePayload = {};
-            if (heavyData.avatar_url) updatePayload.avatar_url = heavyData.avatar_url;
-            if (heavyData.cv_url) updatePayload.cv_url = heavyData.cv_url;
+            
+            // Handle Avatar (Upload to Storage)
+            if (heavyData.avatar_url && heavyData.avatar_url.startsWith('data:')) {
+                const publicUrl = await uploadToStorage(userId, heavyData.avatar_url, 'avatars');
+                if (publicUrl) updatePayload.avatar_url = publicUrl;
+            } else if (heavyData.avatar_url) {
+                updatePayload.avatar_url = heavyData.avatar_url;
+            }
+
+            // Handle CV (Upload to Storage)
+            if (heavyData.cv_url && heavyData.cv_url.startsWith('data:')) {
+                const publicUrl = await uploadToStorage(userId, heavyData.cv_url, 'portfolio');
+                if (publicUrl) updatePayload.cv_url = publicUrl;
+            }
+
             if (heavyData.bio) updatePayload.bio = heavyData.bio;
-            if (heavyData.dob) updatePayload.dob = heavyData.dob;
-            if (heavyData.phone) updatePayload.phone = heavyData.phone;
+            
+            // V25: Critical Data Type Sanitization (Prevent 400 Bad Request)
+            if (heavyData.dob !== undefined) {
+                updatePayload.dob = (heavyData.dob === "" || !heavyData.dob) ? null : heavyData.dob;
+            }
+            if (heavyData.phone !== undefined) {
+                updatePayload.phone = (heavyData.phone === "" || !heavyData.phone) ? null : heavyData.phone;
+            }
 
             if (Object.keys(updatePayload).length > 0) {
+                console.log("[AuthContext] Syncing deferred payload to DB:", Object.keys(updatePayload));
                 const { error: updateError } = await supabase
                     .from('profiles')
                     .update(updatePayload)
@@ -310,6 +330,46 @@ export const AuthProvider = ({ children }) => {
             }
         } catch (e) {
             console.error("[AuthContext] Error in deferred data sync:", e);
+        }
+    };
+
+    // ─── STORAGE HELPER (V25) ────────────────────────────────────────────────
+    const uploadToStorage = async (userId, base64Data, bucket = 'avatars') => {
+        try {
+            if (!base64Data || !base64Data.startsWith('data:')) return base64Data;
+            
+            console.log(`[AuthContext] Uploading file to ${bucket} bucket...`);
+            
+            // Convert Base64 to Blob
+            const response = await fetch(base64Data);
+            const blob = await response.blob();
+            
+            // Clean up old files if they exist (optional, but keep it simple for now)
+            const fileName = `${userId}_${Date.now()}.png`;
+            const filePath = `${userId}/${fileName}`;
+
+            const { data, error } = await supabase.storage
+                .from(bucket)
+                .upload(filePath, blob, {
+                    contentType: 'image/png',
+                    upsert: true
+                });
+
+            if (error) {
+                console.error(`[AuthContext] Storage Upload Error (${bucket}):`, error);
+                return null;
+            }
+
+            // Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from(bucket)
+                .getPublicUrl(filePath);
+
+            console.log(`[AuthContext] Upload SUCCESS: ${publicUrl}`);
+            return publicUrl;
+        } catch (e) {
+            console.error("[AuthContext] Error in uploadToStorage:", e);
+            return null;
         }
     };
 
@@ -471,6 +531,21 @@ export const AuthProvider = ({ children }) => {
             dbReady.dob = processed.birthDate || processed.dob;
             delete dbReady.birthDate;
         }
+
+        // V25: Handle Avatar Upload to Storage if it's Base64
+        if (dbReady.avatar_url && dbReady.avatar_url.startsWith('data:')) {
+            const publicUrl = await uploadToStorage(user.id, dbReady.avatar_url, 'avatars');
+            if (publicUrl) dbReady.avatar_url = publicUrl;
+        }
+
+        if (dbReady.cv_url && dbReady.cv_url.startsWith('data:')) {
+            const publicUrl = await uploadToStorage(user.id, dbReady.cv_url, 'portfolio');
+            if (publicUrl) dbReady.cv_url = publicUrl;
+        }
+
+        // V25: Date Type Sanitization (Prevent 400 Bad Request)
+        if (dbReady.dob === "" || dbReady.dob === undefined) dbReady.dob = null;
+        if (dbReady.phone === "") dbReady.phone = null;
 
         // V21: Strip internal flags that don't exist in the DB schema
         const { 
