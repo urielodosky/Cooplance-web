@@ -12,6 +12,8 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isTutorView, setIsTutorView] = useState(false); // V27: Mirror Mode for adults
+    const [supervisedUser, setSupervisedUser] = useState(null); // The minor being watched
     const syncInProgress = useRef(null); // V24: Track active syncing UID to prevent loops
 
     const handleSession = async (session) => {
@@ -186,6 +188,68 @@ export const AuthProvider = ({ children }) => {
             new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout: "${opName}" excedió el tiempo límite.`)), ms))
         ]);
     };
+    
+    // ─── PARENTAL VALIDATION (V27) ──────────────────────────────────────────
+    const validateParent = async (email) => {
+        if (!email) return { valid: false, error: 'Email requerido.' };
+        console.log(`[AuthContext] Validating parent: ${email}`);
+        
+        try {
+            const { data: parent, error } = await supabase
+                .from('profiles')
+                .select('id, dob, role')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (error) throw error;
+            if (!parent) return { valid: false, error: 'El email no pertenece a ningún usuario registrado.' };
+            
+            // 1. Role must be freelancer
+            if (parent.role !== 'freelancer') {
+                return { valid: false, error: 'El adulto responsable debe tener una cuenta de Freelancer.' };
+            }
+
+            // 2. Age check (Adult)
+            if (parent.dob) {
+                const birthDate = new Date(parent.dob);
+                const age = new Date().getFullYear() - birthDate.getFullYear();
+                if (age < 18) return { valid: false, error: 'El tutor debe ser mayor de 18 años.' };
+            }
+
+            // 3. Quota check (Max 2 minors)
+            const { count, error: countErr } = await supabase
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+                .eq('parent_id', parent.id);
+
+            if (countErr) throw countErr;
+            if (count >= 2) return { valid: false, error: 'Este tutor ya tiene el máximo de 2 menores a cargo.' };
+
+            return { valid: true, parentId: parent.id };
+        } catch (err) {
+            console.error('[AuthContext] validateParent error:', err);
+            return { valid: false, error: 'Fallo al validar tutor. Intenta de nuevo.' };
+        }
+    };
+
+    // ─── MIRROR MODE LOGIC (V27) ───────────────────────────────────────────
+    const enterMirrorMode = async (minorId) => {
+        try {
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', minorId).maybeSingle();
+            if (error || !data) throw new Error("No se pudo cargar la cuenta del tutorado.");
+            setSupervisedUser(data);
+            setIsTutorView(true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {
+            console.error("Mirror Mode Error:", err);
+            alert(err.message);
+        }
+    };
+
+    const exitMirrorMode = () => {
+        setIsTutorView(false);
+        setSupervisedUser(null);
+    };
 
     // ─── REGISTER ───────────────────────────────────────────────────────────
     // With Supabase native OTP: signUp creates the user but Supabase will NOT
@@ -210,6 +274,8 @@ export const AuthProvider = ({ children }) => {
             phone: registrationData.phone || null,
             bio: registrationData.bio || '',
             cuil_cuit: registrationData.cuil_cuit || registrationData.cuit || null,
+            parent_id: registrationData.parentId || null,
+            status: registrationData.parentId ? 'pending_parental_approval' : 'active',
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
         };
 
@@ -633,7 +699,9 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{ 
             user, loading, login, register, logout, updateUser, 
             updateBalance, checkUserExists, deleteAccount, 
-            verifyOtp, resendOtp, loginVerifyOtp 
+            verifyOtp, resendOtp, loginVerifyOtp,
+            validateParent, enterMirrorMode, exitMirrorMode,
+            isTutorView, supervisedUser
         }}>
             {!isInitialized ? <InitialLoader /> : children}
         </AuthContext.Provider>

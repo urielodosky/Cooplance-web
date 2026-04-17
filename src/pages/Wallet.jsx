@@ -6,7 +6,9 @@ import { supabase } from '../lib/supabase';
 import '../styles/pages/Dashboard.scss';
 
 const Wallet = () => {
-    const { user, updateBalance } = useAuth();
+    const { user: authUser, updateBalance, isTutorView, supervisedUser } = useAuth();
+    const user = isTutorView ? supervisedUser : authUser;
+    
     const { jobs } = useJobs();
     const navigate = useNavigate();
 
@@ -121,6 +123,10 @@ const Wallet = () => {
     }, [user]);
 
     const handleConnect = (provider) => {
+        if (isTutorView) {
+            alert("Acción de seguridad: No puedes modificar métodos de pago en modo lectura.");
+            return;
+        }
         const isConnected = connectedAccounts[provider];
         let newStatus = !isConnected;
 

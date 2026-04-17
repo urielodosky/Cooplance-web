@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     province TEXT,
     city TEXT,
     cuil_cuit TEXT, -- For companies
+    parent_id UUID REFERENCES public.profiles(id),
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'pending_parental_approval', 'suspended')),
     terms_accepted_at TIMESTAMPTZ,
     is_verified BOOLEAN DEFAULT FALSE,
     verification_status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'rejected'
@@ -322,7 +324,33 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXEC
 DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
 CREATE TRIGGER on_auth_user_updated AFTER UPDATE ON auth.users FOR EACH ROW EXECUTE PROCEDURE public.handle_user_confirmation();
 
--- B. Account Deletion Protection (V22 Soft Delete Shield)
+-- C. Parental Quota Check (V27)
+CREATE OR REPLACE FUNCTION public.check_parent_limit() 
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (NEW.parent_id IS NOT NULL) THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = NEW.parent_id 
+            AND role = 'freelancer' 
+            AND (dob IS NULL OR dob <= (CURRENT_DATE - INTERVAL '18 years'))
+        ) THEN
+            RAISE EXCEPTION 'El tutor debe ser un Freelancer mayor de 18 años registrado en Cooplance.';
+        END IF;
+
+        IF (SELECT COUNT(*) FROM public.profiles WHERE parent_id = NEW.parent_id AND id != NEW.id) >= 2 THEN
+            RAISE EXCEPTION 'Un tutor no puede tener más de 2 menores a cargo.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER tr_limit_minors_per_parent
+BEFORE INSERT OR UPDATE OF parent_id ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION public.check_parent_limit();
+
+-- D. Account Deletion Protection (V22 Soft Delete Shield)
 CREATE OR REPLACE FUNCTION public.protect_critical_profiles()
 RETURNS TRIGGER AS $$
 BEGIN

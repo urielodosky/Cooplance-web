@@ -279,14 +279,74 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
     </div>
 );
 
+const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
+    <div style={{ marginTop: '2.5rem' }}>
+        <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <span>Mis Tutorados (Supervisión)</span>
+            <span style={{ fontSize: '0.75rem', background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: '10px' }}>Beta</span>
+        </h3>
+        <div className="services-grid">
+            {loading ? (
+                <GridSkeleton />
+            ) : tutorados.length > 0 ? (
+                tutorados.map(minor => (
+                    <div key={minor.id} className="glass" style={{ 
+                        padding: '1.5rem', 
+                        borderRadius: '20px', 
+                        background: 'var(--bg-card)', 
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--primary)' }}>
+                            <img src={getProfilePicture({ role: minor.role, avatar: minor.avatar_url })} alt={minor.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <div>
+                            <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>{minor.first_name || minor.username}</h4>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{minor.username}</p>
+                        </div>
+                        <button 
+                            className="btn-primary" 
+                            style={{ width: '100%', padding: '0.6rem' }}
+                            onClick={() => enterMirrorMode(minor.id)}
+                        >
+                            Ver en Espejo
+                        </button>
+                    </div>
+                ))
+            ) : (
+                <div className="glass" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
+                    <p>No tienes menores a cargo registrados.</p>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
 // --- Main Dashboard Component ---
 
 const Dashboard = () => {
-    const { user, updateUser } = useAuth();
-    const { jobs, updateJobStatus } = useJobs();
+    const { 
+        user: authUser, 
+        updateUser, 
+        isTutorView, 
+        supervisedUser, 
+        enterMirrorMode, 
+        exitMirrorMode 
+    } = useAuth();
+    
+    // Determine effective user for this view
+    const user = isTutorView ? supervisedUser : authUser;
+    
+    const { jobs, updateJobStatus: updateJobStatusApi } = useJobs();
     const { services } = useServices();
     const { createChat } = useChat();
     const navigate = useNavigate();
+    
+    const [tutorados, setTutorados] = useState([]);
 
 
 
@@ -298,6 +358,15 @@ const Dashboard = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
     const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null);
+
+    // V27: Update Job Status with Read-Only check
+    const updateJobStatus = async (jobId, status) => {
+        if (isTutorView) {
+            alert("No puedes realizar esta acción en modo lectura.");
+            return;
+        }
+        return updateJobStatusApi(jobId, status);
+    };
 
     // Initial load and sync
     useEffect(() => {
@@ -319,7 +388,16 @@ const Dashboard = () => {
             finally { setLoading(false); }
         };
         loadInitData();
-    }, [user?.id]);
+
+        // 2. Fetch tutorados if adult freelancer
+        if (authUser.role === 'freelancer' && !isTutorView) {
+            const fetchTutorados = async () => {
+                const { data } = await supabase.from('profiles').select('*').eq('parent_id', authUser.id);
+                if (data) setTutorados(data);
+            };
+            fetchTutorados();
+        }
+    }, [user?.id, authUser.id, isTutorView]);
 
     // Gamification Process - Stabilized
     useEffect(() => {
@@ -432,6 +510,10 @@ const Dashboard = () => {
     };
 
     const handleDeleteProposal = async (e, id) => {
+        if (isTutorView) {
+            alert("Acción bloqueada en modo lectura.");
+            return;
+        }
         e.stopPropagation();
         if (window.confirm('¿Borrar historial?')) {
             await deleteProposalApi(id);
@@ -561,6 +643,16 @@ const Dashboard = () => {
                 <>
                     <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} />
                     <ProposalsSection loading={loading} activeProposalTab={activeProposalTab} setActiveProposalTab={setActiveProposalTab} myProposals={myProposals} filteredProposals={filteredProposals} navigate={navigate} getTimeAgo={getTimeAgo} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} handleCancelProposal={handleCancelProposal} handleDeleteProposal={handleDeleteProposal} />
+                    
+                    {/* V27: Tutorados Section (Adults only) */}
+                    {!isTutorView && authUser.role === 'freelancer' && (
+                        <TutoradosSection 
+                            loading={loading} 
+                            tutorados={tutorados} 
+                            enterMirrorMode={enterMirrorMode} 
+                        />
+                    )}
+
                     <ServicesSection loading={loading} myServices={myServices} user={user} handleCreateServiceClick={handleCreateServiceClick} />
                 </>
             )}

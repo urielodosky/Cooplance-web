@@ -10,7 +10,7 @@ import '../styles/pages/Chat.scss';
 
 const Chat = () => {
     const { chatId } = useParams();
-    const { user } = useAuth();
+    const { user, isTutorView } = useAuth();
     const { getUserChats, getChatById, sendMessage, toggleChatBlock, deleteChat, fetchMessages, purgeDuplicateChats, isCleaning } = useChat();
     const { jobs, extendJobDeadline, updateJobStatus } = useJobs();
     const navigate = useNavigate();
@@ -130,6 +130,10 @@ const Chat = () => {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
+        if (isTutorView) {
+            alert("Acción bloqueada en modo lectura.");
+            return;
+        }
         if (!activeChat || !messageInput.trim()) return;
 
         const text = messageInput.trim();
@@ -217,6 +221,10 @@ const Chat = () => {
 
     const handleFileSelect = async (e) => {
         const file = e.target.files[0];
+        if (isTutorView) {
+            alert("No puedes enviar archivos en modo lectura.");
+            return;
+        }
         if (!file || !activeChat || activeChat.status === 'blocked') return;
 
         if (file.type.startsWith('video')) {
@@ -310,6 +318,10 @@ const Chat = () => {
 
     const handleCancelJob = () => {
         if (!activeJob) return;
+        if (isTutorView) {
+            alert("Operación denegada en modo lectura.");
+            return;
+        }
         if (window.confirm("¿Estás seguro de cancelar este servicio? Esta acción no se puede deshacer y el pago será devuelto al monedero.")) {
             updateJobStatus(activeJob.id, 'canceled');
             sendMessage(activeChat.id, '❌ El servicio ha sido cancelado por expiración del plazo.', [], { isSystem: true });

@@ -34,6 +34,7 @@ import TeamPublicProfile from './features/teams/pages/TeamPublicProfile'
 import Wallet from './pages/Wallet'
 import AdminFinanceDashboard from './pages/AdminFinanceDashboard'
 import ProtectedRoute from './components/common/ProtectedRoute'
+import MirrorModeBanner from './components/common/MirrorModeBanner'
 import { ThemeProvider } from './context/ThemeContext'
 import { TeamProvider } from './context/TeamContext'
 import { ChatProvider } from './context/ChatContext'
@@ -49,7 +50,8 @@ function App() {
   return (
     <ThemeProvider>
       <TeamProvider>
-        <div>
+        <div className="app-container">
+          <MirrorModeBanner />
           <Navbar />
           <main>
             <Routes>

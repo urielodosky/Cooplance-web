@@ -60,6 +60,7 @@ const Register = () => {
         phoneVerified: false,
         termsAccepted: false,
         cuil_cuit: '', // NEW: For companies
+        parentEmail: '', // V27: For minors
         cvFile: '', // Base64 string for CV image
         profileImage: '', // Base64 string for Profile Image
         province: '', // for companies location
@@ -71,6 +72,8 @@ const Register = () => {
     const [profileImageName, setProfileImageName] = useState('');
     const [calculatedAge, setCalculatedAge] = useState(null);
     const [invalidYear, setInvalidYear] = useState(false);
+    const [parentValidationError, setParentValidationError] = useState(null); // V27: Parental validation error
+    const [isValidatingParent, setIsValidatingParent] = useState(false); // V27: Validation state
 
     const [argProvinces, setArgProvinces] = useState([]);
     const [argCities, setArgCities] = useState([]);
@@ -178,6 +181,30 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setParentValidationError(null);
+
+        // V27: Parental Validation for Minors (16-17)
+        if (role !== 'company' && calculatedAge !== null && calculatedAge < 18) {
+            if (!formData.parentEmail) {
+                setParentValidationError("El email del padre/tutor es obligatorio para menores de 18 años.");
+                alert("Se requiere el email de un adulto responsable.");
+                return;
+            }
+            
+            setIsValidatingParent(true);
+            setLoading(true);
+            const parentResult = await validateParent(formData.parentEmail);
+            setIsValidatingParent(false);
+            
+            if (!parentResult.valid) {
+                setParentValidationError(parentResult.error);
+                alert(`Error de Tutor: ${parentResult.error}`);
+                setLoading(false);
+                return;
+            }
+            // Save parentId for registration payload
+            formData.parentId = parentResult.parentId;
+        }
 
         // Password validation
         if (formData.password !== formData.confirmPassword) {
@@ -454,6 +481,32 @@ const Register = () => {
                                     />
                                 </div>
                             )}
+
+                            {/* V27: Parental Email for Minors (16, 17 years) */}
+                            {role !== 'company' && calculatedAge !== null && calculatedAge < 18 && (
+                                <div className="form-group" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem', color: '#ef4444' }}>
+                                        Autorización Parental Requerida
+                                    </p>
+                                    <input
+                                        type="email"
+                                        name="parentEmail"
+                                        value={formData.parentEmail}
+                                        placeholder="Email de tu Padre, Madre o Tutor"
+                                        onChange={handleChange}
+                                        required
+                                        style={{ margin: 0, height: '45px', width: '100%' }}
+                                    />
+                                    <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: '#6b7280' }}>
+                                        * El tutor debe ser un Freelancer mayor de 18 años registrado en Cooplance.
+                                    </p>
+                                    {parentValidationError && (
+                                        <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.5rem' }}>
+                                            {parentValidationError}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         {(role === 'freelancer' || role === 'company') && (
                             <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -461,8 +514,7 @@ const Register = () => {
                                 <span>{documentFileName || 'Subir Foto del Documento (Frente)'}</span>
                             </label>
                         )}
-                    </div>
-
+                    
                     {/* 6. Country & Location */}
                     <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                         <CustomDropdown
