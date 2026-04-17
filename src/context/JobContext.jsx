@@ -98,7 +98,7 @@ export const JobProvider = ({ children }) => {
     }, [user]);
 
     useEffect(() => {
-        fetchJobs();
+        fetchJobs().catch(err => console.error('[JobContext] Unhandled fetchJobs error:', err));
     }, [fetchJobs]);
 
     const createJob = async (service, buyer) => {

@@ -5,91 +5,121 @@ import { supabase } from './supabase';
  */
 
 export const getProjects = async () => {
-    const { data, error } = await supabase
-        .from('projects')
-        .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role)')
-        .order('created_at', { ascending: false });
+    try {
+        const { data, error } = await supabase
+            .from('projects')
+            .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role)')
+            .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('[ProjectService] Error fetching projects:', error);
+        if (error) {
+            console.error('[ProjectService] Supabase error fetching projects:', error);
+            return [];
+        }
+
+        return (data || []).map(mapFromDB);
+    } catch (err) {
+        console.error('[ProjectService] Critical error fetching projects:', err);
         return [];
     }
-
-    return (data || []).map(mapFromDB);
 };
 
 export const getProjectsByClient = async (clientId) => {
-    const { data, error } = await supabase
-        .from('projects')
-        .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role)')
-        .eq('client_id', clientId)
-        .order('created_at', { ascending: false });
+    try {
+        const { data, error } = await supabase
+            .from('projects')
+            .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role)')
+            .eq('client_id', clientId)
+            .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('[ProjectService] Error fetching projects by client:', error);
+        if (error) {
+            console.error('[ProjectService] Supabase error fetching projects by client:', error);
+            return [];
+        }
+
+        return (data || []).map(mapFromDB);
+    } catch (err) {
+        console.error('[ProjectService] Critical error fetching projects by client:', err);
         return [];
     }
-
-    return (data || []).map(mapFromDB);
 };
 
 export const getProjectById = async (id) => {
-    const { data, error } = await supabase
-        .from('projects')
-        .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role, rating, reviews_count)')
-        .eq('id', id)
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('projects')
+            .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role, rating, reviews_count)')
+            .eq('id', id)
+            .single();
 
-    if (error) {
-        console.error('[ProjectService] Error fetching project:', error);
+        if (error) {
+            console.error('[ProjectService] Error fetching project:', error);
+            return null;
+        }
+
+        return data ? mapFromDB(data) : null;
+    } catch (err) {
+        console.error('[ProjectService] Critical error fetching project:', err);
         return null;
     }
-
-    return mapFromDB(data);
 };
 
 export const createProject = async (projectData) => {
-    const dbRow = mapToDB(projectData);
-    const { data, error } = await supabase
-        .from('projects')
-        .insert(dbRow)
-        .select('*')
-        .single();
+    try {
+        const dbRow = mapToDB(projectData);
+        const { data, error } = await supabase
+            .from('projects')
+            .insert(dbRow)
+            .select('*')
+            .single();
 
-    if (error) {
-        console.error('[ProjectService] Error creating project:', error);
-        throw error;
+        if (error) {
+            console.error('[ProjectService] Error creating project:', error);
+            throw error;
+        }
+
+        return data ? mapFromDB(data) : null;
+    } catch (err) {
+        console.error('[ProjectService] Critical error creating project:', err);
+        throw err;
     }
-
-    return mapFromDB(data);
 };
 
 export const updateProject = async (id, projectData) => {
-    const dbRow = mapToDB(projectData);
-    const { data, error } = await supabase
-        .from('projects')
-        .update(dbRow)
-        .eq('id', id)
-        .select('*')
-        .single();
+    try {
+        const dbRow = mapToDB(projectData);
+        const { data, error } = await supabase
+            .from('projects')
+            .update(dbRow)
+            .eq('id', id)
+            .select('*')
+            .single();
 
-    if (error) {
-        console.error('[ProjectService] Error updating project:', error);
-        throw error;
+        if (error) {
+            console.error('[ProjectService] Error updating project:', error);
+            throw error;
+        }
+
+        return data ? mapFromDB(data) : null;
+    } catch (err) {
+        console.error('[ProjectService] Critical error updating project:', err);
+        throw err;
     }
-
-    return mapFromDB(data);
 };
 
 export const deleteProject = async (id) => {
-    const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', id);
+    try {
+        const { error } = await supabase
+            .from('projects')
+            .delete()
+            .eq('id', id);
 
-    if (error) {
-        console.error('[ProjectService] Error deleting project:', error);
-        throw error;
+        if (error) {
+            console.error('[ProjectService] Error deleting project:', error);
+            throw error;
+        }
+    } catch (err) {
+        console.error('[ProjectService] Critical error deleting project:', err);
+        throw err;
     }
 };
 

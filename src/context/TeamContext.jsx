@@ -51,13 +51,17 @@ export const TeamProvider = ({ children }) => {
     }, [user]);
 
     useEffect(() => {
-        fetchTeams();
-
+        fetchTeams().catch(err => console.error('[TeamContext] Unhandled fetchTeams error:', err));
+        
         // Real-time subscription
         const channel = supabase
             .channel('team-updates')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => fetchTeams())
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => fetchTeams())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => {
+                fetchTeams().catch(err => console.error('[TeamContext] Re-fetch error:', err));
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => {
+                fetchTeams().catch(err => console.error('[TeamContext] Re-fetch error:', err));
+            })
             .subscribe();
 
         return () => {

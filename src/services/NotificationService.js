@@ -16,92 +16,116 @@ export const NOTIFICATION_TYPES = {
  * Retrieves all notifications for a specific user from Supabase.
  */
 export const getUserNotifications = async (userId) => {
-    const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('[NotificationService] Error fetching notifications:', error);
+        if (error) {
+            console.error('[NotificationService] Supabase Error fetching notifications:', error);
+            return [];
+        }
+
+        return (data || []).map(mapFromDB);
+    } catch (err) {
+        console.error('[NotificationService] Critical error fetching notifications:', err);
         return [];
     }
-
-    return data.map(mapFromDB);
 };
 
 /**
  * Adds a new notification to Supabase.
  */
 export const createNotification = async (userId, notificationData) => {
-    const { data, error } = await supabase
-        .from('notifications')
-        .insert({
-            user_id: userId,
-            type: notificationData.type || NOTIFICATION_TYPES.SYSTEM,
-            title: notificationData.title,
-            content: notificationData.message || notificationData.content,
-            link: notificationData.link || null,
-            is_read: false
-        })
-        .select('*')
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .insert({
+                user_id: userId,
+                type: notificationData.type || NOTIFICATION_TYPES.SYSTEM,
+                title: notificationData.title,
+                content: notificationData.message || notificationData.content,
+                link: notificationData.link || null,
+                is_read: false
+            })
+            .select('*')
+            .single();
 
-    if (error) {
-        console.error('[NotificationService] Error creating notification:', error);
+        if (error) {
+            console.error('[NotificationService] Error creating notification:', error);
+            return null;
+        }
+
+        return data ? mapFromDB(data) : null;
+    } catch (err) {
+        console.error('[NotificationService] Critical error creating notification:', err);
         return null;
     }
-
-    return mapFromDB(data);
 };
 
 /**
  * Marks a specific notification as read in Supabase.
  */
 export const markNotificationAsRead = async (notificationId) => {
-    const { data, error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId)
-        .select('*')
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', notificationId)
+            .select('*')
+            .single();
 
-    if (error) {
-        console.error('[NotificationService] Error marking notification as read:', error);
+        if (error) {
+            console.error('[NotificationService] Error marking notification as read:', error);
+            return null;
+        }
+
+        return data ? mapFromDB(data) : null;
+    } catch (err) {
+        console.error('[NotificationService] Critical error marking as read:', err);
         return null;
     }
-
-    return mapFromDB(data);
 };
 
 /**
  * Marks all notifications as read for a specific user in Supabase.
  */
 export const markAllAsRead = async (userId) => {
-    const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', userId);
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', userId);
 
-    if (error) {
-        console.error('[NotificationService] Error marking all as read:', error);
+        if (error) {
+            console.error('[NotificationService] Error marking all as read:', error);
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('[NotificationService] Critical error marking all as read:', err);
         return false;
     }
-
-    return true;
 };
 
 /**
  * Deletes a specific notification from Supabase.
  */
 export const deleteNotification = async (notificationId) => {
-    const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .eq('id', notificationId);
 
-    if (error) {
-        console.error('[NotificationService] Error deleting notification:', error);
+        if (error) {
+            console.error('[NotificationService] Error deleting notification:', error);
+        }
+    } catch (err) {
+        console.error('[NotificationService] Critical error deleting notification:', err);
     }
 };
 

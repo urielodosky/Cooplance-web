@@ -206,7 +206,7 @@ export const ChatProvider = ({ children }) => {
 
     // Cargar al montar o cambiar usuario
     useEffect(() => {
-        loadChats();
+        loadChats().catch(err => console.error("[ChatContext] Unhandled loadChats error:", err));
     }, [user]);
 
     // Suscripción Global a Mensajes

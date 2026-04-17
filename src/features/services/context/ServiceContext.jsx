@@ -162,7 +162,7 @@ export const ServiceProvider = ({ children }) => {
     }, [isMounted]);
 
     useEffect(() => {
-        fetchServices();
+        fetchServices().catch(err => console.error('[ServiceContext] Unhandled fetchServices error:', err));
     }, [fetchServices]);
 
     const addService = async (service) => {

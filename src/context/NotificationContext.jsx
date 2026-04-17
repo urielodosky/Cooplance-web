@@ -21,9 +21,15 @@ export const NotificationProvider = ({ children }) => {
             return;
         }
 
-        const userNotifs = await NotificationService.getUserNotifications(user.id);
-        setNotifications(userNotifs);
-        setUnreadCount(userNotifs.filter(n => !n.read).length);
+        try {
+            const userNotifs = await NotificationService.getUserNotifications(user.id);
+            setNotifications(userNotifs || []);
+            setUnreadCount((userNotifs || []).filter(n => !n.read).length);
+        } catch (err) {
+            console.error('[NotificationContext] Error in loadNotifications:', err);
+            setNotifications([]);
+            setUnreadCount(0);
+        }
     }, [user]);
 
     // Real-time subscription
@@ -55,37 +61,51 @@ export const NotificationProvider = ({ children }) => {
 
     // Expose method to mark as read
     const markAsRead = async (notificationId) => {
-        const updated = await NotificationService.markNotificationAsRead(notificationId);
-        if (updated) {
-            setNotifications(prev => prev.map(n => n.id === notificationId ? updated : n));
-            setUnreadCount(prev => Math.max(0, prev - 1));
+        try {
+            const updated = await NotificationService.markNotificationAsRead(notificationId);
+            if (updated) {
+                setNotifications(prev => prev.map(n => n.id === notificationId ? updated : n));
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+        } catch (err) {
+            console.error('[NotificationContext] Error marking as read:', err);
         }
     };
 
     const markAllAsRead = async () => {
-        const didUpdate = await NotificationService.markAllAsRead(user.id);
-        if (didUpdate) {
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-            setUnreadCount(0);
+        try {
+            const didUpdate = await NotificationService.markAllAsRead(user.id);
+            if (didUpdate) {
+                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                setUnreadCount(0);
+            }
+        } catch (err) {
+            console.error('[NotificationContext] Error marking all as read:', err);
         }
     };
 
     const deleteNotification = async (notificationId) => {
-        await NotificationService.deleteNotification(notificationId);
-        loadNotifications(); // Reload to recalculate state easily
+        try {
+            await NotificationService.deleteNotification(notificationId);
+            await loadNotifications();
+        } catch (err) {
+            console.error('[NotificationContext] Error deleting notification:', err);
+        }
     };
 
     // System hook for adding notification from anywhere if needed
     const addNotification = async (userId, data) => {
-        const newNotif = await NotificationService.createNotification(userId, data);
-        // If it's for the current user, local state will be updated via real-time subscribe 
-        // but adding local feedback immediately is nice too if not duplicated.
-        if (user && userId === user.id && newNotif) {
-            setNotifications(prev => {
-                if (prev.some(n => n.id === newNotif.id)) return prev;
-                return [newNotif, ...prev];
-            });
-            setUnreadCount(prev => prev + 1);
+        try {
+            const newNotif = await NotificationService.createNotification(userId, data);
+            if (user && userId === user.id && newNotif) {
+                setNotifications(prev => {
+                    if (prev.some(n => n.id === newNotif.id)) return prev;
+                    return [newNotif, ...prev];
+                });
+                setUnreadCount(prev => prev + 1);
+            }
+        } catch (err) {
+            console.error('[NotificationContext] Error adding notification:', err);
         }
     };
 
