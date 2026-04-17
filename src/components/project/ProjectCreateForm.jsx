@@ -7,10 +7,10 @@ import { useAuth } from '../../features/auth/context/AuthContext';
 import { serviceCategories } from '../../features/services/data/categories';
 import { locations } from '../../features/services/data/locations';
 import { supabase } from '../../lib/supabase';
-import { createProject } from '../../lib/projectService';
+import { createProject, updateProject } from '../../lib/projectService';
 import { getArgentinaProvinces, getArgentinaCities } from '../../utils/locationUtils';
 
-const ProjectCreateForm = () => {
+const ProjectCreateForm = ({ onCancel, initialData }) => {
     const navigate = useNavigate();
     const { user } = useAuth(); // Get current user
 
@@ -25,29 +25,30 @@ const ProjectCreateForm = () => {
     const [videoFile, setVideoFile] = useState(null);
 
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        category: '',
-        budgetType: 'fixed', // or 'range'
-        budget: '',
-        deadline: '',
-        executionTime: '',
-        imageUrl: '',
-        subcategories: [], // Array of selected subcategories
-        specialties: [], // Array of selected specialties
-        vacancies: 1,
-        paymentFrequency: 'unique',
-        contractDuration: '',
-        commissionPercentage: '',
-        workMode: ['remote'], // Array for multi-select
-        country: 'Argentina',
-        province: '', // Changed to string for single selection
-        city: '', // Changed to string for single selection
-        location: '',
-        paymentMethods: [],
-        contractDurationType: 'unique', // 'unique', 'days', 'weeks', 'months', 'years'
-        contractDurationValue: '',
-        contractStartDate: ''
+        ...initialData,
+        title: initialData?.title || '',
+        description: initialData?.description || '',
+        category: initialData?.category || '',
+        budgetType: initialData?.budgetType || 'fixed', // or 'range'
+        budget: initialData?.budget || '',
+        deadline: initialData?.deadline || '',
+        executionTime: initialData?.executionTime || '',
+        imageUrl: initialData?.imageUrl || '',
+        subcategories: initialData?.subcategories || [], // Array of selected subcategories
+        specialties: initialData?.specialties || [], // Array of selected specialties
+        vacancies: initialData?.vacancies || 1,
+        paymentFrequency: initialData?.paymentFrequency || 'unique',
+        contractDuration: initialData?.contractDuration || '',
+        commissionPercentage: initialData?.commissionPercentage || '',
+        workMode: initialData?.workMode || ['remote'], // Array for multi-select
+        country: initialData?.country || 'Argentina',
+        province: initialData?.province || '', // Changed to string for single selection
+        city: initialData?.city || '', // Changed to string for single selection
+        location: initialData?.location || '',
+        paymentMethods: initialData?.paymentMethods ? Object.keys(initialData.paymentMethods).filter(k => initialData.paymentMethods[k]) : [],
+        contractDurationType: initialData?.contractDurationType || 'unique', // 'unique', 'days', 'weeks', 'months', 'years'
+        contractDurationValue: initialData?.contractDurationValue || '',
+        contractStartDate: initialData?.contractStartDate || ''
     });
 
     const [argProvinces, setArgProvinces] = useState([]);
@@ -88,10 +89,10 @@ const ProjectCreateForm = () => {
         }
     }, [formData.province, formData.country]);
 
-    const [faqs, setFaqs] = useState([{ question: '', answer: '' }]);
+    const [faqs, setFaqs] = useState(initialData?.faqs || [{ question: '', answer: '' }]);
 
     // Step 5: Pre-interview Questions (for companies)
-    const [questions, setQuestions] = useState([
+    const [questions, setQuestions] = useState(initialData?.questions || [
         { id: Date.now(), text: '', type: 'text', options: [''] }
     ]);
 
@@ -383,10 +384,15 @@ const ProjectCreateForm = () => {
             }
 
             console.log('[ProjectCreateForm] Sending project data:', projectData);
-            await createProject(projectData);
-
-            setLoadingStatus('¡Listo!');
             
+            if (initialData?.id) {
+                await updateProject(initialData.id, projectData);
+                setLoadingStatus('Actualizado con éxito');
+            } else {
+                await createProject(projectData);
+                setLoadingStatus('¡Listo!');
+            }
+
             setTimeout(() => {
                 navigate('/explore-clients');
             }, 1500);
