@@ -683,8 +683,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     // ─── CHECK IF USER EXISTS ───────────────────────────────────────────────
-    const checkUserExists = async ({ username, email }, excludeId = null) => {
+    const checkUserExists = async ({ username, email, dni, cuil_cuit, phone, companyName }, excludeId = null) => {
         try {
+            // Check Username (Case-Insensitive)
             if (username) {
                 let query = supabase.from('profiles').select('id').ilike('username', username);
                 if (excludeId) query = query.neq('id', excludeId);
@@ -692,6 +693,17 @@ export const AuthProvider = ({ children }) => {
                 if (error) throw error;
                 if (data && data.length > 0) return { exists: true, field: 'username' };
             }
+
+            // Check Company Name (Case-Insensitive)
+            if (companyName) {
+                let query = supabase.from('profiles').select('id').ilike('company_name', companyName);
+                if (excludeId) query = query.neq('id', excludeId);
+                const { data, error } = await withTimeout(query, 10000, "Verificar nombre de empresa");
+                if (error) throw error;
+                if (data && data.length > 0) return { exists: true, field: 'company_name' };
+            }
+
+            // Check Email (Case-Insensitive)
             if (email) {
                 let query = supabase.from('profiles').select('id').ilike('email', email);
                 if (excludeId) query = query.neq('id', excludeId);
@@ -699,6 +711,34 @@ export const AuthProvider = ({ children }) => {
                 if (error) throw error;
                 if (data && data.length > 0) return { exists: true, field: 'email' };
             }
+
+            // Check DNI
+            if (dni) {
+                let query = supabase.from('profiles').select('id').eq('dni', dni);
+                if (excludeId) query = query.neq('id', excludeId);
+                const { data, error } = await withTimeout(query, 10000, "Verificar DNI");
+                if (error) throw error;
+                if (data && data.length > 0) return { exists: true, field: 'dni' };
+            }
+
+            // Check CUIL / CUIT
+            if (cuil_cuit) {
+                let query = supabase.from('profiles').select('id').eq('cuil_cuit', cuil_cuit);
+                if (excludeId) query = query.neq('id', excludeId);
+                const { data, error } = await withTimeout(query, 10000, "Verificar CUIT/CUIL");
+                if (error) throw error;
+                if (data && data.length > 0) return { exists: true, field: 'cuil_cuit' };
+            }
+
+            // Check Phone
+            if (phone) {
+                let query = supabase.from('profiles').select('id').eq('phone', phone);
+                if (excludeId) query = query.neq('id', excludeId);
+                const { data, error } = await withTimeout(query, 10000, "Verificar teléfono");
+                if (error) throw error;
+                if (data && data.length > 0) return { exists: true, field: 'phone' };
+            }
+
         } catch (err) {
             console.error("Error in checkUserExists:", err);
             throw err;

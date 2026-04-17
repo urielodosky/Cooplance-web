@@ -240,6 +240,27 @@ const Register = () => {
         e.preventDefault();
         setParentValidationError(null);
 
+        // Required Fields Basic Check
+        if (role === 'company') {
+            if (!formData.companyName) { alert("El nombre de la empresa es obligatorio."); return; }
+            if (!formData.responsibleFirstName || !formData.responsibleLastName) { alert("El nombre y apellido del responsable son obligatorios."); return; }
+            if (!formData.cuil_cuit) { alert("El CUIT/CUIL de la empresa es obligatorio."); return; }
+        } else {
+            if (!formData.username) { alert("El nombre de usuario es obligatorio."); return; }
+            if (!formData.firstName || !formData.lastName) { alert("Nombre y Apellido son obligatorios."); return; }
+        }
+
+        const isBioRequired = role !== 'buyer';
+        if (isBioRequired) {
+            if (!formData.bio || formData.bio.trim().length < 15) {
+                alert("La biografía es obligatoria y debe tener al menos 15 caracteres.");
+                return;
+            }
+        } else if (formData.bio && formData.bio.trim().length > 0 && formData.bio.trim().length < 15) {
+            alert("Si decides incluir una biografía, esta debe tener al menos 15 caracteres.");
+            return;
+        }
+
         // V27: Parental Validation for Minors (16-17)
         if (role !== 'company' && calculatedAge !== null && calculatedAge < 18) {
             if (!formData.parentEmail) {
@@ -314,7 +335,7 @@ const Register = () => {
         }
 
         const cleanUsername = formData.username ? formData.username.trim() : '';
-        if (cleanUsername && cleanUsername.length < 3) {
+        if (role !== 'company' && cleanUsername.length < 3) {
             alert("El nombre de usuario debe tener al menos 3 caracteres.");
             return;
         }
@@ -329,18 +350,27 @@ const Register = () => {
         }, 30000);
 
         try {
-            // Check for duplicate username/email in Database
-            console.log(" [REGISTER] Comprobando disponibilidad de usuario/email...");
+            // Check for duplicate fields in Database (V30: Expanded uniqueness)
+            console.log(" [REGISTER] Comprobando disponibilidad de datos únicos...");
             const { exists, field } = await checkUserExists({
-                username: cleanUsername || undefined,
+                username: role !== 'company' ? cleanUsername : undefined,
+                companyName: role === 'company' ? formData.companyName : undefined,
                 email: formData.email,
+                dni: formData.dni,
+                cuil_cuit: role === 'company' ? formData.cuil_cuit : undefined,
+                phone: formData.phone || undefined
             });
 
             if (exists) {
                 console.log(` [REGISTER] Conflicto detectado: ${field} ya existe.`);
                 let errorMsg = "El usuario ya existe.";
                 if (field === 'username') errorMsg = "El nombre de usuario ya está registrado.";
+                if (field === 'company_name') errorMsg = "Ese nombre de empresa ya está registrado.";
                 if (field === 'email') errorMsg = "El correo electrónico ya está registrado.";
+                if (field === 'dni') errorMsg = "El DNI ya se encuentra registrado con otra cuenta.";
+                if (field === 'cuil_cuit') errorMsg = "El CUIT/CUIL ya se encuentra registrado con otra cuenta.";
+                if (field === 'phone') errorMsg = "El número de teléfono ya está en uso.";
+                
                 alert(errorMsg);
                 clearTimeout(loadingWatchdog);
                 setLoading(false);
@@ -356,7 +386,7 @@ const Register = () => {
                 cvFile: formData.cvFile
             };
 
-            // Set username default for companies
+            // Set username default for companies if not present (though usually it is not in the form)
             if (role === 'company' && !cleanUsername) {
                 registrationData.username = registrationData.email.split('@')[0];
             } else if (cleanUsername) {
@@ -364,7 +394,7 @@ const Register = () => {
             }
             if (registrationData.email) registrationData.email = registrationData.email.toLowerCase();
 
-            // 1. INTENTO DE REGISTRO TEMPRANO
+            // 1. INTENTO DE REGISTRO
             console.log(" [REGISTER] Llamando a supabase.auth.signUp...");
             try {
                 await register(role, registrationData);

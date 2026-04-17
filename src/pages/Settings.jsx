@@ -23,6 +23,7 @@ const Settings = () => {
     const [isEditingBioInline, setIsEditingBioInline] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [dni, setDni] = useState(user?.dni || '');
+    const [cuilCuit, setCuilCuit] = useState(user?.cuil_cuit || '');
     const [dob, setDob] = useState(user?.dob || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [gender, setGender] = useState(user?.gender || 'male');
@@ -47,6 +48,7 @@ const Settings = () => {
             setVacancies(user.vacancies || '');
             setGender(user.gender || 'male');
             setDni(user.dni || '');
+            setCuilCuit(user.cuil_cuit || '');
             setDob(user.dob || '');
             setPhone(user.phone || '');
         }
@@ -141,20 +143,53 @@ const Settings = () => {
         const cleanUsername = username.trim();
 
         try {
-            if (cleanUsername.length < 3) {
+            // Mandatory field validation
+            if (user.role === 'company') {
+                if (!companyName) { setMessage({ text: 'Error: El nombre de la empresa es obligatorio.', type: 'error' }); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                if (!responsibleName) { setMessage({ text: 'Error: El nombre del responsable es obligatorio.', type: 'error' }); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                if (!cuilCuit) { setMessage({ text: 'Error: El CUIT/CUIL es obligatorio.', type: 'error' }); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+            } else {
+                if (!firstName || !lastName) { setMessage({ text: 'Error: Nombre y apellido son obligatorios.', type: 'error' }); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                if (!cleanUsername) { setMessage({ text: 'Error: El nombre de usuario es obligatorio.', type: 'error' }); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+            }
+
+            if (!dni) { setMessage({ text: 'Error: El DNI es obligatorio.', type: 'error' }); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+
+            const isBioRequired = user.role !== 'buyer';
+            if (isBioRequired) {
+                if (!bio || bio.trim().length < 15) {
+                    setMessage({ text: 'Error: La biografía es obligatoria y debe tener al menos 15 caracteres.', type: 'error' });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+            } else if (bio && bio.trim().length > 0 && bio.trim().length < 15) {
+                setMessage({ text: 'Error: Si incluyes una biografía, debe tener al menos 15 caracteres.', type: 'error' });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            if (cleanUsername.length < 3 && user.role !== 'company') {
                 setMessage({ text: 'Error: El nombre de usuario debe tener al menos 3 caracteres.', type: 'error' });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
 
-            // Check for duplicates (excluding self)
+            // Check for duplicates (excluding self) - V30: Expanded uniqueness check
             const { exists, field } = await checkUserExists({
-                username: cleanUsername
+                username: user.role !== 'company' ? cleanUsername : undefined,
+                companyName: user.role === 'company' ? companyName : undefined,
+                dni: dni,
+                cuil_cuit: user.role === 'company' ? cuilCuit : undefined,
+                phone: phone || undefined
             }, user.id);
 
             if (exists) {
-                let errorMsg = "Error al guardar cambios: El usuario ya existe.";
-                if (field === 'username') errorMsg = "Error al guardar cambios: El nombre de usuario ya está en uso por otro miembro.";
+                let errorMsg = "Error al guardar cambios: El dato ya está registrado.";
+                if (field === 'username') errorMsg = "Error: El nombre de usuario ya está en uso.";
+                if (field === 'company_name') errorMsg = "Error: Ese nombre de empresa ya está registrado.";
+                if (field === 'dni') errorMsg = "Error: El DNI ya pertenece a otra cuenta.";
+                if (field === 'cuil_cuit') errorMsg = "Error: El CUIT/CUIL ya pertenece a otra cuenta.";
+                if (field === 'phone') errorMsg = "Error: El número de teléfono ya está en uso.";
 
                 setMessage({ text: errorMsg, type: 'error' });
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -165,7 +200,7 @@ const Settings = () => {
 
             await updateUser({
                 ...user,
-                username: cleanUsername.toLowerCase(),
+                username: user.role !== 'company' ? cleanUsername.toLowerCase() : user.username,
                 first_name: firstName || null,
                 last_name: lastName || null,
                 company_name: companyName || null,
@@ -178,6 +213,7 @@ const Settings = () => {
                 vacancies: vacancies !== '' && vacancies !== null ? parseInt(vacancies) || 0 : 0,
                 gender: gender,
                 dni: dni || null,
+                cuil_cuit: cuilCuit || null,
                 dob: dob || null,
                 phone: phone || null
             });
@@ -489,6 +525,20 @@ const Settings = () => {
 
                         <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
                             <div className="form-group">
+                                <label className="field-label">DNI / Documento</label>
+                                <input
+                                    type="text"
+                                    value={dni}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val && !/^\d+$/.test(val)) return;
+                                        setDni(val);
+                                    }}
+                                    placeholder="Tu número de documento"
+                                    className="settings-input"
+                                />
+                            </div>
+                            <div className="form-group">
                                 <label className="field-label">Fecha de Nacimiento</label>
                                 <div 
                                     className="datepicker-input glass input-readonly" 
@@ -535,6 +585,16 @@ const Settings = () => {
                                         value={responsibleName}
                                         onChange={(e) => setResponsibleName(e.target.value)}
                                         placeholder="Nombre de la persona a cargo"
+                                        className="settings-input"
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                    <label className="field-label">CUIT / CUIL de la Empresa</label>
+                                    <input
+                                        type="text"
+                                        value={cuilCuit}
+                                        onChange={(e) => setCuilCuit(e.target.value)}
+                                        placeholder="Tu número de CUIT/CUIL"
                                         className="settings-input"
                                     />
                                 </div>
