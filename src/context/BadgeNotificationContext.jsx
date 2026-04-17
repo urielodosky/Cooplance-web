@@ -29,99 +29,103 @@ export const BadgeNotificationProvider = ({ children }) => {
     const checkBadgeUnlocks = useCallback(async () => {
         if (!user || user.sync_error) return;
 
-        console.log("[BadgeNotificationContext] Checking for new unlocks...");
+        try {
+            console.log("[BadgeNotificationContext] Checking for new unlocks...");
 
-        const isClient = user.role === 'buyer' || user.role === 'company';
-        
-        // 1. Fetch relevant data for precise metric calculation
-        const { data: jobs, error: jobsError } = await supabase
-            .from('jobs')
-            .select('client_id, provider_id, status')
-            .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`);
-
-        if (jobsError) {
-            console.warn("[BadgeNotificationContext] Failed to fetch jobs for badge calculation:", jobsError);
-            return;
-        }
-
-        const completedJobs = jobs.filter(j => j.status === 'completed');
-        const mySales = completedJobs.filter(j => j.provider_id === user.id);
-        const myOrders = completedJobs.filter(j => j.client_id === user.id);
-
-        // 2. Calculate Loyalty (Symmetrical)
-        // Frequency of hiring/being hired by the same person
-        const interactions = {};
-        completedJobs.forEach(job => {
-            const targetId = job.client_id === user.id ? job.provider_id : job.client_id;
-            interactions[targetId] = (interactions[targetId] || 0) + 1;
-        });
-        const maxLoyalty = Object.values(interactions).length > 0 ? Math.max(...Object.values(interactions)) : 0;
-
-        // 3. Unique target count (Talent/Clients handled)
-        const uniquePartners = new Set(interactions).size;
-
-        const getProgressForFamily = (familyId) => {
-            switch (familyId) {
-                case 'sales': return mySales.length;
-                case 'purchases': return myOrders.length;
-                case 'levels': return user.level || 1;
-                case 'reviews': return user.reviewsCount || 0; // Assuming this comes from profile
-                case 'loyalty': return maxLoyalty;
-                case 'services': return 0; // Requires separate services fetch if needed
-                case 'talent': return uniquePartners;
-                case 'projects': return 0; // Requires separate projects fetch if needed
-                default: return 0;
-            }
-        };
-
-        const getIconForFamily = (familyId) => {
-            const map = { sales: Icons.Coin, purchases: Icons.Coin, levels: Icons.Flame, services: Icons.Rocket, loyalty: Icons.Heart, speed: Icons.Lightning, reviews: Icons.Star, talent: Icons.Handshake, projects: Icons.Eye };
-            return map[familyId] || Icons.Star;
-        };
-
-        const displayFamilies = isClient ? CLIENT_BADGE_FAMILIES : BADGE_FAMILIES;
-        let currentlyUnlocked = [];
-
-        displayFamilies.forEach(family => {
-            const familyProgress = getProgressForFamily(family.familyId);
-            family.badges.forEach((badge, index) => {
-                if (familyProgress >= badge.required) {
-                    const mappedIndex = Math.floor((index / Math.max(1, family.badges.length - 1)) * 4);
-                    const tierColors = ['#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2', '#b9f2ff'];
-
-                    currentlyUnlocked.push({
-                        ...badge,
-                        icon: getIconForFamily(family.familyId),
-                        tierColor: tierColors[Math.min(mappedIndex, 4)]
-                    });
-                }
-            });
-        });
-
-        // 4. Persistence Check (DB Source of Truth)
-        const gamification = user.gamification || { badges: [], vacation: { active: false, credits: 4 } };
-        const dbBadgeIds = gamification.badges || [];
-        
-        // newlyUnlocked are those we merit NOW but aren't in the DB IDs list
-        const newlyUnlocked = currentlyUnlocked.filter(b => !dbBadgeIds.includes(b.id));
-
-        if (newlyUnlocked.length > 0) {
-            console.log(`[BadgeNotificationContext] ${newlyUnlocked.length} NEW badges found! Syncing to DB...`);
+            const isClient = user.role === 'buyer' || user.role === 'company';
             
-            // Update User Profile gamification (DB Persistence)
-            const updatedBadges = Array.from(new Set([...dbBadgeIds, ...currentlyUnlocked.map(b => b.id)]));
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ gamification: { ...gamification, badges: updatedBadges } })
-                .eq('id', user.id);
+            // 1. Fetch relevant data for precise metric calculation
+            const { data: jobs, error: jobsError } = await supabase
+                .from('jobs')
+                .select('client_id, provider_id, status')
+                .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`);
 
-            if (updateError) {
-                console.error("[BadgeNotificationContext] Failed to sync badges to DB:", updateError);
+            if (jobsError) {
+                console.warn("[BadgeNotificationContext] Failed to fetch jobs for badge calculation:", jobsError);
                 return;
             }
 
-            // Queue notifications
-            setQueue(prev => [...prev, ...newlyUnlocked]);
+            const completedJobs = jobs.filter(j => j.status === 'completed');
+            const mySales = completedJobs.filter(j => j.provider_id === user.id);
+            const myOrders = completedJobs.filter(j => j.client_id === user.id);
+
+            // 2. Calculate Loyalty (Symmetrical)
+            // Frequency of hiring/being hired by the same person
+            const interactions = {};
+            completedJobs.forEach(job => {
+                const targetId = job.client_id === user.id ? job.provider_id : job.client_id;
+                interactions[targetId] = (interactions[targetId] || 0) + 1;
+            });
+            const maxLoyalty = Object.values(interactions).length > 0 ? Math.max(...Object.values(interactions)) : 0;
+
+            // 3. Unique target count (Talent/Clients handled)
+            const uniquePartners = new Set(Object.keys(interactions)).size;
+
+            const getProgressForFamily = (familyId) => {
+                switch (familyId) {
+                    case 'sales': return mySales.length;
+                    case 'purchases': return myOrders.length;
+                    case 'levels': return user.level || 1;
+                    case 'reviews': return user.reviewsCount || 0; // Assuming this comes from profile
+                    case 'loyalty': return maxLoyalty;
+                    case 'services': return 0; // Requires separate services fetch if needed
+                    case 'talent': return uniquePartners;
+                    case 'projects': return 0; // Requires separate projects fetch if needed
+                    default: return 0;
+                }
+            };
+
+            const getIconForFamily = (familyId) => {
+                const map = { sales: Icons.Coin, purchases: Icons.Coin, levels: Icons.Flame, services: Icons.Rocket, loyalty: Icons.Heart, speed: Icons.Lightning, reviews: Icons.Star, talent: Icons.Handshake, projects: Icons.Eye };
+                return map[familyId] || Icons.Star;
+            };
+
+            const displayFamilies = isClient ? CLIENT_BADGE_FAMILIES : BADGE_FAMILIES;
+            let currentlyUnlocked = [];
+
+            displayFamilies.forEach(family => {
+                const familyProgress = getProgressForFamily(family.familyId);
+                family.badges.forEach((badge, index) => {
+                    if (familyProgress >= badge.required) {
+                        const mappedIndex = Math.floor((index / Math.max(1, family.badges.length - 1)) * 4);
+                        const tierColors = ['#cd7f32', '#c0c0c0', '#ffd700', '#e5e4e2', '#b9f2ff'];
+
+                        currentlyUnlocked.push({
+                            ...badge,
+                            icon: getIconForFamily(family.familyId),
+                            tierColor: tierColors[Math.min(mappedIndex, 4)]
+                        });
+                    }
+                });
+            });
+
+            // 4. Persistence Check (DB Source of Truth)
+            const gamification = user.gamification || { badges: [], vacation: { active: false, credits: 4 } };
+            const dbBadgeIds = gamification.badges || [];
+            
+            // newlyUnlocked are those we merit NOW but aren't in the DB IDs list
+            const newlyUnlocked = currentlyUnlocked.filter(b => !dbBadgeIds.includes(b.id));
+
+            if (newlyUnlocked.length > 0) {
+                console.log(`[BadgeNotificationContext] ${newlyUnlocked.length} NEW badges found! Syncing to DB...`);
+                
+                // Update User Profile gamification (DB Persistence)
+                const updatedBadges = Array.from(new Set([...dbBadgeIds, ...currentlyUnlocked.map(b => b.id)]));
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ gamification: { ...gamification, badges: updatedBadges } })
+                    .eq('id', user.id);
+
+                if (updateError) {
+                    console.error("[BadgeNotificationContext] Failed to sync badges to DB:", updateError);
+                    return;
+                }
+
+                // Queue notifications
+                setQueue(prev => [...prev, ...newlyUnlocked]);
+            }
+        } catch (err) {
+            console.error("[BadgeNotificationContext] checkBadgeUnlocks critical error:", err);
         }
     }, [user]);
 
