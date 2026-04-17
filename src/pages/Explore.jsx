@@ -57,15 +57,7 @@ const Explore = () => {
         content = (
             <div className="no-results glass full-width-msg" style={{ animation: 'fadeIn 0.5s ease-out' }}>
                 <h3>Aún no existen servicios registrados.</h3>
-                <p>La base de datos está conectada pero vacía. Crea el primer servicio para verlo aquí.</p>
-                <div style={{ marginTop: '2rem' }}>
-                    <button className="btn-primary" onClick={() => fetchServices()}>
-                        🔄 Reintentar Sincronización
-                    </button>
-                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', marginTop: '1rem' }}>
-                        Si ves esto y sabes que hay datos, por favor reinicia tu servidor Vite.
-                    </p>
-                </div>
+                <p>Vuelve más tarde para descubrir nuevos freelancers.</p>
             </div>
         );
     } else if (filteredServices.length === 0) {

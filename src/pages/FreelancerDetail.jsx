@@ -4,6 +4,7 @@ import { useTeams } from '../context/TeamContext';
 import { getProfilePicture } from '../utils/avatarUtils';
 import ServiceCard from '../features/services/components/ServiceCard';
 import { supabase } from '../lib/supabase';
+import { BADGE_FAMILIES } from '../data/badgeDefinitions';
 import '../styles/pages/ServiceDetail.scss';
 
 const FreelancerDetail = () => {
@@ -155,19 +156,26 @@ const FreelancerDetail = () => {
                     </div>
 
                     <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                            <h1 style={{ margin: 0, fontSize: '2.8rem', fontWeight: 800, lineHeight: 1.1 }}>
-                                {freelancer.first_name ? `${freelancer.first_name} ${freelancer.last_name || ''}` : freelancer.username}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.5rem' }}>
+                            <h1 style={{ margin: 0, fontSize: '3.2rem', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                                {freelancer.username || 'Usuario'}
                             </h1>
-                            <span style={{
-                                background: 'var(--primary)',
-                                color: 'white',
-                                fontSize: '0.75rem',
-                                fontWeight: '800',
-                                padding: '4px 10px',
-                                borderRadius: '12px',
-                                letterSpacing: '0.5px'
-                            }}>FREELANCER NIVEL {freelancer.level || 1}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                <p style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
+                                    {freelancer.first_name} {freelancer.last_name}
+                                </p>
+                                <span style={{
+                                    background: 'var(--primary)',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    fontWeight: '800',
+                                    padding: '3px 8px',
+                                    borderRadius: '8px',
+                                    letterSpacing: '0.5px',
+                                    textTransform: 'uppercase'
+                                }}>Nivel {freelancer.level || 1}</span>
+                            </div>
+                        </div>
                              
                              {freelancer.cv_url && (
                                  <button 
@@ -188,7 +196,8 @@ const FreelancerDetail = () => {
                                          gap: '0.5rem',
                                          cursor: 'pointer',
                                          background: 'rgba(255,255,255,0.05)',
-                                         border: '1px solid var(--border)'
+                                         border: '1px solid var(--border)',
+                                         width: 'fit-content'
                                      }}
                                  >
                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -196,7 +205,7 @@ const FreelancerDetail = () => {
                                  </button>
                              )}
                             {freelancer.gamification?.vacation?.active && (() => {
-                                const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - freelancer.gamification.vacation.startDate) / 86400000));
+                                const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - (freelancer.gamification.vacation.startDate || Date.now())) / 86400000));
                                 return (
                                     <span style={{
                                         background: 'rgba(16, 185, 129, 0.15)',
@@ -208,15 +217,16 @@ const FreelancerDetail = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '4px',
-                                        border: '1px solid rgba(16, 185, 129, 0.25)'
+                                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                                        marginTop: '0.5rem',
+                                        width: 'fit-content'
                                     }}>
                                         De vacaciones — faltan {daysLeft} días
                                     </span>
                                 );
                             })()}
-                        </div>
 
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', margin: '1.5rem 0', alignItems: 'center' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '1rem', padding: '4px 12px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                                 {freelancer.location || 'Ubicación no especificada'}
@@ -227,9 +237,44 @@ const FreelancerDetail = () => {
                             </span>
                         </div>
 
-                        <p style={{ maxWidth: '800px', color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.7', background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                        <p style={{ maxWidth: '800px', color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.7', background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
                             {freelancer.bio || `Hola, soy ${freelancer.first_name || freelancer.username}. Especialista en ofrecer soluciones de alta calidad. Contáctame para discutir tu proyecto.`}
                         </p>
+
+                        {/* Badges Section */}
+                        {freelancer.gamification?.badges?.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                {BADGE_FAMILIES.flatMap(f => f.badges)
+                                    .filter(b => freelancer.gamification.badges.includes(b.id))
+                                    .map(badge => (
+                                        <div 
+                                            key={badge.id}
+                                            className="glass help-icon-wrapper"
+                                            style={{ 
+                                                padding: '6px 12px', 
+                                                borderRadius: '12px', 
+                                                border: '1px solid var(--primary)', 
+                                                background: 'rgba(139, 92, 246, 0.05)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                cursor: 'help'
+                                            }}
+                                        >
+                                            <div style={{ color: 'var(--primary)' }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
+                                            
+                                            <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
+                                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -439,7 +439,11 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                     <div className="filter-item subcat-col">
                         <label>SUBCATEGORÍA</label>
                         <CustomDropdown
-                            options={Object.keys((typeof serviceCategories[currentFilters.category] === 'object' && !Array.isArray(serviceCategories[currentFilters.category])) ? serviceCategories[currentFilters.category] : {}).map(s => ({ label: s, value: s }))}
+                            options={Object.keys(
+                                (serviceCategories[currentFilters.category] && typeof serviceCategories[currentFilters.category] === 'object' && !Array.isArray(serviceCategories[currentFilters.category])) 
+                                ? serviceCategories[currentFilters.category] 
+                                : {}
+                            ).map(s => ({ label: s, value: s }))}
                             value={currentFilters.subcategory || ''}
                             onChange={(val) => handleChange('subcategory', val)}
                             placeholder="Todas"
@@ -450,24 +454,29 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                         <label>ESPECIALIDADES</label>
                         <div className="compact-specs-flex">
                             {currentFilters.subcategory ? (
-                                (serviceCategories[currentFilters.category]?.[currentFilters.subcategory] || []).map(spec => {
-                                    const isSelected = (currentFilters.specialties || []).includes(spec);
-                                    return (
-                                        <button
-                                            key={spec}
-                                            className={`spec-pill ${isSelected ? 'active' : ''}`}
-                                            onClick={() => {
-                                                const current = currentFilters.specialties || [];
-                                                const newSpecs = current.includes(spec) 
-                                                    ? current.filter(s => s !== spec) 
-                                                    : [...current, spec];
-                                                handleChange('specialties', newSpecs);
-                                            }}
-                                        >
-                                            {spec}
-                                        </button>
-                                    );
-                                })
+                                (() => {
+                                    const specs = serviceCategories[currentFilters.category]?.[currentFilters.subcategory];
+                                    if (!Array.isArray(specs)) return null;
+                                    
+                                    return specs.map(spec => {
+                                        const isSelected = (currentFilters.specialties || []).includes(spec);
+                                        return (
+                                            <button
+                                                key={spec}
+                                                className={`spec-pill ${isSelected ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    const current = currentFilters.specialties || [];
+                                                    const newSpecs = current.includes(spec) 
+                                                        ? current.filter(s => s !== spec) 
+                                                        : [...current, spec];
+                                                    handleChange('specialties', newSpecs);
+                                                }}
+                                            >
+                                                {spec}
+                                            </button>
+                                        );
+                                    });
+                                })()
                             ) : (
                                 <span className="helper-text">Elige subcategoría para ver especialidades</span>
                             )}

@@ -5,6 +5,7 @@ import ProjectCard from '../components/project/ProjectCard';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { calculateAge } from '../utils/ageUtils';
 import { supabase } from '../lib/supabase';
+import { CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
 import '../styles/pages/CompanyDetail.scss';
 // We rely on ServiceDetail.css for some basics, but will add inline styles for specific company hero look
 
@@ -94,11 +95,25 @@ const CompanyDetail = () => {
                     </div>
 
                     <div className="company-info">
-                        <div className="company-title-row">
-                            <h1 className="company-title">
-                                {company.company_name || company.companyName || `${company.first_name || ''} ${company.last_name || ''}`.trim() || 'Empresa'}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.5rem' }}>
+                            <h1 style={{ margin: 0, fontSize: '3.2rem', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                                {company.username || 'Empresa'}
                             </h1>
-                            <span className="verified-badge">VERIFICADO</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                <p style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
+                                    {company.company_name || company.companyName || `${company.first_name || ''} ${company.last_name || ''}`.trim()}
+                                </p>
+                                <span style={{
+                                    background: 'var(--secondary)',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    fontWeight: '800',
+                                    padding: '3px 8px',
+                                    borderRadius: '8px',
+                                    letterSpacing: '0.5px',
+                                    textTransform: 'uppercase'
+                                }}>VERIFICADO</span>
+                            </div>
                         </div>
 
                         <div className="company-meta-row">
@@ -113,9 +128,44 @@ const CompanyDetail = () => {
                             </span>
                         </div>
 
-                        <p className="company-bio">
+                        <p className="company-bio" style={{ marginBottom: '1.5rem' }}>
                             {company.bio || "Este usuario no ha añadido una descripción todavía."}
                         </p>
+
+                        {/* Badges Section */}
+                        {company.gamification?.badges?.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                {CLIENT_BADGE_FAMILIES.flatMap(f => f.badges)
+                                    .filter(b => company.gamification.badges.includes(b.id))
+                                    .map(badge => (
+                                        <div 
+                                            key={badge.id}
+                                            className="glass help-icon-wrapper"
+                                            style={{ 
+                                                padding: '6px 12px', 
+                                                borderRadius: '12px', 
+                                                border: '1px solid var(--secondary)', 
+                                                background: 'rgba(59, 130, 246, 0.05)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                cursor: 'help'
+                                            }}
+                                        >
+                                            <div style={{ color: 'var(--secondary)' }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
+                                            
+                                            <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
+                                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
