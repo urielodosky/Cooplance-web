@@ -126,7 +126,7 @@ export const JobProvider = ({ children }) => {
             // Register Activity for Buyer
             if (user) {
                 const updated = registerActivity(user);
-                updateUser(updated);
+                updateUser(updated).catch(err => console.warn('[JobContext] Silently failed to register activity:', err));
             }
 
             // Auto-approve for demo
@@ -230,7 +230,9 @@ export const JobProvider = ({ children }) => {
                                 let newLevel = buyerProfile.level || 1;
                                 if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) newLevel++;
                                 await supabase.from('profiles').update({ xp: newXP, level: newLevel }).eq('id', buyerProfile.id);
-                                if (user?.id === buyerProfile.id) updateUser({ ...user, xp: newXP, level: newLevel });
+                                if (user?.id === buyerProfile.id) {
+                                    updateUser({ ...user, xp: newXP, level: newLevel }).catch(e => console.warn('[JobContext] XP sync failed:', e));
+                                }
                             }
 
                             if (freelancerProfile) {
@@ -239,7 +241,9 @@ export const JobProvider = ({ children }) => {
                                 let newLevel = freelancerProfile.level || 1;
                                 if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) newLevel++;
                                 await supabase.from('profiles').update({ xp: newXP, level: newLevel }).eq('id', freelancerProfile.id);
-                                if (user?.id === freelancerProfile.id) updateUser({ ...user, xp: newXP, level: newLevel });
+                                if (user?.id === freelancerProfile.id) {
+                                    updateUser({ ...user, xp: newXP, level: newLevel }).catch(e => console.warn('[JobContext] XP sync failed:', e));
+                                }
                             }
                         }
                     } catch (xpErr) {

@@ -316,7 +316,7 @@ export const ChatProvider = ({ children }) => {
             // Registro de actividad gamificada
             if (user && !options.isSystem) {
                 const updated = registerActivity(user);
-                updateUser(updated);
+                updateUser(updated).catch(e => console.warn('[ChatContext] Activity sync failed:', e));
             }
 
             return message;

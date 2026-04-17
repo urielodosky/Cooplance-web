@@ -321,13 +321,26 @@ const Dashboard = () => {
         loadInitData();
     }, [user?.id]);
 
-    // Gamification Process
+    // Gamification Process - Stabilized
     useEffect(() => {
-        if (user && (user.role === 'freelancer' || user.role === 'company')) {
-            const processedUser = processGamificationRules(user);
-            if (processedUser !== user) updateUser(processedUser);
+        if (!user || (user.role !== 'freelancer' && user.role !== 'company')) return;
+
+        // Use a stable, non-circular check to avoid infinite loops
+        const processedUser = processGamificationRules(user);
+        
+        // Only update if there is a meaningful data change
+        const hasChanges = 
+            processedUser.xp !== user.xp || 
+            processedUser.level !== user.level || 
+            JSON.stringify(processedUser.gamification) !== JSON.stringify(user.gamification);
+
+        if (hasChanges) {
+            console.log("[Dashboard] Applying gamification updates...");
+            updateUser(processedUser).catch(err => {
+                console.warn("[Dashboard] Silently failed to sync gamification rules:", err);
+            });
         }
-    }, [user, updateUser]);
+    }, [user?.id, user?.xp, user?.level, updateUser]);
 
     // Derived Data
     const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);

@@ -459,8 +459,11 @@ export const AuthProvider = ({ children }) => {
             .eq('id', user.id);
 
         if (error) {
-            console.error('Error updating profile:', error);
-            throw error;
+            const techDetail = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+            console.error('[AuthContext] Error updating profile:', error);
+            const enrichedError = new Error(`Fallo al actualizar perfil: ${techDetail}`);
+            enrichedError.details = error;
+            throw enrichedError;
         }
         await fetchProfile(user.id);
     };

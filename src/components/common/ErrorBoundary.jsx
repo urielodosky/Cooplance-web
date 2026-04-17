@@ -43,15 +43,31 @@ class ErrorBoundary extends React.Component {
                     textAlign: 'center'
                 }}>
                     <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#ef4444' }}>¡Ups! Algo salió mal.</h2>
-                    <p style={{ maxWidth: '600px', marginBottom: '2rem', lineHeight: '1.6' }}>
-                        La aplicación encontró un error inesperado.
-                        <br />
-                        <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
-                            {this.state.error && this.state.error.toString()}
-                        </span>
+                    <p style={{ maxWidth: '600px', marginBottom: '1rem', lineHeight: '1.6' }}>
+                        La aplicación encontró un error inesperado que impide continuar.
                     </p>
 
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '1.5rem',
+                        borderRadius: '12px',
+                        textAlign: 'left',
+                        marginBottom: '2rem',
+                        maxWidth: '800px',
+                        width: '100%',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        overflow: 'auto',
+                        maxHeight: '300px'
+                    }}>
+                        <p style={{ color: '#ef4444', fontWeight: 'bold', margin: '0 0 0.5rem 0' }}>Detalles Técnicos:</p>
+                        <code style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', whiteSpace: 'pre-wrap' }}>
+                            {this.state.error && this.state.error.toString()}
+                            {"\n\n"}
+                            {this.state.errorInfo && this.state.errorInfo.componentStack}
+                        </code>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <button
                             onClick={this.handleReload}
                             style={{
