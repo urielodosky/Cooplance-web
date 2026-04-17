@@ -199,12 +199,16 @@ const Register = () => {
             }
 
             const age = calculateAge(formData.birthDate);
-            if (role === 'freelancer' && age < 14) {
-                alert("Debes tener al menos 14 años para registrarte como freelancer.");
+            if (role === 'freelancer' && age < 16) {
+                alert("Debes tener al menos 16 años para registrarte como freelancer.");
                 return;
             }
             if (role === 'company' && age < 18) {
                 alert("El responsable debe tener al menos 18 años para registrar una empresa.");
+                return;
+            }
+            if (role === 'buyer' && age < 14) {
+                alert("Debes tener al menos 14 años para registrarte como cliente.");
                 return;
             }
         }
@@ -375,14 +379,34 @@ const Register = () => {
                                     Por favor ingresa una fecha de nacimiento válida (año entre 1920 y {new Date().getFullYear()}).
                                 </p>
                             )}
-                            {!invalidYear && calculatedAge !== null && calculatedAge < 14 && (
+                            {/* Freelancer Validation */}
+                            {!invalidYear && calculatedAge !== null && role === 'freelancer' && calculatedAge < 16 && (
                                 <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.25rem' }}>
-                                    Debes tener al menos 14 años para registrarte como freelancer.
+                                    Debes tener al menos 16 años para registrarte como freelancer.
                                 </p>
                             )}
-                            {!invalidYear && calculatedAge !== null && calculatedAge >= 14 && calculatedAge < 18 && (
+                            {!invalidYear && calculatedAge !== null && role === 'freelancer' && calculatedAge >= 16 && calculatedAge < 18 && (
                                 <p style={{ fontSize: '0.8rem', color: '#f59e0b', marginTop: '0.25rem' }}>
-                                    Al ser menor de 18 años, puedes registrarte como freelancer pero no podrás postularte a empresas.
+                                    Al ser menor de 18 años, puedes registrarte como freelancer pero no podrás postularte a ofertas de empresas.
+                                </p>
+                            )}
+
+                            {/* Company Validation */}
+                            {!invalidYear && calculatedAge !== null && role === 'company' && calculatedAge < 18 && (
+                                <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.25rem' }}>
+                                    El responsable de la empresa debe tener al menos 18 años.
+                                </p>
+                            )}
+
+                            {/* Buyer/Client Validation */}
+                            {!invalidYear && calculatedAge !== null && role === 'buyer' && calculatedAge < 14 && (
+                                <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.25rem' }}>
+                                    Debes tener al menos 14 años para registrarte como cliente.
+                                </p>
+                            )}
+                            {!invalidYear && calculatedAge !== null && role === 'buyer' && calculatedAge >= 14 && calculatedAge < 18 && (
+                                <p style={{ fontSize: '0.8rem', color: '#f59e0b', marginTop: '0.25rem' }}>
+                                    Al ser menor de 18 años, solo podrás contratar servicios digitales (remotos).
                                 </p>
                             )}
                         </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { processGamificationRules } from '../../../utils/gamification';
 import { supabase } from '../../../lib/supabase';
 import { createClient } from '@supabase/supabase-js';
@@ -12,23 +12,40 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
+    const syncInProgress = useRef(null); // V24: Track active syncing UID to prevent loops
 
     const handleSession = async (session) => {
-        console.log("[AuthContext] Handling session:", session?.user ? "User detected" : "No user");
-        if (session?.user) {
-            // V13: Carga instantánea desde caché local
-            const cachedProfile = localStorage.getItem(`cooplance_profile_${session.user.id}`);
-            if (cachedProfile) {
-                console.log("[AuthContext] Instant boot from cache.");
-                setUser({ ...JSON.parse(cachedProfile), is_cached: true });
-                setLoading(false);
+        try {
+            console.log("[AuthContext] Handling session:", session?.user ? "User detected" : "No user");
+            if (session?.user) {
+                // V24: Deduplication - Don't start a horizontal sync if one for this UI is already running
+                if (syncInProgress.current === session.user.id) {
+                    console.log("[AuthContext] Sync already in progress for this user. Skipping.");
+                    return;
+                }
+
+                // V13: Carga instantánea desde caché local
+                const cachedProfile = localStorage.getItem(`cooplance_profile_${session.user.id}`);
+                if (cachedProfile) {
+                    console.log("[AuthContext] Instant boot from cache.");
+                    setUser({ ...JSON.parse(cachedProfile), is_cached: true });
+                    setLoading(false);
+                } else {
+                    setLoading(true);
+                }
+                
+                // V14: No bloqueamos el inicio de la App. Sincronizamos en segundo plano.
+                // We don't await here to keep the bootstrap fast, but fetchProfile is now self-guarded.
+                fetchProfile(session.user.id, session.user).catch(err => {
+                    console.error("[AuthContext] Background sync failed:", err);
+                });
             } else {
-                setLoading(true);
+                syncInProgress.current = null;
+                setUser(null);
+                setLoading(false);
             }
-            // V14: No bloqueamos el inicio de la App. Sincronizamos en segundo plano.
-            fetchProfile(session.user.id, session.user); 
-        } else {
-            setUser(null);
+        } catch (err) {
+            console.error("[AuthContext] handleSession error:", err);
             setLoading(false);
         }
     };
@@ -60,10 +77,15 @@ export const AuthProvider = ({ children }) => {
         initializeAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            console.log("[AuthContext] Auth event:", _event);
-            if (_event === 'INITIAL_SESSION') return;
-            
-            if (isMounted) await handleSession(session);
+            try {
+                console.log("[AuthContext] Auth event:", _event);
+                // INITIAL_SESSION logic handled by initializeAuth
+                if (_event === 'INITIAL_SESSION') return;
+                
+                if (isMounted) await handleSession(session);
+            } catch (err) {
+                console.error("[AuthContext] Error in onAuthStateChange listener:", err);
+            }
         });
 
         // Watchdog: force UI load if init hangs (V19: Increased to 45s)
@@ -84,53 +106,63 @@ export const AuthProvider = ({ children }) => {
 
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = async (userId, authUser = null) => {
+        if (!userId) return;
+        
         let attempts = 0;
         const maxAttempts = 3; 
+        syncInProgress.current = userId;
         
-        while (attempts < maxAttempts) {
-            try {
-                console.log(`[AuthContext] Syncing profile for ${userId} (Attempt ${attempts + 1})...`);
-                const { data, error } = await withTimeout(
-                    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-                    30000, // V13: Increased to 30s for slow networks
-                    "Cargar Perfil (DB)"
-                );
-                
-                if (error) {
-                    console.error("[AuthContext] Supabase DB Error:", error.message);
-                    throw error;
-                }
+        try {
+            while (attempts < maxAttempts) {
+                try {
+                    console.log(`[AuthContext] Syncing profile for ${userId} (Attempt ${attempts + 1})...`);
+                    const { data, error } = await withTimeout(
+                        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+                        30000, // V13: Increased to 30s
+                        "Cargar Perfil (DB)"
+                    );
+                    
+                    if (error) {
+                        console.error("[AuthContext] Supabase DB Error:", error.message);
+                        throw error;
+                    }
 
-                if (data) {
-                    console.log("[AuthContext] Profile synced successfully.");
-                    const finalUser = { ...data, is_partial: false, is_cached: false };
-                    setUser(finalUser);
-                    // V13: Save to cache
-                    localStorage.setItem(`cooplance_profile_${userId}`, JSON.stringify(finalUser));
-                    setLoading(false);
-                    return;
+                    if (data) {
+                        console.log("[AuthContext] Profile synced successfully.");
+                        const finalUser = { ...data, is_partial: false, is_cached: false };
+                        setUser(finalUser);
+                        localStorage.setItem(`cooplance_profile_${userId}`, JSON.stringify(finalUser));
+                        setLoading(false);
+                        return;
+                    }
+                    
+                    console.warn(`[AuthContext] Profile NOT FOUND (attempt ${attempts + 1}).`);
+                    await new Promise(r => setTimeout(r, 2000));
+                } catch (err) {
+                    console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
+                    // On last attempt, don't throw, let the fallback logic run
+                    if (attempts === maxAttempts - 1) break;
+                    attempts++;
                 }
-                
-                console.warn(`[AuthContext] Profile NOT FOUND (attempt ${attempts + 1}).`);
-                await new Promise(r => setTimeout(r, 2000));
-            } catch (err) {
-                console.error(`[AuthContext] fetchProfile synchronization error:`, err);
             }
-            attempts++;
-        }
 
-        console.error("[AuthContext] Sync failed. Staying with cache/fallback.");
-        if (authUser && (!user || user.is_partial)) {
-            setUser({
-                id: authUser.id,
-                email: authUser.email,
-                username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
-                role: authUser.raw_user_meta_data?.role || 'freelancer',
-                is_partial: true,
-                sync_error: true 
-            });
+            console.error("[AuthContext] Sync failed. Staying with cache/fallback.");
+            if (authUser && (!user || user.is_partial)) {
+                setUser({
+                    id: authUser.id,
+                    email: authUser.email,
+                    username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
+                    role: authUser.raw_user_meta_data?.role || 'freelancer',
+                    is_partial: true,
+                    sync_error: true 
+                });
+            }
+        } catch (globalErr) {
+            console.error("[AuthContext] fetchProfile critical crash:", globalErr);
+        } finally {
+            syncInProgress.current = null;
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     // ─── TIMEOUT UTILITY ────────────────────────────────────────────────────

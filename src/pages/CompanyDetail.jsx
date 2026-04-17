@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProfilePicture } from '../utils/avatarUtils';
 import ProjectCard from '../components/project/ProjectCard';
+import { useAuth } from '../features/auth/context/AuthContext';
+import { calculateAge } from '../utils/ageUtils';
 import { supabase } from '../lib/supabase';
 import '../styles/pages/CompanyDetail.scss';
 // We rely on ServiceDetail.css for some basics, but will add inline styles for specific company hero look
@@ -9,10 +11,20 @@ import '../styles/pages/CompanyDetail.scss';
 const CompanyDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [company, setCompany] = useState(null);
     const [companyProjects, setCompanyProjects] = useState([]);
     const [companyJobs, setCompanyJobs] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // V23: Strict access control for U18 Freelancers
+    const isU18Freelancer = user?.role === 'freelancer' && calculateAge(user.dob) < 18;
+
+    useEffect(() => {
+        if (isU18Freelancer) {
+            navigate('/dashboard');
+        }
+    }, [isU18Freelancer, navigate]);
 
     useEffect(() => {
         const fetchCompanyData = async () => {

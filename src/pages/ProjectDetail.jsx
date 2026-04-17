@@ -5,6 +5,7 @@ import { getProfilePicture } from '../utils/avatarUtils';
 import { registerActivity } from '../utils/gamification';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
 import { formatLocationDetail } from '../utils/locationFormat';
+import { calculateAge } from '../utils/ageUtils';
 import { getProjectById } from '../lib/projectService';
 import { getActiveJobsCount } from '../lib/jobService';
 import '../styles/pages/ServiceDetail.scss';
@@ -64,6 +65,16 @@ const ProjectDetail = () => {
         if (user.role !== 'freelancer') {
             setApplyMessage({ text: 'Solo los freelancers pueden postularse a proyectos.', type: 'error' });
             setTimeout(() => setApplyMessage({ text: '', type: '' }), 4000);
+            return;
+        }
+
+        // V23: Age protection - U18 Freelancers cannot apply to Company projects
+        if (calculateAge(user.dob) < 18 && project?.clientRole === 'company') {
+            setApplyMessage({ 
+                text: 'Debes ser mayor de 18 años para postularte a ofertas de empresas.', 
+                type: 'error' 
+            });
+            setTimeout(() => setApplyMessage({ text: '', type: '' }), 5000);
             return;
         }
 

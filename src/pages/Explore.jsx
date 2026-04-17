@@ -3,12 +3,31 @@ import { useServices } from '../features/services/context/ServiceContext';
 import ServiceCard from '../features/services/components/ServiceCard';
 import SidebarFilter from '../components/common/SidebarFilter';
 import { searchAndFilterItems } from '../utils/searchUtils';
+import { useAuth } from '../features/auth/context/AuthContext';
+import { calculateAge } from '../utils/ageUtils';
 import ServiceSkeleton from '../features/services/components/ServiceSkeleton';
 import '../styles/pages/Explore.scss';
 
 const Explore = () => {
     const { services, loading, fetchServices } = useServices();
+    const { user } = useAuth();
     const [showManualRefresh, setShowManualRefresh] = useState(false);
+    
+    // V23: Age-based filtering for buyers
+    const getVisibleServices = () => {
+        let list = [...services];
+        if (user && user.role === 'buyer' && calculateAge(user.dob) < 18) {
+            // Only allow digital/remote services
+            list = list.filter(s => {
+                const workMode = s.workMode || [];
+                const isPresential = Array.isArray(workMode) ? workMode.includes('presential') : false;
+                const isRestrictedCategory = ['Profesionales Matriculados', 'Servicios Físicos y Locales'].includes(s.category);
+                return !isPresential && !isRestrictedCategory;
+            });
+        }
+        return list;
+    };
+
     const [filters, setFilters] = useState({
         query: '', category: '', subcategory: '', specialties: [],
         priceMin: '', priceMax: '', rating: 0, workMode: [], level: '', location: ''
@@ -17,12 +36,12 @@ const Explore = () => {
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
-        setFilteredServices(searchAndFilterItems(services, newFilters));
+        setFilteredServices(searchAndFilterItems(getVisibleServices(), newFilters));
     };
 
     useEffect(() => {
-        setFilteredServices(searchAndFilterItems(services, filters));
-    }, [services, filters]);
+        setFilteredServices(searchAndFilterItems(getVisibleServices(), filters));
+    }, [services, filters, user]);
 
     // PRE-RENDER LOGIC
     let content;

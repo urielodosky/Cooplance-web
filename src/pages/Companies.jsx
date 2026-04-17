@@ -3,13 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { getProfilePicture } from '../utils/avatarUtils';
 import SidebarFilter from '../components/common/SidebarFilter';
 import { searchAndFilterItems } from '../utils/searchUtils';
+import { useAuth } from '../features/auth/context/AuthContext';
+import { calculateAge } from '../utils/ageUtils';
 import { supabase } from '../lib/supabase';
 import '../styles/pages/Explore.scss';
 
 const Companies = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [companies, setCompanies] = useState([]);
     const [filteredCompanies, setFilteredCompanies] = useState([]);
+
+    // V23: Strict access control for U18 Freelancers
+    const isU18Freelancer = user?.role === 'freelancer' && calculateAge(user.dob) < 18;
+
+    useEffect(() => {
+        if (isU18Freelancer) {
+            navigate('/dashboard');
+        }
+    }, [isU18Freelancer, navigate]);
+
+    if (isU18Freelancer) return null;
 
     const [filters, setFilters] = useState({
         query: '',

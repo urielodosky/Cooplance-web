@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../features/auth/context/AuthContext';
 import { getProfilePicture } from '../../utils/avatarUtils';
+import { calculateAge } from '../../utils/ageUtils';
 import { useTheme } from '../../context/ThemeContext';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import '../../styles/components/Navbar.scss';
@@ -101,9 +102,12 @@ const Navbar = () => {
                             <button onClick={() => handleOptionClick('/explore')} className="dropdown-item">
                                 Freelancers
                             </button>
-                            <button onClick={() => handleOptionClick('/companies')} className="dropdown-item">
-                                Empresas
-                            </button>
+                            {/* V23: Hide Companies for U18 Freelancers */}
+                            {!(user?.role === 'freelancer' && calculateAge(user.dob) < 18) && (
+                                <button onClick={() => handleOptionClick('/companies')} className="dropdown-item">
+                                    Empresas
+                                </button>
+                            )}
                             <button onClick={() => handleOptionClick('/explore-teams')} className="dropdown-item">
                                 Coops
                             </button>
@@ -258,7 +262,10 @@ const Navbar = () => {
                                 <Link to="/explore-clients" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Clientes</Link>
                             )}
                             <Link to="/explore" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Freelancers</Link>
-                            <Link to="/companies" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Empresas</Link>
+                            {/* V23: Mobile Hide Companies for U18 Freelancers */}
+                            {!(user?.role === 'freelancer' && calculateAge(user.dob) < 18) && (
+                                <Link to="/companies" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Empresas</Link>
+                            )}
                             <Link to="/explore-teams" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Coops</Link>
 
                             <Link to="/community" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Comunidad</Link>
