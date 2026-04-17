@@ -485,112 +485,126 @@ const ProjectCreateForm = () => {
                 {/* STEP 1: DETALLES */}
                 {currentStep === 1 && (
                     <div className="step-content form-step-1 fade-in">
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Conceptos Básicos</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Comienza dándole un nombre y una categoría a tu búsqueda.</p>
-                        </div>
+                        {/* SECTION: BASIC CONCEPTS */}
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>Conceptos Básicos</h3>
+                                    <p>Comienza dándole un nombre y una categoría a tu búsqueda.</p>
+                                </div>
+                            </div>
 
-                        <div className="form-group">
-                            <label>Título {user?.role === 'company' ? 'de la Oferta' : 'del Proyecto'}</label>
-                            <input
-                                type="text"
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                required
-                                placeholder="Ej. Diseño de sitio web e-commerce"
-                            />
-                        </div>
-
-                        <div className="form-grid-2">
                             <div className="form-group">
-                                <CustomDropdown
-                                    label="Categoría Principal"
-                                    options={Object.keys(serviceCategories).map(cat => ({ value: cat, label: cat }))}
-                                    value={formData.category}
-                                    onChange={(val) => handleDropdownChange('category', val)}
+                                <label>Título {user?.role === 'company' ? 'de la Oferta' : 'del Proyecto'}</label>
+                                <input
+                                    type="text"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Ej. Diseño de sitio web e-commerce"
                                 />
                             </div>
-                            {user?.role === 'company' && (
+
+                            <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
                                 <div className="form-group">
-                                    <label>Vacantes Disponibles</label>
-                                    <input
-                                        type="number"
-                                        name="vacancies"
-                                        value={formData.vacancies || 1}
-                                        onChange={handleChange}
-                                        min="1"
-                                        placeholder="1"
+                                    <CustomDropdown
+                                        label="Categoría Principal"
+                                        options={Object.keys(serviceCategories).map(cat => ({ value: cat, label: cat }))}
+                                        value={formData.category}
+                                        onChange={(val) => handleDropdownChange('category', val)}
                                     />
                                 </div>
-                            )}
-                        </div>
-
-                        {formData.category && serviceCategories[formData.category] && (
-                            <div className="form-group fade-in" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <label style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Subcategorías Específicas (Máx. 3)</label>
-                                <div className="subcategories-grid">
-                                    {Object.keys(serviceCategories[formData.category] || {}).map(sub => (
-                                        <div 
-                                            key={sub} 
-                                            className={`subcategory-checkbox-label ${formData.subcategories.includes(sub) ? 'active' : ''}`}
-                                            onClick={() => handleSubcategoryToggle(sub)}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={(formData.subcategories || []).includes(sub)}
-                                                readOnly
-                                                disabled={!(formData.subcategories || []).includes(sub) && (formData.subcategories || []).length >= 3}
-                                            />
-                                            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{sub}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                
-                                {/* SPECIALTIES SECTION [FIXED BUG] */}
-                                {formData.subcategories.length > 0 && (
-                                    <div className="fade-in" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
-                                        <label style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>Habilidades Requeridas (Especialidades - Máx. 5)</label>
-                                        <div className="specialties-grid">
-                                            {formData.subcategories.flatMap(sub => serviceCategories[formData.category][sub] || []).map((spec, idx) => (
-                                                <div 
-                                                    key={`${spec}-${idx}`}
-                                                    className={`specialty-item ${formData.specialties.includes(spec) ? 'active' : ''}`}
-                                                    onClick={() => handleSpecialtyToggle(spec)}
-                                                >
-                                                    <div style={{ 
-                                                        width: '18px', height: '18px', borderRadius: '4px', border: '2px solid',
-                                                        borderColor: formData.specialties.includes(spec) ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        background: formData.specialties.includes(spec) ? 'var(--primary)' : 'transparent',
-                                                        transition: 'all 0.2s'
-                                                    }}>
-                                                        {formData.specialties.includes(spec) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg>}
-                                                    </div>
-                                                    <span>{spec}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                {user?.role === 'company' && (
+                                    <div className="form-group">
+                                        <label>Vacantes Disponibles</label>
+                                        <input
+                                            type="number"
+                                            name="vacancies"
+                                            value={formData.vacancies || 1}
+                                            onChange={handleChange}
+                                            min="1"
+                                            placeholder="1"
+                                        />
                                     </div>
                                 )}
                             </div>
-                        )}
 
-                        <div className="form-group">
-                            <label>Descripción del Trabajo</label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                required
-                                placeholder="Describe las responsabilidades, requisitos y cualquier detalle relevante para los candidatos..."
-                            />
+                            {formData.category && serviceCategories[formData.category] && (
+                                <div className="form-group fade-in" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem' }}>
+                                    <label style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Subcategorías Específicas (Máx. 3)</label>
+                                    <div className="subcategories-grid">
+                                        {Object.keys(serviceCategories[formData.category] || {}).map(sub => (
+                                            <div 
+                                                key={sub} 
+                                                className={`subcategory-checkbox-label ${formData.subcategories.includes(sub) ? 'active' : ''}`}
+                                                onClick={() => handleSubcategoryToggle(sub)}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={(formData.subcategories || []).includes(sub)}
+                                                    readOnly
+                                                    disabled={!(formData.subcategories || []).includes(sub) && (formData.subcategories || []).length >= 3}
+                                                />
+                                                <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{sub}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    {formData.subcategories.length > 0 && (
+                                        <div className="fade-in" style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+                                            <label style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>Habilidades Requeridas (Especialidades - Máx. 5)</label>
+                                            <div className="specialties-grid">
+                                                {formData.subcategories.flatMap(sub => serviceCategories[formData.category][sub] || []).map((spec, idx) => (
+                                                    <div 
+                                                        key={`${spec}-${idx}`}
+                                                        className={`specialty-item ${formData.specialties.includes(spec) ? 'active' : ''}`}
+                                                        onClick={() => handleSpecialtyToggle(spec)}
+                                                    >
+                                                        <div style={{ 
+                                                            width: '18px', height: '18px', borderRadius: '4px', border: '2px solid',
+                                                            borderColor: formData.specialties.includes(spec) ? 'var(--primary)' : 'rgba(255,255,255,0.2)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            background: formData.specialties.includes(spec) ? 'var(--primary)' : 'transparent',
+                                                            transition: 'all 0.2s'
+                                                        }}>
+                                                            {formData.specialties.includes(spec) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg>}
+                                                        </div>
+                                                        <span>{spec}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="form-group" style={{ marginTop: '2rem' }}>
+                                <label>Descripción del Trabajo</label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder="Describe las responsabilidades, requisitos y cualquier detalle relevante para los candidatos..."
+                                    style={{ minHeight: '150px' }}
+                                />
+                            </div>
                         </div>
 
-                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem' }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Presupuesto y Tiempos</h3>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Define cuánto estás dispuesto a pagar y cuándo necesitas empezar.</p>
+                        {/* SECTION: BUDGET & TIMES */}
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>Presupuesto y Tiempos</h3>
+                                    <p>Define cuánto estás dispuesto a pagar y cuándo necesitas empezar.</p>
+                                </div>
                             </div>
 
                             <div className="form-grid-2">
@@ -616,7 +630,7 @@ const ProjectCreateForm = () => {
                                 </div>
                             </div>
 
-                            <div className="form-grid-2" style={{ marginTop: '1rem' }}>
+                            <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
                                 <div className="form-group">
                                     <label>Tipo de Presupuesto</label>
                                     <CustomDropdown
@@ -643,7 +657,7 @@ const ProjectCreateForm = () => {
                                 </div>
                             </div>
 
-                            <div className="form-grid-2" style={{ marginTop: '1rem' }}>
+                            <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
                                 <div className="form-group">
                                     <label>Presupuesto Máximo Estimado ($)</label>
                                     <div className="price-input-wrapper">
@@ -691,11 +705,18 @@ const ProjectCreateForm = () => {
                             </div>
                         </div>
 
-                        <div className="form-group work-mode-section" style={{ marginTop: '3rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2.5rem' }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Ubicación y Modalidad</h3>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Elige si el trabajo requiere presencia física o puede hacerse a distancia.</p>
+                        {/* SECTION: WORK MODE & LOCATION */}
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>Ubicación y Modalidad</h3>
+                                    <p>Elige si el trabajo requiere presencia física o puede hacerse a distancia.</p>
+                                </div>
                             </div>
+
                             <div className="work-mode-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
                                 <div
                                     className={`mode-option remote ${formData.workMode.includes('remote') ? 'active' : ''}`}
@@ -720,78 +741,82 @@ const ProjectCreateForm = () => {
                                     <p style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '0.5rem' }}>Requiere asistencia en una ubicación física.</p>
                                 </div>
                             </div>
+
+                            {formData.workMode.includes('presential') && (
+                                <div className="form-group fade-in" style={{ marginTop: '2rem', background: 'rgba(255,255,255,0.03)', padding: '2rem', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                                    <div className="location-selection-row" style={{ 
+                                        display: 'grid', 
+                                        gridTemplateColumns: 'repeat(3, 1fr)', 
+                                        gap: '1.5rem'
+                                    }}>
+                                        <div className="form-group">
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>País</label>
+                                            <CustomDropdown
+                                                options={Object.keys(locations).map(country => ({ label: country, value: country }))}
+                                                value={formData.country}
+                                                onChange={(val) => handleLocationChange('country', val)}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Provincia / Estado</label>
+                                            <CustomDropdown
+                                                options={getProvinces().map(prov => ({ label: prov, value: prov }))}
+                                                value={formData.province}
+                                                onChange={(val) => handleLocationChange('province', val)}
+                                                placeholder="Seleccionar..."
+                                                disabled={!formData.country}
+                                                searchable={true}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Ciudad</label>
+                                            <CustomDropdown
+                                                options={getCities().map(city => ({ label: city, value: city }))}
+                                                value={formData.city}
+                                                onChange={(val) => handleLocationChange('city', val)}
+                                                placeholder="Seleccionar..."
+                                                disabled={!formData.province || isLoadingLoc}
+                                                searchable={true}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {formData.workMode.includes('presential') && (
-                            <div className="form-group fade-in" style={{ marginTop: '2rem', background: 'rgba(255,255,255,0.03)', padding: '2rem', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                <div className="location-selection-row" style={{ 
-                                    display: 'grid', 
-                                    gridTemplateColumns: 'repeat(3, 1fr)', 
-                                    gap: '1.5rem'
-                                }}>
-                                    <div className="form-group">
-                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>País</label>
-                                        <CustomDropdown
-                                            options={Object.keys(locations).map(country => ({ label: country, value: country }))}
-                                            value={formData.country}
-                                            onChange={(val) => handleLocationChange('country', val)}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Provincia / Estado</label>
-                                        <CustomDropdown
-                                            options={getProvinces().map(prov => ({ label: prov, value: prov }))}
-                                            value={formData.province}
-                                            onChange={(val) => handleLocationChange('province', val)}
-                                            placeholder="Seleccionar..."
-                                            disabled={!formData.country}
-                                            searchable={true}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Ciudad</label>
-                                        <CustomDropdown
-                                            options={getCities().map(city => ({ label: city, value: city }))}
-                                            value={formData.city}
-                                            onChange={(val) => handleLocationChange('city', val)}
-                                            placeholder="Seleccionar..."
-                                            disabled={!formData.province || isLoadingLoc}
-                                            searchable={true}
-                                        />
-                                    </div>
+                        {/* SECTION: PAYMENT METHODS */}
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>Métodos de Pago Preferidos</h3>
+                                    <p>Selecciona cómo prefieres realizar/recibir los pagos. (Opcional)</p>
                                 </div>
                             </div>
-                        )}
 
-                        {/* PAYMENT METHODS (MOVED FROM STEP 4) */}
-                        <div className="form-group" style={{ marginTop: '3rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2.5rem' }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Métodos de Pago Preferidos</h3>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Selecciona cómo prefieres realizar/recibir los pagos. (Opcional)</p>
-                            </div>
-                            <div className="form-step-card glass" style={{ padding: '2rem', borderRadius: '20px' }}>
-                                <div className="checkbox-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-                                    {[
-                                        { id: 'paypal', label: 'PayPal' },
-                                        { id: 'mercadopago', label: 'Mercado Pago' },
-                                        { id: 'binance', label: 'Binance Pay' },
-                                        { id: 'card', label: 'Tarjeta Bancaria' }
-                                    ].map(method => (
-                                        <div 
-                                            key={method.id} 
-                                            className={`subcategory-checkbox-label ${formData.paymentMethods.includes(method.id) ? 'active' : ''}`}
-                                            onClick={() => {
-                                                const current = formData.paymentMethods || [];
-                                                const newMethods = current.includes(method.id) ? current.filter(m => m !== method.id) : [...current, method.id];
-                                                setFormData(prev => ({ ...prev, paymentMethods: newMethods }));
-                                            }}
-                                            style={{ padding: '1rem' }}
-                                        >
-                                            <input type="checkbox" checked={formData.paymentMethods.includes(method.id)} readOnly style={{ width: '18px', height: '18px' }} />
-                                            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{method.label}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="checkbox-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                                {[
+                                    { id: 'paypal', label: 'PayPal' },
+                                    { id: 'mercadopago', label: 'Mercado Pago' },
+                                    { id: 'binance', label: 'Binance Pay' },
+                                    { id: 'card', label: 'Tarjeta Bancaria' }
+                                ].map(method => (
+                                    <div 
+                                        key={method.id} 
+                                        className={`subcategory-checkbox-label ${formData.paymentMethods.includes(method.id) ? 'active' : ''}`}
+                                        onClick={() => {
+                                            const current = formData.paymentMethods || [];
+                                            const newMethods = current.includes(method.id) ? current.filter(m => m !== method.id) : [...current, method.id];
+                                            setFormData(prev => ({ ...prev, paymentMethods: newMethods }));
+                                        }}
+                                        style={{ padding: '1.25rem' }}
+                                    >
+                                        <input type="checkbox" checked={formData.paymentMethods.includes(method.id)} readOnly style={{ width: '18px', height: '18px' }} />
+                                        <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>{method.label}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -801,29 +826,34 @@ const ProjectCreateForm = () => {
                 {/* STEP 2: MULTIMEDIA */}
                 {currentStep === 2 && (
                     <div className="step-content form-step-2 fade-in">
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Identidad Visual</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Agrega imágenes o videos para que tu oferta destaque del resto.</p>
-                        </div>
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>Identidad Visual</h3>
+                                    <p>Agrega imágenes o videos para que tu oferta destaque del resto.</p>
+                                </div>
+                            </div>
 
-                        <div className="form-step-card glass" style={{ padding: '2rem', borderRadius: '24px' }}>
                             <div className="media-section">
                                 <div className="media-inputs" style={{ display: 'grid', gap: '2rem' }}>
                                     {/* IMAGE INPUT */}
                                     <div className="media-group form-group">
                                         <label>Imagen de Referencia</label>
-                                        <div className="media-tabs" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                                            <button type="button" className={`media-tab ${mediaType.image === 'file' ? 'active' : ''}`} onClick={() => toggleMediaType('image', 'file')} style={{ flex: 1 }}>Subir Archivo</button>
-                                            <button type="button" className={`media-tab ${mediaType.image === 'url' ? 'active' : ''}`} onClick={() => toggleMediaType('image', 'url')} style={{ flex: 1 }}>Enlace URL</button>
+                                        <div className="media-tabs" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                                            <button type="button" className={`media-tab ${mediaType.image === 'file' ? 'active' : ''}`} onClick={() => toggleMediaType('image', 'file')} style={{ flex: 1, padding: '0.75rem' }}>Subir Archivo</button>
+                                            <button type="button" className={`media-tab ${mediaType.image === 'url' ? 'active' : ''}`} onClick={() => toggleMediaType('image', 'url')} style={{ flex: 1, padding: '0.75rem' }}>Enlace URL</button>
                                         </div>
                                         {mediaType.image === 'file' ? (
                                             <div className="file-upload-wrapper">
-                                                <label className="custom-file-upload" style={{ width: '100%', padding: '2rem', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '16px', textAlign: 'center', cursor: 'pointer', display: 'block', transition: 'all 0.3s' }}>
+                                                <label className="custom-file-upload" style={{ width: '100%', padding: '3rem 2rem', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '16px', textAlign: 'center', cursor: 'pointer', display: 'block', transition: 'all 0.3s', background: 'rgba(255,255,255,0.02)' }}>
                                                     <input type="file" name="image" accept="image/*" onChange={(e) => handleChange(e, 'file')} style={{ display: 'none' }} />
                                                     <div style={{ marginBottom: '1rem', color: 'var(--primary)' }}>
-                                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                                                     </div>
-                                                    {fileNames.image ? <span className="file-name" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{fileNames.image}</span> : <span style={{ color: 'var(--text-muted)' }}>Haz clic para seleccionar o soltar imagen</span>}
+                                                    {fileNames.image ? <span className="file-name" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.1rem' }}>{fileNames.image}</span> : <span style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Haz clic para seleccionar o soltar imagen</span>}
                                                 </label>
                                             </div>
                                         ) : (
@@ -832,20 +862,20 @@ const ProjectCreateForm = () => {
                                     </div>
 
                                     {/* VIDEO INPUT */}
-                                    <div className="media-group form-group">
+                                    <div className="media-group form-group" style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2.5rem' }}>
                                         <label>Video de Referencia (Opcional)</label>
-                                        <div className="media-tabs" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                                            <button type="button" className={`media-tab ${mediaType.video === 'url' ? 'active' : ''}`} onClick={() => toggleMediaType('video', 'url')} style={{ flex: 1 }}>Enlace (YouTube/Vimeo)</button>
-                                            <button type="button" className={`media-tab ${mediaType.video === 'file' ? 'active' : ''}`} onClick={() => toggleMediaType('video', 'file')} style={{ flex: 1 }}>Subir Archivo</button>
+                                        <div className="media-tabs" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                                            <button type="button" className={`media-tab ${mediaType.video === 'url' ? 'active' : ''}`} onClick={() => toggleMediaType('video', 'url')} style={{ flex: 1, padding: '0.75rem' }}>Enlace (YouTube/Vimeo)</button>
+                                            <button type="button" className={`media-tab ${mediaType.video === 'file' ? 'active' : ''}`} onClick={() => toggleMediaType('video', 'file')} style={{ flex: 1, padding: '0.75rem' }}>Subir Archivo</button>
                                         </div>
                                         {mediaType.video === 'file' ? (
                                             <div className="file-upload-wrapper">
-                                                <label className="custom-file-upload" style={{ width: '100%', padding: '2rem', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '16px', textAlign: 'center', cursor: 'pointer', display: 'block' }}>
+                                                <label className="custom-file-upload" style={{ width: '100%', padding: '3rem 2rem', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '16px', textAlign: 'center', cursor: 'pointer', display: 'block', background: 'rgba(255,255,255,0.02)' }}>
                                                     <input type="file" name="video" accept="video/*" onChange={(e) => handleChange(e, 'file')} style={{ display: 'none' }} />
                                                     <div style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>
-                                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                                                     </div>
-                                                    {fileNames.video ? <span className="file-name" style={{ fontWeight: 600 }}>{fileNames.video}</span> : <span style={{ color: 'var(--text-muted)' }}>Haz clic para seleccionar video</span>}
+                                                    {fileNames.video ? <span className="file-name" style={{ fontWeight: 700, fontSize: '1.1rem' }}>{fileNames.video}</span> : <span style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Haz clic para seleccionar video</span>}
                                                 </label>
                                             </div>
                                         ) : (
@@ -861,43 +891,56 @@ const ProjectCreateForm = () => {
                 {/* STEP 3: PREGUNTAS FRECUENTES */}
                 {currentStep === 3 && (
                     <div className="step-content form-step-3 fade-in">
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Dudas Comunes</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Ahorra tiempo respondiendo las preguntas que suelen tener los interesados.</p>
-                        </div>
-
-                        <div className="faq-section">
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-                                <button type="button" onClick={addFaq} className="btn-add-faq" style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.6rem 1.2rem', borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '700', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    Añadir FAQ
-                                </button>
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>Dudas Comunes</h3>
+                                    <p>Ahorra tiempo respondiendo las preguntas que suelen tener los interesados.</p>
+                                </div>
                             </div>
-                            
-                            <div style={{ display: 'grid', gap: '1rem' }}>
-                                {faqs.map((faq, index) => (
-                                    <div key={index} className="faq-item form-step-card glass fade-in" style={{ padding: '1.5rem', borderRadius: '16px', position: 'relative' }}>
-                                        <button type="button" onClick={() => removeFaq(index)} style={{ position: 'absolute', top: '15px', right: '15px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', border: 'none', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                        </button>
-                                        <div style={{ display: 'grid', gap: '1rem', paddingRight: '2rem' }}>
-                                            <input
-                                                type="text"
-                                                placeholder="Ej: ¿Qué tecnologías debo conocer?"
-                                                value={faq.question}
-                                                onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
-                                                style={{ fontWeight: 600 }}
-                                            />
-                                            <textarea
-                                                placeholder="Escribe la respuesta aquí..."
-                                                value={faq.answer}
-                                                onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
-                                                rows="2"
-                                                style={{ minHeight: '80px' }}
-                                            />
+
+                            <div className="faq-section">
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+                                    <button type="button" onClick={addFaq} className="btn-add-faq" style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.75rem 1.5rem', borderRadius: '14px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '800', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Añadir FAQ
+                                    </button>
+                                </div>
+                                
+                                <div style={{ display: 'grid', gap: '1.25rem' }}>
+                                    {faqs.map((faq, index) => (
+                                        <div key={index} className="faq-item form-step-card glass fade-in" style={{ padding: '2rem', borderRadius: '20px', position: 'relative', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <button type="button" onClick={() => removeFaq(index)} style={{ position: 'absolute', top: '15px', right: '15px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', border: 'none', width: '36px', height: '36px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} className="btn-remove-faq">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                            </button>
+                                            <div style={{ display: 'grid', gap: '1.25rem', paddingRight: '2.5rem' }}>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Pregunta</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ej: ¿Qué tecnologías debo conocer?"
+                                                        value={faq.question}
+                                                        onChange={(e) => handleFaqChange(index, 'question', e.target.value)}
+                                                        style={{ fontWeight: 700, fontSize: '1.1rem' }}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.8rem', opacity: 0.6 }}>Respuesta</label>
+                                                    <textarea
+                                                        placeholder="Escribe la respuesta aquí..."
+                                                        value={faq.answer}
+                                                        onChange={(e) => handleFaqChange(index, 'answer', e.target.value)}
+                                                        rows="3"
+                                                        style={{ minHeight: '100px' }}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -906,55 +949,47 @@ const ProjectCreateForm = () => {
                 {/* STEP 4: PAGOS (COMPAÑÍAS) O RESUMEN (FREELANCERS) */}
                 {currentStep === 4 && (
                     <div className="step-content form-step-4 fade-in">
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{user?.role === 'company' ? 'Gestión de Oferta' : 'Finalizar Publicación'}</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                {user?.role === 'company' 
-                                    ? 'Revisa los detalles finales antes de publicar tu vacante.' 
-                                    : 'Ya casi terminamos. Revisa tu información y publica tu proyecto.'}
-                            </p>
-                        </div>
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>{user?.role === 'company' ? 'Gestión de Oferta' : 'Finalizar Publicación'}</h3>
+                                    <p>
+                                        {user?.role === 'company' 
+                                            ? 'Revisa los detalles finales antes de publicar tu vacante.' 
+                                            : 'Ya casi terminamos. Revisa tu información y publica tu proyecto.'}
+                                    </p>
+                                </div>
+                            </div>
 
-                        {user?.role === 'company' ? (
-                            <div className="form-step-card glass" style={{ padding: '2.5rem', borderRadius: '24px' }}>
-                                <div className="form-grid-2">
-                                    <div className="form-group">
-                                        <label>Frecuencia de Pago</label>
-                                        <CustomDropdown
-                                            options={[
-                                                { value: 'unique', label: 'Pago Único' },
-                                                { value: 'daily', label: 'Diario' },
-                                                { value: 'weekly', label: 'Semanal' },
-                                                { value: 'monthly', label: 'Mensual' }
-                                            ]}
-                                            value={formData.paymentFrequency || 'unique'}
-                                            onChange={(val) => handleDropdownChange('paymentFrequency', val)}
-                                        />
+                            {user?.role === 'company' ? (
+                                <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                                    <div style={{ color: 'var(--primary)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                                        <div style={{ width: '80px', height: '80px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(139, 92, 246, 0.2)' }}>
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                        </div>
                                     </div>
-                                    <div className="form-group">
-                                        <label>Tipo de Presupuesto</label>
-                                        <CustomDropdown
-                                            options={[
-                                                { value: 'fixed', label: 'Fijo (No negociable)' },
-                                                { value: 'negotiable', label: 'Variable (Ofertable)' }
-                                            ]}
-                                            value={formData.budgetType}
-                                            onChange={(val) => handleDropdownChange('budgetType', val)}
-                                        />
+                                    <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-primary)' }}>¡Oferta Lista!</h3>
+                                    <p style={{ color: 'var(--text-secondary)', maxWidth: '450px', margin: '0 auto', fontSize: '1.1rem', lineHeight: '1.6' }}>
+                                        Has configurado todos los detalles de tu búsqueda. En el siguiente paso podrás agregar preguntas opcionales para los postulantes.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                                    <div style={{ color: 'var(--primary)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                                        <div style={{ width: '80px', height: '80px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(139, 92, 246, 0.2)' }}>
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                        </div>
                                     </div>
+                                    <h3 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--text-primary)' }}>¡Todo listo para brillar!</h3>
+                                    <p style={{ color: 'var(--text-secondary)', maxWidth: '450px', margin: '0 auto', fontSize: '1.1rem', lineHeight: '1.6' }}>
+                                        Tu proyecto ha sido configurado correctamente. Haz clic en publicar para que el talento de Cooplance empiece a enviarte sus mejores propuestas.
+                                    </p>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="form-step-card glass" style={{ padding: '3rem', borderRadius: '24px', textAlign: 'center' }}>
-                                <div style={{ color: 'var(--primary)', marginBottom: '1.5rem' }}>
-                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                </div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>¡Todo listo!</h3>
-                                <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-                                    Has completado todos los pasos. Haz clic en el botón de abajo para publicar tu proyecto y empezar a recibir propuestas.
-                                </p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 )}
                 {/* END OF STEP 4 */}
@@ -962,88 +997,96 @@ const ProjectCreateForm = () => {
                 {/* STEP 5: PREGUNTAS (SOLO EMPRESAS) */}
                 {currentStep === 5 && user?.role === 'company' && (
                     <div className="step-content form-step-5 fade-in">
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Entrevista Previa</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Agrega preguntas clave para identificar a los mejores candidatos desde el inicio.</p>
-                        </div>
+                        <div className="premium-form-section">
+                            <div className="section-header">
+                                <div className="section-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                </div>
+                                <div className="section-title-group">
+                                    <h3>Entrevista Previa</h3>
+                                    <p>Agrega preguntas clave para identificar a los mejores candidatos desde el inicio.</p>
+                                </div>
+                            </div>
 
-                        <div className="questions-list" style={{ display: 'grid', gap: '1.5rem' }}>
-                            {questions.map((q, index) => (
-                                <div key={q.id} className="question-item form-step-card glass fade-in" style={{ padding: '2rem', borderRadius: '20px', position: 'relative' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <div style={{ background: 'var(--primary)', color: 'white', padding: '0.3rem 0.8rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>Pregunta {index + 1}</div>
-                                        {questions.length > 1 && (
-                                            <button type="button" onClick={() => removeQuestion(index)} style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>Remover</button>
+                            <div className="questions-list" style={{ display: 'grid', gap: '1.5rem' }}>
+                                {questions.map((q, index) => (
+                                    <div key={q.id} className="question-item form-step-card glass fade-in" style={{ padding: '2rem', borderRadius: '20px', position: 'relative', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                            <div style={{ background: 'var(--primary)', color: 'white', padding: '0.4rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 900 }}>Pregunta {index + 1}</div>
+                                            {questions.length > 1 && (
+                                                <button type="button" onClick={() => removeQuestion(index)} style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '0.5rem 1rem', borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 800, transition: 'all 0.2s' }}>Remover</button>
+                                            )}
+                                        </div>
+
+                                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                                            <label>Enunciado de la Pregunta</label>
+                                            <input
+                                                type="text"
+                                                value={q.text}
+                                                onChange={(e) => handleQuestionChange(index, 'text', e.target.value)}
+                                                placeholder="Ej: ¿Cuál es tu experiencia con despliegues en AWS?"
+                                                required
+                                                style={{ fontSize: '1.1rem', fontWeight: 600 }}
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Tipo de Respuesta</label>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                <div 
+                                                    className={`subcategory-checkbox-label ${q.type === 'text' ? 'active' : ''}`}
+                                                    onClick={() => handleQuestionChange(index, 'type', 'text')}
+                                                    style={{ textAlign: 'center', justifyContent: 'center', padding: '1.25rem' }}
+                                                >
+                                                    <span style={{ fontWeight: 800 }}>Texto Libre</span>
+                                                </div>
+                                                <div 
+                                                    className={`subcategory-checkbox-label ${q.type === 'multiple' ? 'active' : ''}`}
+                                                    onClick={() => handleQuestionChange(index, 'type', 'multiple')}
+                                                    style={{ textAlign: 'center', justifyContent: 'center', padding: '1.25rem' }}
+                                                >
+                                                    <span style={{ fontWeight: 800 }}>Opción Múltiple</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {q.type === 'multiple' && (
+                                            <div className="options-container fade-in" style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', display: 'block', fontWeight: 700 }}>Define las opciones:</label>
+                                                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                                    {q.options.map((opt, optIndex) => (
+                                                        <div key={optIndex} style={{ display: 'flex', gap: '0.75rem' }}>
+                                                            <input
+                                                                type="text"
+                                                                value={opt}
+                                                                onChange={(e) => handleOptionChange(index, optIndex, e.target.value)}
+                                                                placeholder={`Respuesta ${optIndex + 1}`}
+                                                                required
+                                                            />
+                                                            {q.options.length > 2 && (
+                                                                <button type="button" onClick={() => removeOption(index, optIndex)} style={{ border: 'none', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '50px', borderRadius: '12px', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    {q.options.length < 4 && (
+                                                        <button type="button" onClick={() => addOption(index)} style={{ border: '1px dashed var(--primary)', background: 'rgba(139, 92, 246, 0.05)', color: 'var(--primary)', padding: '0.75rem', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', marginTop: '0.5rem' }}>+ Agregar Opción</button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
+                                ))}
+                            </div>
 
-                                    <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                                        <label>Enunciado de la Pregunta</label>
-                                        <input
-                                            type="text"
-                                            value={q.text}
-                                            onChange={(e) => handleQuestionChange(index, 'text', e.target.value)}
-                                            placeholder="Ej: ¿Cuál es tu experiencia con despliegues en AWS?"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Tipo de Respuesta</label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                            <div 
-                                                className={`subcategory-checkbox-label ${q.type === 'text' ? 'active' : ''}`}
-                                                onClick={() => handleQuestionChange(index, 'type', 'text')}
-                                                style={{ textAlign: 'center', justifyContent: 'center' }}
-                                            >
-                                                <span style={{ fontWeight: 700 }}>Texto Libre</span>
-                                            </div>
-                                            <div 
-                                                className={`subcategory-checkbox-label ${q.type === 'multiple' ? 'active' : ''}`}
-                                                onClick={() => handleQuestionChange(index, 'type', 'multiple')}
-                                                style={{ textAlign: 'center', justifyContent: 'center' }}
-                                            >
-                                                <span style={{ fontWeight: 700 }}>Múltiple Opción</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {q.type === 'multiple' && (
-                                        <div className="options-container fade-in" style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', display: 'block' }}>Define las opciones de respuesta:</label>
-                                            <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                                {q.options.map((opt, optIndex) => (
-                                                    <div key={optIndex} style={{ display: 'flex', gap: '0.75rem' }}>
-                                                        <input
-                                                            type="text"
-                                                            value={opt}
-                                                            onChange={(e) => handleOptionChange(index, optIndex, e.target.value)}
-                                                            placeholder={`Respuesta ${optIndex + 1}`}
-                                                            required
-                                                        />
-                                                        {q.options.length > 2 && (
-                                                            <button type="button" onClick={() => removeOption(index, optIndex)} style={{ border: 'none', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', width: '45px', borderRadius: '12px', cursor: 'pointer' }}>×</button>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                                {q.options.length < 4 && (
-                                                    <button type="button" onClick={() => addOption(index)} style={{ border: '1px dashed var(--border)', background: 'transparent', color: 'var(--primary)', padding: '0.6rem', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', marginTop: '0.5rem' }}>+ Agregar Opción</button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                            <button
+                                type="button"
+                                onClick={addQuestion}
+                                className="btn-primary"
+                                style={{ width: '100%', marginTop: '2.5rem', background: 'transparent', border: '2px dashed rgba(139, 92, 246, 0.3)', color: 'var(--primary)', padding: '1.25rem', fontSize: '1rem', fontWeight: 800 }}
+                            >
+                                + Añadir Otra Pregunta
+                            </button>
                         </div>
-
-                        <button
-                            type="button"
-                            onClick={addQuestion}
-                            className="btn-primary"
-                            style={{ width: '100%', marginTop: '2rem', background: 'transparent', border: '2px dashed var(--border)', color: 'var(--text-secondary)' }}
-                        >
-                            + Añadir Pregunta Adicional
-                        </button>
                     </div>
                 )}
                 {/* END OF STEP 5 */}
