@@ -248,15 +248,10 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF (NEW.email_confirmed_at IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = NEW.id) THEN
         INSERT INTO public.profiles (
-            id, 
-            username, 
-            email, 
-            role,
-            first_name,
-            last_name,
-            avatar_url,
-            location,
-            country
+            id, username, email, role,
+            first_name, last_name, avatar_url,
+            location, country, dob, phone,
+            gender, company_name, responsible_name, bio
         )
         VALUES (
             NEW.id,
@@ -267,7 +262,13 @@ BEGIN
             COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
             NEW.raw_user_meta_data->>'avatar_url',
             NEW.raw_user_meta_data->>'location',
-            NEW.raw_user_meta_data->>'country'
+            NEW.raw_user_meta_data->>'country',
+            (NEW.raw_user_meta_data->>'dob')::DATE,
+            NEW.raw_user_meta_data->>'phone',
+            NEW.raw_user_meta_data->>'gender',
+            NEW.raw_user_meta_data->>'company_name',
+            NEW.raw_user_meta_data->>'responsible_name',
+            COALESCE(NEW.raw_user_meta_data->>'bio', '')
         );
     END IF;
     RETURN NEW;
