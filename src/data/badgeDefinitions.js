@@ -83,11 +83,42 @@ export const CLIENT_BADGE_FAMILIES = [
     {
         familyId: 'purchases',
         title: 'Inversión en Talento',
-        description: 'Historial de contrataciones y gestión de capital humano.',
+        description: 'Métricas de volumen y éxito en la adquisición de servicios.',
         badges: [
-            { id: 'c_pur_1', title: 'Iniciador', required: 1, desc: 'Gestión de la primera contratación en la plataforma.' },
+            { id: 'c_pur_1', title: 'Primera Compra', required: 1, desc: 'Gestión de la primera contratación en la plataforma.' },
             { id: 'c_pur_10', title: 'Inversor en Talento', required: 10, desc: 'Registros de 10 contrataciones profesionales realizadas.' },
             { id: 'c_pur_100', title: 'Socio Corporativo', required: 100, desc: 'Gestión de 100 contratos de proyecto finalizados.' },
+        ]
+    },
+    {
+        familyId: 'levels',
+        title: 'Evolución como Cliente',
+        description: 'Crecimiento y experiencia gestionando proyectos en Cooplance.',
+        badges: [
+            { id: 'c_lvl_2', title: 'Cliente Iniciado', required: 2, desc: 'Alcanza el Nivel 2 como contratista.' },
+            { id: 'c_lvl_6', title: 'Cliente Recurrente', required: 6, desc: 'Alcanza el Nivel 6 de reputación.' },
+            { id: 'c_lvl_8', title: 'Estratega de Proyectos', required: 8, desc: 'Alcanza el Nivel 8 de experiencia.' },
+            { id: 'c_lvl_10', title: 'Patrono de Élite', required: 10, desc: 'Alcanza el grado máximo de gestión (Nivel 10).' },
+        ]
+    },
+    {
+        familyId: 'loyalty',
+        title: 'Fidelidad a Talentos',
+        description: 'Métrica de re-contratación y confianza en profesionales.',
+        badges: [
+            { id: 'c_loy_2', title: 'Socio de Confianza', required: 2, desc: 'Has contratado al mismo profesional 2 veces.' },
+            { id: 'c_loy_5', title: 'Alianza Continua', required: 5, desc: 'Has confiado en el mismo talento para 5 encargos.' },
+            { id: 'c_loy_10', title: 'Mecenas Principal', required: 10, desc: 'Has mantenido una relación de 10 contratos con el mismo profesional.' },
+        ]
+    },
+    {
+        familyId: 'reviews',
+        title: 'Reputación como Comprador',
+        description: 'Calidad de la interacción con los profesionales contratados.',
+        badges: [
+            { id: 'c_rev_1', title: 'Buen Empleador', required: 1, desc: 'Primera valoración positiva recibida.' },
+            { id: 'c_rev_5', title: 'Trato Profesional', required: 5, desc: '5 reseñas de excelencia por parte de freelancers.' },
+            { id: 'c_rev_10', title: 'Líder de Proyectos', required: 10, desc: 'Historial de 10 valoraciones impecables.' },
         ]
     },
     {

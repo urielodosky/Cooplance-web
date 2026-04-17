@@ -12,6 +12,7 @@ import {
     Users as Handshake,
     Eye
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const BadgeNotificationContext = createContext();
 
@@ -25,38 +26,57 @@ export const BadgeNotificationProvider = ({ children }) => {
     const [currentNotification, setCurrentNotification] = useState(null);
 
     // Evaluate badges to find new ones
-    const checkBadgeUnlocks = useCallback(() => {
-        if (!user) return;
+    const checkBadgeUnlocks = useCallback(async () => {
+        if (!user || user.sync_error) return;
+
+        console.log("[BadgeNotificationContext] Checking for new unlocks...");
 
         const isClient = user.role === 'buyer' || user.role === 'company';
-
-        // MIGRATION NOTE: Stats should eventually be fetched from Supabase via a dedicated hook.
-        // For now, we skip localStorage and use the user profile level and basic counts.
-        const userLevel = user.level || 1;
         
+        // 1. Fetch relevant data for precise metric calculation
+        const { data: jobs, error: jobsError } = await supabase
+            .from('jobs')
+            .select('client_id, provider_id, status')
+            .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`);
+
+        if (jobsError) {
+            console.warn("[BadgeNotificationContext] Failed to fetch jobs for badge calculation:", jobsError);
+            return;
+        }
+
+        const completedJobs = jobs.filter(j => j.status === 'completed');
+        const mySales = completedJobs.filter(j => j.provider_id === user.id);
+        const myOrders = completedJobs.filter(j => j.client_id === user.id);
+
+        // 2. Calculate Loyalty (Symmetrical)
+        // Frequency of hiring/being hired by the same person
+        const interactions = {};
+        completedJobs.forEach(job => {
+            const targetId = job.client_id === user.id ? job.provider_id : job.client_id;
+            interactions[targetId] = (interactions[targetId] || 0) + 1;
+        });
+        const maxLoyalty = Object.values(interactions).length > 0 ? Math.max(...Object.values(interactions)) : 0;
+
+        // 3. Unique target count (Talent/Clients handled)
+        const uniquePartners = new Set(interactions).size;
+
         const getProgressForFamily = (familyId) => {
             switch (familyId) {
-                case 'levels': return userLevel;
-                case 'reviews': return user.reviews_count || 0;
-                // Other families (sales, loyalty, etc.) will stay at 0 until 
-                // we implement the global stats aggregator.
+                case 'sales': return mySales.length;
+                case 'purchases': return myOrders.length;
+                case 'levels': return user.level || 1;
+                case 'reviews': return user.reviewsCount || 0; // Assuming this comes from profile
+                case 'loyalty': return maxLoyalty;
+                case 'services': return 0; // Requires separate services fetch if needed
+                case 'talent': return uniquePartners;
+                case 'projects': return 0; // Requires separate projects fetch if needed
                 default: return 0;
             }
         };
 
         const getIconForFamily = (familyId) => {
-            switch (familyId) {
-                case 'sales': return Icons.Coin;
-                case 'levels': return Icons.Flame;
-                case 'services': return Icons.Rocket;
-                case 'loyalty': return Icons.Heart;
-                case 'speed': return Icons.Lightning;
-                case 'reviews': return Icons.Star;
-                case 'purchases': return Icons.Diamond;
-                case 'talent': return Icons.Handshake;
-                case 'projects': return Icons.Eye;
-                default: return Icons.Star;
-            }
+            const map = { sales: Icons.Coin, purchases: Icons.Coin, levels: Icons.Flame, services: Icons.Rocket, loyalty: Icons.Heart, speed: Icons.Lightning, reviews: Icons.Star, talent: Icons.Handshake, projects: Icons.Eye };
+            return map[familyId] || Icons.Star;
         };
 
         const displayFamilies = isClient ? CLIENT_BADGE_FAMILIES : BADGE_FAMILIES;
@@ -78,20 +98,63 @@ export const BadgeNotificationProvider = ({ children }) => {
             });
         });
 
-        const cachedIdsStr = localStorage.getItem(`cooplance_badges_unlocked_${user.id}`);
-        const cachedIds = cachedIdsStr ? JSON.parse(cachedIdsStr) : [];
-
-        const newlyUnlocked = currentlyUnlocked.filter(b => !cachedIds.includes(b.id));
+        // 4. Persistence Check (DB Source of Truth)
+        const gamification = user.gamification || { badges: [], vacation: { active: false, credits: 4 } };
+        const dbBadgeIds = gamification.badges || [];
+        
+        // newlyUnlocked are those we merit NOW but aren't in the DB IDs list
+        const newlyUnlocked = currentlyUnlocked.filter(b => !dbBadgeIds.includes(b.id));
 
         if (newlyUnlocked.length > 0) {
-            // Save new state: MERGE with existing to ensure permanence even if progress decays
-            const updatedAllIds = Array.from(new Set([...cachedIds, ...currentlyUnlocked.map(b => b.id)]));
-            localStorage.setItem(`cooplance_badges_unlocked_${user.id}`, JSON.stringify(updatedAllIds));
+            console.log(`[BadgeNotificationContext] ${newlyUnlocked.length} NEW badges found! Syncing to DB...`);
+            
+            // Update User Profile gamification (DB Persistence)
+            const updatedBadges = Array.from(new Set([...dbBadgeIds, ...currentlyUnlocked.map(b => b.id)]));
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ gamification: { ...gamification, badges: updatedBadges } })
+                .eq('id', user.id);
+
+            if (updateError) {
+                console.error("[BadgeNotificationContext] Failed to sync badges to DB:", updateError);
+                return;
+            }
 
             // Queue notifications
             setQueue(prev => [...prev, ...newlyUnlocked]);
         }
     }, [user]);
+
+    // Migration Effect: Silently move localStorage badges to DB if DB is empty but LS has data
+    useEffect(() => {
+        if (!user || user.sync_error) return;
+        
+        const migrateLegacyBadges = async () => {
+            const lsKey = `cooplance_badges_unlocked_${user.id}`;
+            const lsData = localStorage.getItem(lsKey);
+            if (!lsData) return;
+
+            const lsIds = JSON.parse(lsData);
+            const dbIds = user.gamification?.badges || [];
+            
+            // If LS has something DB doesn't, MERGE
+            const needsMigration = lsIds.some(id => !dbIds.includes(id));
+            if (needsMigration) {
+                console.log("[BadgeNotificationContext] Migrating legacy badges from LocalStorage to DB...");
+                const mergedIds = Array.from(new Set([...dbIds, ...lsIds]));
+                const gamification = user.gamification || { badges: [], vacation: { active: false, credits: 4 } };
+                
+                await supabase.from('profiles').update({ 
+                    gamification: { ...gamification, badges: mergedIds } 
+                }).eq('id', user.id);
+                
+                // Clear LS once migrated
+                localStorage.removeItem(lsKey);
+            }
+        };
+        
+        migrateLegacyBadges();
+    }, [user?.id, user?.gamification?.badges]);
 
     // Check periodically
     useEffect(() => {

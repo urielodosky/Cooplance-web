@@ -1,36 +1,39 @@
 import React from 'react';
 import { useAuth } from '../features/auth/context/AuthContext';
+import { useJobs } from '../context/JobContext';
 import { useNavigate } from 'react-router-dom';
 
 import { BADGE_FAMILIES, CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
 
 const Badges = () => {
     const { user } = useAuth();
+    const { jobs } = useJobs();
     const navigate = useNavigate();
 
     if (!user) {
-        return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando insignias...</div>;
+        return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando insignias...</div>;
     }
 
     const isClient = user.role === 'buyer' || user.role === 'company';
-    const allJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
-    const myOrders = allJobs.filter(j => j.buyerId === user.id);
-    const mySales = allJobs.filter(j => j.freelancerId === user.id);
-    const myServices = JSON.parse(localStorage.getItem('cooplance_db_services') || '[]').filter(s => s.freelancerId === user.id);
-    const myProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]').filter(p => p.clientId === user.id);
+    
+    // Use jobs from context instead of localStorage
+    const completedJobs = (jobs || []).filter(j => j.status === 'completed');
+    const mySales = completedJobs.filter(j => j.freelancerId === user.id);
+    const myOrders = completedJobs.filter(j => j.buyerId === user.id);
 
-    // Load saved (permanent) badges
-    const savedUnlockedIds = JSON.parse(localStorage.getItem(`cooplance_badges_unlocked_${user.id}`) || '[]');
+    // DB Source of Truth for unlocked badges
+    const savedUnlockedIds = user.gamification?.badges || [];
 
-    // Calculate loyalty (max purchases by a single buyer)
-    const buyerFrequency = {};
-    mySales.forEach(sale => {
-        buyerFrequency[sale.buyerId] = (buyerFrequency[sale.buyerId] || 0) + 1;
+    // Calculate loyalty (max purchases by a single buyer or from a single talent)
+    const interactions = {};
+    completedJobs.forEach(job => {
+        const targetId = job.buyerId === user.id ? job.freelancerId : job.buyerId;
+        interactions[targetId] = (interactions[targetId] || 0) + 1;
     });
-    const maxLoyalty = Object.values(buyerFrequency).length > 0 ? Math.max(...Object.values(buyerFrequency)) : 0;
+    const maxLoyalty = Object.values(interactions).length > 0 ? Math.max(...Object.values(interactions)) : 0;
 
-    // Calculate unique freelancers hired
-    const uniqueFreelancersHired = new Set(myOrders.map(o => o.freelancerId)).size;
+    // Calculate unique partners (Talents hired / Clients served)
+    const uniquePartners = new Set(Object.keys(interactions)).size;
 
     const Icons = {
         Sales: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" /></svg>,
@@ -47,14 +50,13 @@ const Badges = () => {
     const getProgressForFamily = (familyId) => {
         switch(familyId) {
             case 'sales': return mySales.length;
-            case 'levels': return user.level || 1;
-            case 'services': return myServices.length;
-            case 'loyalty': return maxLoyalty;
-            case 'speed': return Math.floor(mySales.length / 3);
-            case 'reviews': return user.reviewsCount || 0;
             case 'purchases': return myOrders.length;
-            case 'talent': return uniqueFreelancersHired;
-            case 'projects': return myProjects.length;
+            case 'levels': return user.level || 1;
+            case 'loyalty': return maxLoyalty;
+            case 'reviews': return user.reviewsCount || 0;
+            case 'talent': return uniquePartners;
+            case 'services': return 0; // Handled dynamically in Dashboard
+            case 'projects': return 0; // Handled dynamically in Dashboard
             default: return 0;
         }
     };
@@ -62,12 +64,12 @@ const Badges = () => {
     const getIconForFamily = (familyId) => {
         switch(familyId) {
             case 'sales': return Icons.Sales;
+            case 'purchases': return Icons.Sales;
             case 'levels': return Icons.Level;
             case 'services': return Icons.Service;
             case 'loyalty': return Icons.Loyalty;
             case 'speed': return Icons.Speed;
             case 'reviews': return Icons.Review;
-            case 'purchases': return Icons.Sales; // Using same as purchases
             case 'talent': return Icons.Handshake;
             case 'projects': return Icons.Eye;
             default: return Icons.Review;
@@ -91,12 +93,10 @@ const Badges = () => {
     ];
 
     const getTierStyle = (index, maxTiers) => {
-        // Map index to a 0-4 range based on maxTiers to pick the right color
         const mappedIndex = Math.floor((index / Math.max(1, maxTiers - 1)) * 4);
         return tierStyles[Math.min(mappedIndex, 4)];
     };
 
-    // Calculate total unlocked badges (including permanent ones)
     let totalUnlocked = 0;
     let totalBadges = 0;
 
@@ -104,9 +104,7 @@ const Badges = () => {
         family.badges.forEach(badge => {
             totalBadges++;
             const isAchieved = (family.currentProgress >= badge.required) || savedUnlockedIds.includes(badge.id);
-            if (isAchieved) {
-                totalUnlocked++;
-            }
+            if (isAchieved) totalUnlocked++;
         });
     });
 
