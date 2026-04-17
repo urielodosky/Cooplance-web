@@ -38,15 +38,8 @@ import { ThemeProvider } from './context/ThemeContext'
 import { TeamProvider } from './context/TeamContext'
 import { ChatProvider } from './context/ChatContext'
 import React, { useEffect } from 'react'
-import { isConfigured } from './lib/supabase'
-import ConfigRequired from './components/common/ConfigRequired'
 
 function App() {
-  // ─── Early Exit if Config Missing ──────────────────────────────────────────
-  if (!isConfigured) {
-    return <ConfigRequired />;
-  }
-
   useEffect(() => {
     // Automatic seeding is now disabled to allow for a clean start as requested.
     // If you need to re-seed demo data, you can do so from the Settings or Login page.
