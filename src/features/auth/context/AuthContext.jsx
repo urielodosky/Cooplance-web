@@ -292,7 +292,13 @@ export const AuthProvider = ({ children }) => {
             dob: registrationData.dob || registrationData.birthDate || null,
             phone: registrationData.phone || null
         };
-        sessionStorage.setItem('cooplance_pending_profile_data', JSON.stringify(heavyData));
+
+        try {
+            sessionStorage.setItem('cooplance_pending_profile_data', JSON.stringify(heavyData));
+        } catch (storageErr) {
+            console.warn("[AuthContext] Failed to cache pending data in storage (Quota exceeded?):", storageErr);
+            // We ignore and continue. SignUp is more important.
+        }
 
         // Cleanup: Remove empty/null fields
         Object.keys(payload).forEach(key => {

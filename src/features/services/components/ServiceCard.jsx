@@ -57,7 +57,14 @@ const ServiceCard = ({ service }) => {
             style={getCardStyle()}
         >
             <div className="service-image-container">
-                <img src={service.image} alt={service.title} className="service-image" />
+                <img 
+                    src={service.image || service.image_url || service.imageUrl} 
+                    alt={service.title} 
+                    className="service-image" 
+                    onError={(e) => {
+                        e.target.src = 'https://ui-avatars.com/api/?name=Service&background=0a0a1a&color=6366f1&size=512';
+                    }}
+                />
                 {isOwner && (
                     <button 
                         className="delete-service-btn"
@@ -106,9 +113,17 @@ const ServiceCard = ({ service }) => {
             <div className="service-content">
                 <div className="freelancer-info">
                     <img
-                        src={getProfilePicture({ role: 'freelancer', avatar: avatar, gender: 'male' })} // Fallback
+                        src={getProfilePicture(fUser.id ? { ...fUser, role: 'freelancer' } : { 
+                            role: 'freelancer', 
+                            avatar: avatar || service.freelancerAvatar || service.avatar_url, 
+                            gender: fUser.gender || 'male',
+                            username: displayUsername
+                        })}
                         alt={service.freelancerName}
                         className="freelancer-avatar"
+                        onError={(e) => {
+                            e.target.src = 'https://ui-avatars.com/api/?name=U&background=8b5cf6&color=fff';
+                        }}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>

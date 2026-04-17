@@ -145,13 +145,12 @@ const FreelancerDetail = () => {
                         flexShrink: 0
                     }}>
                         <img
-                            src={getProfilePicture({ 
-                                role: 'freelancer', 
-                                avatar: freelancer.avatar_url || freelancer.avatar, 
-                                gender: freelancer.gender 
-                            })}
+                            src={getProfilePicture(freelancer)}
                             alt={freelancer.first_name || 'Freelancer'}
                             style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                            onError={(e) => {
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(freelancer.username || 'F')}&background=8b5cf6&color=fff&size=256`;
+                            }}
                         />
                     </div>
 
@@ -242,39 +241,44 @@ const FreelancerDetail = () => {
                         </p>
 
                         {/* Badges Section */}
-                        {freelancer.gamification?.badges?.length > 0 && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                {BADGE_FAMILIES.flatMap(f => f.badges)
-                                    .filter(b => freelancer.gamification.badges.includes(b.id))
-                                    .map(badge => (
-                                        <div 
-                                            key={badge.id}
-                                            className="glass help-icon-wrapper"
-                                            style={{ 
-                                                padding: '6px 12px', 
-                                                borderRadius: '12px', 
-                                                border: '1px solid var(--primary)', 
-                                                background: 'rgba(139, 92, 246, 0.05)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                cursor: 'help'
-                                            }}
-                                        >
-                                            <div style={{ color: 'var(--primary)' }}>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        {(() => {
+                            const badgesArray = freelancer.gamification?.badges || freelancer.badges || [];
+                            if (badgesArray.length === 0) return null;
+
+                            return (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                    {BADGE_FAMILIES.flatMap(f => f.badges)
+                                        .filter(b => badgesArray.includes(b.id))
+                                        .map(badge => (
+                                            <div 
+                                                key={badge.id}
+                                                className="glass help-icon-wrapper"
+                                                style={{ 
+                                                    padding: '6px 12px', 
+                                                    borderRadius: '12px', 
+                                                    border: '1px solid var(--primary)', 
+                                                    background: 'rgba(139, 92, 246, 0.05)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    cursor: 'help'
+                                                }}
+                                            >
+                                                <div style={{ color: 'var(--primary)' }}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                                </div>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
+                                                
+                                                <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
+                                                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
+                                                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
+                                                </div>
                                             </div>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
-                                            
-                                            <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
-                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
-                                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                }
-                            </div>
-                        )}
+                                        ))
+                                    }
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>

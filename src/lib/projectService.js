@@ -131,6 +131,7 @@ function mapToDB(p) {
         description: p.description,
         category: p.category,
         subcategories: p.subcategories || [],
+        specialties: p.specialties || [], // V29 Added
         budget_type: p.budgetType || 'fixed',
         budget: parseFloat(p.budget) || 0,
         deadline: p.deadline || null,
@@ -158,6 +159,7 @@ function mapFromDB(row) {
         description: row.description,
         category: row.category,
         subcategories: row.subcategories,
+        specialties: row.specialties || [], // V29 Added
         budgetType: row.budget_type,
         budget: row.budget,
         deadline: row.deadline,

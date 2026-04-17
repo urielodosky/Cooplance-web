@@ -89,8 +89,11 @@ const CompanyDetail = () => {
                 <div className="hero-content-wrapper">
                     <div className="company-logo-large">
                         <img
-                            src={getProfilePicture({ role: 'company', avatar: company.avatar })}
-                            alt={company.name || company.companyName}
+                            src={getProfilePicture(company)}
+                            alt={company.company_name || company.companyName || 'Empresa'}
+                            onError={(e) => {
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(company.company_name || company.username || 'E')}&background=6366f1&color=fff&size=512`;
+                            }}
                         />
                     </div>
 
@@ -133,39 +136,44 @@ const CompanyDetail = () => {
                         </p>
 
                         {/* Badges Section */}
-                        {company.gamification?.badges?.length > 0 && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                {CLIENT_BADGE_FAMILIES.flatMap(f => f.badges)
-                                    .filter(b => company.gamification.badges.includes(b.id))
-                                    .map(badge => (
-                                        <div 
-                                            key={badge.id}
-                                            className="glass help-icon-wrapper"
-                                            style={{ 
-                                                padding: '6px 12px', 
-                                                borderRadius: '12px', 
-                                                border: '1px solid var(--secondary)', 
-                                                background: 'rgba(59, 130, 246, 0.05)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                cursor: 'help'
-                                            }}
-                                        >
-                                            <div style={{ color: 'var(--secondary)' }}>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        {(() => {
+                            const badgesArray = company.gamification?.badges || company.badges || [];
+                            if (badgesArray.length === 0) return null;
+
+                            return (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                    {CLIENT_BADGE_FAMILIES.flatMap(f => f.badges)
+                                        .filter(b => badgesArray.includes(b.id))
+                                        .map(badge => (
+                                            <div 
+                                                key={badge.id}
+                                                className="glass help-icon-wrapper"
+                                                style={{ 
+                                                    padding: '6px 12px', 
+                                                    borderRadius: '12px', 
+                                                    border: '1px solid var(--secondary)', 
+                                                    background: 'rgba(59, 130, 246, 0.05)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    cursor: 'help'
+                                                }}
+                                            >
+                                                <div style={{ color: 'var(--secondary)' }}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                                </div>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
+                                                
+                                                <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
+                                                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
+                                                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
+                                                </div>
                                             </div>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
-                                            
-                                            <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
-                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
-                                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                }
-                            </div>
-                        )}
+                                        ))
+                                    }
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>

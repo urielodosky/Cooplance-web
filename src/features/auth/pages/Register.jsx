@@ -144,27 +144,83 @@ const Register = () => {
         }
     };
 
-    const handleCvChange = (e) => {
+    // Helper: Compress Image to reduce Base64 size (Quota Fix)
+    const compressImage = (file, maxWidth = 1200, maxHeight = 1200, quality = 0.6) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convert to JPEG with reduced quality
+                    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(dataUrl);
+                };
+                img.onerror = (err) => {
+                    console.warn("Could not load image for compression, using original.", err);
+                    resolve(event.target.result); // Fallback to original if load fails (e.g. unknown format)
+                };
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const handleCvChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
             setCvFileName(file.name);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, cvFile: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressed = await compressImage(file);
+                setFormData(prev => ({ ...prev, cvFile: compressed }));
+            } catch (err) {
+                console.error("CV Compression error:", err);
+                // Fallback to original file reader if compression fails
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setFormData(prev => ({ ...prev, cvFile: reader.result }));
+                };
+                reader.readAsDataURL(file);
+            }
         }
     };
 
-    const handleProfileImageChange = (e) => {
+    const handleProfileImageChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
             setProfileImageName(file.name);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, profileImage: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressed = await compressImage(file);
+                setFormData(prev => ({ ...prev, profileImage: compressed }));
+            } catch (err) {
+                console.error("Profile image compression error:", err);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setFormData(prev => ({ ...prev, profileImage: reader.result }));
+                };
+                reader.readAsDataURL(file);
+            }
         }
     };
 
