@@ -14,6 +14,7 @@ import { getProfilePicture } from '../utils/avatarUtils';
 import { getBenefitsForRole } from '../data/levelBenefits';
 import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
 import { getProjectsByClient } from '../lib/projectService';
+import { supabase } from '../lib/supabase';
 import '../styles/pages/Dashboard.scss';
 
 // --- Sub-components for UI Blocks ---
