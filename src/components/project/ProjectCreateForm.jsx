@@ -358,9 +358,10 @@ const ProjectCreateForm = () => {
             const projectData = {
                 ...formData,
                 clientId: user.id,
-                clientName: user.role === 'company' ? user.companyName : `${user.firstName || user.first_name} ${user.lastName || user.last_name || ''}`.trim(),
-                clientAvatar: user.avatar || user.avatar_url,
+                clientName: user.role === 'company' ? user.company_name : `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username,
+                clientAvatar: user.avatar_url,
                 clientRole: user.role,
+
                 status: 'open',
                 imageUrl: finalImageUrl,
                 videoUrl: finalVideoUrl,
@@ -374,7 +375,16 @@ const ProjectCreateForm = () => {
                     : null
             };
 
+            // Consolidate contract duration
+            if (formData.contractDurationType !== 'unique' && formData.contractDurationValue) {
+                projectData.contractDuration = `${formData.contractDurationValue} ${formData.contractDurationType}`;
+            } else {
+                projectData.contractDuration = 'Pago único';
+            }
+
+            console.log('[ProjectCreateForm] Sending project data:', projectData);
             await createProject(projectData);
+
             setLoadingStatus('¡Listo!');
             
             setTimeout(() => {
@@ -382,10 +392,12 @@ const ProjectCreateForm = () => {
             }, 1500);
 
         } catch (err) {
-            console.error('Error creating project:', err);
-            setFormError(`Error: ${err.message || 'Error desconocido al publicar el proyecto.'}`);
+            console.error('Error saving project:', err);
+            const errorMessage = err.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+            setFormError(`Hubo un error al publicar el pedido: ${errorMessage}`);
             setIsSubmitting(false);
         }
+
     };
 
     const handleNextOrSubmit = (e) => {

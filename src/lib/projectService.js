@@ -147,6 +147,8 @@ function mapToDB(p) {
         city: p.city || [],
         location: p.location,
         payment_methods: p.paymentMethods || null,
+        payment_frequency: p.paymentFrequency || 'fixed',
+        contract_duration: p.contractDuration || null,
         faqs: p.faqs || null,
         questions: p.questions || null
     };

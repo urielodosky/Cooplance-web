@@ -571,7 +571,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 isSessionBased: isSessionBased,
                 faqs: faqs.filter(f => f.question && f.answer),
                 freelancerId: user.id,
-                freelancerName: initialData?.freelancerName || user.first_name || user.username || user.company_name,
+                freelancerName: user.role === 'company' ? user.company_name : `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username,
                 level: initialData?.level || user.level || 1,
                 images: imageUrls,
                 image: imageUrls[0] || formData.imageUrl || null,
