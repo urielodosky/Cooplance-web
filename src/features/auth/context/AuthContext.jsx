@@ -163,12 +163,20 @@ export const AuthProvider = ({ children }) => {
             dob: registrationData.dob || registrationData.birthDate || null,
             phone: registrationData.phone || null,
             bio: registrationData.bio || '',
-            avatar_url: registrationData.profileImage || null,
-            cv_url: registrationData.cvFile || null,
+            // V23: Heavy images removed from metadata to prevent "Failed to fetch" (size limits)
+            // They will be uploaded post-verification.
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
         };
 
-        // Cleanup V20: Remove empty/null fields to prevent trigger failures
+        // Cache heavy data for post-verification update
+        const heavyData = {
+            avatar_url: registrationData.profileImage || null,
+            cv_url: registrationData.cvFile || null,
+            bio: registrationData.bio || ''
+        };
+        sessionStorage.setItem('cooplance_pending_profile_data', JSON.stringify(heavyData));
+
+        // Cleanup: Remove empty/null fields
         Object.keys(payload).forEach(key => {
             if (payload[key] === null || payload[key] === '' || payload[key] === undefined) {
                 delete payload[key];
@@ -206,6 +214,37 @@ export const AuthProvider = ({ children }) => {
         // Fetch the newly created profile
         if (data.user) {
             await fetchProfile(data.user.id);
+            
+            // V23: Post-verification update for heavy metadata (images/bio)
+            const cachedHeavyData = sessionStorage.getItem('cooplance_pending_profile_data');
+            if (cachedHeavyData) {
+                try {
+                    const heavyData = JSON.parse(cachedHeavyData);
+                    console.log("[AuthContext] Applying deferred profile data (images/bio)...");
+                    
+                    const updatePayload = {};
+                    if (heavyData.avatar_url) updatePayload.avatar_url = heavyData.avatar_url;
+                    if (heavyData.cv_url) updatePayload.cv_url = heavyData.cv_url;
+                    if (heavyData.bio) updatePayload.bio = heavyData.bio;
+
+                    if (Object.keys(updatePayload).length > 0) {
+                        const { error: updateError } = await supabase
+                            .from('profiles')
+                            .update(updatePayload)
+                            .eq('id', data.user.id);
+                        
+                        if (updateError) {
+                            console.error("[AuthContext] Error applying deferred data:", updateError);
+                        } else {
+                            // Re-sync user state with updated values
+                            await fetchProfile(data.user.id);
+                            sessionStorage.removeItem('cooplance_pending_profile_data');
+                        }
+                    }
+                } catch (e) {
+                    console.error("[AuthContext] Error parsing deferred data:", e);
+                }
+            }
         }
 
         return data.user;
