@@ -27,6 +27,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     country TEXT,
     dob DATE,
     phone TEXT,
+    dni TEXT,
+    vacancies INTEGER DEFAULT 0,
+    work_hours TEXT,
+    payment_methods TEXT,
+    cv_url TEXT,
+    province TEXT,
+    city TEXT,
+    cuil_cuit TEXT, -- For companies
+    terms_accepted_at TIMESTAMPTZ,
     is_verified BOOLEAN DEFAULT FALSE,
     verification_status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'rejected'
     gamification JSONB DEFAULT '{"badges": [], "vacation": {"active": false, "credits": 4}}',
@@ -55,6 +64,8 @@ CREATE TABLE IF NOT EXISTS public.projects (
     province TEXT[],
     city TEXT[],
     payment_methods JSONB,
+    payment_frequency TEXT DEFAULT 'fixed', -- 'fixed', 'milestone', 'weekly', 'monthly'
+    contract_duration TEXT,
     faqs JSONB,
     questions JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -240,7 +251,27 @@ CREATE POLICY "Users update their own notifications" ON public.notifications FOR
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users see their own transactions" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
 
--- 9. TRIGGERS & LOGIC
+-- 9. REVIEWS (Reputation System)
+CREATE TABLE IF NOT EXISTS public.reviews (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID REFERENCES public.jobs(id) ON DELETE CASCADE,
+    reviewer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    target_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    role TEXT CHECK (role IN ('client', 'provider')), -- Role of the target in this context
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Reviews are public" ON public.reviews FOR SELECT USING (true);
+CREATE POLICY "Users can create reviews for their jobs" ON public.reviews FOR INSERT WITH CHECK (
+    auth.uid() = reviewer_id AND EXISTS (
+        SELECT 1 FROM public.jobs j WHERE j.id = job_id AND (j.client_id = auth.uid() OR j.provider_id = auth.uid())
+    )
+);
+
+-- 10. TRIGGERS & LOGIC
 
 -- A. Automated Profile Creation (Hardened V23 Logic)
 CREATE OR REPLACE FUNCTION public.handle_user_confirmation()
@@ -251,7 +282,9 @@ BEGIN
             id, username, email, role,
             first_name, last_name, avatar_url,
             location, country, dob, phone,
-            gender, company_name, responsible_name, bio
+            gender, company_name, responsible_name, bio,
+            dni, vacancies, work_hours, payment_methods, cv_url, province, city,
+            cuil_cuit, terms_accepted_at
         )
         VALUES (
             NEW.id,
@@ -268,7 +301,16 @@ BEGIN
             NEW.raw_user_meta_data->>'gender',
             NEW.raw_user_meta_data->>'company_name',
             NEW.raw_user_meta_data->>'responsible_name',
-            COALESCE(NEW.raw_user_meta_data->>'bio', '')
+            COALESCE(NEW.raw_user_meta_data->>'bio', ''),
+            NEW.raw_user_meta_data->>'dni',
+            (COALESCE(NEW.raw_user_meta_data->>'vacancies', '0'))::INTEGER,
+            NEW.raw_user_meta_data->>'work_hours',
+            NEW.raw_user_meta_data->>'payment_methods',
+            NEW.raw_user_meta_data->>'cv_url',
+            NEW.raw_user_meta_data->>'province',
+            NEW.raw_user_meta_data->>'city',
+            NEW.raw_user_meta_data->>'cuil_cuit',
+            CASE WHEN (NEW.raw_user_meta_data->>'terms_accepted')::BOOLEAN THEN NOW() ELSE NULL END
         );
     END IF;
     RETURN NEW;

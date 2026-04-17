@@ -59,6 +59,7 @@ const Register = () => {
         emailVerified: false,
         phoneVerified: false,
         termsAccepted: false,
+        cuil_cuit: '', // NEW: For companies
         cvFile: '', // Base64 string for CV image
         profileImage: '', // Base64 string for Profile Image
         province: '', // for companies location
@@ -417,23 +418,42 @@ const Register = () => {
                     )}
 
                     {/* 5. Identity Verification (For all roles now as per user request) */}
-                    <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                        <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>Datos de Identidad (Obligatorio)</p>
-                        <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
-                            <select name="documentType" value={formData.documentType} onChange={handleChange} style={{ height: '45px' }}>
-                                <option value="dni">DNI</option>
-                                <option value="passport">Pasaporte</option>
-                                <option value="selfie">Cédula</option>
-                            </select>
-                            <input
-                                type="text"
-                                name="dni"
-                                value={formData.dni}
-                                placeholder="Número de Documento"
-                                onChange={handleChange}
-                                required
-                                style={{ margin: 0, height: '45px' }}
-                            />
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
+                                {role === 'company' ? 'Datos de la Empresa y Responsable' : 'Datos de Identidad (Obligatorio)'}
+                            </p>
+                            
+                            <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
+                                <select name="documentType" value={formData.documentType} onChange={handleChange} style={{ height: '45px' }}>
+                                    <option value="dni">DNI</option>
+                                    <option value="passport">Pasaporte</option>
+                                    <option value="selfie">Cédula</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    name="dni"
+                                    value={formData.dni}
+                                    placeholder={role === 'company' ? "DNI Responsable" : "Número de Documento"}
+                                    onChange={handleChange}
+                                    required
+                                    style={{ margin: 0, height: '45px' }}
+                                />
+                            </div>
+
+                            {/* CUIT Field only for companies */}
+                            {role === 'company' && (
+                                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                    <input
+                                        type="text"
+                                        name="cuil_cuit"
+                                        value={formData.cuil_cuit}
+                                        placeholder="CUIT / CUIL de la Empresa"
+                                        onChange={handleChange}
+                                        required
+                                        style={{ margin: 0, height: '45px', width: '100%' }}
+                                    />
+                                </div>
+                            )}
                         </div>
                         {(role === 'freelancer' || role === 'company') && (
                             <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

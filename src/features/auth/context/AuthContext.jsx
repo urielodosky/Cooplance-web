@@ -209,8 +209,7 @@ export const AuthProvider = ({ children }) => {
             dob: registrationData.dob || registrationData.birthDate || null,
             phone: registrationData.phone || null,
             bio: registrationData.bio || '',
-            // V23: Heavy images removed from metadata to prevent "Failed to fetch" (size limits)
-            // They will be uploaded post-verification.
+            cuil_cuit: registrationData.cuil_cuit || registrationData.cuit || null,
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
         };
 
