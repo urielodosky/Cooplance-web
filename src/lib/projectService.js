@@ -179,6 +179,8 @@ function mapFromDB(row) {
         paymentMethods: row.payment_methods,
         faqs: row.faqs || [],
         questions: row.questions || [],
+        contractDuration: row.contract_duration, // V28 Added
+        paymentFrequency: row.payment_frequency, // V28 Added
         createdAt: row.created_at
     };
 }
