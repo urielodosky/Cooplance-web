@@ -96,7 +96,7 @@ const CompanyDetail = () => {
                     <div className="company-info">
                         <div className="company-title-row">
                             <h1 className="company-title">
-                                {company.firstName || company.companyName || 'Empresa'}
+                                {company.company_name || company.companyName || `${company.first_name || ''} ${company.last_name || ''}`.trim() || 'Empresa'}
                             </h1>
                             <span className="verified-badge">VERIFICADO</span>
                         </div>
@@ -114,7 +114,7 @@ const CompanyDetail = () => {
                         </div>
 
                         <p className="company-bio">
-                            {company.bio || "Empresa comprometida con la excelencia y la innovación. Buscamos el mejor talento para unirlo a nuestros proyectos desafiantes."}
+                            {company.bio || "Este usuario no ha añadido una descripción todavía."}
                         </p>
                     </div>
                 </div>
@@ -136,10 +136,10 @@ const CompanyDetail = () => {
                                 key={project.id}
                                 project={{
                                     ...project,
-                                    clientName: company.firstName,
-                                    clientAvatar: company.avatar,
+                                    clientName: company.company_name || company.first_name,
+                                    clientAvatar: company.avatar_url,
                                     clientRating: company.rating,
-                                    clientReviews: company.reviewsCount,
+                                    clientReviews: company.reviews_count,
                                 }}
                             />
                         ))}
@@ -207,80 +207,8 @@ const CompanyDetail = () => {
                     </h2>
                 </div>
 
-                <div className="company-reviews-grid">
-                    {/* Mock Review 1 */}
-                    <div className="review-card">
-                        <div className="review-header">
-                            <div
-                                className="reviewer-profile"
-                                style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                onClick={() => navigate('/freelancer/1')}
-                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                            >
-                                <div className="reviewer-avatar">
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Ana+Garcia&background=6366f1&color=fff&size=128"
-                                        alt="Avatar"
-                                    />
-                                </div>
-                                <div className="reviewer-info">
-                                    <h4>Ana García</h4>
-                                    <span>Freelancer</span>
-                                </div>
-                            </div>
-                            <div className="review-rating">
-                                <span>5.0</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            </div>
-                        </div>
-
-                        <div className="review-project-context">
-                            <span className="context-label">Servicio Realizado</span>
-                            <span className="context-value">Diseño de Logo Profesional</span>
-                        </div>
-
-                        <p className="review-text">
-                            "Excelente cliente, muy claro con los requerimientos y los pagos fueron puntuales. Recomiendo trabajar con ellos 100%."
-                        </p>
-                    </div>
-
-                    {/* Mock Review 2 */}
-                    <div className="review-card">
-                        <div className="review-header">
-                            <div
-                                className="reviewer-profile"
-                                style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                onClick={() => navigate('/freelancer/2')}
-                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                            >
-                                <div className="reviewer-avatar">
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Carlos+R&background=10b981&color=fff&size=128"
-                                        alt="Avatar"
-                                    />
-                                </div>
-                                <div className="reviewer-info">
-                                    <h4>Carlos Rodríguez</h4>
-                                    <span>Freelancer</span>
-                                </div>
-                            </div>
-                            <div className="review-rating">
-                                <span>4.0</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            </div>
-                        </div>
-
-                        <div className="review-project-context">
-                            <span className="context-label">Servicio Realizado</span>
-                            <span className="context-value">Desarrollo Web React</span>
-                        </div>
-
-                        <p className="review-text">
-                            "Buena comunicación, aunque el alcance del proyecto cambió un par de veces. En general una buena experiencia."
-                        </p>
-                    </div>
+                <div className="empty-state-box" style={{ padding: '3rem', border: '1px dashed var(--border)', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Este usuario aún no tiene reseñas.</p>
                 </div>
             </div>
 
@@ -293,43 +221,8 @@ const CompanyDetail = () => {
                     </h2>
                 </div>
 
-                <div className="company-reviews-grid">
-                    {/* Mock Given Review 1 */}
-                    <div className="review-card">
-                        <div className="review-header">
-                            <div
-                                className="reviewer-profile"
-                                style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                onClick={() => navigate('/freelancer/4')}
-                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                            >
-                                <div className="reviewer-avatar">
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Tomas+M&background=3b82f6&color=fff&size=128"
-                                        alt="Avatar"
-                                    />
-                                </div>
-                                <div className="reviewer-info">
-                                    <h4>Tomás Martínez</h4>
-                                    <span>Freelancer</span>
-                                </div>
-                            </div>
-                            <div className="review-rating">
-                                <span>5.0</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            </div>
-                        </div>
-
-                        <div className="review-project-context">
-                            <span className="context-label">Proyecto Asignado</span>
-                            <span className="context-value">Sistema de Gestión Interna</span>
-                        </div>
-
-                        <p className="review-text">
-                            "Un desarrollador brillante. Entregó código limpio, bien documentado y dentro del presupuesto establecido."
-                        </p>
-                    </div>
+                <div className="empty-state-box" style={{ padding: '3rem', border: '1px dashed var(--border)', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Este usuario aún no dio reseñas.</p>
                 </div>
             </div>
         </div>

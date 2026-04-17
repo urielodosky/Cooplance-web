@@ -265,8 +265,19 @@ const ProjectCreateForm = () => {
         e.preventDefault();
 
         // Validation
-        if (formData.budgetType === 'fixed' && Number(formData.budget) <= 0) {
-            alert('Para presupuesto Fijo, el monto debe ser mayor a 0.');
+        // Enhanced Validation
+        if (!formData.budget || Number(formData.budget) < 1000) {
+            alert('El presupuesto debe ser mayor o igual a $1000 ARS.');
+            return;
+        }
+
+        if (!formData.paymentFrequency) {
+            alert('Debes seleccionar una frecuencia de pago.');
+            return;
+        }
+
+        if (user?.role === 'company' && (!formData.vacancies || Number(formData.vacancies) < 1)) {
+            alert('La cantidad de vacantes debe ser al menos 1.');
             return;
         }
 
@@ -600,16 +611,20 @@ const ProjectCreateForm = () => {
 
                         <div className="form-group" style={{ marginTop: '1rem' }}>
                             <label>Presupuesto Máximo Estimado ($)</label>
-                            <div className="price-input-wrapper">
+                             <div className="price-input-wrapper">
                                 <input
                                     type="number"
                                     name="budget"
                                     value={formData.budget}
                                     onChange={handleChange}
                                     required
-                                    placeholder="0.00"
+                                    min="1000"
+                                    placeholder="Mínimo 1000.00"
                                 />
                                 <span className="currency-badge">ARS</span>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                                * El presupuesto mínimo aceptado es de $1000 ARS.
                             </div>
                         </div>
 

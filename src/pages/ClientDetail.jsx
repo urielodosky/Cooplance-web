@@ -2,50 +2,61 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProfilePicture } from '../utils/avatarUtils';
 import ProjectCard from '../components/project/ProjectCard';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../features/auth/context/AuthContext';
 import '../styles/pages/ServiceDetail.scss';
 
 const ClientDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user: currentUser } = useAuth();
     const [client, setClient] = useState(null);
     const [clientProjects, setClientProjects] = useState([]);
     const [clientJobs, setClientJobs] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-        const storedProjects = JSON.parse(localStorage.getItem('cooplance_db_projects') || '[]');
-        const storedJobs = JSON.parse(localStorage.getItem('cooplance_db_jobs') || '[]');
+        const fetchClientData = async () => {
+            setLoading(true);
+            try {
+                // 1. Fetch Client Profile
+                const { data: profile, error: pError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (pError) throw pError;
+                setClient(profile);
 
-        const foundClient = storedUsers.find(u => u.id === parseInt(id));
+                // 2. Fetch Active Projects (Jobs created by this client)
+                const { data: projectsData, error: prError } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('client_id', id)
+                    .eq('status', 'open');
+                
+                if (prError) throw prError;
+                setClientProjects(projectsData || []);
 
-        if (foundClient) {
-            if (foundClient.isDeleted) {
-                setClient({
-                    ...foundClient,
-                    isDeleted: true,
-                    firstName: 'Usuario',
-                    lastName: 'Eliminado',
-                    bio: 'Esta cuenta ha sido eliminada y ya no está disponible.'
-                });
-                setClientProjects([]);
-                setClientJobs([]);
-            } else {
-                setClient(foundClient);
-                // Find active projects by this client
-                // Note: Projects might use clientId or authorId depending on seed data version, checking both
-                const projects = storedProjects.filter(p => (p.clientId === foundClient.id || p.authorId === foundClient.id) && p.status === 'open');
-                setClientProjects(projects);
+                // 3. Fetch Completed Jobs (as Buyer)
+                const { data: jobsData, error: jError } = await supabase
+                    .from('jobs')
+                    .select('*')
+                    .eq('client_id', id)
+                    .in('status', ['completed', 'canceled']);
+                
+                if (jError) throw jError;
+                setClientJobs(jobsData || []);
 
-                // Find finished jobs for this client (as buyer)
-                const finishedJobs = storedJobs.filter(j =>
-                    j.buyerId === foundClient.id &&
-                    (j.status === 'completed' || j.status === 'canceled')
-                );
-                setClientJobs(finishedJobs);
+            } catch (err) {
+                console.error("Error loading client data:", err);
+            } finally {
+                setLoading(false);
             }
-        }
-        setLoading(false);
+        };
+
+        if (id) fetchClientData();
     }, [id]);
 
     if (loading) return <div className="container" style={{ paddingTop: '6rem' }}>Cargando...</div>;
@@ -90,7 +101,7 @@ const ClientDetail = () => {
                     <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                             <h1 style={{ margin: 0, fontSize: '2.8rem', fontWeight: 800, lineHeight: 1.1 }}>
-                                {client.firstName ? `${client.firstName} ${client.lastName || ''}` : 'Usuario'}
+                                {client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : (client.company_name || client.username || 'Usuario')}
                             </h1>
                             <span style={{
                                 background: 'var(--secondary)',
@@ -144,10 +155,10 @@ const ClientDetail = () => {
                                 key={project.id}
                                 project={{
                                     ...project,
-                                    clientName: client.firstName, // Ensure name is passed correctly
-                                    clientAvatar: client.avatar,
+                                    clientName: client.company_name || client.first_name || client.username,
+                                    clientAvatar: client.avatar_url,
                                     clientRating: client.rating,
-                                    clientReviews: client.reviewsCount,
+                                    clientReviews: client.reviews_count,
                                 }}
                             />
                         ))}
@@ -229,228 +240,14 @@ const ClientDetail = () => {
                     </h2>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-
-                    {/* Mock Review 1 */}
-                    <div className="glass" style={{
-                        borderRadius: '16px',
-                        padding: '1.75rem',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                            <div
-                                style={{ display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                onClick={() => navigate('/freelancer/1')}
-                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                            >
-                                <div style={{
-                                    width: '56px',
-                                    height: '56px',
-                                    borderRadius: '50%',
-                                    overflow: 'hidden',
-                                    border: '1px solid var(--border)',
-                                    flexShrink: 0
-                                }}>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Laura+M&background=ec4899&color=fff&size=128"
-                                        alt="Avatar"
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                </div>
-                                <div>
-                                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Laura Martínez</h4>
-                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Freelancer</span>
-                                </div>
-                            </div>
-                            <div style={{
-                                background: 'rgba(251, 191, 36, 0.15)',
-                                color: '#fbbf24',
-                                padding: '6px 10px',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontWeight: 'bold'
-                            }}>
-                                <span>5.0</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            </div>
-                        </div>
-
-                        <div style={{
-                            background: 'var(--bg-card)',
-                            borderLeft: '4px solid var(--primary)',
-                            padding: '1rem',
-                            borderRadius: '0 8px 8px 0',
-                            marginBottom: '1.25rem'
-                        }}>
-                            <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '4px' }}>Proyecto Realizado</span>
-                            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>Rediseño de Sitio Web</span>
-                        </div>
-
-                        <p style={{
-                            fontStyle: 'italic',
-                            lineHeight: '1.6',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.95rem',
-                            margin: 0
-                        }}>
-                            "Un placer trabajar con este cliente. Instrucciones claras y feedback constructivo en todo momento."
-                        </p>
-                    </div>
-
-                    {/* Mock Review 2 */}
-                    <div className="glass" style={{
-                        borderRadius: '16px',
-                        padding: '1.75rem',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                            <div
-                                style={{ display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                onClick={() => navigate('/freelancer/2')}
-                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                            >
-                                <div style={{
-                                    width: '56px',
-                                    height: '56px',
-                                    borderRadius: '50%',
-                                    overflow: 'hidden',
-                                    border: '1px solid var(--border)',
-                                    flexShrink: 0
-                                }}>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Pedro+S&background=3b82f6&color=fff&size=128"
-                                        alt="Avatar"
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                </div>
-                                <div>
-                                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Pedro Sánchez</h4>
-                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Freelancer</span>
-                                </div>
-                            </div>
-                            <div style={{
-                                background: 'rgba(251, 191, 36, 0.15)',
-                                color: '#fbbf24',
-                                padding: '6px 10px',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontWeight: 'bold'
-                            }}>
-                                <span>4.5</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            </div>
-                        </div>
-
-                        <div style={{
-                            background: 'var(--bg-card)',
-                            borderLeft: '4px solid var(--primary)',
-                            padding: '1rem',
-                            borderRadius: '0 8px 8px 0',
-                            marginBottom: '1.25rem'
-                        }}>
-                            <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '4px' }}>Proyecto Realizado</span>
-                            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>Desarrollo App Móvil</span>
-                        </div>
-
-                        <p style={{
-                            fontStyle: 'italic',
-                            lineHeight: '1.6',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.95rem',
-                            margin: 0
-                        }}>
-                            "Buena experiencia, el pago fue rápido. Hubo algunas demoras en la entrega de materiales pero se resolvió bien."
-                        </p>
-                    </div>
+                <div style={{ padding: '3rem', border: '1px dashed var(--border)', borderRadius: '16px', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Este usuario aún no tiene reseñas.</p>
                 </div>
             </div>
 
-            {/* Given Reviews Section */}
-            <div style={{ marginTop: '4rem' }}>
-                <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
-                        Reseñas Dadas
-                    </h2>
+                <div style={{ padding: '3rem', border: '1px dashed var(--border)', borderRadius: '16px', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Este usuario aún no dio reseñas.</p>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                    {/* Mock Given Review 1 */}
-                    <div className="glass" style={{
-                        borderRadius: '16px',
-                        padding: '1.75rem',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                            <div
-                                style={{ display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', transition: 'opacity 0.2s' }}
-                                onClick={() => navigate('/freelancer/3')}
-                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
-                                onMouseLeave={e => e.currentTarget.style.opacity = 1}
-                            >
-                                <div style={{
-                                    width: '56px',
-                                    height: '56px',
-                                    borderRadius: '50%',
-                                    overflow: 'hidden',
-                                    border: '1px solid var(--border)',
-                                    flexShrink: 0
-                                }}>
-                                    <img
-                                        src="https://ui-avatars.com/api/?name=Sofia+G&background=8b5cf6&color=fff&size=128"
-                                        alt="Avatar"
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                </div>
-                                <div>
-                                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Sofía Gómez</h4>
-                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Freelancer</span>
-                                </div>
-                            </div>
-                            <div style={{
-                                background: 'rgba(251, 191, 36, 0.15)',
-                                color: '#fbbf24',
-                                padding: '6px 10px',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontWeight: 'bold'
-                            }}>
-                                <span>5.0</span>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            </div>
-                        </div>
-
-                        <div style={{
-                            background: 'var(--bg-card)',
-                            borderLeft: '4px solid var(--primary)',
-                            padding: '1rem',
-                            borderRadius: '0 8px 8px 0',
-                            marginBottom: '1.25rem'
-                        }}>
-                            <span style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '4px' }}>Proyecto Asignado</span>
-                            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>Edición de Video Promocional</span>
-                        </div>
-
-                        <p style={{
-                            fontStyle: 'italic',
-                            lineHeight: '1.6',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.95rem',
-                            margin: 0
-                        }}>
-                            "Excelente freelancer, entregó el trabajo mucho antes de lo esperado y captó la idea desde el primer momento."
-                        </p>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };

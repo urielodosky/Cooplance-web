@@ -263,7 +263,11 @@ export const AuthProvider = ({ children }) => {
             last_name: registrationData.lastName || registrationData.last_name || '',
             gender: registrationData.gender || 'male',
             company_name: registrationData.companyName || registrationData.company_name || null,
-            responsible_name: registrationData.responsibleName || registrationData.responsible_name || null,
+            responsible_first_name: registrationData.responsibleFirstName || null,
+            responsible_last_name: registrationData.responsibleLastName || null,
+            responsible_name: registrationData.responsibleName || 
+                             ((registrationData.responsibleFirstName || registrationData.responsibleLastName) ? 
+                              `${registrationData.responsibleFirstName || ''} ${registrationData.responsibleLastName || ''}`.trim() : null),
             location: registrationData.location || null,
             country: registrationData.country || 'Argentina',
             work_hours: registrationData.workHours || registrationData.work_hours || null,
@@ -277,6 +281,7 @@ export const AuthProvider = ({ children }) => {
             parent_id: registrationData.parentId || null,
             status: registrationData.parentId ? 'pending_parental_approval' : 'active',
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
+            avatar_url: registrationData.profileImage || null, // V28: Added to metadata for trigger
         };
 
         // Cache heavy/critical data for post-verification update (Safety Net)

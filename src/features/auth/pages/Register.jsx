@@ -46,7 +46,8 @@ const Register = () => {
         location: '',
         workMode: 'remote',
         companyName: '',
-        responsibleName: '',
+        responsibleFirstName: '',
+        responsibleLastName: '',
         username: '',
         password: '',
         confirmPassword: '',
@@ -373,7 +374,10 @@ const Register = () => {
 
                     {/* 2. First Name & Last Name / Responsible Name */}
                     {role === 'company' ? (
-                        <input type="text" name="responsibleName" value={formData.responsibleName} placeholder="Nombre del Responsable" onChange={handleChange} required maxLength={15} />
+                        <div className="form-grid-2">
+                            <input type="text" name="responsibleFirstName" value={formData.responsibleFirstName} placeholder="Nombre del Responsable" onChange={handleChange} required maxLength={15} />
+                            <input type="text" name="responsibleLastName" value={formData.responsibleLastName} placeholder="Apellido del Responsable" onChange={handleChange} required maxLength={15} />
+                        </div>
                     ) : (
                         <div className="form-grid-2">
                             <input type="text" name="firstName" value={formData.firstName} placeholder="Nombre" onChange={handleChange} required maxLength={15} />
@@ -384,8 +388,8 @@ const Register = () => {
                     {/* 3. Bio / Description */}
                     <textarea name="bio" placeholder={role === 'company' ? "Biografía / Descripción de la Empresa" : "Cuéntanos sobre ti (Biografía)"} rows="3" onChange={handleChange} required />
 
-                    {/* 4. Birth Date (Only for freelancer and buyer) */}
-                    {role !== 'company' && (
+                    {/* 4. Birth Date */}
+                    {true && (
                         <div className="form-group">
                             <CustomDatePicker
                                 label="Fecha de Nacimiento"
@@ -460,7 +464,7 @@ const Register = () => {
                                     type="text"
                                     name="dni"
                                     value={formData.dni}
-                                    placeholder={role === 'company' ? "DNI Responsable" : "Número de Documento"}
+                                    placeholder={role === 'company' ? "DNI del Responsable" : "Número de Documento"}
                                     onChange={handleChange}
                                     required
                                     style={{ margin: 0, height: '45px' }}
@@ -564,7 +568,18 @@ const Register = () => {
                                     </>
                                 )}
                             </div>
-                            <input type="text" name="location" placeholder="Calle y Numeración" onChange={handleChange} style={{ marginTop: '0.9rem' }} />
+                            
+                            {formData.province && formData.city && (
+                                <input 
+                                    type="text" 
+                                    name="location" 
+                                    value={formData.location || ''}
+                                    placeholder="Calle y Numeración" 
+                                    onChange={handleChange} 
+                                    style={{ marginTop: '0.9rem' }} 
+                                    required
+                                />
+                            )}
                         </div>
                     )}
 

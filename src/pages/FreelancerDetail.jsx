@@ -461,7 +461,7 @@ const FreelancerDetail = () => {
                         ))
                     ) : (
                         <div className="glass" style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border)' }}>
-                            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Este freelancer aún no ha recibido reseñas.</p>
+                            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Este usuario aún no tiene reseñas.</p>
                         </div>
                     )}
                 </div>
@@ -545,7 +545,7 @@ const FreelancerDetail = () => {
                         ))
                     ) : (
                         <div className="glass" style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border)' }}>
-                            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Este freelancer aún no ha dado reseñas.</p>
+                            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Este usuario aún no dio reseñas.</p>
                         </div>
                     )}
                 </div>

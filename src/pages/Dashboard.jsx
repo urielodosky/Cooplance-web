@@ -621,10 +621,10 @@ const Dashboard = () => {
             </div>
 
             <div className="dashboard-stats-grid">
-                <div className="glass stat-card">
-                    <h4>Nivel Actual</h4>
+                <div className="glass stat-card level-stat-card">
+                    <h4 className="stat-label">Nivel Actual</h4>
                     <p className="stat-value primary">{currentLevel}</p>
-                    <p className="stat-subtitle" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '-0.5rem', fontWeight: '600' }}>
+                    <p className="stat-subtitle">
                         {currentLevelName}
                     </p>
                     {user.id === 'cfb3e724-ce3d-4bd1-bc02-a289ef050b89' && (
@@ -676,7 +676,7 @@ const Dashboard = () => {
                     </div>
                 )}
                 <div className="glass stat-card">
-                    <h4>Trabajos Activos</h4>
+                    <h4 className="stat-label">Trabajos Activos</h4>
                     <p className="stat-value">
                         {(user.role === 'freelancer' || user.role === 'company')
                             ? myWork.filter(j => j.status === 'active').length
@@ -685,7 +685,7 @@ const Dashboard = () => {
                     </p>
                 </div>
                 <div className="glass stat-card">
-                    <h4>Completados</h4>
+                    <h4 className="stat-label">Completados</h4>
                     <p className="stat-value">
                         {(user.role === 'freelancer' || user.role === 'company')
                             ? myWork.filter(j => j.status === 'completed').length
