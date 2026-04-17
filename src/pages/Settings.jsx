@@ -92,7 +92,11 @@ const Settings = () => {
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     try {
-                        await updateUser({ ...user, avatar_url: reader.result });
+                        if (typeof reader.result === 'string') {
+                            updateUser({ ...user, avatar_url: reader.result }).catch(err => {
+                                console.warn('[Settings] Avatar preview sync failed:', err);
+                            });
+                        }
                         setMessage({ text: 'Foto de perfil actualizada', type: 'success' });
                     } catch (err) {
                         setMessage({ text: 'Error al guardar la foto: ' + err.message, type: 'error' });
@@ -107,7 +111,10 @@ const Settings = () => {
                 .from('avatars')
                 .getPublicUrl(filePath);
 
-            await updateUser({ ...user, avatar_url: publicUrl });
+            await updateUser({ ...user, avatar_url: publicUrl }).catch(err => {
+                console.warn('[Settings] Permanent avatar sync failed:', err);
+                throw err; // Re-throw to show error in UI if it's a manual action
+            });
             setMessage({ text: 'Foto de perfil actualizada correctamente', type: 'success' });
         } catch (err) {
             console.error('Avatar upload error:', err);

@@ -180,7 +180,7 @@ export const ServiceProvider = ({ children }) => {
 
             if (user) {
                 const updated = registerActivity(user);
-                updateUser(updated);
+                updateUser(updated).catch(err => console.warn('[ServiceContext] Silently failed to register activity:', err));
             }
             return mapped;
         } catch (err) {

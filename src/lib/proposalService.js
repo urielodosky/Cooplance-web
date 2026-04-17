@@ -144,13 +144,18 @@ export const updateProposalStatus = async (proposalId, status) => {
 };
 
 export const deleteProposal = async (proposalId) => {
-    const { error } = await supabase
-        .from('proposals')
-        .delete()
-        .eq('id', proposalId);
+    try {
+        const { error } = await supabase
+            .from('proposals')
+            .delete()
+            .eq('id', proposalId);
 
-    if (error) {
-        console.error('[ProposalService] Error deleting proposal:', error);
-        throw error;
+        if (error) {
+            console.error('[ProposalService] Error deleting proposal:', error);
+            throw error;
+        }
+    } catch (err) {
+        console.error('[ProposalService] Critical error deleting proposal:', err);
+        throw err;
     }
 };

@@ -140,6 +140,13 @@ export const AuthProvider = ({ children }) => {
                     await new Promise(r => setTimeout(r, 2000));
                 } catch (err) {
                     console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
+                    
+                    // Detect Network/CORS block and fail fast (V1.7)
+                    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+                        console.warn("[AuthContext] Network/CORS block detected. Aborting retries.");
+                        break;
+                    }
+
                     // On last attempt, don't throw, let the fallback logic run
                     if (attempts === maxAttempts - 1) break;
                     attempts++;
