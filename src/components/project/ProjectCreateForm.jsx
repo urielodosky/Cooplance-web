@@ -391,16 +391,16 @@ const ProjectCreateForm = () => {
     const handleNextOrSubmit = (e) => {
         e.preventDefault();
 
-        // Step validation warnings (non-blocking for testing)
-        // Check if there's any invalid state but do not `return` to block them.
-        if (currentStep === 4 && user?.role !== 'company') {
-            handleSubmit(e);
-            return;
-        } else if (currentStep === 5) {
-            const invalidQuestion = questions.some(q => q.text.trim() === '' || (q.type === 'multiple' && q.options.some(opt => opt.trim() === '')));
-            if (invalidQuestion && questions.length > 1) {
-                const confirmOptions = window.confirm('Hay preguntas o respuestas vacías. ¿Deseas publicarlo de todos modos? Las preguntas vacías se eliminarán.');
-                if (!confirmOptions) return;
+        // Step validation warnings
+        const maxSteps = user?.role === 'company' ? 4 : 3;
+
+        if (currentStep === maxSteps) {
+            if (user?.role === 'company') {
+                const invalidQuestion = questions.some(q => q.text.trim() === '' || (q.type === 'multiple' && q.options.some(opt => opt.trim() === '')));
+                if (invalidQuestion && questions.length > 1) {
+                    const confirmOptions = window.confirm('Hay preguntas o respuestas vacías. ¿Deseas publicarlo de todos modos? Las preguntas vacías se eliminarán.');
+                    if (!confirmOptions) return;
+                }
             }
             handleSubmit(e);
             return;
@@ -432,16 +432,14 @@ const ProjectCreateForm = () => {
             {/* Stepper Indicator */}
             <div className="form-steps-indicator" style={{ display: 'flex', justifyContent: 'center', marginTop: '2.5rem', marginBottom: '1.5rem' }}>
                 {(user?.role === 'company' ? [
-                    { id: 1, label: 'Detalles' },
+                    { id: 1, label: 'Básico' },
                     { id: 2, label: 'Media' },
-                    { id: 3, label: 'Opciones' },
-                    { id: 4, label: 'Pago' },
-                    { id: 5, label: 'Preguntas' }
+                    { id: 3, label: 'Extras' },
+                    { id: 4, label: 'Preguntas' }
                 ] : [
-                    { id: 1, label: 'Detalles' },
+                    { id: 1, label: 'Básico' },
                     { id: 2, label: 'Media' },
-                    { id: 3, label: 'Opciones' },
-                    { id: 4, label: 'Pago' }
+                    { id: 3, label: 'Extras' }
                 ]).map((step, idx, arr) => (
                     <div key={step.id} style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
                         <div
@@ -643,6 +641,145 @@ const ProjectCreateForm = () => {
                                 </div>
                             )}
                         </div>
+
+                        <div className="premium-form-section">
+                            <h4>Presupuesto y Tiempos</h4>
+                            <p style={{ color: 'var(--text-secondary)', marginTop: '-1rem', marginBottom: '1.5rem' }}>Define los detalles económicos y plazos de entrega.</p>
+                            
+                            <div className="form-grid-2">
+                                <div className="form-group">
+                                    <label>Tipo de Presupuesto</label>
+                                    <CustomDropdown
+                                        options={[
+                                            { value: 'fixed', label: 'Estimado Fijo' },
+                                            { value: 'negotiable', label: 'Variable (Ofertable)' }
+                                        ]}
+                                        value={formData.budgetType}
+                                        onChange={(val) => handleDropdownChange('budgetType', val)}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Frecuencia de Pago</label>
+                                    <CustomDropdown
+                                        options={[
+                                            { value: 'unique', label: 'Pago Único' },
+                                            { value: 'daily', label: 'Diario' },
+                                            { value: 'weekly', label: 'Semanal' },
+                                            { value: 'monthly', label: 'Mensual' }
+                                        ]}
+                                        value={formData.paymentFrequency || 'unique'}
+                                        onChange={(val) => handleDropdownChange('paymentFrequency', val)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-grid-2">
+                                <div className="form-group">
+                                    <label>Presupuesto Estimado ($)</label>
+                                    <div className="price-input-wrapper">
+                                        <input
+                                            type="number"
+                                            name="budget"
+                                            value={formData.budget}
+                                            onChange={handleChange}
+                                            required
+                                            min="1000"
+                                            placeholder="Mínimo 1000"
+                                        />
+                                        <span className="currency-badge">ARS</span>
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Plazo de Ejecución</label>
+                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                        <div style={{ flex: 1.5 }}>
+                                            <CustomDropdown
+                                                options={[
+                                                    { value: 'unique', label: 'Única vez' },
+                                                    { value: 'days', label: 'Días' },
+                                                    { value: 'weeks', label: 'Semanas' },
+                                                    { value: 'months', label: 'Meses' },
+                                                    { value: 'years', label: 'Años' }
+                                                ]}
+                                                value={formData.contractDurationType || 'unique'}
+                                                onChange={(val) => handleDropdownChange('contractDurationType', val)}
+                                            />
+                                        </div>
+                                        {formData.contractDurationType && formData.contractDurationType !== 'unique' && (
+                                            <div style={{ flex: 1 }} className="fade-in">
+                                                <input
+                                                    type="number"
+                                                    name="contractDurationValue"
+                                                    value={formData.contractDurationValue}
+                                                    onChange={handleChange}
+                                                    placeholder="Cant."
+                                                    required
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="form-grid-2">
+                                <div className="form-group">
+                                    <label>Fecha de Inicio Estimada</label>
+                                    <CustomDatePicker
+                                        selectedDate={formData.contractStartDate}
+                                        onChange={(date) => setFormData(prev => ({ ...prev, contractStartDate: date }))}
+                                        placeholder="Seleccionar fecha"
+                                        minDate={minDate}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Fecha Límite (Deadline)</label>
+                                    <CustomDatePicker
+                                        selectedDate={formData.deadline}
+                                        onChange={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
+                                        placeholder="Seleccionar límite"
+                                        minDate={formData.contractStartDate || minDate}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginTop: '1rem' }}>
+                                <label style={{ marginBottom: '1rem' }}>Métodos de Pago Preferidos</label>
+                                <div className="payment-methods-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                                    {[
+                                        { id: 'bank', label: 'Transferencia Bancaria' },
+                                        { id: 'mercadopago', label: 'Mercado Pago' },
+                                        { id: 'usdt', label: 'USDT / Cripto' },
+                                        { id: 'paypal', label: 'PayPal (USD)' },
+                                        { id: 'cash', label: 'Efectivo' }
+                                    ].map(method => (
+                                        <div 
+                                            key={method.id}
+                                            className={`p-method-pill ${formData.paymentMethods.includes(method.id) ? 'active' : ''}`}
+                                            onClick={() => {
+                                                const current = formData.paymentMethods || [];
+                                                const newMethods = current.includes(method.id) 
+                                                    ? current.filter(m => m !== method.id)
+                                                    : [...current, method.id];
+                                                setFormData({ ...formData, paymentMethods: newMethods });
+                                            }}
+                                            style={{
+                                                padding: '0.75rem 1.25rem',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--border)',
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem',
+                                                fontWeight: 600,
+                                                transition: 'all 0.2s',
+                                                background: formData.paymentMethods.includes(method.id) ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
+                                                color: formData.paymentMethods.includes(method.id) ? 'white' : 'var(--text-primary)'
+                                            }}
+                                        >
+                                            {method.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
                 {/* END OF STEP 1 */}
@@ -722,137 +859,9 @@ const ProjectCreateForm = () => {
                     </div>
                 )}
 
-                {/* STEP 4: PAGOS Y CONTRATO */}
-                {currentStep === 4 && (
+                {/* STEP 4: PREGUNTAS (SOLO EMPRESAS) */}
+                {currentStep === 4 && user?.role === 'company' && (
                     <div className="step-content form-step-4 fade-in">
-                        <div className="premium-form-section">
-                            <h4>Presupuesto y Tiempos</h4>
-                            
-                            <div className="form-grid-2">
-                                <div className="form-group">
-                                    <label>Tipo de Presupuesto</label>
-                                    <CustomDropdown
-                                        options={[
-                                            { value: 'fixed', label: 'Estimado Fijo' },
-                                            { value: 'negotiable', label: 'Variable (Ofertable)' }
-                                        ]}
-                                        value={formData.budgetType}
-                                        onChange={(val) => handleDropdownChange('budgetType', val)}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Frecuencia de Pago</label>
-                                    <CustomDropdown
-                                        options={[
-                                            { value: 'unique', label: 'Pago Único' },
-                                            { value: 'daily', label: 'Diario' },
-                                            { value: 'weekly', label: 'Semanal' },
-                                            { value: 'monthly', label: 'Mensual' }
-                                        ]}
-                                        value={formData.paymentFrequency || 'unique'}
-                                        onChange={(val) => handleDropdownChange('paymentFrequency', val)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="form-grid-2">
-                                <div className="form-group">
-                                    <label>Presupuesto Estimado ($)</label>
-                                    <div className="price-input-wrapper">
-                                        <input
-                                            type="number"
-                                            name="budget"
-                                            value={formData.budget}
-                                            onChange={handleChange}
-                                            required
-                                            min="1000"
-                                            placeholder="Mínimo 1000"
-                                        />
-                                        <span className="currency-badge">ARS</span>
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label>Plazo de Ejecución</label>
-                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                        <div style={{ flex: 1.5 }}>
-                                            <CustomDropdown
-                                                options={[
-                                                    { value: 'unique', label: 'Contrato Único (Días)' },
-                                                    { value: 'days', label: 'Días Recurrentes' },
-                                                    { value: 'weeks', label: 'Semanas Recurrentes' },
-                                                    { value: 'months', label: 'Meses Recurrentes' }
-                                                ]}
-                                                value={formData.contractDurationType || 'unique'}
-                                                onChange={(val) => handleDropdownChange('contractDurationType', val)}
-                                            />
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <input
-                                                type="number"
-                                                name={formData.contractDurationType === 'unique' ? 'executionTime' : 'contractDurationValue'}
-                                                value={formData.contractDurationType === 'unique' ? formData.executionTime : formData.contractDurationValue}
-                                                onChange={handleChange}
-                                                placeholder="Cant."
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="form-grid-2">
-                                <div className="form-group">
-                                    <label>Fecha Límite Postulación</label>
-                                    <CustomDatePicker
-                                        selected={formData.deadline}
-                                        onChange={(val) => handleDropdownChange('deadline', val)}
-                                        minDate={minDate}
-                                        required={true}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Fecha de Inicio</label>
-                                    <CustomDatePicker
-                                        selected={formData.contractStartDate || ''}
-                                        onChange={(val) => handleDropdownChange('contractStartDate', val)}
-                                        minDate={formData.deadline || minDate}
-                                        required={true}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="premium-form-section" style={{ marginTop: '3rem' }}>
-                            <h4>Métodos de Pago</h4>
-                            <div className="checkbox-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
-                                {[
-                                    'Transferencia Bancaria', 'Mercado Pago', 'PayPal', 'Cripto', 'Tarjeta de Crédito'
-                                ].map(method => (
-                                    <div 
-                                        key={method}
-                                        className={`subcategory-checkbox-label ${formData.paymentMethods.includes(method) ? 'active' : ''}`}
-                                        onClick={() => {
-                                            const current = formData.paymentMethods || [];
-                                            const newMethods = current.includes(method) 
-                                                ? current.filter(m => m !== method) 
-                                                : [...current, method];
-                                            handleDropdownChange('paymentMethods', newMethods);
-                                        }}
-                                        style={{ padding: '0.85rem' }}
-                                    >
-                                        <input type="checkbox" checked={formData.paymentMethods.includes(method)} readOnly />
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{method}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {/* END OF STEP 4 */}
-
-                {/* STEP 5: PREGUNTAS (SOLO EMPRESAS) */}
-                {currentStep === 5 && user?.role === 'company' && (
-                    <div className="step-content form-step-5 fade-in">
                         <div className="premium-form-section">
                             <h4>Entrevista Previa</h4>
                             <p style={{ color: 'var(--text-secondary)', marginTop: '-1rem', marginBottom: '1.5rem' }}>Agrega preguntas clave para identificar a los mejores candidatos desde el inicio.</p>
@@ -938,7 +947,7 @@ const ProjectCreateForm = () => {
                     >
                         {isSubmitting 
                             ? (loadingStatus || 'Procesando...') 
-                            : (currentStep < (user?.role === 'company' ? 5 : 4) ? 'Siguiente' : (user?.role === 'company' ? 'Publicar Oferta' : 'Publicar Proyecto'))}
+                            : (currentStep < (user?.role === 'company' ? 4 : 3) ? 'Siguiente' : (user?.role === 'company' ? 'Publicar Oferta' : 'Publicar Proyecto'))}
                     </button>
                 </div>
             </form >
