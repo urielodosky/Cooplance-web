@@ -46,9 +46,11 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
         city: initialData?.city || '', // Changed to string for single selection
         location: initialData?.location || '',
         paymentMethods: initialData?.paymentMethods ? Object.keys(initialData.paymentMethods).filter(k => initialData.paymentMethods[k]) : [],
-        contractDurationType: initialData?.contractDurationType || 'unique', // 'unique', 'days', 'weeks', 'months', 'years'
+        contractDurationType: initialData?.contractDurationType || 'days', // default to days for relative duration
         contractDurationValue: initialData?.contractDurationValue || '',
-        contractStartDate: initialData?.contractStartDate || ''
+        contractStartDate: initialData?.contractStartDate || '',
+        expirationDate: initialData?.expirationDate || '',
+        deadlineType: initialData?.deadlineType || 'fixed' // 'fixed' for specific date, 'duration' for relative time
     });
 
     const [argProvinces, setArgProvinces] = useState([]);
@@ -329,15 +331,25 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                     : 'Remoto',
                 paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
                     ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
-                    : null
+                    : null,
+                expirationDate: formData.expirationDate,
+                deadlineType: formData.deadlineType
             };
 
-            // Consolidate duration
-            if (formData.contractDurationType !== 'unique' && formData.contractDurationValue) {
+            // Handle duration and deadlines based on deadlineType
+            if (formData.deadlineType === 'duration' && formData.contractDurationValue) {
                 projectData.contractDuration = `${formData.contractDurationValue} ${formData.contractDurationType}`;
-            } else {
-                projectData.contractDuration = 'Pago único';
+                projectData.deadline = null; // Ensure fixed deadline is null if duration-based
+            } else if (formData.deadlineType === 'fixed') {
+                projectData.contractDuration = 'Fecha fija';
+                // formData.deadline is already picked up
             }
+
+            // Cleanup frequency for clients
+            if (user?.role !== 'company') {
+                projectData.paymentFrequency = 'unique';
+            }
+
 
             if (initialData?.id) {
                 await updateProject(initialData.id, projectData);
@@ -415,6 +427,54 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                 <label className="work-mode-label">Descripción Detallada</label>
                                 <textarea name="description" placeholder="Describe las metas, responsabilidades y requisitos..." value={formData.description} onChange={handleChange} rows="10" required />
                             </div>
+
+                            {/* CATEGORY SELECTION */}
+                            <div className="form-group">
+                                <label className="work-mode-label">Categoría del Proyecto</label>
+                                <CustomDropdown 
+                                    options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
+                                    value={formData.category} 
+                                    onChange={(val) => handleDropdownChange('category', val)} 
+                                    placeholder="Selecciona Categoría..."
+                                />
+                            </div>
+
+                            {/* SUBCATEGORY SELECTION */}
+                            {formData.category && (
+                                <div className="form-group fade-in">
+                                    <label className="work-mode-label">Subcategorías (Max 3)</label>
+                                    <div className="category-grid">
+                                        {Object.keys(serviceCategories[formData.category] || {}).map(sub => (
+                                            <div 
+                                                key={sub} 
+                                                className={`category-option ${(formData.subcategories || []).includes(sub) ? 'selected' : ''}`}
+                                                onClick={() => handleSubcategoryToggle(sub)}
+                                            >
+                                                {sub}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SPECIALTIES SELECTION */}
+                            {formData.category && (formData.subcategories || []).length > 0 && (
+                                <div className="form-group fade-in">
+                                    <label className="work-mode-label">Especialidades (Max 5)</label>
+                                    <div className="category-grid">
+                                        {(formData.subcategories || []).flatMap(sub => serviceCategories[formData.category][sub] || []).map(spec => (
+                                            <div 
+                                                key={spec} 
+                                                className={`category-option ${(formData.specialties || []).includes(spec) ? 'selected' : ''}`}
+                                                onClick={() => handleSpecialtyToggle(spec)}
+                                            >
+                                                {spec}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="form-group">
                                 <label className="work-mode-label">Modalidad de Trabajo</label>
                                 <div className="work-mode-options">
@@ -437,30 +497,129 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
 
                         <div className="premium-form-section" style={{ marginTop: '2rem' }}>
                             <h4>Presupuesto y Tiempos</h4>
-                            <div className="form-grid-2">
-                                <div className="form-group">
-                                    <label className="work-mode-label">Tipo</label>
-                                    <CustomDropdown options={[{ value: 'fixed', label: 'Estimado Fijo' }, { value: 'negotiable', label: 'Variable' }]} value={formData.budgetType} onChange={(v) => handleDropdownChange('budgetType', v)} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="work-mode-label">Frecuencia</label>
-                                    <CustomDropdown options={[{ value: 'unique', label: 'Pago Único' }, { value: 'daily', label: 'Diario' }, { value: 'weekly', label: 'Semanal' }, { value: 'monthly', label: 'Mensual' }]} value={formData.paymentFrequency} onChange={(v) => handleDropdownChange('paymentFrequency', v)} />
-                                </div>
-                            </div>
-                            <div className="form-grid-2">
-                                <div className="form-group">
-                                    <label className="work-mode-label">Presupuesto ($ ARS)</label>
-                                    <input type="number" name="budget" value={formData.budget} onChange={handleChange} required min="1000" />
-                                </div>
-                                <div className="form-group">
-                                    <label className="work-mode-label">Duración</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <CustomDropdown options={[{ value: 'unique', label: 'Única vez' }, { value: 'days', label: 'Días' }, { value: 'weeks', label: 'Semanas' }, { value: 'months', label: 'Meses' }, { value: 'years', label: 'Años' }]} value={formData.contractDurationType} onChange={(v) => handleDropdownChange('contractDurationType', v)} />
-                                        {formData.contractDurationType !== 'unique' && <input type="number" name="contractDurationValue" value={formData.contractDurationValue} onChange={handleChange} placeholder="Cant." style={{ width: '80px' }} required />}
+                            
+                            {user?.role === 'company' ? (
+                                <>
+                                    <div className="form-grid-2">
+                                        <div className="form-group">
+                                            <label className="work-mode-label">Tipo</label>
+                                            <CustomDropdown options={[{ value: 'fixed', label: 'Estimado Fijo' }, { value: 'negotiable', label: 'Variable' }]} value={formData.budgetType} onChange={(v) => handleDropdownChange('budgetType', v)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="work-mode-label">Frecuencia</label>
+                                            <CustomDropdown 
+                                                options={[
+                                                    { value: 'unique', label: 'Pago Único' }, 
+                                                    { value: 'daily', label: 'Diario' }, 
+                                                    { value: 'weekly', label: 'Semanal' }, 
+                                                    { value: 'biweekly', label: 'Quincenal' }, 
+                                                    { value: 'monthly', label: 'Mensual' },
+                                                    { value: 'commission', label: 'Comisión por Ventas' }
+                                                ]} 
+                                                value={formData.paymentFrequency} 
+                                                onChange={(v) => handleDropdownChange('paymentFrequency', v)} 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="form-grid-2">
+                                        <div className="form-group">
+                                            <label className="work-mode-label">
+                                                {formData.paymentFrequency === 'commission' ? 'Porcentaje de comisión (%)' : 'Presupuesto ($ ARS)'}
+                                            </label>
+                                            <input type="number" name="budget" value={formData.budget} onChange={handleChange} required min={formData.paymentFrequency === 'commission' ? "1" : "1000"} max={formData.paymentFrequency === 'commission' ? "100" : undefined} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="work-mode-label">Duración del Contrato</label>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <CustomDropdown options={[{ value: 'unique', label: 'Única vez' }, { value: 'days', label: 'Días' }, { value: 'weeks', label: 'Semanas' }, { value: 'months', label: 'Meses' }, { value: 'years', label: 'Años' }]} value={formData.contractDurationType} onChange={(v) => handleDropdownChange('contractDurationType', v)} />
+                                                {formData.contractDurationType !== 'unique' && <input type="number" name="contractDurationValue" value={formData.contractDurationValue} onChange={handleChange} placeholder="Cant." style={{ width: '80px' }} required />}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="form-grid-2">
+                                    <div className="form-group">
+                                        <label className="work-mode-label">Presupuesto ($ ARS)</label>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <CustomDropdown options={[{ value: 'fixed', label: 'Fijo' }, { value: 'negotiable', label: 'Negociable' }]} value={formData.budgetType} onChange={(v) => handleDropdownChange('budgetType', v)} style={{ flex: 1 }} />
+                                            <input type="number" name="budget" value={formData.budget} onChange={handleChange} placeholder="Monto" style={{ flex: 2 }} required min="1000" />
+                                        </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {/* SHARED TIME AND EXPIRATION LOGIC */}
+                            <div className="form-group" style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+                                <label className="work-mode-label">Fecha de expiración de la publicación</label>
+                                <CustomDatePicker 
+                                    value={formData.expirationDate} 
+                                    onChange={(v) => handleDropdownChange('expirationDate', v)} 
+                                    minDate={minDate}
+                                    placeholder="¿Hasta cuándo estará visible?"
+                                />
+                            </div>
+
+                            <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                <label className="work-mode-label">Plazo de Entrega del Proyecto</label>
+                                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                                    <button 
+                                        type="button" 
+                                        className={`category-option ${formData.deadlineType === 'fixed' ? 'selected' : ''}`}
+                                        onClick={() => setFormData(p => ({ ...p, deadlineType: 'fixed', executionTime: '' }))}
+                                        style={{ flex: 1 }}
+                                    >
+                                        Fecha Fija
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className={`category-option ${formData.deadlineType === 'duration' ? 'selected' : ''}`}
+                                        onClick={() => setFormData(p => ({ ...p, deadlineType: 'duration', deadline: '' }))}
+                                        style={{ flex: 1 }}
+                                    >
+                                        Plazo tras aceptación
+                                    </button>
+                                </div>
+
+                                {formData.deadlineType === 'fixed' ? (
+                                    <CustomDatePicker 
+                                        value={formData.deadline} 
+                                        onChange={(v) => handleDropdownChange('deadline', v)} 
+                                        minDate={formData.expirationDate || minDate}
+                                        placeholder="Selecciona la fecha de entrega"
+                                    />
+                                ) : (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input 
+                                            type="number" 
+                                            name="contractDurationValue" 
+                                            value={formData.contractDurationValue} 
+                                            onChange={handleChange} 
+                                            placeholder="Ej: 5" 
+                                            style={{ flex: 1 }} 
+                                            required 
+                                        />
+                                        <CustomDropdown 
+                                            options={[
+                                                { value: 'days', label: 'Días' }, 
+                                                { value: 'weeks', label: 'Semanas' }, 
+                                                { value: 'months', label: 'Meses' }
+                                            ]} 
+                                            value={formData.contractDurationType} 
+                                            onChange={(v) => handleDropdownChange('contractDurationType', v)} 
+                                            style={{ flex: 1 }} 
+                                        />
+                                    </div>
+                                )}
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                    {formData.deadlineType === 'duration' 
+                                        ? 'El profesional deberá terminar el trabajo en este tiempo una vez aceptado el pedido.' 
+                                        : 'Fecha límite estricta para la entrega del trabajo final.'}
+                                </p>
                             </div>
                         </div>
+
+
                     </div>
                 )}
 

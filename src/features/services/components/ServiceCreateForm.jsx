@@ -1330,41 +1330,32 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 {/* STEP 4: PAYMENTS */}
                 {currentStep === 4 && (
                     <div className="step-content form-step-4">
-                        <h4>Paso 4: Pagos y Publicación</h4>
-                        <div className="p-methods-wrapper">
-                            <label className="p-methods-label">Métodos de Pago Aceptados</label>
-                            <p className="p-methods-hint">
-                                Selecciona los métodos que aceptas para este servicio. Si no seleccionas ninguno, se asumirá que aceptas <strong>todos</strong> los configurados en tu billetera.
-                            </p>
-                            <div className="p-methods-grid">
+                        <div className="premium-form-section">
+                            <h4>Métodos de Pago Preferidos</h4>
+                            <p className="subtitle" style={{ fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'left' }}>Selecciona los métodos que prefieres utilizar para este servicio.</p>
+                            <div className="category-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
                                 {[
                                     { id: 'paypal', label: 'PayPal' },
                                     { id: 'mercadopago', label: 'Mercado Pago' },
                                     { id: 'binance', label: 'Binance Pay' },
                                     { id: 'card', label: 'Tarjeta (Plataforma)' }
                                 ].map(method => (
-                                    <label key={method.id} className={`p-method-card ${(formData.paymentMethods || []).includes(method.id) ? 'active' : ''}`}>
-                                        <input
-                                            type="checkbox"
-                                            checked={(formData.paymentMethods || []).includes(method.id)}
-                                            onChange={() => {
-                                                const current = formData.paymentMethods || [];
-                                                let newMethods;
-                                                if (current.includes(method.id)) {
-                                                    newMethods = current.filter(m => m !== method.id);
-                                                } else {
-                                                    newMethods = [...current, method.id];
-                                                }
-                                                setFormData(prev => ({ ...prev, paymentMethods: newMethods }));
-                                            }}
-                                        />
-                                        <span className="p-method-info">
-                                            <span className="p-method-name">{method.label}</span>
-                                        </span>
-                                    </label>
+                                    <div 
+                                        key={method.id}
+                                        className={`category-option ${(formData.paymentMethods || []).includes(method.id) ? 'selected' : ''}`}
+                                        onClick={() => {
+                                            const current = formData.paymentMethods || [];
+                                            const newMethods = current.includes(method.id) ? current.filter(m => m !== method.id) : [...current, method.id];
+                                            setFormData({ ...formData, paymentMethods: newMethods });
+                                        }}
+                                        style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontWeight: 600 }}
+                                    >
+                                        {method.label}
+                                    </div>
                                 ))}
                             </div>
                         </div>
+
                     </div>
                 )}
 
