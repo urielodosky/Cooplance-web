@@ -222,13 +222,22 @@ export const AuthProvider = ({ children }) => {
             }
         });
 
+        console.log("[AuthContext] Launching signUp request...");
+        const startTime = Date.now();
+        
         const { data, error } = await withTimeout(supabase.auth.signUp({
             email: registrationData.email,
             password: registrationData.password,
             options: { data: payload }
-        }), 60000, "Registro V3");
+        }), 90000, "Registro V3");
 
-        if (error) throw new Error(error.message);
+        const duration = (Date.now() - startTime) / 1000;
+        console.log(`[AuthContext] signUp response received in ${duration.toFixed(2)}s.`);
+
+        if (error) {
+            console.error("[AuthContext] signUp returned error:", error);
+            throw new Error(error.message);
+        }
         return data.user;
     };
 

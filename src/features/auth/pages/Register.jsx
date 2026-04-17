@@ -304,11 +304,15 @@ const Register = () => {
                 state: { email: registrationData.email, type: 'registration' }
             });
         } catch (err) {
-            console.error(" [REGISTER] Error fatal durante el proceso:", err);
-            alert(err.message || 'Error al procesar el registro. Inténtalo de nuevo.');
-        } finally {
-            console.log(" [REGISTER] Finalizando estado de carga.");
+            console.error(' [REGISTER] Error fatal durante el proceso:', err);
+            
+            // Fix for the {} alert: Extract the message if it's an Error object
+            const errorMessage = err.message || (typeof err === 'string' ? err : JSON.stringify(err));
+            setError(`Error: ${errorMessage}`);
+            alert(`Error de Registro: ${errorMessage}`);
+            
             clearTimeout(loadingWatchdog);
+        } finally {
             setLoading(false);
         }
     };
