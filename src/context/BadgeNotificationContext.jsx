@@ -35,22 +35,32 @@ export const BadgeNotificationProvider = ({ children }) => {
             const isClient = user.role === 'buyer' || user.role === 'company';
             
             // 1. Fetch relevant data for precise metric calculation
-            const { data: jobs, error: jobsError } = await supabase
-                .from('jobs')
-                .select('client_id, provider_id, status')
-                .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`);
+            const [jobsRes, servicesRes, projectsRes] = await Promise.all([
+                supabase
+                    .from('jobs')
+                    .select('client_id, provider_id, status')
+                    .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`),
+                supabase
+                    .from('services')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('freelancerId', user.id),
+                supabase
+                    .from('projects')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('client_id', user.id)
+            ]);
 
-            if (jobsError) {
-                console.warn("[BadgeNotificationContext] Failed to fetch jobs for badge calculation:", jobsError);
+            if (jobsRes.error) {
+                console.warn("[BadgeNotificationContext] Failed to fetch jobs for badge calculation:", jobsRes.error);
                 return;
             }
 
+            const jobs = jobsRes.data || [];
             const completedJobs = jobs.filter(j => j.status === 'completed');
             const mySales = completedJobs.filter(j => j.provider_id === user.id);
             const myOrders = completedJobs.filter(j => j.client_id === user.id);
 
             // 2. Calculate Loyalty (Symmetrical)
-            // Frequency of hiring/being hired by the same person
             const interactions = {};
             completedJobs.forEach(job => {
                 const targetId = job.client_id === user.id ? job.provider_id : job.client_id;
@@ -66,11 +76,11 @@ export const BadgeNotificationProvider = ({ children }) => {
                     case 'sales': return mySales.length;
                     case 'purchases': return myOrders.length;
                     case 'levels': return user.level || 1;
-                    case 'reviews': return user.reviewsCount || 0; // Assuming this comes from profile
+                    case 'reviews': return user.reviewsCount || 0;
                     case 'loyalty': return maxLoyalty;
-                    case 'services': return 0; // Requires separate services fetch if needed
+                    case 'services': return servicesRes.count || 0;
                     case 'talent': return uniquePartners;
-                    case 'projects': return 0; // Requires separate projects fetch if needed
+                    case 'projects': return projectsRes.count || 0;
                     default: return 0;
                 }
             };

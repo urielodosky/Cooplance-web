@@ -107,6 +107,33 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
 
     const [faqs, setFaqs] = useState(initialData?.faqs || [{ question: '', answer: '' }]);
 
+    // Level-based publication limit check on mount (for new services only)
+    useEffect(() => {
+        if (!user || initialData?.id) return;
+
+        const checkServiceLimits = async () => {
+            try {
+                const currentLevel = user.level || 1;
+                const maxServices = currentLevel >= 5 ? 5 : currentLevel;
+                
+                // Use Supabase directly to get count of active services
+                const { data: existingServices, error } = await supabase
+                    .from('services')
+                    .select('id')
+                    .eq('freelancer_id', user.id);
+
+                if (!error && existingServices.length >= maxServices) {
+                    alert(`Has alcanzado tu límite de ${maxServices} servicios activos para el Nivel ${currentLevel}.\n\nElimina un servicio anterior o espera a subir de nivel para publicar uno nuevo.`);
+                    onCancel(); // Redirect out
+                }
+            } catch (err) {
+                console.error('Error checking service limits on mount:', err);
+            }
+        };
+
+        checkServiceLimits();
+    }, [user, initialData, onCancel]);
+
     const [argProvinces, setArgProvinces] = useState([]);
     const [argCities, setArgCities] = useState([]);
     const [isLoadingLoc, setIsLoadingLoc] = useState(false);

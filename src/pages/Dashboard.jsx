@@ -332,16 +332,27 @@ const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
     </div>
 );
 
-const BadgesSection = ({ user, myWork, myOrders, navigate }) => {
+import { 
+    CreditCard as Coin, 
+    Zap as Flame, 
+    Rocket, 
+    Heart, 
+    Zap as Lightning, 
+    Star, 
+    Handshake, 
+    Eye 
+} from 'lucide-react';
+
+const BadgesSection = ({ user, navigate }) => {
     const Icons = {
-        Sales: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" /></svg>,
-        Level: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" /></svg>,
-        Service: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>,
-        Loyalty: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>,
-        Speed: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>,
-        Review: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>,
-        Handshake: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 11-4-7" /><path d="M17 11v3" /><path d="m15 10-5 5" /><path d="M7 11l4-7" /><path d="M7 11v3" /><path d="m9 10 5 5" /><path d="M16 21H8a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z" /></svg>,
-        Eye: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+        Sales: <Coin size={20} />,
+        Level: <Flame size={20} />,
+        Service: <Rocket size={20} />,
+        Loyalty: <Heart size={20} />,
+        Speed: <Lightning size={20} />,
+        Review: <Star size={20} />,
+        Handshake: <Handshake size={20} />,
+        Eye: <Eye size={20} />
     };
 
     const isClient = user.role === 'buyer' || user.role === 'company';
@@ -377,8 +388,8 @@ const BadgesSection = ({ user, myWork, myOrders, navigate }) => {
             <div className="dashboard-badges-grid">
                 {featured.map((badge, idx) => (
                     <div key={idx} className="glass badge-mini-card">
-                        <div className="badge-icon-wrapper">
-                            {badge.familyIcon}
+                        <div className="badge-icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                            {badge.icon}
                         </div>
                         <h5>{badge.title}</h5>
                     </div>
@@ -387,6 +398,7 @@ const BadgesSection = ({ user, myWork, myOrders, navigate }) => {
         </div>
     );
 };
+
 
 // --- Main Dashboard Component ---
 
@@ -543,8 +555,11 @@ const Dashboard = () => {
         if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto de forma permanente? Esta acción no se puede deshacer.')) {
             try {
                 await deleteProjectApi(projectId);
-                setMyPublishedProjects(prev => prev.filter(p => p.id !== projectId));
-                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(myPublishedProjects.filter(p => p.id !== projectId)));
+                
+                // Update state and localStorage with the NEW filtered list
+                const updatedProjects = myPublishedProjects.filter(p => p.id !== projectId);
+                setMyPublishedProjects(updatedProjects);
+                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(updatedProjects));
             } catch (err) {
                 alert('No se pudo eliminar el proyecto: ' + err.message);
             }

@@ -23,6 +23,7 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
     const hasImage = !!project.imageUrl;
     const displayUsername = project.profiles?.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
     const avatar = project.clientAvatar || project.profiles?.avatar_url;
+    const projectLevel = project.profiles?.level || 1;
 
     const handleClick = () => {
         navigate(`/project/${project.id}`);
@@ -35,6 +36,12 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
         }
     };
 
+    const renderLevelBadge = () => {
+        if (projectLevel === 1) return <span className="status-badge new">Primer Pedido</span>;
+        if (projectLevel === 10) return <span className="status-badge expert">Cliente Experto</span>;
+        return null;
+    };
+
     return (
         <div className="project-card clickable" onClick={handleClick} style={{ position: 'relative' }}>
             {/* Delete Button for Owners */}
@@ -43,26 +50,6 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                     className="delete-project-btn"
                     onClick={handleDelete}
                     title="Eliminar Proyecto"
-                    style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: '12px',
-                        zIndex: 10,
-                        background: 'rgba(239, 68, 68, 0.9)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        width: '32px',
-                        height: '32px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 6h18"></path>
@@ -84,11 +71,11 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
             </div>
 
             <div className="project-content">
-                <div className="client-info">
+                <div className="avatar-layout-row">
                     <img
                         src={getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })}
                         alt={project.clientName}
-                        className="client-avatar clickable"
+                        className="avatar-img clickable"
                         onClick={(e) => {
                             e.stopPropagation();
                             if (project.clientRole === 'company') {
@@ -98,11 +85,10 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                             }
                         }}
                     />
-                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <div className="avatar-details-col">
+                        <div className="username-badge-row">
                             <span
-                                className="client-username clickable"
-                                style={{ cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                                className="username-text clickable"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (project.clientRole === 'company') {
@@ -114,61 +100,39 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                             >
                                 {displayUsername}
                             </span>
-                            {project.clientRating > 0 ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.8rem' }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{project.clientRating}</span>
-                                </div>
-                            ) : (
-                                <span style={{ fontSize: '0.7rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '1px 4px', borderRadius: '3px' }}>Nuevo Paso</span>
-                            )}
+                            {renderLevelBadge()}
                         </div>
-                        <span className="client-realname" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {project.clientName || 'Usuario'}
-                        </span>
+                        <span className="fullname-text">{project.clientName || 'Usuario'}</span>
+                        <span className="level-text">Nivel {projectLevel}</span>
                     </div>
-                    <span className="project-time-ago">{getTimeAgo(project.createdAt)}</span>
                 </div>
 
-                <h3 className="project-title">{project.title}</h3>
+                <div className="title-desc-section">
+                    <h3 className="card-title">{project.title}</h3>
+                    <p className="card-description">
+                        {project.description}
+                    </p>
+                </div>
 
-                <p className="project-excerpt">
-                    {project.description}
-                </p>
-            </div>
+                <div className="meta-info-row">
+                    <span className="category-meta">{project.category}</span>
+                    {project.subcategory && <span className="subcategory-meta">{project.subcategory}</span>}
+                </div>
 
-            <div className="project-footer">
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span className="category-badge">
-                        {project.category}
-                    </span>
-
-                    <span className="category-badge" style={{
-                        background: project.workMode === 'presential' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(6, 182, 212, 0.1)',
-                        color: project.workMode === 'presential' ? '#8b5cf6' : 'var(--secondary)'
-                    }}>
+                <div className="modality-deadline-row">
+                    <span className={`modality-text ${project.workMode === 'presential' ? 'presential' : 'remote'}`}>
                         {project.workMode === 'presential' ? 'Presencial' : 'Remoto'}
                     </span>
-
-                    {project.deadline && (
-                        <span className="category-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
-                            Expira: {project.deadline}
-                        </span>
-                    )}
-                </div>
-
-                <div className="project-budget-container">
-                    <span className="budget-label">PRESUPUESTO</span>
-                    <span className="project-budget">
-                        {project.budgetType === 'negotiable' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                <span style={{ fontSize: '1.1rem' }}>${project.budget} <span style={{ fontSize: '0.7em', color: 'var(--text-secondary)' }}>ARS</span></span>
-                                <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>Ofertable</span>
-                            </div>
-                        ) : (
-                            <>${project.budget} <span style={{ fontSize: '0.7em', color: 'var(--text-secondary)' }}>ARS</span></>
-                        )}
+                    <span className="deadline-text">
+                        {project.deadline || getTimeAgo(project.createdAt)}
                     </span>
+                </div>
+            </div>
+
+            <div className="project-footer-new">
+                <div className="price-tag-col">
+                    <span className="price-amount">${project.budget} ARS</span>
+                    {project.budgetType === 'negotiable' && <span className="negotiable-label">(negociable)</span>}
                 </div>
             </div>
         </div>

@@ -58,17 +58,30 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
     const [argCities, setArgCities] = useState([]);
     const [isLoadingLoc, setIsLoadingLoc] = useState(false);
 
+    const [faqs, setFaqs] = useState(initialData?.faqs || [{ question: '', answer: '' }]);
+    
+    // Level-based publication limit check on mount (for new projects only)
     useEffect(() => {
-        if (formData.country === 'Argentina') {
-            const fetchProvinces = async () => {
-                setIsLoadingLoc(true);
-                const provinces = await getArgentinaProvinces();
-                setArgProvinces(provinces);
-                setIsLoadingLoc(false);
-            };
-            fetchProvinces();
-        }
-    }, [formData.country]);
+        if (!user || initialData?.id) return;
+
+        const checkLimits = async () => {
+            try {
+                const currentLevel = user.level || 1;
+                const maxProjects = currentLevel >= 5 ? 5 : currentLevel;
+                const existingProjects = await getProjectsByClient(user.id);
+                const openProjectsCount = existingProjects.filter(p => p.status === 'open').length;
+
+                if (openProjectsCount >= maxProjects) {
+                    alert(`Has alcanzado tu límite de ${maxProjects} publicaciones para el Nivel ${currentLevel}.\n\nPara publicar un nuevo pedido, primero debes eliminar o esperar a que expiren los anteriores.`);
+                    navigate('/dashboard');
+                }
+            } catch (err) {
+                console.error('Error checking limits on mount:', err);
+            }
+        };
+
+        checkLimits();
+    }, [user, initialData, navigate]);
 
     useEffect(() => {
         if (formData.country === 'Argentina' && formData.province) {
