@@ -17,12 +17,16 @@ const getTimeAgo = (timestamp) => {
     return `Hace ${Math.floor(diffInSeconds / 86400)} días`;
 };
 
-const ProjectCard = ({ project, onApply }) => {
+const ProjectCard = ({ project, onApply, onDelete }) => {
     const navigate = useNavigate();
     // Only use image if explicitly provided by user
     const hasImage = !!project.imageUrl;
     const displayUsername = project.profiles?.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
     const avatar = project.clientAvatar || project.profiles?.avatar_url;
+
+    const handleClick = () => {
+        navigate(`/project/${project.id}`);
+    };
 
     const handleDelete = (e) => {
         e.stopPropagation();
