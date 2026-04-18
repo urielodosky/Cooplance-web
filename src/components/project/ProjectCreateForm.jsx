@@ -168,8 +168,8 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
             const updates = { [name]: value };
             // Mutual exclusivity logic only for clients
             if (user?.role !== 'company') {
-                if (name === 'deadline' && value) updates.executionTime = '';
-                if (name === 'executionTime' && value) updates.deadline = '';
+                if (name === 'deadline' && value) updates.contractDurationValue = '';
+                if (name === 'contractDurationValue' && value) updates.deadline = '';
             }
             return { ...prev, ...updates };
         });
@@ -202,7 +202,6 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
 
             // Duration type reset logic
             if (name === 'contractDurationType') {
-                next.executionTime = '';
                 next.contractDurationValue = '';
             }
 
@@ -680,7 +679,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                     <button 
                                         type="button" 
                                         className={`category-option ${formData.deadlineType === 'fixed' ? 'selected' : ''}`}
-                                        onClick={() => setFormData(p => ({ ...p, deadlineType: 'fixed', executionTime: '' }))}
+                                        onClick={() => setFormData(p => ({ ...p, deadlineType: 'fixed', contractDurationValue: '' }))}
                                         style={{ flex: 1 }}
                                     >
                                         Fecha Fija
