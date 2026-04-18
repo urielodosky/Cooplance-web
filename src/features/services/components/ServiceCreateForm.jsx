@@ -797,8 +797,12 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                                                         if (current.includes(spec)) {
                                                             newSpecs = current.filter(s => s !== spec);
                                                         } else {
-                                                            if (current.length >= 3) return; // Limit reached
-                                                            newSpecs = [...current, spec];
+                                                            if (current.length >= 3) {
+                                                                // Replace the first (oldest) selection for smooth UX
+                                                                newSpecs = [...current.slice(1), spec];
+                                                            } else {
+                                                                newSpecs = [...current, spec];
+                                                            }
                                                         }
                                                         handleSelectOption('specialties', newSpecs);
                                                     }}

@@ -37,15 +37,27 @@ const FreelancerDetail = () => {
                 if (pError) throw pError;
                 setFreelancer(profile);
 
-                // 2. Fetch Services
+                // 2. Fetch Services with Profile data
                 const { data: servicesData, error: sError } = await supabase
                     .from('services')
-                    .select('*')
+                    .select('*, owner:profiles!owner_id(username, first_name, last_name, avatar_url, level)')
                     .eq('owner_id', id)
                     .eq('active', true);
                 
                 if (sError) throw sError;
-                setFreelancerServices(servicesData || []);
+                
+                // Map services to match the structure expected by ServiceCard
+                const mappedServices = (servicesData || []).map(s => ({
+                    ...s,
+                    freelancerUsername: s.owner?.username,
+                    freelancerAvatar: s.owner?.avatar_url,
+                    freelancerName: s.owner?.first_name ? `${s.owner.first_name} ${s.owner.last_name || ''}`.trim() : s.owner?.username,
+                    level: s.owner?.level || 1,
+                    image: s.image_url,
+                    // Use specialties from config or root
+                    specialties: s.config?.specialties || s.specialties || []
+                }));
+                setFreelancerServices(mappedServices);
 
                 // 3. Fetch Jobs (for work history)
                 // Note: We'll fetch completed jobs specifically
@@ -122,164 +134,172 @@ const FreelancerDetail = () => {
                 Volver
             </button>
 
-            {/* Hero Section */}
-            <div className="glass" style={{
-                borderRadius: '24px',
-                padding: '3rem',
+            {/* Hero Section - Premium Redesign */}
+            <div className="glass profile-hero-premium" style={{
+                borderRadius: '32px',
+                padding: '3.5rem',
                 marginBottom: '3rem',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)'
             }}>
                 <div style={{
-                    position: 'absolute', top: 0, left: 0, width: '100%', height: '4px',
-                    background: 'var(--gradient-primary)'
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
+                    background: 'var(--gradient-primary)',
+                    opacity: 0.8
                 }}></div>
 
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '2rem', flexWrap: 'wrap' }}>
-                    <div style={{
-                        width: '140px', height: '140px',
-                        padding: '6px',
-                        background: 'var(--bg-card-hover)',
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
+                    <div className="profile-avatar-wrapper" style={{
+                        width: '180px', height: '180px',
+                        padding: '8px',
+                        background: 'var(--gradient-primary)',
                         borderRadius: '50%',
-                        border: '1px solid var(--border)',
+                        position: 'relative',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                         flexShrink: 0
                     }}>
-                        <img
-                            src={getProfilePicture(freelancer)}
-                            alt={freelancer.first_name || 'Freelancer'}
-                            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                            onError={(e) => {
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(freelancer.username || 'F')}&background=8b5cf6&color=fff&size=256`;
-                            }}
-                        />
+                        <div style={{
+                            width: '100%', height: '100%',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '4px solid var(--bg-card)',
+                            background: 'var(--bg-card)'
+                        }}>
+                            <img
+                                src={getProfilePicture(freelancer)}
+                                alt={freelancer.username}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                        </div>
+                        {freelancer.level >= 3 && (
+                            <div style={{
+                                position: 'absolute', bottom: '10px', right: '10px',
+                                background: 'var(--primary)', color: 'white',
+                                width: '32px', height: '32px', borderRadius: '50%',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                border: '3px solid var(--bg-card)',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                            }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+                            </div>
+                        )}
                     </div>
 
-                    <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.5rem' }}>
-                            <h1 style={{ margin: 0, fontSize: '3.2rem', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                                {freelancer.username || 'Usuario'}
-                            </h1>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                                <p style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
+                    <div style={{ flex: 1, minWidth: '300px' }}>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap' }}>
+                                <h1 style={{ 
+                                    margin: 0, 
+                                    fontSize: '3rem', 
+                                    fontWeight: 900, 
+                                    letterSpacing: '-0.03em', 
+                                    color: 'var(--text-primary)'
+                                }}>
                                     {freelancer.first_name} {freelancer.last_name}
-                                </p>
-                                <span style={{
-                                    background: 'var(--primary)',
+                                </h1>
+                                <span className="level-badge-premium" style={{
+                                    background: 'var(--gradient-primary)',
                                     color: 'white',
-                                    fontSize: '0.7rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: '800',
-                                    padding: '3px 8px',
-                                    borderRadius: '8px',
-                                    letterSpacing: '0.5px',
-                                    textTransform: 'uppercase'
+                                    padding: '6px 14px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px'
                                 }}>Nivel {freelancer.level || 1}</span>
                             </div>
-                        </div>
-                             
-                             {freelancer.cv_url && (
-                                 <button 
-                                     onClick={() => {
-                                         const link = document.createElement('a');
-                                         link.href = freelancer.cv_url;
-                                         link.target = '_blank';
-                                         link.download = `CV_${freelancer.first_name || freelancer.username}.png`;
-                                         link.click();
-                                     }}
-                                     className="btn-secondary"
-                                     style={{ 
-                                         fontSize: '0.75rem', 
-                                         padding: '4px 12px', 
-                                         borderRadius: '10px',
-                                         display: 'flex',
-                                         alignItems: 'center',
-                                         gap: '0.5rem',
-                                         cursor: 'pointer',
-                                         background: 'rgba(255,255,255,0.05)',
-                                         border: '1px solid var(--border)',
-                                         width: 'fit-content'
-                                     }}
-                                 >
-                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                                     Ver CV
-                                 </button>
-                             )}
-                            {freelancer.gamification?.vacation?.active && (() => {
-                                const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - (freelancer.gamification.vacation.startDate || Date.now())) / 86400000));
-                                return (
-                                    <span style={{
-                                        background: 'rgba(16, 185, 129, 0.15)',
-                                        color: '#10b981',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '700',
-                                        padding: '4px 10px',
-                                        borderRadius: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        border: '1px solid rgba(16, 185, 129, 0.25)',
-                                        marginTop: '0.5rem',
-                                        width: 'fit-content'
-                                    }}>
-                                        De vacaciones — faltan {daysLeft} días
-                                    </span>
-                                );
-                            })()}
-
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', margin: '1.5rem 0', alignItems: 'center' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '1rem', padding: '4px 12px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                                {freelancer.location || 'Ubicación no especificada'}
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '1rem', padding: '4px 12px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20" /></svg>
-                                {freelancerServices.length} Servicios
-                            </span>
+                            <p style={{ 
+                                margin: '0.25rem 0 0 0', 
+                                fontSize: '1.2rem', 
+                                color: 'var(--primary)', 
+                                fontWeight: 700,
+                                opacity: 0.8 
+                            }}>
+                                @{freelancer.username}
+                            </p>
                         </div>
 
-                        <p style={{ maxWidth: '800px', color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.7', background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-                            {freelancer.bio || `Hola, soy ${freelancer.first_name || freelancer.username}. Especialista en ofrecer soluciones de alta calidad. Contáctame para discutir tu proyecto.`}
-                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                                <span style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{freelancer.location || 'Planeta Tierra'}</span>
+                            </div>
+                            {freelancer.cv_url && (
+                                <button 
+                                    onClick={() => window.open(freelancer.cv_url, '_blank')}
+                                    className="btn-premium-action"
+                                    style={{ 
+                                        display: 'flex', alignItems: 'center', gap: '8px', 
+                                        padding: '8px 16px', background: 'var(--primary)', 
+                                        color: 'white', borderRadius: '12px', border: 'none',
+                                        fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Ver Curriculum
+                                </button>
+                            )}
+                        </div>
 
-                        {/* Badges Section */}
-                        {(() => {
-                            const badgesArray = freelancer.gamification?.badges || freelancer.badges || [];
-                            if (badgesArray.length === 0) return null;
-
-                            return (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                    {BADGE_FAMILIES.flatMap(f => f.badges)
-                                        .filter(b => badgesArray.includes(b.id))
-                                        .map(badge => (
-                                            <div 
-                                                key={badge.id}
-                                                className="glass help-icon-wrapper"
-                                                style={{ 
-                                                    padding: '6px 12px', 
-                                                    borderRadius: '12px', 
-                                                    border: '1px solid var(--primary)', 
-                                                    background: 'rgba(139, 92, 246, 0.05)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '8px',
-                                                    cursor: 'help'
-                                                }}
-                                            >
-                                                <div style={{ color: 'var(--primary)' }}>
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                                </div>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
-                                                
-                                                <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
-                                                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
-                                                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            );
-                        })()}
+                        <div className="bio-container-premium" style={{
+                            background: 'rgba(255,255,255,0.02)',
+                            padding: '1.25rem',
+                            borderRadius: '20px',
+                            border: '1px solid var(--border)',
+                            lineHeight: 1.5,
+                            color: 'var(--text-secondary)',
+                            fontSize: '1rem',
+                            position: 'relative'
+                        }}>
+                            <svg style={{ position: 'absolute', top: '15px', right: '20px', opacity: 0.1 }} width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017V14C19.017 11.2386 16.7784 9 14.017 9V7C17.883 7 21.017 10.134 21.017 14V21H14.017ZM3.01701 21L3.01701 18C3.01701 16.8954 3.91244 16 5.01701 16H8.01701V14C8.01701 11.2386 5.77844 9 3.01701 9V7C6.88301 7 10.017 10.134 10.017 14V21H3.01701Z"/></svg>
+                            {freelancer.bio || `¡Hola! Soy ${freelancer.first_name || freelancer.username}. Me apasiona crear soluciones excepcionales y ayudar a mis clientes a alcanzar sus objetivos con profesionalismo y creatividad.`}
+                        </div>
                     </div>
+                </div>
+
+                {/* Badges Section - Moved inside hero but after flex row */}
+                <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                    {(() => {
+                        const badgesArray = freelancer.gamification?.badges || freelancer.badges || [];
+                        if (badgesArray.length === 0) return null;
+
+                        return (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                {BADGE_FAMILIES.flatMap(f => f.badges)
+                                    .filter(b => badgesArray.includes(b.id))
+                                    .map(badge => (
+                                        <div 
+                                            key={badge.id}
+                                            className="glass help-icon-wrapper"
+                                            style={{ 
+                                                padding: '6px 12px', 
+                                                borderRadius: '12px', 
+                                                border: '1px solid var(--primary)', 
+                                                background: 'rgba(139, 92, 246, 0.05)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                cursor: 'help'
+                                            }}
+                                        >
+                                            <div style={{ color: 'var(--primary)' }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
+                                            
+                                            <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
+                                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 

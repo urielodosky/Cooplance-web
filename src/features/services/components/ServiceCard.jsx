@@ -86,56 +86,75 @@ const ServiceCard = ({ service }) => {
 
             <div className="service-content">
                 <div className="avatar-layout-row">
-                    <img
-                        src={getProfilePicture({ 
-                            role: 'freelancer', 
-                            avatar: avatar || service.freelancerAvatar || service.avatar_url, 
-                            username: displayUsername
-                        })}
-                        alt={service.freelancerName}
-                        className="avatar-img round clickable"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/freelancer/${service.freelancerId}`);
-                        }}
-                    />
-                    <div className="avatar-details-col">
-                        <span className="username-text">@{displayUsername}</span>
-                        <div className="name-level-row">
-                            <span className="fullname-text">{service.freelancerName}</span>
-                            <span className="level-dot">•</span>
-                            <span className="level-number">Nivel {displayLevel}</span>
-                            {renderLevelBadge()}
+                    <div className="profile-avatar-wrapper small" style={{
+                        width: '48px', height: '48px',
+                        padding: '3px',
+                        background: 'var(--gradient-primary)',
+                        borderRadius: '50%',
+                        flexShrink: 0
+                    }}>
+                        <div style={{
+                            width: '100%', height: '100%',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '2px solid var(--bg-card)',
+                            background: 'var(--bg-card)'
+                        }}>
+                            <img
+                                src={getProfilePicture({ 
+                                    role: 'freelancer', 
+                                    avatar: avatar || service.freelancerAvatar || service.avatar_url, 
+                                    username: displayUsername
+                                })}
+                                alt={service.freelancerName}
+                                className="clickable"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/freelancer/${service.freelancerId}`);
+                                }}
+                            />
                         </div>
+                    </div>
+                    <div className="avatar-details-col">
+                        <div className="name-level-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="fullname-text" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{service.freelancerName}</span>
+                            <span className="level-badge-compact" style={{ 
+                                fontSize: '0.7rem', 
+                                background: 'rgba(139, 92, 246, 0.1)', 
+                                color: 'var(--primary)', 
+                                padding: '2px 8px', 
+                                borderRadius: '6px',
+                                fontWeight: 700
+                            }}>Nivel {displayLevel}</span>
+                        </div>
+                        <span className="username-text" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>@{displayUsername}</span>
                     </div>
                 </div>
 
-                <div className="title-desc-section">
-                    <h4 className="card-title">{service.title}</h4>
-                    <p className="card-description">{service.description || 'Sin descripción disponible.'}</p>
+                <div className="title-desc-section" style={{ margin: '1.25rem 0' }}>
+                    <h4 className="card-title" style={{ fontSize: '1.2rem', marginBottom: '0.5rem', fontWeight: 800 }}>{service.title}</h4>
+                    <p className="card-description" style={{ fontSize: '0.9rem', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{service.description || 'Sin descripción disponible.'}</p>
                 </div>
 
-                <div className="meta-info-row">
-                    <div className="subtle-badge category-badge">{service.category}</div>
-                    {service.subcategory && (
-                        <div className="subtle-badge subcategory-badge">{service.subcategory}</div>
-                    )}
+                <div className="meta-info-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="premium-badge-tag" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>{service.category}</div>
                     
-                    <div className="modality-tag">
+                    <div className="modality-tag-premium" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                         {service.workMode === 'presential' ? (
-                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
                         ) : (
-                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0a2 2 0 0 1 2 2v1H2v-1a2 2 0 0 1 2-2"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                         )}
                         <span>{service.workMode === 'presential' ? 'Presencial' : 'Remoto'}</span>
                     </div>
 
                     {service.specialties && service.specialties.length > 0 && (
-                        <div className="extra-meta tooltip-container">
+                        <div className="extra-meta tooltip-container" style={{ background: 'var(--bg-card-hover)', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, cursor: 'help' }}>
                             +{service.specialties.length}
                             <div className="tooltip-content">
-                                <ul>
-                                    {service.specialties.map((s, idx) => <li key={idx}>{s}</li>)}
+                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                    {service.specialties.map((s, idx) => <li key={idx} style={{ padding: '2px 0' }}>{s}</li>)}
                                 </ul>
                             </div>
                         </div>
@@ -149,8 +168,20 @@ const ServiceCard = ({ service }) => {
                     <span>Entrega: {service.deliveryTime || 3} días</span>
                 </div>
                 <div className="price-info">
-                    <span className="price-amount">${service.price || service.budget} ARS</span>
-                    <span className="price-type">Fijo</span>
+                    <div className="price-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                        <span className="price-amount" style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.2rem' }}>
+                            ${service.price || service.budget} ARS
+                        </span>
+                        <span className="price-type" style={{ 
+                            fontSize: '0.75rem', 
+                            color: service.budgetType === 'negotiable' ? 'var(--secondary)' : 'var(--text-muted)',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                        }}>
+                            {service.budgetType === 'negotiable' ? 'Negociable' : 'Fijo'}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>

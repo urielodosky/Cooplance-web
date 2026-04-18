@@ -230,8 +230,8 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                 const newSpecs = (prev.specialties || []).filter(spec => !subSpecialties.includes(spec));
                 return { ...prev, subcategories: newSubs, specialties: newSpecs };
             } else {
-                if (current.length >= 1) return prev; // Max 1
-                return { ...prev, subcategories: [...current, sub] };
+                // Replace if already has 1 (User friendly limit enforcement)
+                return { ...prev, subcategories: [sub], specialties: [] };
             }
         });
     };

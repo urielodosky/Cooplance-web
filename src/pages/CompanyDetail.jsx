@@ -41,15 +41,26 @@ const CompanyDetail = () => {
                 if (pError) throw pError;
                 setCompany(profile);
 
-                // 2. Fetch Active Projects (Jobs created by this company)
+                // 2. Fetch Active Projects from 'projects' table (Corrected from 'jobs')
                 const { data: projectsData, error: prError } = await supabase
-                    .from('jobs')
-                    .select('*')
+                    .from('projects')
+                    .select('*, client:profiles!client_id(username, first_name, last_name, avatar_url, level, rating, reviews_count)')
                     .eq('client_id', id)
                     .eq('status', 'open');
                 
                 if (prError) throw prError;
-                setCompanyProjects(projectsData || []);
+                
+                // Map projects to ensure nested data is correctly formatted for ProjectCard
+                const mappedProjects = (projectsData || []).map(p => ({
+                    ...p,
+                    clientUsername: p.client?.username,
+                    clientAvatar: p.client?.avatar_url,
+                    clientName: p.client?.company_name || (p.client?.first_name ? `${p.client.first_name} ${p.client.last_name || ''}`.trim() : p.client?.username),
+                    clientRating: p.client?.rating || 0,
+                    clientReviews: p.client?.reviews_count || 0,
+                    clientLevel: p.client?.level || 1
+                }));
+                setCompanyProjects(mappedProjects);
 
                 // 3. Fetch Completed Jobs (as Buyer)
                 const { data: jobsData, error: jError } = await supabase
@@ -82,99 +93,147 @@ const CompanyDetail = () => {
                 Volver
             </button>
 
-            {/* Hero Section */}
-            <div className="company-hero glass">
-                <div className="hero-gradient-bar"></div>
+            {/* Hero Section - Premium Redesign */}
+            <div className="glass company-hero-premium" style={{
+                borderRadius: '32px',
+                padding: '3.5rem',
+                marginBottom: '3rem',
+                position: 'relative',
+                overflow: 'hidden',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)'
+            }}>
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                    opacity: 0.8
+                }}></div>
 
-                <div className="hero-content-wrapper">
-                    <div className="company-logo-large">
-                        <img
-                            src={getProfilePicture(company)}
-                            alt={company.company_name || company.companyName || 'Empresa'}
-                            onError={(e) => {
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(company.company_name || company.username || 'E')}&background=6366f1&color=fff&size=512`;
-                            }}
-                        />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
+                    <div className="company-logo-wrapper" style={{
+                        width: '180px', height: '180px',
+                        padding: '8px',
+                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                        borderRadius: '50%',
+                        position: 'relative',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                        flexShrink: 0
+                    }}>
+                        <div style={{
+                            width: '100%', height: '100%',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '4px solid var(--bg-card)',
+                            background: 'var(--bg-card)'
+                        }}>
+                            <img
+                                src={getProfilePicture(company)}
+                                alt={company.company_name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                        </div>
+                        <div style={{
+                            position: 'absolute', bottom: '10px', right: '10px',
+                            background: '#6366f1', color: 'white',
+                            width: '32px', height: '32px', borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            border: '3px solid var(--bg-card)',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                        }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        </div>
                     </div>
 
-                    <div className="company-info">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.5rem' }}>
-                            <h1 style={{ margin: 0, fontSize: '3.2rem', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                                {company.username || 'Empresa'}
-                            </h1>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                                <p style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
-                                    {company.company_name || company.companyName || `${company.first_name || ''} ${company.last_name || ''}`.trim()}
-                                </p>
-                                <span style={{
-                                    background: 'var(--secondary)',
+                    <div style={{ flex: 1, minWidth: '300px' }}>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap' }}>
+                                <h1 style={{ 
+                                    margin: 0, 
+                                    fontSize: '3rem', 
+                                    fontWeight: 900, 
+                                    letterSpacing: '-0.03em', 
+                                    color: 'var(--text-primary)'
+                                }}>
+                                    {company.company_name || company.first_name || 'Empresa Cooplance'}
+                                </h1>
+                                <span className="company-badge-premium" style={{
+                                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
                                     color: 'white',
-                                    fontSize: '0.7rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: '800',
-                                    padding: '3px 8px',
-                                    borderRadius: '8px',
-                                    letterSpacing: '0.5px',
-                                    textTransform: 'uppercase'
-                                }}>VERIFICADO</span>
+                                    padding: '6px 14px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '1px'
+                                }}>Empresa Verificada</span>
                             </div>
+                            <p style={{ 
+                                margin: '0.25rem 0 0 0', 
+                                fontSize: '1.2rem', 
+                                color: '#6366f1', 
+                                fontWeight: 700,
+                                opacity: 0.8 
+                            }}>
+                                @{company.username}
+                            </p>
                         </div>
-
-                        <div className="company-meta-row">
-                            <span className="company-meta-tag">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="8" height="14" x="3" y="2" rx="2" /><path d="M21 14h-5" /><path d="M21 12h-5" /><path d="M21 16h-5" /></svg>
-                                {company.industry || 'Tecnología'}
-                            </span>
-
-                            <span className="company-meta-tag">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
-                                {company.location || 'Remoto'}
-                            </span>
+                        <div className="bio-container-premium" style={{
+                            background: 'rgba(255,255,255,0.02)',
+                            padding: '1.25rem',
+                            borderRadius: '20px',
+                            border: '1px solid var(--border)',
+                            lineHeight: 1.5,
+                            color: 'var(--text-secondary)',
+                            fontSize: '1rem',
+                            position: 'relative'
+                        }}>
+                             <svg style={{ position: 'absolute', top: '15px', right: '20px', opacity: 0.1 }} width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017V14C19.017 11.2386 16.7784 9 14.017 9V7C17.883 7 21.017 10.134 21.017 14V21H14.017ZM3.01701 21L3.01701 18C3.01701 16.8954 3.91244 16 5.01701 16H8.01701V14C8.01701 11.2386 5.77844 9 3.01701 9V7C6.88301 7 10.017 10.134 10.017 14V21H3.01701Z"/></svg>
+                            {company.bio || "Esta empresa busca excelencia y profesionalismo en cada proyecto. Comprometido con el crecimiento mutuo y la calidad."}
                         </div>
-
-                        <p className="company-bio" style={{ marginBottom: '1.5rem' }}>
-                            {company.bio || "Este usuario no ha añadido una descripción todavía."}
-                        </p>
-
-                        {/* Badges Section */}
-                        {(() => {
-                            const badgesArray = company.gamification?.badges || company.badges || [];
-                            if (badgesArray.length === 0) return null;
-
-                            return (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                    {CLIENT_BADGE_FAMILIES.flatMap(f => f.badges)
-                                        .filter(b => badgesArray.includes(b.id))
-                                        .map(badge => (
-                                            <div 
-                                                key={badge.id}
-                                                className="glass help-icon-wrapper"
-                                                style={{ 
-                                                    padding: '6px 12px', 
-                                                    borderRadius: '12px', 
-                                                    border: '1px solid var(--secondary)', 
-                                                    background: 'rgba(59, 130, 246, 0.05)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '8px',
-                                                    cursor: 'help'
-                                                }}
-                                            >
-                                                <div style={{ color: 'var(--secondary)' }}>
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                                </div>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
-                                                
-                                                <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
-                                                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
-                                                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            );
-                        })()}
                     </div>
+                </div>
+
+                {/* Badges Section - Moved inside hero but after flex row */}
+                <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                    {(() => {
+                        const badgesArray = company.gamification?.badges || company.badges || [];
+                        if (badgesArray.length === 0) return null;
+
+                        return (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                {CLIENT_BADGE_FAMILIES.flatMap(f => f.badges)
+                                    .filter(b => badgesArray.includes(b.id))
+                                    .map(badge => (
+                                        <div 
+                                            key={badge.id}
+                                            className="glass help-icon-wrapper"
+                                            style={{ 
+                                                padding: '6px 12px', 
+                                                borderRadius: '12px', 
+                                                border: '1px solid var(--secondary)', 
+                                                background: 'rgba(59, 130, 246, 0.05)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                cursor: 'help'
+                                            }}
+                                        >
+                                            <div style={{ color: 'var(--secondary)' }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                            </div>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
+                                            
+                                            <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
+                                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 

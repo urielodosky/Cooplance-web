@@ -80,52 +80,71 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
 
             <div className="project-content">
                 <div className="avatar-layout-row">
-                    <img
-                        src={getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })}
-                        alt={project.clientName}
-                        className="avatar-img round clickable"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/${project.clientRole === 'company' ? 'company' : 'client'}/${project.clientId || project.authorId}`);
-                        }}
-                    />
-                    <div className="avatar-details-col">
-                        <span className="username-text">{displayUsername}</span>
-                        <div className="name-level-row">
-                            <span className="fullname-text">{project.clientName || 'Usuario'}</span>
-                            <span className="level-dot">•</span>
-                            <span className="level-number">Nivel {projectLevel}</span>
-                            {renderLevelBadge()}
+                    <div className="profile-avatar-wrapper small" style={{
+                        width: '48px', height: '48px',
+                        padding: '3px',
+                        background: 'var(--gradient-secondary, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%))',
+                        borderRadius: '50%',
+                        flexShrink: 0
+                    }}>
+                        <div style={{
+                            width: '100%', height: '100%',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '2px solid var(--bg-card)',
+                            background: 'var(--bg-card)'
+                        }}>
+                            <img
+                                src={getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })}
+                                alt={project.clientName}
+                                className="clickable"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/${project.clientRole === 'company' ? 'company' : 'client'}/${project.clientId || project.authorId}`);
+                                }}
+                            />
                         </div>
+                    </div>
+                    <div className="avatar-details-col">
+                        <div className="name-level-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="fullname-text" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{project.clientName || 'Usuario'}</span>
+                            <span className="level-badge-compact" style={{ 
+                                fontSize: '0.7rem', 
+                                background: 'rgba(59, 130, 246, 0.1)', 
+                                color: '#3b82f6', 
+                                padding: '2px 8px', 
+                                borderRadius: '6px',
+                                fontWeight: 700
+                            }}>Nivel {projectLevel}</span>
+                        </div>
+                        <span className="username-text" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>@{displayUsername}</span>
                     </div>
                 </div>
 
-                <div className="title-desc-section">
-                    <h3 className="card-title">{project.title}</h3>
-                    <p className="card-description">{project.description}</p>
+                <div className="title-desc-section" style={{ margin: '1.25rem 0' }}>
+                    <h3 className="card-title" style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 800 }}>{project.title}</h3>
+                    <p className="card-description" style={{ fontSize: '0.9rem', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{project.description}</p>
                 </div>
 
-                <div className="meta-info-row">
-                    <div className="subtle-badge category-badge">{project.category}</div>
-                    {project.subcategory && (
-                        <div className="subtle-badge subcategory-badge">{project.subcategory}</div>
-                    )}
+                <div className="meta-info-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="premium-badge-tag" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>{project.category}</div>
                     
-                    <div className="modality-tag">
+                    <div className="modality-tag-premium" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                         {project.workMode === 'presential' ? (
-                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
                         ) : (
-                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0a2 2 0 0 1 2 2v1H2v-1a2 2 0 0 1 2-2"/></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                         )}
                         <span>{project.workMode === 'presential' ? 'Presencial' : 'Remoto'}</span>
                     </div>
 
                     {project.specialties && project.specialties.length > 0 && (
-                        <div className="extra-meta tooltip-container">
+                        <div className="extra-meta tooltip-container" style={{ background: 'var(--bg-card-hover)', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, cursor: 'help' }}>
                             +{project.specialties.length}
                             <div className="tooltip-content">
-                                <ul>
-                                    {project.specialties.map((s, idx) => <li key={idx}>{s}</li>)}
+                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                    {project.specialties.map((s, idx) => <li key={idx} style={{ padding: '2px 0' }}>{s}</li>)}
                                 </ul>
                             </div>
                         </div>
@@ -133,16 +152,15 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                 </div>
             </div>
 
-            <div className="project-footer-new">
-                <div className="timeline-info">
-                    <span className="published-date">{getTimeAgo(project.createdAt)}</span>
-                    <span className="separator">•</span>
-                    <span className="expiry-date">Expira: {formatDate(project.deadline)}</span>
+            <div className="project-footer-new" style={{ marginTop: 'auto', borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div className="timeline-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{getTimeAgo(project.createdAt)}</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ef4444' }}>Expira: {formatDate(project.deadline)}</span>
                 </div>
                 <div className="price-info">
-                    <div className="price-row">
-                        <span className="price-amount">${project.budget} ARS</span>
-                        {project.budgetType === 'negotiable' && <span className="negotiable-tag">Negociable</span>}
+                    <div className="price-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                        <span className="price-amount" style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>${project.budget} ARS</span>
+                        {project.budgetType === 'negotiable' && <span className="negotiable-tag" style={{ fontSize: '0.7rem', color: 'var(--secondary)', fontWeight: 800, textTransform: 'uppercase' }}>Negociable</span>}
                     </div>
                 </div>
             </div>
