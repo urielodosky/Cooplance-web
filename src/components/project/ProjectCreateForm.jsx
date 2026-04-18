@@ -7,7 +7,7 @@ import { useAuth } from '../../features/auth/context/AuthContext';
 import { serviceCategories } from '../../features/services/data/categories';
 import { locations } from '../../features/services/data/locations';
 import { supabase } from '../../lib/supabase';
-import { createProject, updateProject } from '../../lib/projectService';
+import { createProject, updateProject, getProjectsByClient } from '../../lib/projectService';
 import { getArgentinaProvinces, getArgentinaCities } from '../../utils/locationUtils';
 
 const ProjectCreateForm = ({ onCancel, initialData }) => {
@@ -392,6 +392,26 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
             }
         }
 
+        // Level-based publication limit check (for new projects only)
+        if (!initialData?.id) {
+            const currentLevel = user.level || 1;
+            const maxProjects = currentLevel >= 5 ? 5 : currentLevel;
+            
+            try {
+                setLoadingStatus('Verificando límites...');
+                const existingProjects = await getProjectsByClient(user.id);
+                const openProjectsCount = existingProjects.filter(p => p.status === 'open').length;
+
+                if (openProjectsCount >= maxProjects) {
+                    setFormError(`Límite alcanzado: Tu Nivel ${currentLevel} permite hasta ${maxProjects} publicaciones activas. Borra un proyecto anterior para publicar uno nuevo.`);
+                    setIsSubmitting(false);
+                    return;
+                }
+            } catch (err) {
+                console.warn('Could not verify limits, proceeding with caution...', err);
+            }
+        }
+
         try {
             let finalImageUrl = formData.imageUrl;
             let finalVideoUrl = formData.videoUrl;
@@ -589,11 +609,11 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                 <>
                                     <div className="form-grid-2">
                                         <div className="form-group">
-                                            <label className="work-mode-label">Tipo</label>
-                                            <CustomDropdown options={[{ value: 'fixed', label: 'Estimado Fijo' }, { value: 'negotiable', label: 'Variable' }]} value={formData.budgetType} onChange={(v) => handleDropdownChange('budgetType', v)} />
+                                            <label className="work-mode-label">Tipo de Presupuesto</label>
+                                            <CustomDropdown options={[{ value: 'fixed', label: 'Est. Fijo' }, { value: 'negotiable', label: 'Estimado' }]} value={formData.budgetType} onChange={(v) => handleDropdownChange('budgetType', v)} />
                                         </div>
                                         <div className="form-group">
-                                            <label className="work-mode-label">Frecuencia</label>
+                                            <label className="work-mode-label">Frecuencia de Pago</label>
                                             <CustomDropdown 
                                                 options={[
                                                     { value: 'unique', label: 'Pago Único' }, 
@@ -616,49 +636,15 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                             <input type="number" name="budget" value={formData.budget} onChange={handleChange} required min={formData.paymentFrequency === 'commission' ? "1" : "1000"} max={formData.paymentFrequency === 'commission' ? "100" : undefined} />
                                         </div>
                                         <div className="form-group">
-                                            <label className="work-mode-label">Duración del Contrato</label>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                {formData.contractDurationType !== 'unique' && (
-                                                    <input 
-                                                        type="number" 
-                                                        name="contractDurationValue" 
-                                                        value={formData.contractDurationValue} 
-                                                        onChange={handleChange} 
-                                                        placeholder="Cant." 
-                                                        style={{ width: '80px' }} 
-                                                        required 
-                                                    />
-                                                )}
-                                                <CustomDropdown 
-                                                    options={[
-                                                        { value: 'unique', label: 'Única vez' }, 
-                                                        { value: 'days', label: 'Días' }, 
-                                                        { value: 'weeks', label: 'Semanas' }, 
-                                                        { value: 'months', label: 'Meses' }, 
-                                                        { value: 'years', label: 'Años' }
-                                                    ].filter(opt => {
-                                                        if (formData.paymentFrequency === 'unique') return opt.value === 'unique';
-                                                        if (['daily', 'weekly', 'biweekly', 'monthly'].includes(formData.paymentFrequency)) return opt.value !== 'unique';
-                                                        return true;
-                                                    })} 
-                                                    value={formData.contractDurationType} 
-                                                    onChange={(v) => handleDropdownChange('contractDurationType', v)} 
-                                                    disabled={formData.paymentFrequency === 'unique'}
-                                                    style={{ flex: 1 }}
-                                                />
-                                            </div>
+                                            <label className="work-mode-label">Vacantes</label>
+                                            <input type="number" name="vacancies" value={formData.vacancies} onChange={handleChange} min="1" required />
                                         </div>
                                     </div>
                                 </>
                             ) : (
-                                <div className="form-grid-2">
-                                    <div className="form-group">
-                                        <label className="work-mode-label">Presupuesto ($ ARS)</label>
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <CustomDropdown options={[{ value: 'fixed', label: 'Fijo' }, { value: 'negotiable', label: 'Negociable' }]} value={formData.budgetType} onChange={(v) => handleDropdownChange('budgetType', v)} style={{ flex: 1 }} />
-                                            <input type="number" name="budget" value={formData.budget} onChange={handleChange} placeholder="Monto" style={{ flex: 2 }} required min="1000" />
-                                        </div>
-                                    </div>
+                                <div className="form-group">
+                                    <label className="work-mode-label">Presupuesto Estimado ($ ARS)</label>
+                                    <input type="number" name="budget" value={formData.budget} onChange={handleChange} placeholder="Ej. 50000" required min="1000" />
                                 </div>
                             )}
 
@@ -674,7 +660,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                             </div>
 
                             <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                <label className="work-mode-label">Plazo de Entrega del Proyecto</label>
+                                <label className="work-mode-label">{user?.role === 'company' ? 'Duración del Contrato' : 'Plazo de Entrega del Proyecto'}</label>
                                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                                     <button 
                                         type="button" 

@@ -19,10 +19,10 @@
 /* Image Section */
 .project-image-container {
     width: 100%;
-    padding-top: 56.25%;
-    /* 16:9 Aspect Ratio */
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
     position: relative;
     background: #0f172a;
+    overflow: hidden;
 }
 
 .project-image {
@@ -41,7 +41,7 @@
 
 /* Content Section */
 .project-content {
-    padding: 1.25rem 1rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -53,7 +53,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
+    position: relative;
 }
 
 .client-avatar {
@@ -64,10 +64,9 @@
     border: 1px solid var(--border);
 }
 
-.client-name {
-    font-size: 0.85rem;
+.client-realname {
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    font-weight: 500;
 }
 
 .project-time-ago {
@@ -116,9 +115,10 @@
     font-size: 0.75rem;
     padding: 0.25rem 0.6rem;
     border-radius: 4px;
-    background: rgba(56, 189, 248, 0.1);
-    color: #38bdf8;
-    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 /* Budget */
@@ -134,11 +134,40 @@
 }
 
 .project-budget {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: #10b981;
-    /* Green for money/budget */
+    color: var(--text-primary);
     white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .project-card {
+        border-radius: 14px;
+    }
+
+    .project-image-container {
+        padding-top: 0;
+        height: 140px;
+    }
+    
+    .project-image {
+        position: relative;
+        height: 140px;
+        object-fit: cover;
+    }
+
+    .project-content {
+        padding: 0.75rem;
+        gap: 0.4rem;
+    }
+
+    .project-title {
+        font-size: 0.9rem;
+    }
+
+    .project-footer {
+        padding: 0.5rem 0.75rem;
+    }
 }
 
 /* Light Mode Overrides for ProjectCard */
@@ -148,19 +177,8 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="light"] .project-card:hover {
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    border-color: var(--primary);
-    transform: translateY(-4px);
-}
-
 [data-theme="light"] .project-footer {
     background: #f8fafc;
-    /* Slate 50 */
     border-top: 1px solid #e2e8f0;
-}
-
-[data-theme="light"] {
-    background: #f1f5f9;
 }
 

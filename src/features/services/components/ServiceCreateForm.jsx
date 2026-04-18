@@ -492,6 +492,28 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             return;
         }
 
+        // Level-based publication limit check (for new services only)
+        if (!initialData) {
+            const currentLevel = user.level || 1;
+            const maxServices = currentLevel >= 5 ? 5 : currentLevel;
+            
+            try {
+                setLoadingStatus('Verificando límites...');
+                const { data: existingServices, error: countErr } = await supabase
+                    .from('services')
+                    .select('id')
+                    .eq('freelancer_id', user.id);
+
+                if (!countErr && existingServices.length >= maxServices) {
+                    setFormError(`Límite alcanzado: Tu Nivel ${currentLevel} permite hasta ${maxServices} servicios activos. Elimina uno anterior para publicar uno nuevo.`);
+                    setIsSubmitting(false);
+                    return;
+                }
+            } catch (err) {
+                console.warn('Limit check skipped due to error', err);
+            }
+        }
+
         try {
             // Upload images to Supabase Storage
             const imageUrls = [];

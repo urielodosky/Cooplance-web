@@ -6,7 +6,7 @@ import { registerActivity } from '../utils/gamification';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
 import { formatLocationDetail } from '../utils/locationFormat';
 import { calculateAge } from '../utils/ageUtils';
-import { getProjectById } from '../lib/projectService';
+import { getProjectById, deleteProject } from '../lib/projectService';
 import { getActiveJobsCount } from '../lib/jobService';
 import '../styles/pages/ServiceDetail.scss';
 import '../styles/pages/ProjectDetail.scss';
@@ -26,10 +26,15 @@ const ProjectDetail = () => {
 
     useEffect(() => {
         const fetchProjectData = async () => {
+            if (!id) return;
             setLoading(true);
             try {
                 const data = await getProjectById(id);
-                setProject(data);
+                if (data) {
+                    setProject(data);
+                } else {
+                    console.error('Project not found for ID:', id);
+                }
             } catch (err) {
                 console.error('Error fetching project:', err);
             } finally {
@@ -117,6 +122,18 @@ const ProjectDetail = () => {
         setTimeout(() => setApplyMessage({ text: '', type: '' }), 4000);
     };
 
+    const handleDelete = async () => {
+        if (!window.confirm('¿Estás seguro de que deseas eliminar este proyecto de forma permanente?')) return;
+        
+        try {
+            await deleteProject(id);
+            alert('Proyecto eliminado con éxito.');
+            navigate('/dashboard');
+        } catch (err) {
+            alert('Error al eliminar proyecto: ' + err.message);
+        }
+    };
+
     if (loading) return <ProjectDetailSkeleton />;
     if (!project) return <div className="container" style={{ paddingTop: '6rem', color: 'var(--text-primary)', textAlign: 'center' }}><h3>Proyecto no encontrado.</h3></div>;
 
@@ -181,6 +198,54 @@ const ProjectDetail = () => {
                                 {project.description}
                             </p>
                         </div>
+
+                        {/* Multimedia Grid - Added Premium Support */}
+                        {((project.images && project.images.length > 0) || (project.videos && project.videos.length > 0)) && (
+                            <div className="detail-section">
+                                <h3>Material Adicional</h3>
+                                <div className="detail-projects-grid" style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                                    gap: '1.5rem',
+                                    marginTop: '1rem' 
+                                }}>
+                                    {/* Videos First */}
+                                    {project.videos?.map((vid, idx) => (
+                                        <div key={`vid-${idx}`} className="glass project-item-card" style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                            {vid.type === 'file' ? (
+                                                <video src={vid.src} controls style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+                                            ) : (
+                                                <div style={{ position: 'relative', paddingTop: '56.25%' }}>
+                                                    <iframe 
+                                                        src={vid.src.replace('watch?v=', 'embed/')} 
+                                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} 
+                                                        allowFullScreen 
+                                                    />
+                                                </div>
+                                            )}
+                                            <div style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                                                Video de demostración {idx + 1}
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* Images */}
+                                    {project.images?.map((img, idx) => (
+                                        <div key={`img-${idx}`} className="glass project-item-card" style={{ overflow: 'hidden', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                            <img 
+                                                src={img} 
+                                                alt={`Project image ${idx + 1}`} 
+                                                style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', cursor: 'pointer' }}
+                                                onClick={() => window.open(img, '_blank')}
+                                            />
+                                            <div style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                                                Imagen {idx + 1}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* FAQs Section - Main Column but Compact Size */}
                         {(() => {
@@ -347,6 +412,11 @@ const ProjectDetail = () => {
                                     <span>({project.clientReviews} reseñas)</span>
                                 </div>
                             </div>
+                            {project.clientId === user?.id && (
+                                <button className="btn-secondary danger" onClick={handleDelete} style={{ marginTop: '1rem', width: '100%', borderColor: '#ef4444', color: '#ef4444' }}>
+                                    Eliminar Publicación
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

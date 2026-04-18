@@ -70,6 +70,13 @@ CREATE TABLE IF NOT EXISTS public.projects (
     payment_methods JSONB,
     payment_frequency TEXT DEFAULT 'fixed', -- 'fixed', 'milestone', 'weekly', 'monthly'
     contract_duration TEXT,
+    specialties TEXT[],
+    image_url TEXT,
+    video_url TEXT,
+    vacancies INTEGER DEFAULT 1,
+    location TEXT,
+    images TEXT[] DEFAULT '{}',
+    videos JSONB DEFAULT '[]',
     faqs JSONB,
     questions JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()

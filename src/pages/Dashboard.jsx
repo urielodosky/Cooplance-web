@@ -13,7 +13,7 @@ import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, XP_TA
 import { getProfilePicture } from '../utils/avatarUtils';
 import { getBenefitsForRole } from '../data/levelBenefits';
 import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
-import { getProjectsByClient } from '../lib/projectService';
+import { getProjectsByClient, deleteProject as deleteProjectApi } from '../lib/projectService';
 import { supabase } from '../lib/supabase';
 import { BADGE_FAMILIES, CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
 import '../styles/pages/Dashboard.scss';
@@ -209,7 +209,7 @@ const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }
     </div>
 );
 
-const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setSelectedProjectForProposals, user }) => (
+const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setSelectedProjectForProposals, user, onDelete }) => (
     <div style={{ marginTop: '2rem' }}>
         <h3 className="section-title">{user.role === 'company' ? 'Mis Ofertas Laborales' : 'Mis Proyectos Publicados'}</h3>
         <div className="services-grid">
@@ -218,7 +218,11 @@ const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setS
             ) : myPublishedProjects.length > 0 ? (
                 myPublishedProjects.map(project => (
                     <div key={project.id} style={{ position: 'relative' }}>
-                        <ProjectCard project={project} onApply={() => navigate(`/explore-clients?highlight=${project.id}`)} />
+                        <ProjectCard 
+                            project={project} 
+                            onApply={() => navigate(`/explore-clients?highlight=${project.id}`)} 
+                            onDelete={onDelete}
+                        />
                         {project.proposalCount > 0 && (
                             <div className="proposal-badge" style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold' }} onClick={(e) => { e.stopPropagation(); setSelectedProjectForProposals({ id: project.id, title: project.title }); }}>
                                 {project.proposalCount}
@@ -531,6 +535,40 @@ const Dashboard = () => {
         }
     };
 
+    const handleDeleteProject = async (projectId) => {
+        if (isTutorView) {
+            alert("No puedes realizar esta acción en modo lectura.");
+            return;
+        }
+        if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto de forma permanente? Esta acción no se puede deshacer.')) {
+            try {
+                await deleteProjectApi(projectId);
+                setMyPublishedProjects(prev => prev.filter(p => p.id !== projectId));
+                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(myPublishedProjects.filter(p => p.id !== projectId)));
+            } catch (err) {
+                alert('No se pudo eliminar el proyecto: ' + err.message);
+            }
+        }
+    };
+
+    const handleCreateProjectClick = () => {
+        const currentLevel = user.level || 1;
+        const maxProjects = currentLevel >= 5 ? 5 : currentLevel;
+        const openProjects = myPublishedProjects.filter(p => p.status === 'open').length;
+
+        if (openProjects >= maxProjects) {
+            let msg = `Has alcanzado el límite de proyectos/pedidos publicados (${maxProjects}) para tu Nivel ${currentLevel}.`;
+            if (currentLevel < 5) {
+                msg += `\n\n¡Sube de nivel para desbloquear más espacios! (Máximo 5 en Nivel 5)`;
+            } else {
+                msg += `\n\nHas alcanzado el máximo de publicaciones permitidas.`;
+            }
+            alert(msg);
+            return;
+        }
+        navigate('/create-project');
+    };
+
     const handleCreateServiceClick = () => {
         const currentLevel = user.level || 1;
         const maxServices = currentLevel >= 5 ? 5 : currentLevel;
@@ -614,7 +652,7 @@ const Dashboard = () => {
                     </div>
                 </div>
                 <div className="dashboard-actions-inline">
-                    <button className="btn-primary" onClick={user.role === 'freelancer' ? handleCreateServiceClick : () => navigate('/create-project')}>
+                    <button className="btn-primary" onClick={user.role === 'freelancer' ? handleCreateServiceClick : handleCreateProjectClick}>
                         + {user.role === 'freelancer' ? 'Servicio' : 'Proyecto'}
                     </button>
                 </div>
@@ -725,7 +763,14 @@ const Dashboard = () => {
             {(user.role === 'buyer' || user.role === 'company' || myOrders.length > 0) && (
                 <>
                     {(user.role === 'buyer' || user.role === 'company') && (
-                        <PublishedProjectsSection loading={loading} myPublishedProjects={myPublishedProjects} navigate={navigate} setSelectedProjectForProposals={setSelectedProjectForProposals} user={user} />
+                        <PublishedProjectsSection 
+                            loading={loading} 
+                            myPublishedProjects={myPublishedProjects} 
+                            navigate={navigate} 
+                            setSelectedProjectForProposals={setSelectedProjectForProposals} 
+                            user={user} 
+                            onDelete={handleDeleteProject}
+                        />
                     )}
                     <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} />
                 </>

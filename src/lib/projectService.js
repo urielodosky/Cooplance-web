@@ -148,6 +148,8 @@ function mapToDB(p) {
         payment_methods: p.paymentMethods || null,
         payment_frequency: p.paymentFrequency || 'fixed',
         contract_duration: p.contractDuration || null,
+        images: p.images || [],
+        videos: p.videos || [],
         faqs: p.faqs || null,
         questions: p.questions || null
     };
@@ -183,6 +185,9 @@ function mapFromDB(row) {
         questions: row.questions || [],
         contractDuration: row.contract_duration, // V28 Added
         paymentFrequency: row.payment_frequency, // V28 Added
+        images: row.images || [],
+        videos: row.videos || [],
+        vacancies: row.vacancies || 1,
         createdAt: row.created_at
     };
 }

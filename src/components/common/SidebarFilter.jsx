@@ -439,11 +439,13 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                     <div className="filter-item subcat-col">
                         <label>SUBCATEGORÍA</label>
                         <CustomDropdown
-                            options={Object.keys(
-                                (serviceCategories[currentFilters.category] && typeof serviceCategories[currentFilters.category] === 'object' && !Array.isArray(serviceCategories[currentFilters.category])) 
-                                ? serviceCategories[currentFilters.category] 
-                                : {}
-                            ).map(s => ({ label: s, value: s }))}
+                            options={(() => {
+                                const catData = serviceCategories?.[currentFilters.category];
+                                if (catData && typeof catData === 'object' && !Array.isArray(catData)) {
+                                    return Object.keys(catData).map(s => ({ label: s, value: s }));
+                                }
+                                return [];
+                            })()}
                             value={currentFilters.subcategory || ''}
                             onChange={(val) => handleChange('subcategory', val)}
                             placeholder="Todas"
@@ -453,33 +455,31 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                     <div className="filter-item specialties-col">
                         <label>ESPECIALIDADES</label>
                         <div className="compact-specs-flex">
-                            {currentFilters.subcategory ? (
-                                (() => {
-                                    const specs = serviceCategories[currentFilters.category]?.[currentFilters.subcategory];
-                                    if (!Array.isArray(specs)) return null;
-                                    
-                                    return specs.map(spec => {
-                                        const isSelected = (currentFilters.specialties || []).includes(spec);
-                                        return (
-                                            <button
-                                                key={spec}
-                                                className={`spec-pill ${isSelected ? 'active' : ''}`}
-                                                onClick={() => {
-                                                    const current = currentFilters.specialties || [];
-                                                    const newSpecs = current.includes(spec) 
-                                                        ? current.filter(s => s !== spec) 
-                                                        : [...current, spec];
-                                                    handleChange('specialties', newSpecs);
-                                                }}
-                                            >
-                                                {spec}
-                                            </button>
-                                        );
-                                    });
-                                })()
-                            ) : (
-                                <span className="helper-text">Elige subcategoría para ver especialidades</span>
-                            )}
+                            {(() => {
+                                if (!currentFilters.category || !currentFilters.subcategory) return <span className="helper-text">Elige subcategoría para ver especialidades</span>;
+                                
+                                const specs = serviceCategories?.[currentFilters.category]?.[currentFilters.subcategory];
+                                if (!Array.isArray(specs)) return null;
+                                
+                                return specs.map(spec => {
+                                    const isSelected = (currentFilters.specialties || []).includes(spec);
+                                    return (
+                                        <button
+                                            key={spec}
+                                            className={`spec-pill ${isSelected ? 'active' : ''}`}
+                                            onClick={() => {
+                                                const current = currentFilters.specialties || [];
+                                                const newSpecs = current.includes(spec) 
+                                                    ? current.filter(s => s !== spec) 
+                                                    : [...current, spec];
+                                                handleChange('specialties', newSpecs);
+                                            }}
+                                        >
+                                            {spec}
+                                        </button>
+                                    );
+                                });
+                            })()}
                         </div>
                     </div>
                 </div>
