@@ -105,8 +105,6 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
         }
     }, [formData.province, formData.country]);
 
-    const [faqs, setFaqs] = useState(initialData?.faqs || [{ question: '', answer: '' }]);
-
     // Step 5: Pre-interview Questions (for companies)
     const [questions, setQuestions] = useState(initialData?.questions || [
         { id: Date.now(), text: '', type: 'text', options: [''] }
