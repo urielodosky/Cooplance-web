@@ -374,24 +374,25 @@ const BadgesSection = ({ user, navigate }) => {
         });
     });
 
+    // Sort to show newest or most relevant first (optional, here we just limit)
     const featured = unlockedList.slice(0, 6);
     if (featured.length === 0) return null;
 
     return (
-        <div style={{ marginTop: '2.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-                <h3 className="section-title" style={{ margin: 0 }}>Mis Insignias Desbloqueadas</h3>
-                <button onClick={() => navigate('/badges')} className="btn-text" style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <div className="dashboard-badges-section">
+            <div className="section-header-row">
+                <h3 className="section-title">Mis Insignias</h3>
+                <button onClick={() => navigate('/badges')} className="btn-text-link">
                     Ver todas →
                 </button>
             </div>
             <div className="dashboard-badges-grid">
                 {featured.map((badge, idx) => (
-                    <div key={idx} className="glass badge-mini-card">
-                        <div className="badge-icon-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                    <div key={idx} className="glass badge-mini-card" title={badge.description}>
+                        <div className="badge-icon-container">
                             {badge.icon}
                         </div>
-                        <h5>{badge.title}</h5>
+                        <span className="badge-mini-title">{badge.title}</span>
                     </div>
                 ))}
             </div>

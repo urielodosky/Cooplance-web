@@ -21,7 +21,7 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
     const navigate = useNavigate();
     // Only use image if explicitly provided by user
     const hasImage = !!project.imageUrl;
-    const displayUsername = project.profiles?.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
+    const displayUsername = project.clientUsername || project.profiles?.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
     const avatar = project.clientAvatar || project.profiles?.avatar_url;
     const projectLevel = project.profiles?.level || 1;
 
@@ -117,6 +117,9 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                 <div className="meta-info-row">
                     <span className="category-meta">{project.category}</span>
                     {project.subcategory && <span className="subcategory-meta">{project.subcategory}</span>}
+                    {project.specialties && project.specialties.length > 0 && (
+                        <span className="extra-meta">+{project.specialties.length}</span>
+                    )}
                 </div>
 
                 <div className="modality-deadline-row">

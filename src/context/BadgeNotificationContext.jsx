@@ -21,9 +21,10 @@ export const useBadgeNotification = () => useContext(BadgeNotificationContext);
 const Icons = { Coin, Flame, Rocket, Heart, Lightning, Star, Diamond, Handshake, Eye };
 
 export const BadgeNotificationProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [queue, setQueue] = useState([]);
     const [currentNotification, setCurrentNotification] = useState(null);
+    const notifiedIds = React.useRef(new Set());
 
     // Evaluate badges to find new ones
     const checkBadgeUnlocks = useCallback(async () => {
@@ -113,21 +114,24 @@ export const BadgeNotificationProvider = ({ children }) => {
             const gamification = user.gamification || { badges: [], vacation: { active: false, credits: 4 } };
             const dbBadgeIds = gamification.badges || [];
             
-            // newlyUnlocked are those we merit NOW but aren't in the DB IDs list
-            const newlyUnlocked = currentlyUnlocked.filter(b => !dbBadgeIds.includes(b.id));
+            // newlyUnlocked are those we merit NOW but aren't in the DB IDs list AND haven't been notified yet
+            const newlyUnlocked = currentlyUnlocked.filter(b => !dbBadgeIds.includes(b.id) && !notifiedIds.current.has(b.id));
 
             if (newlyUnlocked.length > 0) {
                 console.log(`[BadgeNotificationContext] ${newlyUnlocked.length} NEW badges found! Syncing to DB...`);
                 
-                // Update User Profile gamification (DB Persistence)
-                const updatedBadges = Array.from(new Set([...dbBadgeIds, ...currentlyUnlocked.map(b => b.id)]));
-                const { error: updateError } = await supabase
-                    .from('profiles')
-                    .update({ gamification: { ...gamification, badges: updatedBadges } })
-                    .eq('id', user.id);
+                // Track these IDs locally immediately to prevent loops while DB updates
+                newlyUnlocked.forEach(b => notifiedIds.current.add(b.id));
 
-                if (updateError) {
-                    console.error("[BadgeNotificationContext] Failed to sync badges to DB:", updateError);
+                // Update User Profile gamification (Using updateUser to trigger refresh)
+                const updatedBadges = Array.from(new Set([...dbBadgeIds, ...currentlyUnlocked.map(b => b.id)]));
+                
+                try {
+                    await updateUser({ gamification: { ...gamification, badges: updatedBadges } });
+                } catch (updateError) {
+                    console.error("[BadgeNotificationContext] Failed to sync badges:", updateError);
+                    // On error, remove from notified list so we can try again
+                    newlyUnlocked.forEach(b => notifiedIds.current.delete(b.id));
                     return;
                 }
 
@@ -137,7 +141,7 @@ export const BadgeNotificationProvider = ({ children }) => {
         } catch (err) {
             console.error("[BadgeNotificationContext] checkBadgeUnlocks critical error:", err);
         }
-    }, [user]);
+    }, [user, updateUser]);
 
     // Migration Effect: Silently move localStorage badges to DB if DB is empty but LS has data
     useEffect(() => {

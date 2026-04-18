@@ -170,6 +170,7 @@ function mapFromDB(row) {
         videoUrl: row.video_url,
         clientId: row.client_id,
         clientName: row.client_name || (row.profiles?.first_name ? `${row.profiles.first_name} ${row.profiles.last_name || ''}`.trim() : row.profiles?.username),
+        clientUsername: row.profiles?.username,
         clientAvatar: row.client_avatar || row.profiles?.avatar_url,
         clientRole: row.client_role || row.profiles?.role,
         clientRating: row.profiles?.rating || 0,
