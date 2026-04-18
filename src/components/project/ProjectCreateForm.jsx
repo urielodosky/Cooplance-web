@@ -180,27 +180,34 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
     };
 
     const handleDropdownChange = (name, value) => {
-        if (name === 'category') {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value,
-                subcategories: [],
-                specialties: []
-            }));
-        } else if (name === 'contractDurationType') {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value,
-                // Clear all duration values when switching types to prevent stale data
-                executionTime: '',
-                contractDurationValue: ''
-            }));
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }));
-        }
+        setFormData(prev => {
+            let next = { ...prev, [name]: value };
+            
+            // Logic for business payment frequency vs duration
+            if (name === 'paymentFrequency') {
+                if (value === 'unique') {
+                    next.contractDurationType = 'unique';
+                    next.contractDurationValue = '1';
+                } else if (value !== 'commission' && prev.contractDurationType === 'unique') {
+                    next.contractDurationType = 'days';
+                    next.contractDurationValue = '';
+                }
+            }
+
+            // Category reset logic
+            if (name === 'category') {
+                next.subcategories = [];
+                next.specialties = [];
+            }
+
+            // Duration type reset logic
+            if (name === 'contractDurationType') {
+                next.executionTime = '';
+                next.contractDurationValue = '';
+            }
+
+            return next;
+        });
     };
 
     const handleSubcategoryToggle = (sub) => {
@@ -353,6 +360,38 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
         setIsSubmitting(true);
         setFormError('');
         setLoadingStatus('Iniciando...');
+
+        // Mandatory duration validation for companies
+        if (user?.role === 'company') {
+            const freq = formData.paymentFrequency;
+            const type = formData.contractDurationType;
+            const val = Number(formData.contractDurationValue);
+
+            if (freq !== 'unique' && freq !== 'commission') {
+                let minDays = 0;
+                if (freq === 'daily') minDays = 1;
+                if (freq === 'weekly') minDays = 7;
+                if (freq === 'biweekly') minDays = 15;
+                if (freq === 'monthly') minDays = 30;
+
+                let currentDays = val;
+                if (type === 'weeks') currentDays = val * 7;
+                if (type === 'months') currentDays = val * 30;
+                if (type === 'years') currentDays = val * 365;
+
+                if (currentDays < minDays) {
+                    const messages = {
+                        daily: 'Diario: mínimo 1 día.',
+                        weekly: 'Semanal: mínimo 7 días o 1 semana.',
+                        biweekly: 'Quincenal: mínimo 15 días o 2 semanas.',
+                        monthly: 'Mensual: mínimo 30 días o 1 mes.'
+                    };
+                    setFormError(`La duración del contrato no cumple el mínimo para la frecuencia seleccionada: ${messages[freq]}`);
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+        }
 
         try {
             let finalImageUrl = formData.imageUrl;
@@ -580,8 +619,34 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                         <div className="form-group">
                                             <label className="work-mode-label">Duración del Contrato</label>
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <CustomDropdown options={[{ value: 'unique', label: 'Única vez' }, { value: 'days', label: 'Días' }, { value: 'weeks', label: 'Semanas' }, { value: 'months', label: 'Meses' }, { value: 'years', label: 'Años' }]} value={formData.contractDurationType} onChange={(v) => handleDropdownChange('contractDurationType', v)} />
-                                                {formData.contractDurationType !== 'unique' && <input type="number" name="contractDurationValue" value={formData.contractDurationValue} onChange={handleChange} placeholder="Cant." style={{ width: '80px' }} required />}
+                                                {formData.contractDurationType !== 'unique' && (
+                                                    <input 
+                                                        type="number" 
+                                                        name="contractDurationValue" 
+                                                        value={formData.contractDurationValue} 
+                                                        onChange={handleChange} 
+                                                        placeholder="Cant." 
+                                                        style={{ width: '80px' }} 
+                                                        required 
+                                                    />
+                                                )}
+                                                <CustomDropdown 
+                                                    options={[
+                                                        { value: 'unique', label: 'Única vez' }, 
+                                                        { value: 'days', label: 'Días' }, 
+                                                        { value: 'weeks', label: 'Semanas' }, 
+                                                        { value: 'months', label: 'Meses' }, 
+                                                        { value: 'years', label: 'Años' }
+                                                    ].filter(opt => {
+                                                        if (formData.paymentFrequency === 'unique') return opt.value === 'unique';
+                                                        if (['daily', 'weekly', 'biweekly', 'monthly'].includes(formData.paymentFrequency)) return opt.value !== 'unique';
+                                                        return true;
+                                                    })} 
+                                                    value={formData.contractDurationType} 
+                                                    onChange={(v) => handleDropdownChange('contractDurationType', v)} 
+                                                    disabled={formData.paymentFrequency === 'unique'}
+                                                    style={{ flex: 1 }}
+                                                />
                                             </div>
                                         </div>
                                     </div>
