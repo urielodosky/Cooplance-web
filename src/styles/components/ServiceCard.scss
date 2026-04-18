@@ -1,22 +1,21 @@
-/* ServiceCard.scss - Premium Unified Redesign */
+/* ServiceCard.scss - Premium Compact Mockup Version */
 .service-card {
-    border-radius: 32px;
+    border-radius: 24px;
     overflow: hidden;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
-    background: var(--bg-card);
+    background: #0f172a; /* Solid dark background for card */
     height: 100%;
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     position: relative;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .service-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.15);
-    border-color: var(--primary);
+    box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.2), 0 0 20px rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.5);
 }
 
 /* Cover Image */
@@ -24,9 +23,8 @@
     width: 100%;
     aspect-ratio: 16 / 9;
     position: relative;
-    background: #0f172a;
+    background: #020617;
     overflow: hidden;
-    border-bottom: 1px solid var(--border);
 }
 
 .service-image {
@@ -37,96 +35,61 @@
 }
 
 .service-card:hover .service-image {
-    transform: scale(1.1);
-}
-
-/* Delete Button */
-.delete-service-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(239, 68, 68, 0.8);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-}
-
-.delete-service-btn:hover {
-    background: #ef4444;
-    transform: scale(1.15) rotate(90deg);
+    transform: scale(1.08);
 }
 
 /* Content Area */
 .service-content {
-    padding: 1.5rem;
+    padding: 1.25rem 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
     flex: 1;
 }
 
-/* Avatar Section Refinement */
-.profile-avatar-wrapper.small {
-    transition: transform 0.3s ease;
+/* Avatar & Identity Layout */
+.avatar-layout-row {
+    margin-bottom: 0.5rem;
 }
 
-.service-card:hover .profile-avatar-wrapper.small {
-    transform: scale(1.1) rotate(5deg);
-}
-
-.fullname-text {
+.username-text {
     transition: color 0.3s ease;
 }
 
-.service-card:hover .fullname-text {
-    color: var(--primary);
+.service-card:hover .username-text {
+    color: #8b5cf6 !important;
 }
 
-/* Meta Labels Row */
-.meta-info-row {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+/* Status Badges */
+.status-badge-compact {
+    display: inline-flex;
     align-items: center;
-    margin-top: 0.5rem;
+    justify-content: center;
 }
 
-.premium-badge-tag {
+/* Category & Modality Pills */
+.category-capsule {
     transition: all 0.3s ease;
-    border: 1px solid transparent;
 }
 
-/* Subtle Category Colors */
-:global(.category-desarrollo-y-tecnología) .premium-badge-tag { background: rgba(59, 130, 246, 0.1) !important; color: #60a5fa !important; }
-:global(.category-diseño-y-creatividad) .premium-badge-tag { background: rgba(236, 72, 153, 0.1) !important; color: #f472b6 !important; }
-:global(.category-marketing-y-contenido) .premium-badge-tag { background: rgba(16, 185, 129, 0.1) !important; color: #34d399 !important; }
-:global(.category-negocios-y-administración) .premium-badge-tag { background: rgba(251, 191, 36, 0.1) !important; color: #fbbf24 !important; }
-:global(.category-escritura-y-traducción) .premium-badge-tag { background: rgba(139, 92, 246, 0.1) !important; color: #a78bfa !important; }
-
-.project-card:hover .premium-badge-tag,
-.service-card:hover .premium-badge-tag {
-    background: var(--primary) !important;
+.service-card:hover .category-capsule {
+    background: #8b5cf6 !important;
     color: white !important;
-    transform: scale(1.05);
 }
 
-/* Modality Icon Animation */
-.modality-tag-premium {
-    transition: color 0.3s ease;
+.extra-meta-pill {
+    transition: background 0.3s ease;
 }
 
-.service-card:hover .modality-tag-premium {
-    color: var(--text-primary) !important;
+.modality-pill {
+    transition: transform 0.3s ease;
+
+    svg {
+        stroke: #8b5cf6;
+    }
+}
+
+.service-card:hover .modality-pill {
+    transform: translateX(4px);
 }
 
 /* Tooltip specialties */
@@ -136,22 +99,29 @@
 
 .tooltip-content {
     position: absolute;
-    bottom: 120%;
+    bottom: 130%;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
     background: #1e293b;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    border: 1px solid var(--border);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     width: max-content;
-    min-width: 150px;
+    min-width: 140px;
     z-index: 100;
     visibility: hidden;
     opacity: 0;
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     pointer-events: none;
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+
+    ul li {
+        color: #94a3b8;
+        font-size: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        &:last-child { border: none; }
+    }
 }
 
 .tooltip-container:hover .tooltip-content {
@@ -162,31 +132,43 @@
 
 /* Footer & Pricing */
 .service-footer-new {
-    padding: 1.25rem 1.5rem;
-    background: rgba(255, 255, 255, 0.02);
-    border-top: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.01);
 }
 
 .price-amount {
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .service-card:hover .price-amount {
-    transform: scale(1.1);
-    color: var(--primary) !important;
+    transform: scale(1.05);
 }
 
 /* Light Mode Support */
 [data-theme='light'] {
     .service-card { 
         background: #ffffff; 
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
     }
-    .service-footer-new { background: #f8fafc; }
+    .service-card:hover {
+        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.1);
+        border-color: #8b5cf6;
+    }
+    .username-text { color: #1e293b !important; }
+    .card-title { color: #0f172a !important; }
+    .card-description { color: #64748b !important; }
+    .service-footer-new { 
+        background: #f8fafc; 
+        border-top: 1px solid #f1f5f9;
+    }
+    .price-amount { color: #0f172a !important; }
     .tooltip-content { background: #ffffff; color: #1e293b; border-color: #e2e8f0; }
+    .tooltip-content ul li { color: #475569; border-color: #f1f5f9; }
+    .extra-meta-pill { background: #f1f5f9 !important; color: #64748b !important; }
+    .modality-pill { color: #475569 !important; }
 }
 
 @media (max-width: 640px) {
-    .service-card { border-radius: 24px; }
+    .service-card { border-radius: 20px; }
     .service-content { padding: 1.25rem; }
 }

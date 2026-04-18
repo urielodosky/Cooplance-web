@@ -79,60 +79,66 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
             </div>
 
             <div className="project-content">
-                <div className="avatar-layout-row">
+                <div className="avatar-layout-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div className="profile-avatar-wrapper small" style={{
-                        width: '48px', height: '48px',
-                        padding: '3px',
-                        background: 'var(--gradient-secondary, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%))',
+                        width: '44px', height: '44px',
                         borderRadius: '50%',
+                        overflow: 'hidden',
+                        background: 'var(--bg-card-hover)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         flexShrink: 0
                     }}>
-                        <div style={{
-                            width: '100%', height: '100%',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            border: '2px solid var(--bg-card)',
-                            background: 'var(--bg-card)'
-                        }}>
-                            <img
-                                src={getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })}
-                                alt={project.clientName}
-                                className="clickable"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/${project.clientRole === 'company' ? 'company' : 'client'}/${project.clientId || project.authorId}`);
-                                }}
-                            />
-                        </div>
+                        <img
+                            src={getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })}
+                            alt={project.clientName}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
                     </div>
-                    <div className="avatar-details-col">
-                        <div className="username-row">
-                            <span className="username-text" style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.05rem' }}>@{displayUsername}</span>
+                    <div className="avatar-details-col" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div className="username-row" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span className="username-text" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>@{displayUsername}</span>
                         </div>
-                        <div className="name-level-row" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                            <span className="fullname-text" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{project.clientName || 'Usuario'}</span>
-                            <span className="level-badge-compact" style={{ 
-                                fontSize: '0.7rem', 
-                                background: 'rgba(59, 130, 246, 0.1)', 
-                                color: '#3b82f6', 
-                                padding: '1px 8px', 
-                                borderRadius: '6px',
-                                fontWeight: 700
-                            }}>Nivel {projectLevel}</span>
+                        <div className="status-info-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="level-dot-text" style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>• Nivel {projectLevel}</span>
+                            {projectLevel === 1 && (
+                                <span className="status-badge-compact new" style={{ 
+                                    fontSize: '0.7rem', 
+                                    background: 'rgba(59, 130, 246, 0.1)', 
+                                    color: '#3b82f6', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '12px',
+                                    fontWeight: 700,
+                                    lineHeight: '1'
+                                }}>Primer Pedido</span>
+                            )}
+                            {projectLevel === 10 && (
+                                <span className="status-badge-compact expert" style={{ 
+                                    fontSize: '0.7rem', 
+                                    background: 'rgba(251, 191, 36, 0.1)', 
+                                    color: '#fbbf24', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '12px',
+                                    fontWeight: 700,
+                                    lineHeight: '1'
+                                }}>Cliente Experto</span>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                <div className="title-desc-section" style={{ margin: '1.25rem 0' }}>
-                    <h3 className="card-title" style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 800 }}>{project.title}</h3>
-                    <p className="card-description" style={{ fontSize: '0.9rem', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{project.description}</p>
+                <div className="title-desc-section" style={{ marginTop: '1rem', marginBottom: '0.75rem' }}>
+                    <h3 className="card-title" style={{ fontSize: '1.2rem', marginBottom: '0.25rem', fontWeight: 800 }}>{project.title}</h3>
+                    <p className="card-description" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{project.description}</p>
                 </div>
 
-                <div className="meta-info-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div className="premium-badge-tag" style={{ background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>{project.category}</div>
+                <div className="meta-info-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="category-capsule" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700 }}>
+                        {project.category}
+                    </div>
                     
-                    <div className="modality-tag-premium" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    <div className="modality-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                         {project.workMode === 'presential' ? (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
                         ) : (
@@ -142,7 +148,7 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                     </div>
 
                     {project.specialties && project.specialties.length > 0 && (
-                        <div className="extra-meta tooltip-container" style={{ background: 'var(--bg-card-hover)', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, cursor: 'help' }}>
+                        <div className="extra-meta-pill tooltip-container" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, cursor: 'help' }}>
                             +{project.specialties.length}
                             <div className="tooltip-content">
                                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -154,15 +160,24 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                 </div>
             </div>
 
-            <div className="project-footer-new" style={{ marginTop: 'auto', borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div className="project-footer-new" style={{ padding: '12px 1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                 <div className="timeline-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{getTimeAgo(project.createdAt)}</span>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ef4444' }}>Expira: {formatDate(project.deadline)}</span>
                 </div>
-                <div className="price-info">
-                    <div className="price-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                        <span className="price-amount" style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>${project.budget} ARS</span>
-                        {project.budgetType === 'negotiable' && <span className="negotiable-tag" style={{ fontSize: '0.7rem', color: 'var(--secondary)', fontWeight: 800, textTransform: 'uppercase' }}>Negociable</span>}
+                <div className="price-info" style={{ textAlign: 'right' }}>
+                    <div className="price-amount" style={{ color: 'white', fontWeight: 800, fontSize: '1.25rem' }}>
+                        ${project.budget} ARS
+                    </div>
+                    <div className="price-status" style={{ 
+                        fontSize: '0.65rem', 
+                        color: project.budgetType === 'negotiable' ? 'var(--secondary)' : 'var(--text-muted)', 
+                        fontWeight: 800, 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.5px', 
+                        marginTop: '-2px' 
+                    }}>
+                        {project.budgetType === 'negotiable' ? 'Negociable' : 'Fijo'}
                     </div>
                 </div>
             </div>

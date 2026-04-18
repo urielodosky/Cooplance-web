@@ -16,10 +16,11 @@ const getMatchScore = (item, query, semanticMap = {}) => {
 
     const q = query.toLowerCase();
     const title = (item.title || '').toLowerCase();
-    const category = (item.category || '').toLowerCase();
-    const subcategories = (item.subcategories || []).map(s => s.toLowerCase());
+    const subcategoriesRaw = item.subcategories || item.subcategory || [];
+    const subcategories = (Array.isArray(subcategoriesRaw) ? subcategoriesRaw : [subcategoriesRaw]).map(s => String(s).toLowerCase());
     const description = (item.description || '').toLowerCase();
-    const tags = (item.tags || []).map(t => t.toLowerCase());
+    const tagsRaw = item.tags || [];
+    const tags = (Array.isArray(tagsRaw) ? tagsRaw : [tagsRaw]).map(t => String(t).toLowerCase());
 
     // 1. Exact Title Match (Highest Priority)
     if (title === q) return 150;
@@ -92,8 +93,8 @@ export const searchAndFilterItems = (items, filters = {}) => {
             const filterSpecs = filters.specialties;
 
             // Normalize item specialties/subcategories to array to support old data
-            const itemSpecs = item.specialties || item.subcategories || item.subcategory || [];
-            const itemSpecsArray = Array.isArray(itemSpecs) ? itemSpecs : [itemSpecs];
+            const itemSpecsRaw = item.specialties || item.subcategories || item.subcategory || [];
+            const itemSpecsArray = Array.isArray(itemSpecsRaw) ? itemSpecsRaw : [itemSpecsRaw];
 
             // Filter down: item must have basically ANY of the selected specialties to show up
             const hasMatch = filterSpecs.some(spec => itemSpecsArray.includes(spec));
@@ -228,8 +229,8 @@ export const searchAndFilterItems = (items, filters = {}) => {
     if (filters.specialties && filters.specialties.length > 0) {
         const filterSpecs = filters.specialties;
         result = result.map(item => {
-            const itemSpecs = item.specialties || item.subcategories || item.subcategory || [];
-            const itemSpecsArray = Array.isArray(itemSpecs) ? itemSpecs : [itemSpecs];
+            const itemSpecsRaw = item.specialties || item.subcategories || item.subcategory || [];
+            const itemSpecsArray = Array.isArray(itemSpecsRaw) ? itemSpecsRaw : [itemSpecsRaw];
 
             // Count how many filter specialties are present in the item
             const matchCount = filterSpecs.filter(spec => itemSpecsArray.includes(spec)).length;
