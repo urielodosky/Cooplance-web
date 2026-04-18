@@ -107,18 +107,20 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                         </div>
                     </div>
                     <div className="avatar-details-col">
-                        <div className="name-level-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span className="fullname-text" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{project.clientName || 'Usuario'}</span>
+                        <div className="username-row">
+                            <span className="username-text" style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.05rem' }}>@{displayUsername}</span>
+                        </div>
+                        <div className="name-level-row" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                            <span className="fullname-text" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{project.clientName || 'Usuario'}</span>
                             <span className="level-badge-compact" style={{ 
                                 fontSize: '0.7rem', 
                                 background: 'rgba(59, 130, 246, 0.1)', 
                                 color: '#3b82f6', 
-                                padding: '2px 8px', 
+                                padding: '1px 8px', 
                                 borderRadius: '6px',
                                 fontWeight: 700
                             }}>Nivel {projectLevel}</span>
                         </div>
-                        <span className="username-text" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>@{displayUsername}</span>
                     </div>
                 </div>
 

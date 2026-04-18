@@ -117,18 +117,20 @@ const ServiceCard = ({ service }) => {
                         </div>
                     </div>
                     <div className="avatar-details-col">
-                        <div className="name-level-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span className="fullname-text" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{service.freelancerName}</span>
+                        <div className="username-row">
+                            <span className="username-text" style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1rem' }}>@{displayUsername}</span>
+                        </div>
+                        <div className="name-level-row" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                            <span className="fullname-text" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{service.freelancerName}</span>
                             <span className="level-badge-compact" style={{ 
-                                fontSize: '0.7rem', 
+                                fontSize: '0.65rem', 
                                 background: 'rgba(139, 92, 246, 0.1)', 
                                 color: 'var(--primary)', 
-                                padding: '2px 8px', 
-                                borderRadius: '6px',
+                                padding: '1px 7px', 
+                                borderRadius: '5px',
                                 fontWeight: 700
                             }}>Nivel {displayLevel}</span>
                         </div>
-                        <span className="username-text" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>@{displayUsername}</span>
                     </div>
                 </div>
 
