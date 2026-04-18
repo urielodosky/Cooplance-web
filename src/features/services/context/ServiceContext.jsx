@@ -54,6 +54,7 @@ const mapFromDB = (row) => {
                 : (row.profiles.username || 'Usuario'))
             : 'Usuario',
         freelancerAvatar: row.profiles?.avatar_url || null,
+        freelancerUsername: row.profiles?.username || null,
         level: row.profiles?.level || 1,
         date: row.created_at,
         createdAt: row.created_at,

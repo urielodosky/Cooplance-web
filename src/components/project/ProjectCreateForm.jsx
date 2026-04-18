@@ -230,7 +230,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                 const newSpecs = (prev.specialties || []).filter(spec => !subSpecialties.includes(spec));
                 return { ...prev, subcategories: newSubs, specialties: newSpecs };
             } else {
-                if (current.length >= 3) return prev; // Max 3
+                if (current.length >= 1) return prev; // Max 1
                 return { ...prev, subcategories: [...current, sub] };
             }
         });
@@ -242,7 +242,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
             if (current.includes(spec)) {
                 return { ...prev, specialties: current.filter(s => s !== spec) };
             } else {
-                if (current.length >= 5) return prev; // Max 5 specialties
+                if (current.length >= 3) return prev; // Max 3 specialties
                 return { ...prev, specialties: [...current, spec] };
             }
         });
@@ -560,7 +560,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                             {/* SUBCATEGORY SELECTION */}
                             {formData.category && (
                                 <div className="form-group fade-in">
-                                    <label className="work-mode-label">Subcategorías (Max 3)</label>
+                                    <label className="work-mode-label">Subcategorías (Max 1)</label>
                                     <div className="category-grid">
                                         {Object.keys(serviceCategories[formData.category] || {}).map(sub => (
                                             <div 
@@ -578,7 +578,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                             {/* SPECIALTIES SELECTION */}
                             {formData.category && (formData.subcategories || []).length > 0 && (
                                 <div className="form-group fade-in">
-                                    <label className="work-mode-label">Especialidades (Max 5)</label>
+                                    <label className="work-mode-label">Especialidades (Max 3)</label>
                                     <div className="category-grid">
                                         {(formData.subcategories || []).flatMap(sub => serviceCategories[formData.category][sub] || []).map(spec => (
                                             <div 

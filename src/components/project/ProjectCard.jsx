@@ -19,8 +19,6 @@ const getTimeAgo = (timestamp) => {
 
 const ProjectCard = ({ project, onApply, onDelete }) => {
     const navigate = useNavigate();
-    // Only use image if explicitly provided by user
-    const hasImage = !!project.imageUrl;
     const displayUsername = project.clientUsername || project.profiles?.username || project.clientName?.replace(/\s+/g, '_').toLowerCase() || 'usuario';
     const avatar = project.clientAvatar || project.profiles?.avatar_url;
     const projectLevel = project.profiles?.level || 1;
@@ -42,8 +40,18 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
         return null;
     };
 
+    const formatDate = (dateStr) => {
+        if (!dateStr) return 'No definida';
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+        } catch (e) {
+            return dateStr;
+        }
+    };
+
     return (
-        <div className="project-card clickable" onClick={handleClick} style={{ position: 'relative' }}>
+        <div className={`project-card clickable category-${(project.category || '').toLowerCase().replace(/\s+/g, '-')}`} onClick={handleClick}>
             {/* Delete Button for Owners */}
             {onDelete && (
                 <button 
@@ -75,67 +83,67 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                     <img
                         src={getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })}
                         alt={project.clientName}
-                        className="avatar-img clickable"
+                        className="avatar-img round clickable"
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (project.clientRole === 'company') {
-                                navigate(`/company/${project.clientId || project.authorId}`);
-                            } else {
-                                navigate(`/client/${project.clientId || project.authorId}`);
-                            }
+                            navigate(`/${project.clientRole === 'company' ? 'company' : 'client'}/${project.clientId || project.authorId}`);
                         }}
                     />
                     <div className="avatar-details-col">
-                        <div className="username-badge-row">
-                            <span
-                                className="username-text clickable"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (project.clientRole === 'company') {
-                                        navigate(`/company/${project.clientId || project.authorId}`);
-                                    } else {
-                                        navigate(`/client/${project.clientId || project.authorId}`);
-                                    }
-                                }}
-                            >
-                                {displayUsername}
-                            </span>
+                        <span className="username-text">{displayUsername}</span>
+                        <div className="name-level-row">
+                            <span className="fullname-text">{project.clientName || 'Usuario'}</span>
+                            <span className="level-dot">•</span>
+                            <span className="level-number">Nivel {projectLevel}</span>
                             {renderLevelBadge()}
                         </div>
-                        <span className="fullname-text">{project.clientName || 'Usuario'}</span>
-                        <span className="level-text">Nivel {projectLevel}</span>
                     </div>
                 </div>
 
                 <div className="title-desc-section">
                     <h3 className="card-title">{project.title}</h3>
-                    <p className="card-description">
-                        {project.description}
-                    </p>
+                    <p className="card-description">{project.description}</p>
                 </div>
 
                 <div className="meta-info-row">
-                    <span className="category-meta">{project.category}</span>
-                    {project.subcategory && <span className="subcategory-meta">{project.subcategory}</span>}
-                    {project.specialties && project.specialties.length > 0 && (
-                        <span className="extra-meta">+{project.specialties.length}</span>
+                    <div className="subtle-badge category-badge">{project.category}</div>
+                    {project.subcategory && (
+                        <div className="subtle-badge subcategory-badge">{project.subcategory}</div>
                     )}
-                </div>
+                    
+                    <div className="modality-tag">
+                        {project.workMode === 'presential' ? (
+                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                        ) : (
+                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0a2 2 0 0 1 2 2v1H2v-1a2 2 0 0 1 2-2"/></svg>
+                        )}
+                        <span>{project.workMode === 'presential' ? 'Presencial' : 'Remoto'}</span>
+                    </div>
 
-                <div className="modality-deadline-row">
-                    <span className={`modality-text ${project.workMode === 'presential' ? 'presential' : 'remote'}`}>
-                        {project.workMode === 'presential' ? 'Presencial' : 'Remoto'}
-                    </span>
-                    <span className="deadline-text">
-                        {project.deadline || getTimeAgo(project.createdAt)}
-                    </span>
+                    {project.specialties && project.specialties.length > 0 && (
+                        <div className="extra-meta tooltip-container">
+                            +{project.specialties.length}
+                            <div className="tooltip-content">
+                                <ul>
+                                    {project.specialties.map((s, idx) => <li key={idx}>{s}</li>)}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="project-footer-new">
-                <div className="price-tag-col">
-                    <span className="price-amount">${project.budget} ARS</span>
-                    {project.budgetType === 'negotiable' && <span className="negotiable-label">(negociable)</span>}
+                <div className="timeline-info">
+                    <span className="published-date">{getTimeAgo(project.createdAt)}</span>
+                    <span className="separator">•</span>
+                    <span className="expiry-date">Expira: {formatDate(project.deadline)}</span>
+                </div>
+                <div className="price-info">
+                    <div className="price-row">
+                        <span className="price-amount">${project.budget} ARS</span>
+                        {project.budgetType === 'negotiable' && <span className="negotiable-tag">Negociable</span>}
+                    </div>
                 </div>
             </div>
         </div>

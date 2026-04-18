@@ -446,7 +446,7 @@ const SidebarFilter = ({ onFilterChange, filters, variant = 'default' }) => {
                                 }
                                 return [];
                             })()}
-                            value={currentFilters.subcategory || ''}
+                            value={typeof currentFilters.subcategory === 'string' ? currentFilters.subcategory : ''}
                             onChange={(val) => handleChange('subcategory', val)}
                             placeholder="Todas"
                         />

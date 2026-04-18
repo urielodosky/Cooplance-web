@@ -19,19 +19,10 @@ const ServiceCard = ({ service }) => {
     const rating = service.rating || 0;
     const reviewCount = service.reviewCount || 0;
 
-    // Fetch fresh user data to ensure latest gamification (and username) is displayed
-    const getFreelancerDetails = () => {
-        try {
-            const allUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
-            return allUsers.find(u => u.id === service.freelancerId) || {};
-        } catch (e) {
-            return {};
-        }
-    };
-    const fUser = getFreelancerDetails();
-    const displayUsername = fUser.username || service.freelancerName?.replace(/\s+/g, '_').toLowerCase();
-    const displayLevel = Math.min(10, Math.max(1, fUser.level || service.level || 1));
-    const avatar = fUser.avatar || service.freelancerAvatar;
+    // Prioritize the real username from the mapped service data (Supabase)
+    const displayUsername = service.freelancerUsername || service.freelancerName?.replace(/\s+/g, '_').toLowerCase();
+    const displayLevel = Math.min(10, Math.max(1, service.level || 1));
+    const avatar = service.freelancerAvatar;
 
     const isTopLevel = displayLevel >= 10;
     const isNewTalent = displayLevel <= 2;
@@ -57,14 +48,10 @@ const ServiceCard = ({ service }) => {
     };
 
     return (
-        <div
-            className="service-card clickable"
-            onClick={() => navigate(`/service/${service.id}`)}
-            style={getCardStyle()}
-        >
+        <div className={`service-card clickable category-${(service.category || '').toLowerCase().replace(/\s+/g, '-')}`} onClick={() => navigate(`/service/${service.id}`)}>
             <div className="service-image-container">
                 <img 
-                    src={service.image || service.image_url || service.imageUrl} 
+                    src={service.image || service.image_url || service.imageUrl || 'https://ui-avatars.com/api/?name=Service&background=0a0a1a&color=6366f1&size=512'} 
                     alt={service.title} 
                     className="service-image" 
                     onError={(e) => {
@@ -100,63 +87,70 @@ const ServiceCard = ({ service }) => {
             <div className="service-content">
                 <div className="avatar-layout-row">
                     <img
-                        src={getProfilePicture(fUser.id ? { ...fUser, role: 'freelancer' } : { 
+                        src={getProfilePicture({ 
                             role: 'freelancer', 
                             avatar: avatar || service.freelancerAvatar || service.avatar_url, 
-                            gender: fUser.gender || 'male',
                             username: displayUsername
                         })}
                         alt={service.freelancerName}
-                        className="avatar-img"
+                        className="avatar-img round clickable"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/freelancer/${service.freelancerId}`);
+                        }}
                     />
                     <div className="avatar-details-col">
-                        <div className="username-badge-row">
-                            <span className="username-text" style={highlightColor ? { color: highlightColor } : {}}>
-                                {displayUsername}
-                            </span>
+                        <span className="username-text">@{displayUsername}</span>
+                        <div className="name-level-row">
+                            <span className="fullname-text">{service.freelancerName}</span>
+                            <span className="level-dot">•</span>
+                            <span className="level-number">Nivel {displayLevel}</span>
                             {renderLevelBadge()}
                         </div>
-                        <span className="fullname-text">{service.freelancerName}</span>
-                        <span className="level-text" style={highlightColor ? { color: highlightColor } : {}}>
-                            Nivel {displayLevel}
-                        </span>
                     </div>
                 </div>
 
                 <div className="title-desc-section">
                     <h4 className="card-title">{service.title}</h4>
-                    <p className="card-description">
-                        {service.description || 'Sin descripción disponible.'}
-                    </p>
+                    <p className="card-description">{service.description || 'Sin descripción disponible.'}</p>
                 </div>
 
                 <div className="meta-info-row">
-                    <span className="category-meta">{service.category}</span>
-                    <span className="subcategory-meta">{service.subcategory}</span>
-                    {(() => {
-                        const rawSpecs = service.specialties || [];
-                        const specs = Array.isArray(rawSpecs) ? rawSpecs : [];
-                        if (specs.length > 0) return <span className="extra-meta">+{specs.length}</span>;
-                        return null;
-                    })()}
-                </div>
+                    <div className="subtle-badge category-badge">{service.category}</div>
+                    {service.subcategory && (
+                        <div className="subtle-badge subcategory-badge">{service.subcategory}</div>
+                    )}
+                    
+                    <div className="modality-tag">
+                        {service.workMode === 'presential' ? (
+                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+                        ) : (
+                            <svg className="modality-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0a2 2 0 0 1 2 2v1H2v-1a2 2 0 0 1 2-2"/></svg>
+                        )}
+                        <span>{service.workMode === 'presential' ? 'Presencial' : 'Remoto'}</span>
+                    </div>
 
-                <div className="modality-deadline-row">
-                    <span className={`modality-text ${service.workMode?.includes('presential') ? 'presential' : 'remote'}`}>
-                        {service.workMode?.includes('presential') ? 'Presencial' : 'Remoto'}
-                    </span>
-                    <span className="deadline-text">
-                        {(() => {
-                            const time = service.deliveryTime || '3';
-                            return `${time} ${time == 1 ? 'día' : 'días'}`;
-                        })()}
-                    </span>
+                    {service.specialties && service.specialties.length > 0 && (
+                        <div className="extra-meta tooltip-container">
+                            +{service.specialties.length}
+                            <div className="tooltip-content">
+                                <ul>
+                                    {service.specialties.map((s, idx) => <li key={idx}>{s}</li>)}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="service-footer-new">
-                <div className="price-tag-col">
-                    <span className="price-amount">${service.price} ARS</span>
+                <div className="delivery-info">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Entrega: {service.deliveryTime || 3} días</span>
+                </div>
+                <div className="price-info">
+                    <span className="price-amount">${service.price || service.budget} ARS</span>
+                    <span className="price-type">Fijo</span>
                 </div>
             </div>
         </div>
