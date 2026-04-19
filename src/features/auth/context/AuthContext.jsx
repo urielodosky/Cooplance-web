@@ -231,6 +231,31 @@ export const AuthProvider = ({ children }) => {
             return { valid: false, error: 'Fallo al validar tutor. Intenta de nuevo.' };
         }
     };
+    
+    // ─── SPENDING LIMITS (V38) ──────────────────────────────────────────────
+    const fetchMonthlySpend = async (userId) => {
+        if (!userId) return 0;
+        try {
+            // Get first day of current month
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+            const { data, error } = await supabase
+                .from('transactions')
+                .select('amount')
+                .eq('user_id', userId)
+                .eq('type', 'expense')
+                .gte('created_at', firstDay);
+
+            if (error) throw error;
+
+            const total = (data || []).reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
+            return total;
+        } catch (err) {
+            console.error('[AuthContext] fetchMonthlySpend error:', err);
+            return 0;
+        }
+    };
 
     // ─── MIRROR MODE LOGIC (V27) ───────────────────────────────────────────
     const enterMirrorMode = async (minorId) => {
@@ -781,6 +806,7 @@ export const AuthProvider = ({ children }) => {
             updateBalance, checkUserExists, deleteAccount, 
             verifyOtp, resendOtp, loginVerifyOtp,
             validateParent, enterMirrorMode, exitMirrorMode,
+            fetchMonthlySpend,
             isTutorView, supervisedUser,
             resetPassword, updatePassword
         }}>

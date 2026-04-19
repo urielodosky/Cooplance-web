@@ -31,8 +31,10 @@ const Settings = () => {
     const fileInputRef = useRef(null);
     const cvInputRef = useRef(null);
     const [cvFile, setCvFile] = useState(user?.cv_url || '');
+    const [minors, setMinors] = useState([]); // V38: For parents
+    const [monthlySpend, setMonthlySpend] = useState(0); // V38: For minors
+    const { fetchMonthlySpend } = useAuth();
 
-    // Sync state with user object when it changes (e.g. after update or load)
     React.useEffect(() => {
         if (user) {
             setUsername(user.username || '');
@@ -51,8 +53,42 @@ const Settings = () => {
             setCuilCuit(user.cuil_cuit || '');
             setDob(user.dob || '');
             setPhone(user.phone || '');
+
+            // V38: Fetch minor related data
+            const loadParentalData = async () => {
+                // If Parent: Load supervised accounts
+                const { data: minorsList } = await supabase.from('profiles').select('*').eq('parent_id', user.id);
+                if (minorsList) setMinors(minorsList);
+
+                // If Minor: Load current spend
+                if (user.role === 'buyer' && user.dob) {
+                    const birthDate = new Date(user.dob);
+                    const age = new Date().getFullYear() - birthDate.getFullYear();
+                    if (age < 18) {
+                        const spend = await fetchMonthlySpend(user.id);
+                        setMonthlySpend(spend);
+                    }
+                }
+            };
+            loadParentalData();
         }
     }, [user]);
+
+    const handleUpdateMinorLimit = async (minorId, newLimit) => {
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ monthly_spending_limit: newLimit, is_limit_custom: true })
+                .eq('id', minorId);
+
+            if (error) throw error;
+            setMessage({ text: 'Límite de gasto actualizado para tu tutorado.', type: 'success' });
+            setMinors(prev => prev.map(m => m.id === minorId ? { ...m, monthly_spending_limit: newLimit } : m));
+        } catch (err) {
+            console.error("Error updating minor limit:", err);
+            setMessage({ text: 'Fallo al actualizar límite.', type: 'error' });
+        }
+    };
 
     if (authLoading && !user) {
         return (
@@ -440,6 +476,93 @@ const Settings = () => {
                         </div>
                     )}
                 </div>
+
+                {/* V38: Spending Limit section for Minors */}
+                {user.role === 'buyer' && user.dob && (() => {
+                    const birthDate = new Date(user.dob);
+                    let age = new Date().getFullYear() - birthDate.getFullYear();
+                    const monthDiff = new Date().getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate())) age--;
+                    
+                    if (age < 18) {
+                        const limit = user.parent_id ? (user.monthly_spending_limit || 50000) : 50000;
+                        const percent = Math.min(100, (monthlySpend / limit) * 100);
+                        
+                        return (
+                            <div className="glass settings-section" style={{ padding: '1.5rem', marginBottom: '2rem', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid var(--primary-low)' }}>
+                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.1rem' }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    Límite de Gasto Mensual
+                                </h3>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                                    {user.parent_id 
+                                        ? "Tu gasto está siendo supervisado por un adulto responsable." 
+                                        : "Cuentas no supervisadas tienen un límite de 50,000 ARS por mes."}
+                                </p>
+                                
+                                <div style={{ marginTop: '1.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                        <span>Consumido: <strong>${monthlySpend.toLocaleString()}</strong></span>
+                                        <span>Límite: <strong>${limit.toLocaleString()}</strong></span>
+                                    </div>
+                                    <div style={{ height: '8px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', width: `${percent}%`, background: percent > 90 ? '#ef4444' : percent > 70 ? '#f59e0b' : 'var(--primary)', transition: 'width 0.5s ease' }}></div>
+                                    </div>
+                                    {percent > 90 && (
+                                        <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 600 }}>
+                                            ⚠️ Estás por alcanzar tu límite.
+                                        </p>
+                                    )}
+                                </div>
+                                {!user.parent_id && (
+                                    <button 
+                                        onClick={() => setMessage({ text: 'Para aumentar tu límite, vincula un tutor en Ajustes > Cuenta.', type: 'info' })}
+                                        style={{ marginTop: '1rem', background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                                    >
+                                        ¿Cómo aumentar mi límite?
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
+
+                {/* V38: Parental Controls for Parents */}
+                {minors.length > 0 && (
+                    <div className="glass settings-section" style={{ padding: '1.5rem', marginBottom: '2rem', border: '1px solid rgba(16, 185, 129, 0.2)', background: 'rgba(16, 185, 129, 0.03)' }}>
+                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.1rem' }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            Control Parental ({minors.length}/2)
+                        </h3>
+                        <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {minors.map(minor => (
+                                <div key={minor.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <img src={getProfilePicture(minor)} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                                        <div>
+                                            <p style={{ margin: 0, fontWeight: 600 }}>{minor.username}</p>
+                                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Límite: ${minor.monthly_spending_limit?.toLocaleString() || '50,000'}</p>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <select 
+                                            value={minor.monthly_spending_limit || 50000} 
+                                            onChange={(e) => handleUpdateMinorLimit(minor.id, parseInt(e.target.value))}
+                                            style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
+                                        >
+                                            <option value="10000">$10.000</option>
+                                            <option value="25000">$25.000</option>
+                                            <option value="50000">$50.000 (Default)</option>
+                                            <option value="100000">$100.000</option>
+                                            <option value="999999999">Ilimitado</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="settings-section">
                     <form onSubmit={handleUpdateProfile}>

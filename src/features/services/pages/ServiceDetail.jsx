@@ -18,7 +18,7 @@ const ServiceDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { services, deleteService } = useServices();
-    const { user, updateBalance } = useAuth();
+    const { user, updateBalance, fetchMonthlySpend } = useAuth();
     const { createJob } = useJobs();
 
     const service = services.find(s => String(s.id) === String(id));
@@ -147,6 +147,18 @@ const ServiceDetail = () => {
             return;
         }
 
+        // V38: Check for minor spending restrictions (unsupervised)
+        if (user.role === 'buyer' && user.dob) {
+            const birthDate = new Date(user.dob);
+            const age = new Date().getFullYear() - birthDate.getFullYear();
+            const isMinor = age < 18;
+            
+            if (isMinor && !user.parent_id) {
+                // Warning for unsupervised minors about potential limits
+                console.log("[ServiceDetail] Unsupervised minor detected. Spending limit (50k) will be enforced at checkout.");
+            }
+        }
+
         if (service?.bookingConfig?.requiresBooking && (!selectedBooking.date || !selectedBooking.time)) {
             alert('Por favor, selecciona una fecha y horario disponible para el turno antes de continuar.');
             return;
@@ -155,9 +167,48 @@ const ServiceDetail = () => {
         setShowPaymentModal(true);
     };
 
-    const handlePaymentSuccess = () => {
-        const price = selectedTierForPayment ? selectedTierForPayment.price : service.price;
-        const deliveryTime = selectedTierForPayment ? selectedTierForPayment.deliveryTime : service.deliveryTime;
+    const handlePaymentSuccess = async () => {
+        // V38: Final Spending Limit Validation
+        if (user.role === 'buyer' && user.dob) {
+            const birthDate = new Date(user.dob);
+            const currentYear = new Date().getFullYear();
+            const birthYear = birthDate.getFullYear();
+            let age = currentYear - birthYear;
+            
+            // Precise age calculation
+            const monthDiff = new Date().getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            const isMinor = age < 18;
+
+            if (isMinor) {
+                // If the user HAS a parent_id, the limit is what the parent set (profile.monthly_spending_limit)
+                // If the user NO has a parent_id, the limit is the hard platform limit of 50,000.
+                const limit = user.parent_id ? (user.monthly_spending_limit || 50000) : 50000;
+                
+                try {
+                    const currentMonthSpend = await fetchMonthlySpend(user.id);
+                    const totalAfterPurchase = currentMonthSpend + service.price;
+
+                    if (totalAfterPurchase > limit) {
+                        if (user.parent_id) {
+                            alert(`Has alcanzado el límite de gasto mensual configurado por tu tutor ($${limit}). No puedes realizar esta compra.`);
+                        } else {
+                            alert("Has alcanzado el límite de transacciones para cuentas no supervisadas. Para continuar, vinculá a un Adulto Responsable en tu perfil.");
+                        }
+                        setShowPaymentModal(false);
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Spending limit check failed:", err);
+                }
+            }
+        }
+
+        const price = service.price; 
+        const deliveryTime = service.deliveryTime;
 
         if (user.balance < price) {
             alert("Fondos insuficientes. Por favor recarga tu billetera.");

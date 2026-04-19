@@ -287,27 +287,31 @@ const Register = () => {
             return;
         }
 
-        // V27: Parental Validation for Minors (16-17)
-        if (role !== 'company' && calculatedAge !== null && calculatedAge < 18) {
-            if (!formData.parentEmail) {
-                setParentValidationError("El email del padre/tutor es obligatorio para menores de 18 años.");
+        // V27/V38: Parental Validation for Minors (16-17)
+        if (calculatedAge !== null && calculatedAge >= 16 && calculatedAge < 18) {
+            // Mandatory for freelancers
+            if (role === 'freelancer' && !formData.parentEmail) {
+                setParentValidationError("El email del padre/tutor es obligatorio para freelancers menores de 18 años.");
                 alert("Se requiere el email de un adulto responsable.");
                 return;
             }
             
-            setIsValidatingParent(true);
-            setLoading(true);
-            const parentResult = await validateParent(formData.parentEmail);
-            setIsValidatingParent(false);
-            
-            if (!parentResult.valid) {
-                setParentValidationError(parentResult.error);
-                alert(`Error de Tutor: ${parentResult.error}`);
-                setLoading(false);
-                return;
+            // Optional but recommended for buyers - only validate if provided
+            if (formData.parentEmail) {
+                setIsValidatingParent(true);
+                setLoading(true);
+                const parentResult = await validateParent(formData.parentEmail);
+                setIsValidatingParent(false);
+                
+                if (!parentResult.valid) {
+                    setParentValidationError(parentResult.error);
+                    alert(`Error de Tutor: ${parentResult.error}`);
+                    setLoading(false);
+                    return;
+                }
+                // Save parentId for registration payload
+                formData.parentId = parentResult.parentId;
             }
-            // Save parentId for registration payload
-            formData.parentId = parentResult.parentId;
         }
 
         // Password validation
@@ -614,11 +618,20 @@ const Register = () => {
                                 </div>
                             )}
 
-                            {/* V27: Parental Email for Minors (16, 17 years) */}
-                            {role !== 'company' && calculatedAge !== null && calculatedAge < 18 && (
-                                <div className="form-group" style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem', color: '#ef4444' }}>
-                                        Autorización Parental Requerida
+                            {/* V27/V38: Parental Email for Minors (16-17 years) */}
+                            {calculatedAge !== null && calculatedAge >= 16 && calculatedAge < 18 && role !== 'company' && (
+                                <div 
+                                    className="form-group" 
+                                    style={{ 
+                                        marginBottom: '1rem', 
+                                        padding: '1rem', 
+                                        background: role === 'freelancer' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)', 
+                                        borderRadius: '8px', 
+                                        border: `1px solid ${role === 'freelancer' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'}` 
+                                    }}
+                                >
+                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem', color: role === 'freelancer' ? '#ef4444' : '#3b82f6' }}>
+                                        {role === 'freelancer' ? 'Autorización Parental Requerida' : 'Supervisión Parental (Recomendado)'}
                                     </p>
                                     <input
                                         type="email"
@@ -626,11 +639,13 @@ const Register = () => {
                                         value={formData.parentEmail}
                                         placeholder="Email de tu Padre, Madre o Tutor"
                                         onChange={handleChange}
-                                        required
+                                        required={role === 'freelancer'}
                                         style={{ margin: 0, height: '45px', width: '100%' }}
                                     />
                                     <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: '#6b7280' }}>
-                                        * El tutor debe ser un Freelancer mayor de 18 años registrado en Cooplance.
+                                        {role === 'freelancer' 
+                                            ? '* El tutor debe ser un Freelancer mayor de 18 años registrado en Cooplance.'
+                                            : '* Recomendado. Vincular un tutor elimina el límite de gasto mensual y permite contratar servicios presenciales.'}
                                     </p>
                                     {parentValidationError && (
                                         <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.5rem' }}>
