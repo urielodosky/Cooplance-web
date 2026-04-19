@@ -146,22 +146,27 @@ const ServiceCard = ({ service }) => {
                 </div>
 
                 <div className="meta-info-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div className="category-capsule" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700 }}>
-                        {service.category}
-                    </div>
-                    
-                    {service.specialties && service.specialties.length > 0 && (
-                        <div className="extra-meta-pill tooltip-container" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, cursor: 'help' }}>
-                            {service.subcategory || service.specialties[0]} {service.specialties.length > 1 && `+${service.specialties.length - 1}`}
-                            <div className="tooltip-content">
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                    {service.specialties.map((s, idx) => <li key={idx} style={{ padding: '2px 0' }}>{s}</li>)}
-                                </ul>
-                            </div>
+                    <div className="category-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div className="category-capsule" style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700 }}>
+                            {service.category}
                         </div>
-                    )}
+                        
+                        {(service.subcategory || (service.specialties && service.specialties.length > 0)) && (
+                            <div className="subcategory-capsule tooltip-container" style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, cursor: 'help' }}>
+                                {service.subcategory || service.specialties[0]} 
+                                {service.specialties && service.specialties.length > 0 && (
+                                    <span style={{ marginLeft: '4px', color: 'var(--text-primary)' }}>+{service.specialties.length}</span>
+                                )}
+                                <div className="tooltip-content">
+                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                        {service.specialties?.map((s, idx) => <li key={idx} style={{ padding: '2px 0' }}>{s}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
-                    <div className="modality-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <div className="modality-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginLeft: 'auto' }}>
                         {service.workMode === 'presential' ? (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
                         ) : (
@@ -180,9 +185,6 @@ const ServiceCard = ({ service }) => {
                 <div className="price-info" style={{ textAlign: 'right' }}>
                     <div className="price-amount" style={{ color: 'white', fontWeight: 800, fontSize: '1.25rem' }}>
                         ${service.price || service.budget} ARS
-                    </div>
-                    <div className="price-status" style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '-2px' }}>
-                        FIJO
                     </div>
                 </div>
             </div>

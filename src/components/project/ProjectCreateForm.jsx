@@ -580,7 +580,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                 <div className="form-group fade-in">
                                     <label className="work-mode-label">Especialidades (Max 3)</label>
                                     <div className="category-grid">
-                                        {(formData.subcategories || []).flatMap(sub => serviceCategories[formData.category][sub] || []).map(spec => (
+                                        {(formData.subcategories || []).flatMap(sub => (serviceCategories[formData.category] || {})[sub] || []).map(spec => (
                                             <div 
                                                 key={spec} 
                                                 className={`category-option ${(formData.specialties || []).includes(spec) ? 'selected' : ''}`}

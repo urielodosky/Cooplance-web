@@ -134,11 +134,27 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                 </div>
 
                 <div className="meta-info-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div className="category-capsule" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700 }}>
-                        {project.category}
+                    <div className="category-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div className="category-capsule" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700 }}>
+                            {project.category}
+                        </div>
+                        
+                        {(project.subcategory || (project.specialties && project.specialties.length > 0)) && (
+                            <div className="subcategory-capsule tooltip-container" style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, cursor: 'help' }}>
+                                {project.subcategory || project.specialties[0]} 
+                                {project.specialties && project.specialties.length > 0 && (
+                                    <span style={{ marginLeft: '4px', color: 'var(--text-primary)' }}>+{project.specialties.length}</span>
+                                )}
+                                <div className="tooltip-content">
+                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                        {project.specialties?.map((s, idx) => <li key={idx} style={{ padding: '2px 0' }}>{s}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    
-                    <div className="modality-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+
+                    <div className="modality-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginLeft: 'auto' }}>
                         {project.workMode === 'presential' ? (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
                         ) : (
@@ -146,17 +162,6 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                         )}
                         <span>{project.workMode === 'presential' ? 'Presencial' : 'Remoto'}</span>
                     </div>
-
-                    {project.specialties && project.specialties.length > 0 && (
-                        <div className="extra-meta-pill tooltip-container" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, cursor: 'help' }}>
-                            +{project.specialties.length}
-                            <div className="tooltip-content">
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                    {project.specialties.map((s, idx) => <li key={idx} style={{ padding: '2px 0' }}>{s}</li>)}
-                                </ul>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -168,16 +173,6 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                 <div className="price-info" style={{ textAlign: 'right' }}>
                     <div className="price-amount" style={{ color: 'white', fontWeight: 800, fontSize: '1.25rem' }}>
                         ${project.budget} ARS
-                    </div>
-                    <div className="price-status" style={{ 
-                        fontSize: '0.65rem', 
-                        color: project.budgetType === 'negotiable' ? 'var(--secondary)' : 'var(--text-muted)', 
-                        fontWeight: 800, 
-                        textTransform: 'uppercase', 
-                        letterSpacing: '0.5px', 
-                        marginTop: '-2px' 
-                    }}>
-                        {project.budgetType === 'negotiable' ? 'Negociable' : 'Fijo'}
                     </div>
                 </div>
             </div>

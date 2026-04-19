@@ -295,7 +295,7 @@ const Register = () => {
         }
 
         // Age validation
-        if (formData.birthDate) {
+        if (role !== 'company' && formData.birthDate) {
             const birthYear = new Date(formData.birthDate).getFullYear();
             const currentYear = new Date().getFullYear();
 
@@ -309,17 +309,13 @@ const Register = () => {
                 alert("Debes tener al menos 16 años para registrarte como freelancer.");
                 return;
             }
-            if (role === 'company' && age < 18) {
-                alert("El responsable debe tener al menos 18 años para registrar una empresa.");
-                return;
-            }
             if (role === 'buyer' && age < 14) {
                 alert("Debes tener al menos 14 años para registrarte como cliente.");
                 return;
             }
         }
 
-        if (!formData.dni || formData.dni.length < 6) {
+        if (role === 'freelancer' && (!formData.dni || formData.dni.length < 6)) {
             alert("Por favor ingresa un número de DNI / Documento válido.");
             return;
         }
@@ -356,7 +352,7 @@ const Register = () => {
                 username: role !== 'company' ? cleanUsername : undefined,
                 companyName: role === 'company' ? formData.companyName : undefined,
                 email: formData.email,
-                dni: formData.dni,
+                dni: role === 'freelancer' ? formData.dni : undefined,
                 cuil_cuit: role === 'company' ? formData.cuil_cuit : undefined,
                 phone: formData.phone || undefined
             });
@@ -379,8 +375,9 @@ const Register = () => {
 
             const registrationData = {
                 ...formData,
-                dob: formData.birthDate,
-                dni: formData.dni,
+                dob: role !== 'company' ? formData.birthDate : null,
+                dni: role === 'freelancer' ? formData.dni : null,
+                gender: role === 'company' ? 'other' : formData.gender,
                 terms_accepted: formData.termsAccepted,
                 profileImage: formData.profileImage, 
                 cvFile: formData.cvFile
@@ -475,7 +472,7 @@ const Register = () => {
                     <textarea name="bio" placeholder={role === 'company' ? "Biografía / Descripción de la Empresa" : "Cuéntanos sobre ti (Biografía)"} rows="3" onChange={handleChange} required />
 
                     {/* 4. Birth Date */}
-                    {true && (
+                    {role !== 'company' && (
                         <div className="form-group">
                             <CustomDatePicker
                                 label="Fecha de Nacimiento"
@@ -513,13 +510,6 @@ const Register = () => {
                                 </p>
                             )}
 
-                            {/* Company Validation */}
-                            {!invalidYear && calculatedAge !== null && role === 'company' && calculatedAge < 18 && (
-                                <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.25rem' }}>
-                                    El responsable de la empresa debe tener al menos 18 años.
-                                </p>
-                            )}
-
                             {/* Buyer/Client Validation */}
                             {!invalidYear && calculatedAge !== null && role === 'buyer' && calculatedAge < 14 && (
                                 <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.25rem' }}>
@@ -534,32 +524,39 @@ const Register = () => {
                         </div>
                     )}
 
-                    {/* 5. Identity Verification (For all roles now as per user request) */}
+                    {/* 5. Identity Verification */}
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
-                            <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
-                                {role === 'company' ? 'Datos de la Empresa y Responsable' : 'Datos de Identidad (Obligatorio)'}
-                            </p>
-                            
-                            <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
-                                <select name="documentType" value={formData.documentType} onChange={handleChange} style={{ height: '45px' }}>
-                                    <option value="dni">DNI</option>
-                                    <option value="passport">Pasaporte</option>
-                                    <option value="selfie">Cédula</option>
-                                </select>
-                                <input
-                                    type="text"
-                                    name="dni"
-                                    value={formData.dni}
-                                    placeholder={role === 'company' ? "DNI del Responsable" : "Número de Documento"}
-                                    onChange={handleChange}
-                                    required
-                                    style={{ margin: 0, height: '45px' }}
-                                />
-                            </div>
+                            {role === 'freelancer' && (
+                                <>
+                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
+                                        Datos de Identidad (Obligatorio)
+                                    </p>
+                                    
+                                    <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
+                                        <select name="documentType" value={formData.documentType} onChange={handleChange} style={{ height: '45px' }}>
+                                            <option value="dni">DNI</option>
+                                            <option value="passport">Pasaporte</option>
+                                            <option value="selfie">Cédula</option>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            name="dni"
+                                            value={formData.dni}
+                                            placeholder="Número de Documento"
+                                            onChange={handleChange}
+                                            required
+                                            style={{ margin: 0, height: '45px' }}
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             {/* CUIT Field only for companies */}
                             {role === 'company' && (
                                 <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
+                                        Datos de la Empresa
+                                    </p>
                                     <input
                                         type="text"
                                         name="cuil_cuit"
@@ -598,7 +595,7 @@ const Register = () => {
                                 </div>
                             )}
                         </div>
-                        {(role === 'freelancer' || role === 'company') && (
+                        {role === 'freelancer' && (
                             <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <input type="file" name="documentFile" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                                 <span>{documentFileName || 'Subir Foto del Documento (Frente)'}</span>
@@ -670,32 +667,34 @@ const Register = () => {
                     )}
 
                     {/* 7. Gender */}
-                    <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-                        <p className="field-label-sm">Género (para tu avatar predeterminado)</p>
-                        <div className="gender-selector">
-                            <button
-                                type="button"
-                                className={`gender-btn ${formData.gender === 'male' ? 'active' : ''}`}
-                                onClick={() => setFormData({ ...formData, gender: 'male' })}
-                            >
-                                Hombre
-                            </button>
-                            <button
-                                type="button"
-                                className={`gender-btn ${formData.gender === 'female' ? 'active' : ''}`}
-                                onClick={() => setFormData({ ...formData, gender: 'female' })}
-                            >
-                                Mujer
-                            </button>
-                            <button
-                                type="button"
-                                className={`gender-btn ${formData.gender === 'other' ? 'active' : ''}`}
-                                onClick={() => setFormData({ ...formData, gender: 'other' })}
-                            >
-                                Prefiero no decirlo
-                            </button>
+                    {role !== 'company' && (
+                        <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                            <p className="field-label-sm">Género (para tu avatar predeterminado)</p>
+                            <div className="gender-selector">
+                                <button
+                                    type="button"
+                                    className={`gender-btn ${formData.gender === 'male' ? 'active' : ''}`}
+                                    onClick={() => setFormData({ ...formData, gender: 'male' })}
+                                >
+                                    Hombre
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`gender-btn ${formData.gender === 'female' ? 'active' : ''}`}
+                                    onClick={() => setFormData({ ...formData, gender: 'female' })}
+                                >
+                                    Mujer
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`gender-btn ${formData.gender === 'other' ? 'active' : ''}`}
+                                    onClick={() => setFormData({ ...formData, gender: 'other' })}
+                                >
+                                    Prefiero no decirlo
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* 8. Profile Image Upload (All Roles) */}
                     <div className="form-group" style={{ marginBottom: '1rem' }}>

@@ -465,16 +465,13 @@ return (
 
                         <div className="category-grid">
                             {(serviceCategories[formData.category]?.[formData.subcategory] || []).map(spec => {
-                                const isSelected = Array.isArray(formData.specialties)
-                                    ? formData.specialties.includes(spec)
-                                    : false;
-
+                                const isSelected = (formData.specialties || []).includes(spec);
                                 return (
                                     <div
                                         key={spec}
                                         className={`category-option ${isSelected ? 'selected' : ''}`}
                                         onClick={() => {
-                                            const current = Array.isArray(formData.specialties) ? formData.specialties : [];
+                                            const current = formData.specialties || [];
                                             let newSpecs;
                                             if (current.includes(spec)) {
                                                 newSpecs = current.filter(s => s !== spec);

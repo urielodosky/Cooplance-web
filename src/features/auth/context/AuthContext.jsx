@@ -261,7 +261,7 @@ export const AuthProvider = ({ children }) => {
             username: (registrationData.username || registrationData.email?.split('@')[0])?.toLowerCase(),
             first_name: registrationData.firstName || registrationData.first_name || '',
             last_name: registrationData.lastName || registrationData.last_name || '',
-            gender: registrationData.gender || 'male',
+            gender: registrationData.role === 'company' ? (registrationData.gender || 'other') : (registrationData.gender || 'male'),
             company_name: registrationData.companyName || registrationData.company_name || null,
             responsible_first_name: registrationData.responsibleFirstName || null,
             responsible_last_name: registrationData.responsibleLastName || null,
