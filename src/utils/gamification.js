@@ -96,30 +96,33 @@ export const processGamificationRules = (user) => {
 
     // 0. Initialize missing fields
     if (!updatedUser.gamification) {
-        updatedUser.gamification = {
-            lastActivity: now,
-            pause_mode: {
-                active: false,
-                startDate: null,
-                credits: 4, // 4 per year
-                lastReset: now
-            }
-        };
-        hasChanges = true;
+        updatedUser.gamification = { lastActivity: now };
     }
 
     const g = updatedUser.gamification;
 
-    // COMPATIBILITY V34: Migration of legacy 'vacation' to 'pause_mode' in frontend state
-    if (g.vacation) {
+    // COMPATIBILITY V34: Migration of legacy 'vacation' to 'pause_mode'
+    if (g.vacation && !g.pause_mode) {
         g.pause_mode = { ...g.vacation };
         delete g.vacation;
         hasChanges = true;
     }
 
+    // Ensure pause_mode exists as an object with default properties if completely missing
+    if (typeof g.pause_mode !== 'object' || g.pause_mode === null) {
+        g.pause_mode = {
+            active: false,
+            startDate: null,
+            credits: 4,
+            lastReset: now
+        };
+        hasChanges = true;
+    }
+
     // 1. Pause Mode Reset (Annual Policy V3)
     const oneYear = 365 * 24 * 60 * 60 * 1000;
-    if (g.pause_mode?.lastReset && now - g.pause_mode.lastReset > oneYear) {
+    const lastResetTime = g.pause_mode?.lastReset || 0;
+    if (lastResetTime && now - lastResetTime > oneYear) {
         g.pause_mode.credits = 4;
         g.pause_mode.lastReset = now;
         g.pause_mode.policyV3 = true;
@@ -128,13 +131,13 @@ export const processGamificationRules = (user) => {
 
     // 2. Check Pause Mode Expiry (15 days duration)
     const fifteenDaysDuration = 15 * 24 * 60 * 60 * 1000;
-    if (g.pause_mode?.active) {
+    if (g.pause_mode?.active && g.pause_mode?.startDate) {
         if (now - new Date(g.pause_mode.startDate).getTime() > fifteenDaysDuration) {
             g.pause_mode.active = false;
             g.pause_mode.startDate = null;
             hasChanges = true;
         } else {
-            // While in pause mode, we just return
+            // While in pause mode, we just return to avoid XP decay or other rules
             if (hasChanges) return updatedUser;
             return user;
         }
@@ -170,8 +173,13 @@ export const activatePauseMode = (user) => {
     }
 
     if (g.pause_mode && g.pause_mode.active) return user;
-    if (!g.pause_mode) g.pause_mode = { active: false, credits: 4, lastReset: Date.now() };
-    if ((g.pause_mode.credits || 0) <= 0) return user;
+    
+    // Ensure structure
+    if (!g.pause_mode) {
+        g.pause_mode = { active: false, credits: 4, lastReset: Date.now() };
+    }
+
+    if ((g.pause_mode?.credits || 0) <= 0) return user;
 
     return {
         ...user,
