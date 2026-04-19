@@ -773,7 +773,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                 <div className="category-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                                     {formData.images?.map((img, index) => (
                                         <div key={index} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', aspectRatio: '1/1', border: '1px solid var(--border)' }}>
-                                            <img src={img} alt={`Preview ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={img.src || img} alt={`Preview ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             <button 
                                                 type="button" 
                                                 onClick={() => handleRemoveImage(index)} 
