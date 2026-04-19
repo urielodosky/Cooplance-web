@@ -465,10 +465,15 @@ const Dashboard = () => {
         loadInitData();
 
         // 2. Fetch tutorados if adult freelancer
-        if (authUser.role === 'freelancer' && !isTutorView) {
+        if (authUser?.id && authUser.role === 'freelancer' && !isTutorView) {
             const fetchTutorados = async () => {
-                const { data } = await supabase.from('profiles').select('*').eq('parent_id', authUser.id);
-                if (data) setTutorados(data);
+                try {
+                    const { data, error } = await supabase.from('profiles').select('*').eq('parent_id', authUser.id);
+                    if (error) throw error;
+                    if (data) setTutorados(data);
+                } catch (err) {
+                    console.error("[Dashboard] Error fetching tutorados:", err);
+                }
             };
             fetchTutorados();
         }

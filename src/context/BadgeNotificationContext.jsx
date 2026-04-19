@@ -44,7 +44,7 @@ export const BadgeNotificationProvider = ({ children }) => {
                 supabase
                     .from('services')
                     .select('id', { count: 'exact', head: true })
-                    .eq('freelancerId', user.id),
+                    .eq('owner_id', user.id),
                 supabase
                     .from('projects')
                     .select('id', { count: 'exact', head: true })

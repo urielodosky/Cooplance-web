@@ -31,7 +31,7 @@ const Badges = () => {
         const fetchMetrics = async () => {
             try {
                 const [servicesRes, projectsRes] = await Promise.all([
-                    supabase.from('services').select('id', { count: 'exact', head: true }).eq('freelancerId', user.id),
+                    supabase.from('services').select('id', { count: 'exact', head: true }).eq('owner_id', user.id),
                     supabase.from('projects').select('id', { count: 'exact', head: true }).eq('client_id', user.id)
                 ]);
                 setCounts({
