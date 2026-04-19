@@ -250,6 +250,41 @@ export const JobProvider = ({ children }) => {
                         console.error('XP Awarding error:', xpErr);
                     }
                 }
+            } else if (status === 'canceled') {
+                const job = jobs.find(j => j.id === jobId);
+                if (job) {
+                    // APPLY V34 COMPLIANCE: Commercial penalty only for level 6+
+                    try {
+                        const { data: freelancerProfile } = await supabase
+                            .from('profiles')
+                            .select('id, xp, level')
+                            .eq('id', job.freelancerId)
+                            .single();
+
+                        if (freelancerProfile && (freelancerProfile.level || 1) >= 6) {
+                            const penaltyXP = 150; // Fixed commercial penalty
+                            const newXP = Math.max(0, (freelancerProfile.xp || 0) - penaltyXP);
+                            
+                            // Check for level down
+                            const newLevel = getLevelFromXP(newXP);
+                            
+                            await supabase.from('profiles')
+                                .update({ xp: newXP, level: newLevel })
+                                .eq('id', freelancerProfile.id);
+
+                            // Sync local user if it's the current user
+                            if (user?.id === freelancerProfile.id) {
+                                updateUser({ ...user, xp: newXP, level: newLevel }).catch(e => console.warn('[JobContext] Penalty sync failed:', e));
+                            }
+                            
+                            console.log(`[Gamification V34] Commercial penalty applied to @${job.freelancerUsername}: -${penaltyXP} XP`);
+                        } else {
+                            console.log(`[Gamification V34] Freelancer @${job.freelancerUsername} is level ${freelancerProfile?.level || 1}. Penalty waived.`);
+                        }
+                    } catch (err) {
+                        console.error('[JobContext] Cancellation penalty error:', err);
+                    }
+                }
             }
         } catch (err) {
             console.error('[JobContext] Error updating job status:', err);

@@ -9,7 +9,7 @@ import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
-import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activateVacation, XP_TABLE, processGamificationRules } from '../utils/gamification';
+import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { getBenefitsForRole } from '../data/levelBenefits';
 import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
@@ -538,18 +538,20 @@ const Dashboard = () => {
         updateUser({ ...user, level: newLevel, xp: newXp });
     };
 
-    const handleVacationClick = () => {
+    const handlePauseModeClick = () => {
         const g = user.gamification || {};
-        if (g.vacation?.active) {
-            alert("Ya estás en modo vacaciones.");
+        const pause_data = g.pause_mode || g.vacation || {}; // Fallback for state yet to be synced
+        
+        if (pause_data.active) {
+            alert("Ya estás en Modo Pausa.");
             return;
         }
-        if ((g.vacation?.credits || 0) <= 0) {
-            alert("No tienes créditos de vacaciones disponibles.");
+        if ((pause_data.credits || 0) <= 0) {
+            alert("No tienes créditos de pausa disponibles.");
             return;
         }
-        if (window.confirm(`¿Activar modo vacaciones? Se pausará el decaimiento de XP. Te quedan ${g.vacation?.credits} usos.`)) {
-            updateUser(activateVacation(user));
+        if (window.confirm(`¿Activar Modo Pausa? Se pausarán las penalizaciones de tiempo. Te quedan ${pause_data.credits} usos.`)) {
+            updateUser(activatePauseMode(user));
         }
     };
 
@@ -705,32 +707,32 @@ const Dashboard = () => {
                 </div>
                 {user.role === 'freelancer' && (
                     <div className="glass stat-card">
-                        <div className="vacation-header">
-                            <h4>Vacaciones</h4>
+                        <div className="pause-mode-header">
+                            <h4>Modo Pausa</h4>
                             <div className="help-icon">?</div>
-                            <span className="help-tooltip">Mientras estés de vacaciones no se perderá experiencia.</span>
+                            <span className="help-tooltip">Mientras estés en modo pausa no se perderá experiencia por inactividad.</span>
                         </div>
                         <p className="stat-value" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                            {user.gamification?.vacation?.active ? 'ON' : 'OFF'}
+                            {user.gamification?.pause_mode?.active || user.gamification?.vacation?.active ? 'ON' : 'OFF'}
                         </p>
                         <button
-                            onClick={handleVacationClick}
-                            disabled={user.gamification?.vacation?.active || (user.gamification?.vacation?.credits || 0) <= 0}
+                            onClick={handlePauseModeClick}
+                            disabled={user.gamification?.pause_mode?.active || user.gamification?.vacation?.active || (user.gamification?.pause_mode?.credits || (user.gamification?.vacation?.credits || 0)) <= 0}
                             style={{
                                 fontSize: '0.7rem',
                                 padding: '0.4rem',
-                                background: user.gamification?.vacation?.active ? '#10b981' : 'var(--primary)',
+                                background: (user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? '#10b981' : 'var(--primary)',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '8px',
-                                cursor: user.gamification?.vacation?.active ? 'default' : 'pointer',
+                                cursor: (user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'default' : 'pointer',
                                 width: '100%'
                             }}
                         >
-                            {user.gamification?.vacation?.active ? 'Disfrutando' : 'Activar'}
+                            {(user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Pausado' : 'Activar'}
                         </button>
                         <p style={{ fontSize: '0.7rem', marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
-                            Restante: {user.gamification?.vacation?.credits || 0} usos
+                            Restante: {user.gamification?.pause_mode?.credits ?? (user.gamification?.vacation?.credits || 0)} usos
                         </p>
                     </div>
                 )}

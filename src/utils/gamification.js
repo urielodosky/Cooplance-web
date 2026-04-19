@@ -86,22 +86,19 @@ export const processGamificationRules = (user) => {
     let hasChanges = false;
 
     // 0. Automatic Level-Up (V3)
-    // Ensures level is always synced with total XP
     const currentXP = updatedUser.xp || 0;
     const currentLvl = updatedUser.level || 1;
     const properLvl = getLevelFromXP(currentXP);
     if (properLvl > currentLvl) {
         updatedUser.level = properLvl;
         hasChanges = true;
-        console.log(`[Gamification] Auto-Level Up: @${updatedUser.username} ${currentLvl} -> ${properLvl}`);
     }
 
     // 0. Initialize missing fields
     if (!updatedUser.gamification) {
         updatedUser.gamification = {
-            lastDecayCheck: now,
             lastActivity: now,
-            vacation: {
+            pause_mode: {
                 active: false,
                 startDate: null,
                 credits: 4, // 4 per year
@@ -111,82 +108,40 @@ export const processGamificationRules = (user) => {
         hasChanges = true;
     }
 
-    // 1. Vacation Logic (Reset credits yearly)
     const g = updatedUser.gamification;
+
+    // COMPATIBILITY V34: Migration of legacy 'vacation' to 'pause_mode' in frontend state
+    if (g.vacation) {
+        g.pause_mode = { ...g.vacation };
+        delete g.vacation;
+        hasChanges = true;
+    }
+
+    // 1. Pause Mode Reset (Annual Policy V3)
     const oneYear = 365 * 24 * 60 * 60 * 1000;
-    // 1. Vacation Reset (Annual Policy V3) - ONLY if vacation exists
-    if (g.vacation?.lastReset && now - g.vacation.lastReset > oneYear) {
-        g.vacation.credits = 4;
-        g.vacation.lastReset = now;
-        g.vacation.policyV3 = true; // Mark as reset under the new policy
+    if (g.pause_mode?.lastReset && now - g.pause_mode.lastReset > oneYear) {
+        g.pause_mode.credits = 4;
+        g.pause_mode.lastReset = now;
+        g.pause_mode.policyV3 = true;
         hasChanges = true;
     }
 
-    // LEGACY SYNC: If user has more than 4 credits (due to previous migration bugs), cap at 4.
-    if (!g.vacation.policyV3 || g.vacation.credits > 4) {
-        if (g.vacation.credits > 4) {
-            g.vacation.credits = 4;
-            hasChanges = true;
-        }
-        g.vacation.policyV3 = true;
-        hasChanges = true;
-    }
-
-    // 2. Check Vacation Expiry (15 days duration)
+    // 2. Check Pause Mode Expiry (15 days duration)
     const fifteenDaysDuration = 15 * 24 * 60 * 60 * 1000;
-    if (g.vacation.active) {
-        if (now - new Date(g.vacation.startDate).getTime() > fifteenDaysDuration) {
-            g.vacation.active = false;
-            g.vacation.startDate = null;
+    if (g.pause_mode?.active) {
+        if (now - new Date(g.pause_mode.startDate).getTime() > fifteenDaysDuration) {
+            g.pause_mode.active = false;
+            g.pause_mode.startDate = null;
             hasChanges = true;
         } else {
-            // If on vacation, SKIP decay and inactivity checks
+            // While in pause mode, we just return
             if (hasChanges) return updatedUser;
             return user;
         }
     }
 
-    // 3. XP Decay (Level 6+) - Every 15 days
-    if (updatedUser.level >= 6) {
-        const fifteenDays = 15 * 24 * 60 * 60 * 1000;
-        const timeSinceDecay = now - g.lastDecayCheck;
-
-        if (timeSinceDecay >= fifteenDays) {
-            const periods = Math.floor(timeSinceDecay / fifteenDays);
-            if (periods > 0) {
-                const xpReq = getLevelSeekXP(updatedUser.level);
-                const penaltyPerPeriod = Math.floor(xpReq * 0.05);
-                const totalPenalty = penaltyPerPeriod * periods;
-
-                updatedUser.xp = Math.max(0, (updatedUser.xp || 0) - totalPenalty);
-                updatedUser.points = updatedUser.xp;
-
-                const properLevel = getLevelFromXP(updatedUser.xp);
-                if (properLevel < updatedUser.level) {
-                    updatedUser.level = properLevel;
-                }
-
-                g.lastDecayCheck = now;
-                hasChanges = true;
-            }
-        }
-    }
-
-    // 4. Inactivity Penalty (2 months) -> Drop Level (down to 5)
-    if (updatedUser.level > 5) {
-        const oneMonth = 30 * 24 * 60 * 60 * 1000;
-        if (!g.vacation?.active && now - (user.last_activity || now) > oneMonth) {
-            if (!g.lastInactivityPenalty || (now - g.lastInactivityPenalty >= oneMonth)) {
-                const oldLevel = updatedUser.level;
-                updatedUser.level = Math.max(5, oldLevel - 1);
-                const startOfNewLevelXP = updatedUser.level > 1 ? XP_TABLE[updatedUser.level - 1] : 0;
-                updatedUser.xp = startOfNewLevelXP;
-
-                g.lastInactivityPenalty = now;
-                hasChanges = true;
-            }
-        }
-    }
+    // --- V34 LEGAL COMPLIANCE: AUTOMATED PENALTIES REMOVED ---
+    // Inactivity and Decay checks are now handled via commercial penalties only.
 
     if (hasChanges) return updatedUser;
     return user;
@@ -204,23 +159,29 @@ export const registerActivity = (user) => {
     };
 };
 
-export const activateVacation = (user) => {
+export const activatePauseMode = (user) => {
     if (!user) return user;
-    const g = user.gamification || { vacation: { active: false, credits: 4, lastReset: Date.now() } };
+    const g = user.gamification || { pause_mode: { active: false, credits: 4, lastReset: Date.now() } };
 
-    if (g.vacation && g.vacation.active) return user;
-    if (!g.vacation) g.vacation = { active: false, credits: 4, lastReset: Date.now() };
-    if ((g.vacation.credits || 0) <= 0) return user;
+    // Migration check inside activator
+    if (g.vacation && !g.pause_mode) {
+        g.pause_mode = { ...g.vacation };
+        delete g.vacation;
+    }
+
+    if (g.pause_mode && g.pause_mode.active) return user;
+    if (!g.pause_mode) g.pause_mode = { active: false, credits: 4, lastReset: Date.now() };
+    if ((g.pause_mode.credits || 0) <= 0) return user;
 
     return {
         ...user,
         gamification: {
             ...g,
-            vacation: {
-                ...g.vacation,
+            pause_mode: {
+                ...g.pause_mode,
                 active: true,
                 startDate: new Date().toISOString(),
-                credits: (g.vacation.credits || 0) - 1
+                credits: (g.pause_mode.credits || 0) - 1
             }
         }
     };

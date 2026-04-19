@@ -10,6 +10,7 @@ import { formatLocationDetail } from '../../../utils/locationFormat';
 import BookingPicker from '../../../components/booking/BookingPicker';
 import { getServiceReviews } from '../../../services/ReviewService';
 import { supabase } from '../../../lib/supabase';
+import ReportModal from '../../../components/common/ReportModal';
 import '../../../styles/pages/ServiceDetail.scss';
 
 
@@ -35,6 +36,7 @@ const ServiceDetail = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showReviewsModal, setShowReviewsModal] = useState(false);
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
         if (service?.bookingConfig?.requiresBooking) {
@@ -324,11 +326,12 @@ const ServiceDetail = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                     <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600 }}>{displayUsername}</h3>
                                     <span className="level-badge-lg" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Nivel {displayLevel}</span>
-                                    {freelancerUser.gamification?.vacation?.active && (() => {
-                                        const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - freelancerUser.gamification.vacation.startDate) / 86400000));
+                                    {(freelancerUser.gamification?.pause_mode?.active || freelancerUser.gamification?.vacation?.active) && (() => {
+                                        const pauseData = freelancerUser.gamification.pause_mode || freelancerUser.gamification.vacation;
+                                        const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - new Date(pauseData.startDate).getTime()) / 86400000));
                                         return (
                                             <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.65rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                                                Vacaciones — {daysLeft}d
+                                                Modo Pausa — {daysLeft}d
                                             </span>
                                         );
                                     })()}
@@ -594,6 +597,14 @@ const ServiceDetail = () => {
                 freelancerName={displayUsername}
                 onConfirm={handlePaymentSuccess}
                 allowedMethods={freelancerUser.paymentMethods}
+            />
+
+            <ReportModal 
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                itemId={service.id}
+                itemType="service"
+                itemName={service.title}
             />
         </div>
     );

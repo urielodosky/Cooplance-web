@@ -271,6 +271,7 @@ const HelpCenter = () => {
                     <p><strong>Distribución Automática en Coops:</strong> Los fondos se distribuirán automáticamente según la modalidad elegida por la Coop (Proporcional por Nivel, División Personalizada o División Equitativa).</p>
                 </div>
                 <p><strong>Extracción de Fondos:</strong> Los mecanismos, plazos y condiciones para la extracción de saldo hacia cuentas externas están <em>(Aún por definir)</em>.</p>
+                <p><strong>Prevención de Fraude y Contracargos:</strong> Cooplance se reserva el derecho de auditar o suspender temporalmente los retiros de fondos ante cualquier actividad financiera sospechosa. En caso de que un Cliente inicie un contracargo o desconocimiento de compra fraudulento ante su entidad emisora o pasarela de pagos, Cooplance no estará obligada a liquidar dichos fondos al Freelancer o Coop con patrimonio propio. Se procederá a la suspensión inmediata de las cuentas involucradas hasta la resolución del caso.</p>
 
                 <h3>6. Sistema de Niveles y Experiencia (XP)</h3>
                 <ul>
@@ -280,7 +281,10 @@ const HelpCenter = () => {
                 </ul>
 
                 <h3>7. Entregas, Cancelaciones y Retención de Fondos (Escrow)</h3>
-                <p><strong>Seguridad Financiera:</strong> Cooplance retiene el pago del Cliente hasta la finalización del proyecto.</p>
+                <p><strong>Seguridad Financiera:</strong> Cooplance actúa exclusivamente como intermediario tecnológico. La retención temporal de fondos (Escrow) para la seguridad de los proyectos es gestionada en su totalidad por pasarelas de pago externas. Cooplance no almacena ni administra fondos reales; la Billetera interna cumple una función estrictamente visual.</p>
+                <div className="legal-note">
+                    <p><strong>Excepción de Arrepentimiento:</strong> En concordancia con la Ley de Defensa del Consumidor de la República Argentina, al tratarse de servicios digitales confeccionados a medida, el Usuario reconoce y acepta que no resulta aplicable el derecho de revocación o arrepentimiento de 10 días una vez iniciada la ejecución del servicio.</p>
+                </div>
                 <div className="legal-note">
                     <p><strong>Protección al Freelancer (Política de No Reembolso):</strong> Una vez que el trabajo ha comenzado o se ha realizado la entrega, no se aceptarán cancelaciones unilaterales ni devoluciones por motivos de insatisfacción personal del Cliente. En caso de inconformidad, el Cliente deberá agotar las instancias de "Revisiones" ofrecidas por el Freelancer.</p>
                 </div>
@@ -299,15 +303,17 @@ const HelpCenter = () => {
                 </ul>
                 <p><strong>Detalles legales adicionales:</strong> Otros aspectos de la propiedad intelectual se encuentran <em>(Aún por definir)</em>.</p>
 
-                <h3>9. Limitación de Responsabilidad y Servicios Presenciales</h3>
                 <p><strong>Intermediación:</strong> Cooplance actúa exclusivamente como intermediario tecnológico. No interviene en la ejecución de los proyectos y no se hace responsable por la calidad, exactitud o nivel de satisfacción final del trabajo entregado por los profesionales.</p>
+                
+                <h3>Resolución de Disputas</h3>
+                <p>En caso de conflicto entre usuarios, Cooplance proveerá únicamente un canal de mediación amistosa y no asume el rol de árbitro legal ni financiero. De no haber acuerdo, la resolución de los fondos quedará sujeta a las políticas del procesador de pagos externo, renunciando los usuarios a iniciar acciones contra Cooplance por la calidad de los servicios contratados.</p>
                 <div className="legal-note">
                     <p><strong>Exención de Responsabilidad en Servicios Presenciales:</strong> En el caso de los servicios que requieran un encuentro físico o presencial entre los Usuarios, Cooplance funciona únicamente como una plataforma de contacto. Los Usuarios asumen la total responsabilidad y el riesgo al acordar y ejecutar trabajos fuera del entorno digital.</p>
                 </div>
                 <p><strong>Reportes, Soporte y Colaboración Legal:</strong> Sin perjuicio de la exención de responsabilidad mencionada, Cooplance mantiene un estricto compromiso con la seguridad de su comunidad. Ante cualquier incidente, maltrato o irregularidad durante un servicio (físico o digital), el Usuario afectado podrá y deberá emitir un reporte a nuestro equipo de soporte.</p>
 
                 <h3>10. Obligaciones Fiscales y Facturación</h3>
-                <p>Cooplance actúa como un intermediario y no es empleador, socio ni representante de los Freelancers. Cada Freelancer opera como un profesional independiente y es el único y exclusivo responsable de cumplir con sus obligaciones fiscales, tributarias y previsionales vigentes (ej. inscripción en AFIP, Dirección General de Rentas, etc.). Es responsabilidad exclusiva del Freelancer o de la Coop emitir y entregar al Cliente o Empresa la factura legal correspondiente por el total del servicio prestado.</p>
+                <p>Cooplance actúa como un intermediario y no es empleador, socio ni representante de los Freelancers. Cada Freelancer opera como un profesional independiente y es el único y exclusivo responsable de cumplir con sus obligaciones fiscales, tributarias y previsionales vigentes (ej. inscripción en AFIP, Dirección General de Rentas, etc.). Es responsabilidad exclusiva del Freelancer o de la Coop emitir y entregar al Cliente o Empresa la factura legal correspondiente por el total del servicio prestado. Cooplance emitirá y pondrá a disposición del Usuario la factura legal correspondiente única y exclusivamente por el monto equivalente a la comisión de intermediación (fee de servicio) cobrada por la plataforma.</p>
 
                 <h3>11. Ley Aplicable y Jurisdicción</h3>
                 <p><strong>Marco Legal:</strong> Los presentes Términos y Condiciones, la Política de Privacidad y cualquier otro acuerdo o política vinculada a Cooplance, se rigen e interpretan en todos sus puntos de acuerdo con las leyes vigentes de la República Argentina.</p>
@@ -335,13 +341,7 @@ const HelpCenter = () => {
                 <p>Para garantizar un entorno seguro, transparente y de confianza, solicitamos información específica dependiendo del tipo de cuenta y la naturaleza del servicio:</p>
                 <ul>
                     <li><strong>Datos de registro generales:</strong> A todos los Usuarios les solicitamos información obligatoria que incluye su nombre real, apellido, fecha de nacimiento y una dirección de correo electrónico válida.</li>
-                    <li><strong>Información de Freelancers (Profesionales y Oficios):</strong>
-                        <ul>
-                            <li><strong>Identidad:</strong> Solicitamos el número de DNI de forma obligatoria para verificar la identidad del profesional.</li>
-                            <li><strong>Profesiones reguladas:</strong> Es obligatorio proporcionar el número de matrícula correspondiente y la institución académica.</li>
-                        </ul>
-                    </li>
-                    <li><strong>Información de Clientes:</strong> La provisión del DNI no es obligatoria para los usuarios que se registran exclusivamente para contratar servicios.</li>
+                    <li><strong>Identidad/Registro:</strong> Cooplance solicita el número de DNI o documento de identidad exclusivamente a los Usuarios registrados bajo el rol de Freelancer y a los Adultos Responsables para verificar identidad, mayoría de edad o vínculo parental. No es obligatorio proveer el DNI para usuarios que se registren exclusivamente como Clientes.</li>
                     <li><strong>Cuentas de Empresa:</strong> Solicitamos de forma obligatoria el nombre de la empresa, el CUIT, y el nombre del propietario, representante legal o titular.</li>
                     <li><strong>Datos de ubicación y contacto (Servicios Presenciales):</strong> Proporcionar la ubicación geográfica es de carácter obligatorio para coordinar trabajos presenciales.</li>
                 </ul>
@@ -392,6 +392,10 @@ const HelpCenter = () => {
                     <p><strong>Cuentas Supervisadas (16-17 años):</strong> Operan bajo la tutoría obligatoria de un Responsable Legal vinculado. Tienen prohibido realizar trabajos presenciales y relacionarse comercialmente con cuentas de "Empresas".</p>
                 </div>
                 <p>Al cumplir los 18 años, la cuenta se desvinculará automáticamente de la supervisión y pasará a ser una cuenta estándar.</p>
+                <div className="legal-note" style={{ marginTop: '1rem' }}>
+                    <p><strong>Consentimiento de Supervisión:</strong> Para garantizar un entorno seguro, el Adulto Responsable vinculado tendrá acceso de lectura irrestricto (Modo Espejo) a toda la actividad de la cuenta del menor, incluyendo transacciones, postulaciones y chats privados. Al registrarse, ambas partes aceptan y consienten esta supervisión.</p>
+                    <p><strong>Límite de Cupo:</strong> Cada Adulto Responsable podrá tener un máximo de dos (2) cuentas de menores bajo su supervisión simultánea.</p>
+                </div>
 
                 <h3>11. Cambios a esta Política de Privacidad</h3>
                 <p>Cooplance se reserva el derecho de modificar esta política. Cualquier cambio sustancial será notificado vía correo electrónico o mediante un aviso destacado en la plataforma.</p>

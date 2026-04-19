@@ -312,11 +312,11 @@
         font-size: 0.7rem !important;
     }
 
-    .vacation-header {
+    .pause-mode-header {
         margin-bottom: 0.25rem;
     }
 
-    .vacation-header h4 {
+    .pause-mode-header h4 {
         font-size: 0.75rem;
     }
 
@@ -577,8 +577,8 @@
     /* Slate 200 */
 }
 
-/* VACATION TOOLTIP */
-.vacation-header {
+/* PAUSE MODE TOOLTIP */
+.pause-mode-header {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -635,7 +635,7 @@
     border-color: var(--border) transparent transparent transparent;
 }
 
-.vacation-header:hover .help-tooltip,
+.pause-mode-header:hover .help-tooltip,
 .help-icon-wrapper:hover .help-tooltip {
     visibility: visible;
     opacity: 1;

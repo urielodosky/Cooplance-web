@@ -4,6 +4,7 @@ import { useTeams } from '../context/TeamContext';
 import { getProfilePicture } from '../utils/avatarUtils';
 import ServiceCard from '../features/services/components/ServiceCard';
 import { supabase } from '../lib/supabase';
+import ReportModal from '../components/common/ReportModal';
 import { BADGE_FAMILIES } from '../data/badgeDefinitions';
 import '../styles/pages/ServiceDetail.scss';
 
@@ -17,6 +18,7 @@ const FreelancerDetail = () => {
     const [reviewsReceived, setReviewsReceived] = useState([]);
     const [reviewsGiven, setReviewsGiven] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     // Calculate teams where this freelancer is a member
     const memberTeams = teams.filter(team =>
@@ -242,6 +244,19 @@ const FreelancerDetail = () => {
                                     Ver Curriculum
                                 </button>
                             )}
+                            <button 
+                                onClick={() => setIsReportModalOpen(true)}
+                                className="btn-secondary"
+                                style={{ 
+                                    display: 'flex', alignItems: 'center', gap: '8px', 
+                                    padding: '8px 16px', background: 'rgba(239, 68, 68, 0.05)', 
+                                    color: '#ef4444', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)',
+                                    fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'
+                                }}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                                Reportar Perfil
+                            </button>
                         </div>
 
                         <div className="bio-container-premium" style={{
@@ -619,6 +634,14 @@ const FreelancerDetail = () => {
                     )}
                 </div>
             </div>
+
+            <ReportModal 
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                itemId={id}
+                itemType="profile"
+                itemName={`${freelancer.first_name} ${freelancer.last_name}`}
+            />
         </div>
     );
 };

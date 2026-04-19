@@ -6,6 +6,7 @@ import { useChat } from '../context/ChatContext';
 import { useJobs } from '../context/JobContext';
 import { supabase } from '../lib/supabase';
 import { useTeams } from '../context/TeamContext'; // Import TeamContext
+import ReportModal from '../components/common/ReportModal';
 import '../styles/pages/Chat.scss';
 
 const Chat = () => {
@@ -25,6 +26,7 @@ const Chat = () => {
     const [extensionDays, setExtensionDays] = useState('2');
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [purgeResult, setPurgeResult] = useState(null);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const messagesEndRef = useRef(null);
 
     // --- MERGE CHATS LOGIC ---
@@ -436,7 +438,7 @@ const Chat = () => {
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                                                 Anclar
                                             </button>
-                                            <button onClick={() => alert("Usuario Reportado")}>
+                                            <button onClick={() => setIsReportModalOpen(true)}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
                                                 Reportar
                                             </button>
@@ -724,6 +726,16 @@ const Chat = () => {
                     )}
                 </div>
             </div>
+
+            {activeChat && (
+                <ReportModal 
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    itemId={activeChat.id}
+                    itemType="chat"
+                    itemName={getChatName(activeChat)}
+                />
+            )}
         </div >
     );
 };
