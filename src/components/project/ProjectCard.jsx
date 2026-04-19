@@ -69,7 +69,7 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
 
             <div className="project-image-container">
                 <img 
-                    src={project.imageUrl || 'https://ui-avatars.com/api/?name=Project&background=0a0a1a&color=6366f1&size=512'} 
+                    src={project.imageUrl || project.image_url || (project.images && project.images[0]) || 'https://ui-avatars.com/api/?name=Project&background=0a0a1a&color=6366f1&size=512'} 
                     alt={project.title} 
                     className="project-image" 
                     onError={(e) => {
@@ -79,7 +79,7 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
             </div>
 
             <div className="project-content">
-                <div className="avatar-layout-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="avatar-layout-row" style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
                     <div className="profile-avatar-wrapper small" style={{
                         width: '44px', height: '44px',
                         borderRadius: '50%',
@@ -126,35 +126,38 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                             )}
                         </div>
                     </div>
+                    <div className="publication-time-indicator">
+                        {getTimeAgo(project.createdAt)}
+                    </div>
                 </div>
 
-                <div className="title-desc-section" style={{ marginTop: '1rem', marginBottom: '0.75rem' }}>
-                    <h3 className="card-title" style={{ fontSize: '1.2rem', marginBottom: '0.25rem', fontWeight: 800 }}>{project.title}</h3>
-                    <p className="card-description" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{project.description}</p>
+                <div className="title-desc-section">
+                    <h3 className="card-title">{project.title}</h3>
+                    <p className="card-description">{project.description}</p>
                 </div>
 
-                <div className="meta-info-row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div className="category-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <div className="category-capsule" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700 }}>
+                <div className="meta-info-row">
+                    <div className="category-group">
+                        <div className="category-capsule">
                             {project.category}
                         </div>
                         
                         {(project.subcategory || (project.specialties && project.specialties.length > 0)) && (
-                            <div className="subcategory-capsule tooltip-container" style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-muted)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, cursor: 'help' }}>
+                            <div className="subcategory-capsule tooltip-container">
                                 {project.subcategory || project.specialties[0]} 
                                 {project.specialties && project.specialties.length > 0 && (
-                                    <span style={{ marginLeft: '4px', color: 'var(--text-primary)' }}>+{project.specialties.length}</span>
+                                    <span className="specialties-count">+{project.specialties.length}</span>
                                 )}
                                 <div className="tooltip-content">
-                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                        {project.specialties?.map((s, idx) => <li key={idx} style={{ padding: '2px 0' }}>{s}</li>)}
+                                    <ul>
+                                        {project.specialties?.map((s, idx) => <li key={idx}>{s}</li>)}
                                     </ul>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="modality-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginLeft: 'auto' }}>
+                    <div className="modality-pill">
                         {project.workMode === 'presential' ? (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
                         ) : (
@@ -165,13 +168,20 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                 </div>
             </div>
 
-            <div className="project-footer-new" style={{ padding: '12px 1.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                <div className="timeline-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{getTimeAgo(project.createdAt)}</span>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ef4444' }}>Expira: {formatDate(project.deadline)}</span>
+            <div className="project-footer-new">
+                <div className="timeline-info">
+                    <span className={`deadline-label ${project.deadline ? 'urgent' : ''}`}>
+                        {project.deadline ? (
+                            `Límite: ${formatDate(project.deadline)}`
+                        ) : project.contractDuration ? (
+                            `Plazo: ${project.contractDuration}`
+                        ) : (
+                            'Sin plazo ni fecha límite'
+                        )}
+                    </span>
                 </div>
-                <div className="price-info" style={{ textAlign: 'right' }}>
-                    <div className="price-amount" style={{ color: 'white', fontWeight: 800, fontSize: '1.25rem' }}>
+                <div className="price-info">
+                    <div className="price-amount">
                         ${project.budget} ARS
                     </div>
                 </div>

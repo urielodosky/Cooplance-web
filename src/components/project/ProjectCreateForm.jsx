@@ -124,8 +124,12 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
             return;
         }
 
-        const newImages = files.slice(0, remaining).map(file => URL.createObjectURL(file));
-        // Note: For real persistence, you'd upload these files first.
+        const newImages = files.slice(0, remaining).map(file => ({
+            type: 'file',
+            src: URL.createObjectURL(file),
+            file: file
+        }));
+        
         setFormData(prev => ({ ...prev, images: [...(prev.images || []), ...newImages] }));
     };
 
@@ -424,11 +428,42 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
         }
 
         try {
-            let finalImageUrl = formData.imageUrl;
-            let finalVideoUrl = formData.videoUrl;
+            setLoadingStatus('Subiendo archivos...');
+            
+            // Helper function to upload media
+            const uploadMedia = async (mediaList, bucket) => {
+                const uploadedUrls = [];
+                for (const item of mediaList) {
+                    if (item.type === 'file' && item.file) {
+                        const fileExt = item.file.name.split('.').pop();
+                        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+                        const filePath = `${user.id}/${fileName}`;
 
-            // Media upload logic (skipped for brevity here, normally remains same)
-            // [Rest of upload logic from previous state]
+                        const { error: uploadError } = await supabase.storage
+                            .from(bucket)
+                            .upload(filePath, item.file);
+
+                        if (uploadError) throw uploadError;
+
+                        const { data: { publicUrl } } = supabase.storage
+                            .from(bucket)
+                            .getPublicUrl(filePath);
+                            
+                        uploadedUrls.push(publicUrl);
+                    } else if (typeof item === 'string') {
+                        uploadedUrls.push(item);
+                    } else if (item.src && item.type !== 'file') {
+                        uploadedUrls.push(item.src);
+                    } else if (item.src && item.type === 'file' && !item.file) {
+                        // case for existing social/blob urls that might have been loaded from initialData
+                        uploadedUrls.push(item.src);
+                    }
+                }
+                return uploadedUrls;
+            };
+
+            const finalizedImages = await uploadMedia(formData.images || [], 'project-images');
+            const finalizedVideos = await uploadMedia(formData.videos || [], 'project-videos');
 
             setLoadingStatus('Guardando proyecto...');
             const projectData = {
@@ -438,10 +473,10 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                 clientAvatar: user.avatar_url,
                 clientRole: user.role,
                 status: 'open',
-                imageUrl: (formData.images && formData.images.length > 0) ? formData.images[0] : null,
-                images: formData.images || [],
-                videos: formData.videos || [],
-                videoUrl: (formData.videos && formData.videos.length > 0) ? formData.videos[0].src : null,
+                imageUrl: finalizedImages.length > 0 ? finalizedImages[0] : null,
+                images: finalizedImages,
+                videos: finalizedVideos.map(v => ({ type: v.startsWith('http') ? 'url' : 'file', src: v })),
+                videoUrl: finalizedVideos.length > 0 ? finalizedVideos[0] : null,
                 faqs: faqs.filter(f => f.question && f.answer),
                 questions: user?.role === 'company' ? questions.filter(q => q.text.trim() !== '') : [],
                 location: formData.workMode.includes('presential')

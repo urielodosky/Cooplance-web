@@ -13,7 +13,7 @@ const ServiceCard = ({ service }) => {
     const [isDeleting, setIsDeleting] = useState(false);
     
     // Check if current user is owner
-    const isOwner = user && user.id === service.freelancerId;
+    const isOwner = user && String(user.id) === String(service.freelancerId);
 
     // Mock data if missing
     const rating = service.rating || 0;

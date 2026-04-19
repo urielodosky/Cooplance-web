@@ -38,6 +38,41 @@
     transform: scale(1.08);
 }
 
+/* Delete Button */
+.delete-service-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(239, 68, 68, 0.82);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0.9;
+}
+
+.delete-service-btn:hover:not(:disabled) {
+    background: #ef4444;
+    transform: scale(1.1) rotate(90deg);
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.delete-service-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: #64748b;
+}
+
 /* Content Area */
 .service-content {
     padding: 1.25rem 1.5rem;
