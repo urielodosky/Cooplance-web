@@ -12,7 +12,15 @@ const CustomDatePicker = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [viewMode, setViewMode] = useState('days'); // 'days', 'years'
-    const [viewDate, setViewDate] = useState(selected ? new Date(selected) : new Date());
+    
+    // Safety check for initialization
+    const getInitialDate = () => {
+        if (!selected) return new Date();
+        const d = new Date(selected);
+        return isNaN(d.getTime()) ? new Date() : d;
+    };
+    
+    const [viewDate, setViewDate] = useState(getInitialDate());
     const dropdownRef = useRef(null);
 
     const monthNames = [

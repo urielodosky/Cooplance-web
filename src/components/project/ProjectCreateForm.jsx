@@ -50,7 +50,6 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
         contractDurationType: initialData?.contractDurationType || 'days', // default to days for relative duration
         contractDurationValue: initialData?.contractDurationValue || '',
         contractStartDate: initialData?.contractStartDate || '',
-        expirationDate: initialData?.expirationDate || '',
         deadlineType: initialData?.deadlineType || 'fixed' // 'fixed' for specific date, 'duration' for relative time
     });
 
@@ -485,7 +484,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                 paymentMethods: (formData.paymentMethods && formData.paymentMethods.length > 0)
                     ? formData.paymentMethods.reduce((acc, curr) => ({ ...acc, [curr]: true }), {})
                     : null,
-                expirationDate: formData.expirationDate,
+                expirationDate: formData.deadlineType === 'fixed' ? formData.deadline : null,
                 deadlineType: formData.deadlineType
             };
 
@@ -694,16 +693,6 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
                                 </div>
                             )}
 
-                            {/* SHARED TIME AND EXPIRATION LOGIC */}
-                            <div className="form-group" style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
-                                <label className="work-mode-label">Fecha de expiración de la publicación</label>
-                                <CustomDatePicker 
-                                    value={formData.expirationDate} 
-                                    onChange={(v) => handleDropdownChange('expirationDate', v)} 
-                                    minDate={minDate}
-                                    placeholder="¿Hasta cuándo estará visible?"
-                                />
-                            </div>
 
                             <div className="form-group" style={{ marginTop: '1.5rem' }}>
                                 <label className="work-mode-label">{user?.role === 'company' ? 'Duración del Contrato' : 'Plazo de Entrega del Proyecto'}</label>
@@ -728,9 +717,9 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
 
                                 {formData.deadlineType === 'fixed' ? (
                                     <CustomDatePicker 
-                                        value={formData.deadline} 
+                                        selected={formData.deadline} 
                                         onChange={(v) => handleDropdownChange('deadline', v)} 
-                                        minDate={formData.expirationDate || minDate}
+                                        minDate={minDate}
                                         placeholder="Selecciona la fecha de entrega"
                                     />
                                 ) : (
