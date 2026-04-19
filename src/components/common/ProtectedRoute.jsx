@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../features/auth/context/AuthContext';
 import FullPageLoader from './FullPageLoader';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, adminOnly = false }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
@@ -15,6 +15,12 @@ const ProtectedRoute = ({ children }) => {
     if (!user) {
         // Redirect to login if user is not authenticated and loading is done
         return <Navigate to="/login" replace state={{ from: location }} />;
+    }
+
+    // RBAC: Check for admin privilege if required
+    if (adminOnly && !user.is_admin) {
+        console.warn(`[ProtectedRoute] Acceso denegado a ${location.pathname}. Usuario no es administrador.`);
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;

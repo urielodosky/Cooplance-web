@@ -16,6 +16,7 @@ import { getProposalsByUser, updateProposalStatus, deleteProposal as deletePropo
 import { getProjectsByClient, deleteProject as deleteProjectApi } from '../lib/projectService';
 import { supabase } from '../lib/supabase';
 import { BADGE_FAMILIES, CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
+import { useBadgeNotification } from '../context/BadgeNotificationContext';
 import '../styles/pages/Dashboard.scss';
 
 // --- Sub-components for UI Blocks ---
@@ -433,6 +434,7 @@ const Dashboard = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
     const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null);
+    const { refreshBadges } = useBadgeNotification();
 
     // V27: Update Job Status with Read-Only check
     const updateJobStatus = async (jobId, status) => {
@@ -440,7 +442,11 @@ const Dashboard = () => {
             alert("No puedes realizar esta acción en modo lectura.");
             return;
         }
-        return updateJobStatusApi(jobId, status);
+        const result = await updateJobStatusApi(jobId, status);
+        if (status === 'completed' && refreshBadges) {
+            refreshBadges();
+        }
+        return result;
     };
 
     // Initial load and sync

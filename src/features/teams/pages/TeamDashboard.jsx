@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/context/AuthContext';
 import { useChat } from '../../../context/ChatContext';
 import CustomDropdown from '../../../components/common/CustomDropdown';
 import CoopServiceCreateForm from '../components/CoopServiceCreateForm';
+import { useBadgeNotification } from '../../../context/BadgeNotificationContext';
 
 // Define explicit sub-components to isolate hook usage if any (though currently they are hookless)
 // This ensures cleaner main component render
@@ -18,6 +19,7 @@ const TeamDashboard = () => {
     const { teams, simulateDistribution, clearChat, deleteMessage, leaveTeam, addMemberToTeam, updateMemberRole, dissolveCoop, toggleService, addServiceToTeam, closeProject, updateRules, submitEvaluation, updateTeam, acceptRules } = useTeams();
     const { user } = useAuth();
     const { createChat, sendMessage: sendChatMessage } = useChat();
+    const { refreshBadges } = useBadgeNotification();
 
     // --- 2. DERIVED STATE ---
     // Ensure activeTeam is derived from updated teams list
@@ -227,6 +229,7 @@ const TeamDashboard = () => {
 
         try {
             await closeProject(activeTeam.id, projectId, { clientScore: score, feedback: feedback || "" });
+            if (refreshBadges) refreshBadges();
         } catch (error) {
             alert(error.message);
         }

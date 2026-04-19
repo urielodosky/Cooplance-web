@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CustomDropdown from '../../../components/common/CustomDropdown';
@@ -9,6 +9,14 @@ import '../../../styles/pages/Register.scss';
 const Register = () => {
     const [searchParams] = useSearchParams();
     const [role, setRole] = useState('freelancer');
+    const [fileError, setFileError] = useState(null);
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB Limit for local storage safety
+    
+    // V38: Safety shield for unmounted components
+    const isMounted = useRef(true);
+    useEffect(() => {
+        return () => { isMounted.current = false; };
+    }, []);
 
     // Sync role from query param on mount
     useEffect(() => {
@@ -85,8 +93,10 @@ const Register = () => {
             const fetchProvinces = async () => {
                 setIsLoadingLoc(true);
                 const provinces = await getArgentinaProvinces();
-                setArgProvinces(provinces);
-                setIsLoadingLoc(false);
+                if (isMounted.current) {
+                    setArgProvinces(provinces);
+                    setIsLoadingLoc(false);
+                }
             };
             fetchProvinces();
         }
@@ -99,9 +109,10 @@ const Register = () => {
                 // Strip the province name from the city format "City (Province)" if needed, 
                 // but getArgentinaCities handles the full format.
                 const cities = await getArgentinaCities(formData.province);
-                // For Register, we might want just the city name or keep the format for consistency
-                setArgCities(cities);
-                setIsLoadingLoc(false);
+                if (isMounted.current) {
+                    setArgCities(cities);
+                    setIsLoadingLoc(false);
+                }
             };
             fetchCities();
         } else {
@@ -189,14 +200,21 @@ const Register = () => {
 
     const handleCvChange = async (e) => {
         const file = e.target.files[0];
+        setFileError(null);
+
         if (file) {
+            if (file.size > MAX_FILE_SIZE) {
+                setFileError(`El archivo "${file.name}" es demasiado grande (Máx: 2MB). Por favor, usa una imagen más liviana.`);
+                e.target.value = ''; // Reset input
+                return;
+            }
+
             setCvFileName(file.name);
             try {
                 const compressed = await compressImage(file);
                 setFormData(prev => ({ ...prev, cvFile: compressed }));
             } catch (err) {
                 console.error("CV Compression error:", err);
-                // Fallback to original file reader if compression fails
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     setFormData(prev => ({ ...prev, cvFile: reader.result }));
@@ -208,7 +226,15 @@ const Register = () => {
 
     const handleProfileImageChange = async (e) => {
         const file = e.target.files[0];
+        setFileError(null);
+
         if (file) {
+            if (file.size > MAX_FILE_SIZE) {
+                setFileError(`La imagen de perfil "${file.name}" excede los 2MB limitantes. Intenta con una imagen optimizada.`);
+                e.target.value = ''; // Reset
+                return;
+            }
+
             setProfileImageName(file.name);
             try {
                 const compressed = await compressImage(file);
@@ -341,8 +367,10 @@ const Register = () => {
 
         // Watchdog: Force loading to false after 30s if everything hangs
         const loadingWatchdog = setTimeout(() => {
-            console.warn(" [REGISTER] Watchdog activado: El proceso de registro ha excedido los 30s.");
-            setLoading(false);
+            if (isMounted.current) {
+                console.warn(" [REGISTER] Watchdog activado: El proceso de registro ha excedido los 30s.");
+                setLoading(false);
+            }
         }, 30000);
 
         try {
@@ -369,7 +397,7 @@ const Register = () => {
                 
                 alert(errorMsg);
                 clearTimeout(loadingWatchdog);
-                setLoading(false);
+                if (isMounted.current) setLoading(false);
                 return;
             }
 
@@ -420,12 +448,14 @@ const Register = () => {
             
             // Fix for the {} alert: Extract the message if it's an Error object
             const errorMessage = err.message || (typeof err === 'string' ? err : JSON.stringify(err));
-            setError(`Error: ${errorMessage}`);
-            alert(`Error de Registro: ${errorMessage}`);
+            if (isMounted.current) {
+                setError(`Error: ${errorMessage}`);
+                alert(`Error de Registro: ${errorMessage}`);
+            }
             
             clearTimeout(loadingWatchdog);
         } finally {
-            setLoading(false);
+            if (isMounted.current) setLoading(false);
         }
     };
 
@@ -446,7 +476,22 @@ const Register = () => {
                     ))}
                 </div>
 
+
                 <form onSubmit={handleSubmit} className="register-form">
+                    
+                    {fileError && (
+                        <div className="file-error-container">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <div>
+                                <strong>Error de Archivo</strong>
+                                {fileError}
+                            </div>
+                        </div>
+                    )}
 
                     {/* 1. Username or Company Name */}
                     {role !== 'company' ? (
@@ -469,7 +514,7 @@ const Register = () => {
                     )}
 
                     {/* 3. Bio / Description */}
-                    <textarea name="bio" placeholder={role === 'company' ? "Biografía / Descripción de la Empresa" : "Cuéntanos sobre ti (Biografía)"} rows="3" onChange={handleChange} required />
+                    <textarea name="bio" value={formData.bio} placeholder={role === 'company' ? "Biografía / Descripción de la Empresa" : "Cuéntanos sobre ti (Biografía)"} rows="3" onChange={handleChange} required />
 
                     {/* 4. Birth Date */}
                     {role !== 'company' && (
@@ -596,10 +641,13 @@ const Register = () => {
                             )}
                         </div>
                         {role === 'freelancer' && (
-                            <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <input type="file" name="documentFile" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                                <span>{documentFileName || 'Subir Foto del Documento (Frente)'}</span>
-                            </label>
+                            <>
+                                <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <input type="file" name="documentFile" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                                    <span>{documentFileName || 'Subir Foto del Documento (Frente)'}</span>
+                                </label>
+                                <span className="file-limit-info">Identidad: Máx 2MB</span>
+                            </>
                         )}
                     
                     {/* 6. Country & Location */}
@@ -706,6 +754,7 @@ const Register = () => {
                                 {profileImageName || 'Subir Imagen (JPG, PNG)'}
                             </span>
                         </label>
+                        <span className="file-limit-info">Foto: Máx 2MB</span>
                     </div>
 
                     {/* 9. CV Upload (Only for Freelancer) */}
@@ -719,6 +768,7 @@ const Register = () => {
                                     {cvFileName || 'Subir CV (JPG, PNG)'}
                                 </span>
                             </label>
+                            <span className="file-limit-info">CV: Máx 2MB</span>
                         </div>
                     )}
 

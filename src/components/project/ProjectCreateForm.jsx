@@ -9,10 +9,12 @@ import { locations } from '../../features/services/data/locations';
 import { supabase } from '../../lib/supabase';
 import { createProject, updateProject, getProjectsByClient } from '../../lib/projectService';
 import { getArgentinaProvinces, getArgentinaCities } from '../../utils/locationUtils';
+import { useBadgeNotification } from '../../context/BadgeNotificationContext';
 
 const ProjectCreateForm = ({ onCancel, initialData }) => {
     const navigate = useNavigate();
     const { user } = useAuth(); // Get current user
+    const { refreshBadges } = useBadgeNotification();
 
     // Get today's date in local YYYY-MM-DD format
     const minDate = new Date().toLocaleDateString('en-CA');
@@ -509,6 +511,7 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
             } else {
                 await createProject(projectData);
                 setLoadingStatus('¡Listo!');
+                if (refreshBadges) refreshBadges();
             }
 
             setTimeout(() => {

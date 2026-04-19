@@ -47,7 +47,7 @@ export const getProjectById = async (id) => {
     try {
         const { data, error } = await supabase
             .from('projects')
-            .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role, rating, reviews_count, industry)')
+            .select('*, profiles:client_id(username, first_name, last_name, avatar_url, role, rating, reviews_count, industry, level)')
             .eq('id', id)
             .single();
 
@@ -176,6 +176,7 @@ function mapFromDB(row) {
         clientIndustry: row.profiles?.industry,
         clientRating: row.profiles?.rating || 0,
         clientReviews: row.profiles?.reviews_count || 0,
+        clientLevel: row.profiles?.level || 1,
         status: row.status,
         workMode: row.work_mode,
         country: row.country,

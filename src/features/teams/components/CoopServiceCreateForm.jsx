@@ -7,11 +7,13 @@ import { locations } from '../../services/data/locations';
 import universitiesData from '../../services/data/universidades_limpias.json';
 import CustomDropdown from '../../../components/common/CustomDropdown';
 import BookingConfigForm from '../../../components/booking/BookingConfigForm';
+import { useBadgeNotification } from '../../../context/BadgeNotificationContext';
 import '../../../styles/components/ServiceCreateForm.scss';
 
 const CoopServiceCreateForm = ({ onCancel, teamId, initialData, dashboardMembers }) => {
     const { addServiceToTeam } = useTeams();
     const { user } = useAuth();
+    const { refreshBadges } = useBadgeNotification();
 
     const [hasPackages, setHasPackages] = useState(initialData?.hasPackages || false);
     const [mediaType, setMediaType] = useState(initialData?.mediaType || { image: 'file', video: 'url' });
@@ -370,11 +372,12 @@ const handleSubmit = (e) => {
         // updateTeamService(teamId, finalServiceData);
         alert('¡Servicio de Equipo actualizado con éxito!');
     } else {
-        addServiceToTeam(teamId, finalServiceData)
-            .then(() => {
-                alert('¡Servicio de Equipo publicado con éxito!');
-                onCancel();
-            })
+            addServiceToTeam(teamId, finalServiceData)
+                .then(() => {
+                    alert('¡Servicio de Equipo publicado con éxito!');
+                    if (refreshBadges) refreshBadges();
+                    onCancel();
+                })
             .catch(err => alert("Error: " + err.message));
         return;
     }

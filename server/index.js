@@ -89,6 +89,15 @@ const otpLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// 6. RATE LIMITING ÚNICO PARA ACCESO ADMIN (Máxima seguridad)
+const adminLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 5, // Límite estricto: 5 intentos cada 15 minutos
+    message: { success: false, message: 'Demasiados intentos de acceso administrativo. Intenta en 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Endpoint: Send OTP
 app.post('/api/otp/send', otpLimiter, async (req, res) => {
     const { email, type } = req.body;
@@ -174,6 +183,24 @@ app.post('/api/otp/verify', (req, res) => {
     // Success
     otpStore.delete(email);
     res.json({ success: true, message: 'Verificación exitosa' });
+});
+
+// Endpoint: Admin Login (Server-side validation)
+app.post('/api/admin/auth', adminLimiter, (req, res) => {
+    const { passcode } = req.body;
+    const masterPasscode = process.env.ADMIN_MASTER_PASSCODE || 'SigloGracia'; // Fallback for safety
+
+    if (!passcode || typeof passcode !== 'string') {
+        return res.status(400).json({ success: false, message: 'Passcode requerido' });
+    }
+
+    if (passcode === masterPasscode) {
+        console.log(` [ADMIN ACCESS] Acceso concedido [${new Date().toLocaleString()}]`);
+        return res.json({ success: true, message: 'Acceso autorizado' });
+    } else {
+        console.warn(` [ADMIN DENIED] Intento fallido con: ${passcode}`);
+        return res.status(401).json({ success: false, message: 'Código incorrecto' });
+    }
 });
 
 app.listen(PORT, () => {

@@ -14,6 +14,16 @@ const ProjectDetailSkeleton = () => {
                     <div className="detail-content">
                         <div style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
                             <div className="skeleton-pulse" style={{ height: '3rem', width: '70%', marginBottom: '1rem' }}></div>
+                            
+                            {/* Client Badge Skeleton */}
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <div className="skeleton-pulse" style={{ width: '48px', height: '48px', borderRadius: '50%' }}></div>
+                                <div style={{ flex: 1 }}>
+                                    <div className="skeleton-pulse" style={{ height: '1.2rem', width: '150px', marginBottom: '0.4rem' }}></div>
+                                    <div className="skeleton-pulse" style={{ height: '0.8rem', width: '100px' }}></div>
+                                </div>
+                            </div>
+
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <div className="skeleton-pulse" style={{ height: '1.5rem', width: '80px', borderRadius: '15px' }}></div>
                                 <div className="skeleton-pulse" style={{ height: '1.5rem', width: '60px', borderRadius: '15px' }}></div>
@@ -25,6 +35,15 @@ const ProjectDetailSkeleton = () => {
                             <div className="skeleton-pulse" style={{ height: '1rem', width: '100%', marginBottom: '0.6rem' }}></div>
                             <div className="skeleton-pulse" style={{ height: '1rem', width: '100%', marginBottom: '0.6rem' }}></div>
                             <div className="skeleton-pulse" style={{ height: '1rem', width: '60%' }}></div>
+                        </div>
+
+                        {/* Categories Section Skeleton */}
+                        <div className="detail-section">
+                            <div className="skeleton-pulse" style={{ height: '1.5rem', width: '200px', marginBottom: '1rem' }}></div>
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <div className="skeleton-pulse" style={{ height: '60px', width: '140px', borderRadius: '12px' }}></div>
+                                <div className="skeleton-pulse" style={{ height: '60px', width: '140px', borderRadius: '12px' }}></div>
+                            </div>
                         </div>
 
                         <div className="glass detail-section" style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '12px' }}>

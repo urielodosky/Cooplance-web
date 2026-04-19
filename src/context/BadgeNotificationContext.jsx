@@ -24,14 +24,23 @@ export const BadgeNotificationProvider = ({ children }) => {
     const { user, updateUser } = useAuth();
     const [queue, setQueue] = useState([]);
     const [currentNotification, setCurrentNotification] = useState(null);
-    const notifiedIds = React.useRef(new Set());
+    const lastCheckRef = React.useRef(0);
+    const THROTTLE_MS = 60000; // 1 minute minimum between checks
 
     // Evaluate badges to find new ones
-    const checkBadgeUnlocks = useCallback(async () => {
+    const checkBadgeUnlocks = useCallback(async (force = false) => {
         if (!user || user.sync_error) return;
 
+        // Throttle to avoid excessive DB calls
+        const now = Date.now();
+        if (!force && (now - lastCheckRef.current < THROTTLE_MS)) {
+            return;
+        }
+
         try {
-            console.log("[BadgeNotificationContext] Checking for new unlocks...");
+            lastCheckRef.current = now;
+            // Removed noisy log
+            // console.log("[BadgeNotificationContext] Checking for new unlocks...");
 
             const isClient = user.role === 'buyer' || user.role === 'company';
             
@@ -174,12 +183,14 @@ export const BadgeNotificationProvider = ({ children }) => {
         migrateLegacyBadges();
     }, [user?.id, user?.gamification?.badges]);
 
-    // Check periodically
+    // Check periodically (Relaxed interval: 5 minutes)
     useEffect(() => {
+        if (!user?.id) return;
+
         checkBadgeUnlocks();
-        const interval = setInterval(checkBadgeUnlocks, 3000);
+        const interval = setInterval(() => checkBadgeUnlocks(), 300000); 
         return () => clearInterval(interval);
-    }, [checkBadgeUnlocks]);
+    }, [user?.id]); // Only restart if the user identity actually changes
 
     // Process Queue
     useEffect(() => {
@@ -198,7 +209,7 @@ export const BadgeNotificationProvider = ({ children }) => {
     }, [queue, currentNotification]);
 
     return (
-        <BadgeNotificationContext.Provider value={{}}>
+        <BadgeNotificationContext.Provider value={{ refreshBadges: () => checkBadgeUnlocks(true) }}>
             {children}
             {/* Notification UI */}
             <div style={{

@@ -289,7 +289,7 @@ const ProjectDetail = () => {
                     <div className="detail-content">
                         {/* Header Section */}
                         <div style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
                                 <h1 className="detail-title" style={{ margin: 0, fontSize: '2.2rem' }}>{project.title}</h1>
                                 {project.status === 'open' && (
                                     <span className="project-status-badge">
@@ -299,26 +299,57 @@ const ProjectDetail = () => {
                                 )}
                             </div>
 
-                            <div className="detail-tags" style={{ marginTop: '1rem' }}>
-                                <span className="detail-tag project-category-tag">{project.category}</span>
-                                {project.tags && project.tags.map((tag, i) => (
-                                    <span key={i} className="detail-tag">
-                                        {tag}
-                                    </span>
-                                ))}
-                                <span className={`detail-tag work-mode-tag ${project.workMode === 'presential' ? 'presential' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.8rem' }}>
+                            {/* Client Header Info - Service Style */}
+                            <div
+                                className="detail-freelancer-badge"
+                                onClick={() => navigate(project.clientRole === 'company' ? `/company/${project.clientId}` : `/client/${project.clientId}`)}
+                                style={{ cursor: 'pointer', transition: 'background 0.2s', padding: '0.8rem', borderRadius: '12px', border: '1px solid transparent', marginBottom: '1.5rem' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; }}
+                            >
+                                <img
+                                    src={getProfilePicture({ role: project.clientRole, avatar: project.clientAvatar, companyName: project.clientName })}
+                                    alt={project.clientName}
+                                    style={{ width: '48px', height: '48px', borderRadius: project.clientRole === 'company' ? '8px' : '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
+                                />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                        <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600 }}>{project.clientName}</h3>
+                                        <span className="level-badge-lg" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Nivel {project.clientLevel || 1}</span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.85rem' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>{project.clientRole === 'company' ? 'Empresa' : 'Cliente'}</span>
+                                        {project.clientRating > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', paddingLeft: '0.5rem', borderLeft: '1px solid var(--border)' }}>
+                                                <span style={{ color: '#fbbf24' }}>★</span>
+                                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{project.clientRating}</span>
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>({project.clientReviews || 0})</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="detail-tags" style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                                <span className={`detail-tag work-mode-tag ${project.workMode === 'presential' ? 'presential' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.9rem' }}>
                                     {project.workMode === 'presential' ? (
                                         <>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                                             {formatLocationDetail(project.location) || 'Presencial'}
                                         </>
                                     ) : (
                                         <>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="18" height="12" x="3" y="4" rx="2" ry="2" /><line x1="2" x2="22" y1="20" y2="20" /></svg>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="18" height="12" x="3" y="4" rx="2" ry="2" /><line x1="2" x2="22" y1="20" y2="20" /></svg>
                                             Remoto
                                         </>
                                     )}
                                 </span>
+                                {project.tags && project.tags.map((tag, i) => (
+                                    <span key={i} className="detail-tag" style={{ borderRadius: '8px', padding: '0.5rem 1rem' }}>
+                                        {tag}
+                                    </span>
+                                ))}
                             </div>
                         </div>
 
@@ -328,6 +359,42 @@ const ProjectDetail = () => {
                             <p className="detail-description">
                                 {project.description}
                             </p>
+                        </div>
+
+                        {/* Category & Information Section - Service Style */}
+                        <div className="detail-section">
+                            <h3>Categoría e Información</h3>
+                            <div className="category-info-layout">
+                                <div className="category-main-row">
+                                    {project.category && (
+                                        <div className="category-pill">
+                                            <span className="pill-label">Categoría</span>
+                                            <span className="pill-value">{project.category}</span>
+                                        </div>
+                                    )}
+                                    {project.subcategories && project.subcategories.length > 0 && (
+                                        <div className="category-pill subcategory">
+                                            <span className="pill-label">Subcategoría</span>
+                                            <span className="pill-value">
+                                                {Array.isArray(project.subcategories) ? project.subcategories.join(', ') : project.subcategories}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {project.specialties && project.specialties.length > 0 && (
+                                    <div className="specialties-section">
+                                        <h4 className="specialties-title">Especialidades</h4>
+                                        <div className="specialties-grid">
+                                            {project.specialties.map(spec => (
+                                                <span key={spec} className="specialty-tag">
+                                                    {spec}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Multimedia Grid - Only if no carousel logic happened (fallback) */}
@@ -446,20 +513,21 @@ const ProjectDetail = () => {
 
                         {/* CLIENT INFO SECTION - REBUILT TO MATCH SERVICE DETAIL */}
                         <div className="sidebar-reviews-section" style={{ padding: '1.5rem', borderTop: '1px solid var(--border)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                            <h4 style={{ margin: '0 0 1.5rem 0', fontSize: '1rem', color: 'var(--text-primary)' }}>Sobre el Cliente</h4>
+                            <h4 style={{ margin: '0 0 1.2rem 0', fontSize: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                                Sobre el Cliente
+                            </h4>
                             <div 
                                 className="client-profile-card"
-                                style={{ display: 'flex', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}
                                 onClick={() => navigate(project.clientRole === 'company' ? `/company/${project.clientId}` : `/client/${project.clientId}`)}
                             >
                                 <img
                                     src={getProfilePicture({ role: project.clientRole, companyName: project.clientName, avatar: project.clientAvatar })}
                                     alt={project.clientName}
                                     className={`client-avatar ${project.clientRole === 'company' ? 'company' : ''}`}
-                                    style={{ width: '50px', height: '50px', borderRadius: project.clientRole === 'company' ? '8px' : '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
                                 />
-                                <div style={{ flex: 1 }}>
-                                    <div className="client-name" style={{ fontSize: '1rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <div className="client-info">
+                                    <div className="client-name">
                                         {project.clientName}
                                         {project.clientRole === 'company' && (
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" x2="21" y1="14" y2="3" /></svg>
@@ -468,10 +536,9 @@ const ProjectDetail = () => {
                                     {project.clientIndustry && (
                                         <div style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginBottom: '4px' }}>{project.clientIndustry}</div>
                                     )}
-                                    <div className="client-rating" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem' }}>
-                                        <span style={{ color: '#fbbf24' }}>★</span>
-                                        <span style={{ fontWeight: 600 }}>{project.clientRating}</span>
-                                        <span style={{ color: 'var(--text-muted)' }}>({project.clientReviews})</span>
+                                    <div className="client-rating">
+                                        <span className="rating-value">★ {project.clientRating}</span>
+                                        <span>({project.clientReviews})</span>
                                     </div>
                                 </div>
                             </div>

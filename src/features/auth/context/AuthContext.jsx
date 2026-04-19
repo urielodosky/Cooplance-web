@@ -297,7 +297,10 @@ export const AuthProvider = ({ children }) => {
             sessionStorage.setItem('cooplance_pending_profile_data', JSON.stringify(heavyData));
         } catch (storageErr) {
             console.warn("[AuthContext] Failed to cache pending data in storage (Quota exceeded?):", storageErr);
-            // We ignore and continue. SignUp is more important.
+            // If it's a quota error, we must warn the user because they will lose their photo
+            if (storageErr.name === 'QuotaExceededError' || storageErr.message.includes('quota')) {
+                throw new Error("Tu navegador no tiene espacio suficiente para guardar estas fotos temporalmente. Por favor, usa imágenes más pequeñas o limpia el historial de tu navegador.");
+            }
         }
 
         // Cleanup: Remove empty/null fields
@@ -573,6 +576,32 @@ export const AuthProvider = ({ children }) => {
         return result.data?.user;
     };
 
+    // ─── RESET PASSWORD (Step 1: Send link/email) ──────────────────────────
+    const resetPassword = async (email) => {
+        console.log(`[AuthContext] Requesting password reset for ${email}...`);
+        const { error } = await withTimeout(
+            supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            }),
+            60000,
+            "Solicitar Reset Password"
+        );
+        if (error) throw new Error(error.message);
+        return true;
+    };
+
+    // ─── UPDATE PASSWORD (Step 2: Save new password) ──────────────────────
+    const updatePassword = async (newPassword) => {
+        console.log("[AuthContext] Updating user password...");
+        const { data, error } = await withTimeout(
+            supabase.auth.updateUser({ password: newPassword }),
+            60000,
+            "Actualizar Password"
+        );
+        if (error) throw new Error(error.message);
+        return data.user;
+    };
+
     // ─── LOGOUT ─────────────────────────────────────────────────────────────
     const logout = async () => {
         const userId = user?.id;
@@ -752,7 +781,8 @@ export const AuthProvider = ({ children }) => {
             updateBalance, checkUserExists, deleteAccount, 
             verifyOtp, resendOtp, loginVerifyOtp,
             validateParent, enterMirrorMode, exitMirrorMode,
-            isTutorView, supervisedUser
+            isTutorView, supervisedUser,
+            resetPassword, updatePassword
         }}>
             {!isInitialized ? <InitialLoader /> : children}
         </AuthContext.Provider>

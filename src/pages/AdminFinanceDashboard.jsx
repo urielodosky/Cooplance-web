@@ -10,14 +10,13 @@ const formatCurrency = (value) => {
     }).format(value);
 };
 
-// CÓDIGO MAESTRO SOLICITADO
-const MASTER_PASSCODE = 'SigloGracia';
-const VERIFICATION_CODE_MOCK = '777777'; // Simulated code sent to email
+// CÓDIGO MAESTRO REMOVIDO DEL FRONTEND POR SEGURIDAD
+// La validación ahora se hace en el servidor Express (/server/index.js)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const AdminFinanceDashboard = () => {
-    const [authStep, setAuthStep] = useState(0); // 0 = request code, 1 = verification, 2 = authorized
+    const [authStep, setAuthStep] = useState(0); // 0 = request code, 2 = authorized
     const [passcode, setPasscode] = useState('');
-    const [verificationCode, setVerificationCode] = useState('');
     const [authError, setAuthError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -179,7 +178,7 @@ const AdminFinanceDashboard = () => {
         }
     };
 
-    const handlePasscodeSubmit = (e) => {
+    const handlePasscodeSubmit = async (e) => {
         e.preventDefault();
 
         if (lockoutUntil && Date.now() < lockoutUntil) {
@@ -189,12 +188,20 @@ const AdminFinanceDashboard = () => {
         setAuthError('');
         setIsLoading(true);
 
-        setTimeout(() => {
-            if (passcode === MASTER_PASSCODE) {
+        try {
+            const resp = await fetch(`${API_URL}/admin/auth`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ passcode })
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.success) {
                 // Success
                 setLoginAttempts(0);
                 localStorage.setItem('admin_login_attempts', '0');
-                setAuthStep(1);
+                setAuthStep(2); // Fully authorized directly
             } else {
                 // Failure
                 const newAttempts = loginAttempts + 1;
@@ -207,26 +214,15 @@ const AdminFinanceDashboard = () => {
                     localStorage.setItem('admin_lockout_until', lockoutTime.toString());
                     setAuthError('Demasiados intentos. Sistema bloqueado.');
                 } else {
-                    setAuthError(`Código incorrecto. Te quedan ${3 - newAttempts} intentos.`);
+                    setAuthError(data.message || `Código incorrecto. Te quedan ${3 - newAttempts} intentos.`);
                 }
             }
+        } catch (err) {
+            console.error("Auth error:", err);
+            setAuthError('Error de conexión con el servidor de seguridad.');
+        } finally {
             setIsLoading(false);
-        }, 1000); // Simulate network delay
-    };
-
-    const handleVerificationSubmit = (e) => {
-        e.preventDefault();
-        setAuthError('');
-        setIsLoading(true);
-
-        setTimeout(() => {
-            if (verificationCode === VERIFICATION_CODE_MOCK) {
-                setAuthStep(2); // Fully authorized
-            } else {
-                setAuthError('Código de verificación inválido.');
-            }
-            setIsLoading(false);
-        }, 800);
+        }
     };
 
     if (authStep < 2) {
@@ -253,14 +249,14 @@ const AdminFinanceDashboard = () => {
                                     <strong>Espera {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')} para intentar nuevamente.</strong>
                                 </div>
                             </div>
-                        ) : authStep === 0 ? (
+                        ) : (
                             <form
                                 key="step1"
                                 onSubmit={handlePasscodeSubmit}
                                 className="auth-form"
                             >
                                 <div className="input-group">
-                                    <label>¿Cuál es el código?</label>
+                                    <label>Código de Seguridad</label>
                                     <input
                                         type="password"
                                         value={passcode}
@@ -271,33 +267,7 @@ const AdminFinanceDashboard = () => {
                                 </div>
                                 {authError && <div className="auth-error">{authError}</div>}
                                 <button type="submit" className="btn-primary auth-btn" disabled={isLoading || !passcode}>
-                                    {isLoading ? 'Verificando...' : 'Continuar'}
-                                </button>
-                            </form>
-                        ) : (
-                            <form
-                                key="step2"
-                                onSubmit={handleVerificationSubmit}
-                                className="auth-form"
-                            >
-                                <div className="verification-notice">
-                                    Se ha enviado un código de seguridad al correo:
-                                    <strong>cooplance.org@gmail.com</strong>
-                                </div>
-                                <div className="input-group">
-                                    <label>Código de Verificación</label>
-                                    <input
-                                        type="text"
-                                        value={verificationCode}
-                                        onChange={(e) => setVerificationCode(e.target.value)}
-                                        placeholder="Ingresa el código de 6 dígitos"
-                                        maxLength={6}
-                                        autoFocus
-                                    />
-                                </div>
-                                {authError && <div className="auth-error">{authError}</div>}
-                                <button type="submit" className="btn-primary auth-btn" disabled={isLoading || verificationCode.length < 6}>
-                                    {isLoading ? 'Comprobando...' : 'Acceder al Dashboard'}
+                                    {isLoading ? 'Verificando...' : 'Acceder al Dashboard'}
                                 </button>
                             </form>
                         )}

@@ -35,6 +35,7 @@ import Wallet from './pages/Wallet'
 import AdminFinanceDashboard from './pages/AdminFinanceDashboard'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import MirrorModeBanner from './components/common/MirrorModeBanner'
+import NotFound from './pages/NotFound'
 import { ThemeProvider } from './context/ThemeContext'
 import { TeamProvider } from './context/TeamContext'
 import { ChatProvider } from './context/ChatContext'
@@ -88,7 +89,8 @@ function App() {
               <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
               <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
               <Route path="/events" element={<Events />} />
-              <Route path="/admin-cooplance-secret" element={<ProtectedRoute><AdminFinanceDashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminFinanceDashboard /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <SupportChatbot />

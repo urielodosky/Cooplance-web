@@ -5,12 +5,14 @@ import { useTeams } from '../../../context/TeamContext';
 import { serviceCategories } from '../../services/data/categories';
 import { getProfilePicture } from '../../../utils/avatarUtils';
 import CustomDropdown from '../../../components/common/CustomDropdown';
+import { useBadgeNotification } from '../../../context/BadgeNotificationContext';
 import '../../../styles/main.scss';
 
 const CreateTeam = () => {
     const { user } = useAuth();
     const { createTeam, canCreateTeam, searchUser } = useTeams();
     const navigate = useNavigate();
+    const { refreshBadges } = useBadgeNotification();
 
     // --- STATE ---
     const [formData, setFormData] = useState({
@@ -157,6 +159,7 @@ const CreateTeam = () => {
                 invitedMembers
             };
             await createTeam(finalData);
+            if (refreshBadges) refreshBadges();
             navigate('/my-coops');
         } catch (err) {
             setError(err.message);

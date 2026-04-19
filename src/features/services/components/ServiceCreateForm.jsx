@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useServices } from '../context/ServiceContext';
 import { useAuth } from '../../auth/context/AuthContext';
+import { useBadgeNotification } from '../../../context/BadgeNotificationContext';
 import { processGamificationRules, calculateCommission } from '../../../utils/gamification';
 import { serviceCategories, bookingCategories } from '../data/categories';
 import { locations } from '../data/locations';
@@ -23,6 +24,7 @@ const withTimeout = (promise, ms, actionName) => {
 const ServiceCreateForm = ({ onCancel, initialData }) => {
     const { addService, updateService } = useServices();
     const { user } = useAuth();
+    const { refreshBadges } = useBadgeNotification();
 
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = 4;
@@ -649,6 +651,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             } else {
                 await addService(finalServiceData);
                 setSuccessMessage('¡Servicio publicado con éxito!');
+                if (refreshBadges) refreshBadges();
             }
             
             setLoadingStatus('¡Listo!');
