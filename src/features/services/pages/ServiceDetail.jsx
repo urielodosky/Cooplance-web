@@ -248,6 +248,30 @@ const ServiceDetail = () => {
 
     return (
         <div className="container service-detail-container">
+            {(freelancerUser.gamification?.pause_mode?.active || freelancerUser.gamification?.vacation?.active) && (
+                <div className="pause-notice-banner" style={{
+                    background: 'rgba(139, 92, 246, 0.1)',
+                    border: '2px solid #8b5cf6',
+                    padding: '1.25rem',
+                    marginBottom: '1.5rem',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    boxShadow: '0 8px 25px rgba(139, 92, 246, 0.15)'
+                }}>
+                    <div style={{ background: '#8b5cf6', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+                    </div>
+                    <div>
+                        <h4 style={{ margin: 0, color: '#8b5cf6', fontWeight: 800, fontSize: '1rem' }}>Profesional en Pausa</h4>
+                        <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                            Este profesional se encuentra actualmente en pausa y no está aceptando nuevos pedidos en este momento.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {isOwner && (
                 <div className="owner-banner" style={{
                     background: 'rgba(99, 102, 241, 0.1)',
@@ -377,15 +401,11 @@ const ServiceDetail = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                     <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600 }}>{displayUsername}</h3>
                                     <span className="level-badge-lg" style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}>Nivel {displayLevel}</span>
-                                    {(freelancerUser.gamification?.pause_mode?.active || freelancerUser.gamification?.vacation?.active) && (() => {
-                                        const pauseData = freelancerUser.gamification.pause_mode || freelancerUser.gamification.vacation;
-                                        const daysLeft = Math.max(0, 15 - Math.floor((Date.now() - new Date(pauseData.startDate).getTime()) / 86400000));
-                                        return (
-                                            <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.65rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                                                Modo Pausa — {daysLeft}d
-                                            </span>
-                                        );
-                                    })()}
+                                    {(freelancerUser.gamification?.pause_mode?.active || freelancerUser.gamification?.vacation?.active) && (
+                                        <span style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', fontSize: '0.65rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
+                                            Modo Pausa
+                                        </span>
+                                    )}
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.85rem' }}>

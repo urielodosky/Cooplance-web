@@ -1,7 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../../styles/components/CustomDropdown.scss';
 
-const CustomDropdown = ({ label, options, value, onChange, placeholder = 'Seleccionar...', disabled = false, searchable = false, multiple = false, maxSelections = 0, allowCustom = false }) => {
+const CustomDropdown = ({ 
+    label, options, value, onChange, placeholder = 'Seleccionar...', 
+    disabled = false, searchable = false, multiple = false, 
+    maxSelections = 0, allowCustom = false,
+    className = '', style = {}
+}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const dropdownRef = useRef(null);
@@ -69,7 +74,7 @@ const CustomDropdown = ({ label, options, value, onChange, placeholder = 'Selecc
     }
 
     return (
-        <div className="custom-dropdown-container" ref={dropdownRef}>
+        <div className={`custom-dropdown-container ${className}`} ref={dropdownRef} style={style}>
             {label && <label className="field-label-sm">{label}</label>}
             <div className={`custom-dropdown-wrapper ${disabled ? 'disabled' : ''} ${isOpen ? 'open' : ''}`}>
                 <div className="dropdown-selected" onClick={toggleDropdown}>

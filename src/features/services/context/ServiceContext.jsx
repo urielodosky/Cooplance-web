@@ -56,6 +56,7 @@ const mapFromDB = (row) => {
         freelancerAvatar: row.profiles?.avatar_url || null,
         freelancerUsername: row.profiles?.username || null,
         level: row.profiles?.level || 1,
+        gamification: row.profiles?.gamification || null,
         date: row.created_at,
         createdAt: row.created_at,
         // Preserve raw config for any edge cases
@@ -137,7 +138,7 @@ export const ServiceProvider = ({ children }) => {
             console.log('[ServiceContext v1.6] fetchServices START');
             const { data, error } = await supabase
                 .from('services')
-                .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender)')
+                .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender, gamification)')
                 .eq('active', true)
                 .order('created_at', { ascending: false });
 
@@ -172,7 +173,7 @@ export const ServiceProvider = ({ children }) => {
             const { data, error } = await supabase
                 .from('services')
                 .insert(dbRow)
-                .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender)')
+                .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender, gamification)')
                 .single();
 
             if (error) throw error;
@@ -206,7 +207,7 @@ export const ServiceProvider = ({ children }) => {
                 .from('services')
                 .update(dbRow)
                 .eq('id', updatedService.id)
-                .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender)')
+                .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender, gamification)')
                 .maybeSingle();
 
             if (error) throw error;

@@ -12,6 +12,7 @@ import { getArgentinaProvinces, getArgentinaCities } from '../../utils/locationU
 import { useBadgeNotification } from '../../context/BadgeNotificationContext';
 
 const ProjectCreateForm = ({ onCancel, initialData }) => {
+    const STORAGE_KEY = 'cooplance_project_draft';
     const navigate = useNavigate();
     const { user } = useAuth(); // Get current user
     const { refreshBadges } = useBadgeNotification();
@@ -113,6 +114,51 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
 
     const [mediaType, setMediaType] = useState({ image: 'file', video: 'url' });
     const [fileNames, setFileNames] = useState({ image: '', video: '' });
+
+    // --- FORM PERSISTENCE LOGIC (MOBILE SYNC) ---
+    // 1. Load draft on Mount
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(STORAGE_KEY);
+        if (savedDraft && !initialData?.id) { // Only load draft for NEW projects, not edits
+            try {
+                const draft = JSON.parse(savedDraft);
+                if (draft.formData) {
+                    setFormData(prev => ({
+                        ...prev,
+                        ...draft.formData,
+                        images: [], // Reset images as blobs are sesson-based
+                        videos: []
+                    }));
+                }
+                if (draft.currentStep) setCurrentStep(draft.currentStep);
+                if (draft.faqs) setFaqs(draft.faqs);
+                if (draft.questions) setQuestions(draft.questions);
+            } catch (err) {
+                console.error("Error loading project draft:", err);
+            }
+        }
+    }, [initialData]);
+
+    // 2. Sync changes to LocalStorage
+    useEffect(() => {
+        if (initialData?.id) return; // Don't sync if editing an existing project
+
+        const syncDraft = () => {
+            // Exclude blobs (images/videos) to respect storage limits
+            const { images, videos, ...safeFormData } = formData;
+            const draft = {
+                formData: safeFormData,
+                currentStep,
+                faqs,
+                questions,
+                updatedAt: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        };
+
+        const timeoutId = setTimeout(syncDraft, 1000); // Debounce
+        return () => clearTimeout(timeoutId);
+    }, [formData, currentStep, faqs, questions, initialData]);
 
     const handleAddImages = (e) => {
         const files = Array.from(e.target.files);
@@ -515,6 +561,8 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
             }
 
             setTimeout(() => {
+                // 3. Cleanup Persistence on Success
+                localStorage.removeItem(STORAGE_KEY);
                 navigate('/explore-clients');
             }, 1500);
 

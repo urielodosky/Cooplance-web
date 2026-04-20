@@ -12,6 +12,28 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
+.service-card.is-paused {
+    border: 2px solid #8b5cf6 !important;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    position: relative;
+    
+    &::after {
+        content: 'PAUSADO';
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: #8b5cf6;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        z-index: 5;
+        box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4);
+    }
+}
+
 .service-card:hover {
     transform: translateY(-8px);
     box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.2), 0 0 20px rgba(139, 92, 246, 0.1);

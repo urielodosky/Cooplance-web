@@ -130,25 +130,32 @@ const HelpCenter = () => {
             </div>
 
             <div className="help-section">
-                <h3>Política de Vacaciones</h3>
-                <p>Sabemos que necesitas descansar. Por eso ofrecemos un "Modo Vacaciones" que congela tu XP para evitar penalizaciones por inactividad.</p>
+                <h3>Disponibilidad y Modo Pausa</h3>
+                <p>En Cooplance valoramos tu autonomía. El "Modo Pausa" te permite decidir cuándo estar fuera de servicio sin preocupaciones.</p>
                 <ul>
-                    <li>Tienes <strong>4 usos de 15 días</strong> cada uno por año.</li>
-                    <li>Mientras estás activo en vacaciones, no puedes recibir nuevos trabajos, pero tu XP no decae.</li>
-                    <li>Debes activarlo manualmente desde tu Panel de Control.</li>
+                    <li>Es <strong>100% voluntario e ilimitado</strong>. Puedes activarlo y desactivarlo las veces que quieras desde tu perfil.</li>
+                    <li>Mientras estás en pausa, tus servicios se mostrarán al final de los listados con un aviso especial, evitando que recibas nuevos pedidos mientras no estás disponible.</li>
+                    <li><strong>Sin penalizaciones por inactividad:</strong> No perderás XP ni nivel por tomarte el tiempo que necesites.</li>
                 </ul>
             </div>
 
             <div className="help-section">
-                <h3>Ganancia de Experiencia (XP) y Ganancias</h3>
-                <p>Tu XP te permite subir de nivel. Toma en cuenta la siguiente estructura básica de ganancias de XP por trabajo completado:</p>
+                <h3>Ganancia de Experiencia (XP) y Calidad</h3>
+                <p>Tu XP te permite subir de nivel y se obtiene principalmente al concretar ventas exitosas:</p>
                 <ul>
-                    <li>Mayor a $140.000: <strong>80 XP</strong></li>
-                    <li>Mayor a $70.000: <strong>40 XP</strong></li>
-                    <li>Mayor a $28.000: <strong>30 XP</strong></li>
+                    <li>Venta Mayor a $140.000: <strong>80 XP</strong></li>
+                    <li>Venta Mayor a $70.000: <strong>40 XP</strong></li>
+                    <li>Venta Mayor a $28.000: <strong>30 XP</strong></li>
                     <li>De $7.000 a $28.000: <strong>10 XP</strong></li>
                 </ul>
                 <p><em>* Nivel 1: Menos de $140.000 otorga 40 XP fijos.</em></p>
+                
+                <h4 style={{ marginTop: '1.2rem', color: 'var(--primary)' }}>Penalizaciones por Calidad (Nivel 6+)</h4>
+                <p>Para asegurar la excelencia en los niveles superiores, los profesionales de <strong>Nivel 6 o más</strong> están sujetos a deducciones de XP si reciben bajas calificaciones:</p>
+                <ul>
+                    <li>Reseña de 1 o 2 estrellas: <strong>-100 XP</strong></li>
+                    <li>Reseña de 3 estrellas: <strong>-20 XP</strong></li>
+                </ul>
             </div>
         </div>
     );

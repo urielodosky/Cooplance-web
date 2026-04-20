@@ -101,9 +101,14 @@ export const processGamificationRules = (user) => {
 
     const g = updatedUser.gamification;
 
-    // COMPATIBILITY V34: Migration of legacy 'vacation' to 'pause_mode'
-    if (g.vacation && !g.pause_mode) {
-        g.pause_mode = { ...g.vacation };
+    // COMPATIBILITY V39: Migration of legacy 'vacation' to 'pause_mode'
+    if (g.vacation) {
+        if (!g.pause_mode) {
+            g.pause_mode = { 
+                active: g.vacation.active || false,
+                startDate: g.vacation.startDate || null
+            };
+        }
         delete g.vacation;
         hasChanges = true;
     }
@@ -112,35 +117,18 @@ export const processGamificationRules = (user) => {
     if (typeof g.pause_mode !== 'object' || g.pause_mode === null) {
         g.pause_mode = {
             active: false,
-            startDate: null,
-            credits: 4,
-            lastReset: now
+            startDate: null
         };
         hasChanges = true;
     }
 
-    // 1. Pause Mode Reset (Annual Policy V3)
-    const oneYear = 365 * 24 * 60 * 60 * 1000;
-    const lastResetTime = g.pause_mode?.lastReset || 0;
-    if (lastResetTime && now - lastResetTime > oneYear) {
-        g.pause_mode.credits = 4;
-        g.pause_mode.lastReset = now;
-        g.pause_mode.policyV3 = true;
-        hasChanges = true;
-    }
 
-    // 2. Check Pause Mode Expiry (15 days duration)
-    const fifteenDaysDuration = 15 * 24 * 60 * 60 * 1000;
-    if (g.pause_mode?.active && g.pause_mode?.startDate) {
-        if (now - new Date(g.pause_mode.startDate).getTime() > fifteenDaysDuration) {
-            g.pause_mode.active = false;
-            g.pause_mode.startDate = null;
-            hasChanges = true;
-        } else {
-            // While in pause mode, we just return to avoid XP decay or other rules
-            if (hasChanges) return updatedUser;
-            return user;
-        }
+    // 2. Pause Mode Activity
+    if (g.pause_mode?.active) {
+        // While in pause mode, we just return to avoid any automatic rules
+        // In V34+, we don't expire it automatically after 15 days anymore.
+        if (hasChanges) return updatedUser;
+        return user;
     }
 
     // --- V34 LEGAL COMPLIANCE: AUTOMATED PENALTIES REMOVED ---
@@ -164,23 +152,16 @@ export const registerActivity = (user) => {
 
 export const activatePauseMode = (user) => {
     if (!user) return user;
-    const g = user.gamification || { pause_mode: { active: false, credits: 4, lastReset: Date.now() } };
+    const g = user.gamification || { pause_mode: { active: false, lastReset: Date.now() } };
 
-    // Migration check inside activator
+    // Migration check
     if (g.vacation && !g.pause_mode) {
         g.pause_mode = { ...g.vacation };
         delete g.vacation;
     }
 
-    if (g.pause_mode && g.pause_mode.active) return user;
+    if (g.pause_mode?.active) return user;
     
-    // Ensure structure
-    if (!g.pause_mode) {
-        g.pause_mode = { active: false, credits: 4, lastReset: Date.now() };
-    }
-
-    if ((g.pause_mode?.credits || 0) <= 0) return user;
-
     return {
         ...user,
         gamification: {
@@ -188,8 +169,25 @@ export const activatePauseMode = (user) => {
             pause_mode: {
                 ...g.pause_mode,
                 active: true,
-                startDate: new Date().toISOString(),
-                credits: (g.pause_mode.credits || 0) - 1
+                startDate: new Date().toISOString()
+            }
+        }
+    };
+};
+
+export const deactivatePauseMode = (user) => {
+    if (!user) return user;
+    const g = user.gamification;
+    if (!g || !g.pause_mode?.active) return user;
+
+    return {
+        ...user,
+        gamification: {
+            ...g,
+            pause_mode: {
+                ...g.pause_mode,
+                active: false,
+                startDate: null
             }
         }
     };

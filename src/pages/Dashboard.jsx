@@ -9,7 +9,7 @@ import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
-import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
+import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, deactivatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { getBenefitsForRole } from '../data/levelBenefits';
 import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
@@ -546,18 +546,16 @@ const Dashboard = () => {
 
     const handlePauseModeClick = () => {
         const g = user.gamification || {};
-        const pause_data = g.pause_mode || g.vacation || {}; // Fallback for state yet to be synced
+        const isPaused = g.pause_mode?.active || g.vacation?.active;
         
-        if (pause_data.active) {
-            alert("Ya estás en Modo Pausa.");
-            return;
-        }
-        if ((pause_data.credits || 0) <= 0) {
-            alert("No tienes créditos de pausa disponibles.");
-            return;
-        }
-        if (window.confirm(`¿Activar Modo Pausa? Se pausarán las penalizaciones de tiempo. Te quedan ${pause_data.credits} usos.`)) {
-            updateUser(activatePauseMode(user));
+        if (isPaused) {
+            if (window.confirm("¿Desactivar el Modo Pausa? Tus servicios volverán a ser visibles normalmente.")) {
+                updateUser(deactivatePauseMode(user));
+            }
+        } else {
+            if (window.confirm("¿Activar Modo Pausa? Tus servicios se mostrarán al final de las listas y no se aplicarán penalizaciones de tiempo. Puedes desactivarlo cuando quieras.")) {
+                updateUser(activatePauseMode(user));
+            }
         }
     };
 
@@ -716,14 +714,13 @@ const Dashboard = () => {
                         <div className="pause-mode-header">
                             <h4>Modo Pausa</h4>
                             <div className="help-icon">?</div>
-                            <span className="help-tooltip">Mientras estés en modo pausa no se perderá experiencia por inactividad.</span>
+                            <span className="help-tooltip">En Modo Pausa, tus servicios aparecen al final de las listas y no recibes pedidos. Es ideal para vacaciones o periodos de alta demanda.</span>
                         </div>
                         <p className="stat-value" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                            {user.gamification?.pause_mode?.active || user.gamification?.vacation?.active ? 'ON' : 'OFF'}
+                            {user.gamification?.pause_mode?.active || user.gamification?.vacation?.active ? 'ACTIVO' : 'INACTIVO'}
                         </p>
                         <button
                             onClick={handlePauseModeClick}
-                            disabled={user.gamification?.pause_mode?.active || user.gamification?.vacation?.active || (user.gamification?.pause_mode?.credits || (user.gamification?.vacation?.credits || 0)) <= 0}
                             style={{
                                 fontSize: '0.7rem',
                                 padding: '0.4rem',
@@ -731,14 +728,14 @@ const Dashboard = () => {
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '8px',
-                                cursor: (user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'default' : 'pointer',
+                                cursor: 'pointer',
                                 width: '100%'
                             }}
                         >
-                            {(user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Pausado' : 'Activar'}
+                            {(user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Desactivar' : 'Activar'}
                         </button>
                         <p style={{ fontSize: '0.7rem', marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
-                            Restante: {user.gamification?.pause_mode?.credits ?? (user.gamification?.vacation?.credits || 0)} usos
+                            Uso ilimitado y voluntario.
                         </p>
                     </div>
                 )}

@@ -18,6 +18,8 @@ const Register = () => {
         return () => { isMounted.current = false; };
     }, []);
 
+    const STORAGE_KEY = 'cooplance_register_draft';
+
     // Sync role from query param on mount
     useEffect(() => {
         const queryRole = searchParams.get('role')?.toLowerCase();
@@ -87,6 +89,64 @@ const Register = () => {
     const [argProvinces, setArgProvinces] = useState([]);
     const [argCities, setArgCities] = useState([]);
     const [isLoadingLoc, setIsLoadingLoc] = useState(false);
+
+    // --- FORM PERSISTENCE LOGIC (MOBILE SYNC) ---
+    // 1. Load draft on Mount
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(STORAGE_KEY);
+        if (savedDraft) {
+            try {
+                const draft = JSON.parse(savedDraft);
+                if (draft.role) setRole(draft.role);
+                if (draft.formData) {
+                    setFormData(prev => ({
+                        ...prev,
+                        ...draft.formData,
+                        // Security: Never recover passwords from storage
+                        password: '',
+                        confirmPassword: ''
+                    }));
+                    
+                    // Recover file names only (not blobs)
+                    if (draft.filenames) {
+                        if (draft.filenames.document) setDocumentFileName(draft.filenames.document);
+                        if (draft.filenames.cv) setCvFileName(draft.filenames.cv);
+                        if (draft.filenames.profile) setProfileImageName(draft.filenames.profile);
+                    }
+
+                    // Recalculate age if birthDate exists
+                    if (draft.formData.birthDate) {
+                        const age = calculateAge(draft.formData.birthDate);
+                        setCalculatedAge(age);
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading register draft:", err);
+            }
+        }
+    }, []);
+
+    // 2. Sync changes to LocalStorage
+    useEffect(() => {
+        const syncDraft = () => {
+            // We exclude passwords and blobs for security and storage limits
+            const { password, confirmPassword, cvFile, profileImage, documentFile, ...safeFormData } = formData;
+            const draft = {
+                role,
+                formData: safeFormData,
+                filenames: {
+                    document: documentFileName,
+                    cv: cvFileName,
+                    profile: profileImageName
+                },
+                updatedAt: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        };
+
+        const timeoutId = setTimeout(syncDraft, 1000); // Debounce to avoid excessive writes
+        return () => clearTimeout(timeoutId);
+    }, [formData, role, documentFileName, cvFileName, profileImageName]);
 
     useEffect(() => {
         if (formData.country === 'Argentina' && role === 'company') {
@@ -447,6 +507,9 @@ const Register = () => {
             navigate('/verify-email', {
                 state: { email: registrationData.email, type: 'registration' }
             });
+
+            // 3. Cleanup Persistence on Success
+            localStorage.removeItem(STORAGE_KEY);
         } catch (err) {
             console.error(' [REGISTER] Error fatal durante el proceso:', err);
             

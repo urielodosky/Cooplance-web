@@ -47,8 +47,10 @@ const ServiceCard = ({ service }) => {
         return null;
     };
 
+    const isPaused = service.gamification?.pause_mode?.active || service.gamification?.vacation?.active;
+    
     return (
-        <div className={`service-card clickable category-${(service.category || '').toLowerCase().replace(/\s+/g, '-')}`} onClick={() => navigate(`/service/${service.id}`)}>
+        <div className={`service-card clickable ${isPaused ? 'is-paused' : ''} category-${(service.category || '').toLowerCase().replace(/\s+/g, '-')}`} onClick={() => navigate(`/service/${service.id}`)}>
             <div className="service-image-container">
                 <img 
                     src={service.image || service.image_url || service.imageUrl} 

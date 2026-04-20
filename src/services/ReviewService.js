@@ -33,7 +33,8 @@ export const getServiceReviews = async (serviceId) => {
 
 export const createReview = async (reviewData) => {
     try {
-        const { data, error } = await supabase
+        // 1. Insert Review
+        const { data: review, error: reviewError } = await supabase
             .from('service_reviews')
             .insert({
                 service_id: reviewData.serviceId,
@@ -45,12 +46,44 @@ export const createReview = async (reviewData) => {
             .select('*')
             .single();
 
-        if (error) {
-            console.error('[ReviewService] Error creating review:', error);
-            throw error;
+        if (reviewError) {
+            console.error('[ReviewService] Error creating review:', reviewError);
+            throw reviewError;
         }
 
-        return data ? mapFromDB(data) : null;
+        // 2. XP Penalty Logic (V39)
+        // Only apply if rating <= 3 and freelancer is Level 6+
+        if (review.rating <= 3) {
+            // Get service owner
+            const { data: service } = await supabase
+                .from('services')
+                .select('owner_id')
+                .eq('id', review.service_id)
+                .single();
+            
+            if (service?.owner_id) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('level, xp')
+                    .eq('id', service.owner_id)
+                    .single();
+
+                if (profile && profile.level >= 6) {
+                    const penalty = review.rating <= 2 ? 100 : 20;
+                    const newXP = Math.max(0, (profile.xp || 0) - penalty);
+                    
+                    // Update profile XP
+                    await supabase
+                        .from('profiles')
+                        .update({ xp: newXP })
+                        .eq('id', service.owner_id);
+                    
+                    console.log(`[ReviewService] Quality Penalty applied to ${service.owner_id}: -${penalty} XP`);
+                }
+            }
+        }
+
+        return review ? mapFromDB(review) : null;
     } catch (err) {
         console.error('[ReviewService] Critical error creating review:', err);
         throw err;

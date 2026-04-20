@@ -40,7 +40,16 @@ const Explore = () => {
     };
 
     useEffect(() => {
-        setFilteredServices(searchAndFilterItems(getVisibleServices(), filters));
+        const filtered = searchAndFilterItems(getVisibleServices(), filters);
+        // V39: Sort paused services to the end
+        const sorted = [...filtered].sort((a, b) => {
+            const aPaused = a.gamification?.pause_mode?.active || a.gamification?.vacation?.active;
+            const bPaused = b.gamification?.pause_mode?.active || b.gamification?.vacation?.active;
+            if (aPaused && !bPaused) return 1;
+            if (!aPaused && bPaused) return -1;
+            return 0;
+        });
+        setFilteredServices(sorted);
     }, [services, filters, user]);
 
     // PRE-RENDER LOGIC

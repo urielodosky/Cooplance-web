@@ -8,7 +8,9 @@ const CustomDatePicker = ({
     minDate, 
     maxDate, 
     required = false,
-    placeholder = "Seleccionar fecha"
+    placeholder = "Seleccionar fecha",
+    className = '',
+    style = {}
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [viewMode, setViewMode] = useState('days'); // 'days', 'years'
@@ -116,7 +118,7 @@ const CustomDatePicker = ({
     };
 
     return (
-        <div className="custom-date-picker-wrapper" ref={dropdownRef}>
+        <div className={`custom-date-picker-wrapper ${className}`} ref={dropdownRef} style={style}>
             {label && <label className="datepicker-label">{label} {required && <span className="required">*</span>}</label>}
             <div 
                 className={`datepicker-input glass ${isOpen ? 'active' : ''}`} 
