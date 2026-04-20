@@ -7,9 +7,10 @@
 
 .settings-card {
     width: 100%;
-    max-width: 500px;
-    padding: 3rem;
+    max-width: 550px; /* Increased slightly for better breathability */
+    padding: 3rem 2.5rem;
     text-align: center;
+    margin: 0 auto;
 }
 
 .settings-card h2 {
@@ -238,17 +239,18 @@
 
 /* Missing Layout and Component Styles */
 .form-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column; /* Changed from grid to flex column for linear layout as requested */
     gap: 1.5rem;
-    align-items: start;
+    align-items: stretch;
 }
 
 .gender-selector {
     display: flex;
-    gap: 0.8rem;
+    flex-direction: column; /* Stacked vertically to avoid overflow */
+    gap: 0.6rem;
     background: rgba(255, 255, 255, 0.03);
-    padding: 0.4rem;
+    padding: 0.6rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
 }
@@ -295,11 +297,6 @@
 }
 
 @media (max-width: 768px) {
-    .form-grid-2 {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
     .gender-selector {
         flex-direction: column;
         gap: 0.4rem;
