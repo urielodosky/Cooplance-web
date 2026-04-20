@@ -512,3 +512,74 @@
         .card-desc { font-size: 0.85rem; }
     }
 }
+
+/* Light Mode Overrides for Better Contrast */
+[data-theme="light"] {
+    .glass-panel {
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .help-category-card {
+        border-color: #e5e7eb !important;
+        
+        &:hover {
+            background: #f9fafb !important;
+            border-color: var(--primary) !important;
+        }
+    }
+
+    .help-nav-item {
+        &:hover {
+            background: #f3f4f6 !important;
+        }
+        &.active {
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), transparent) !important;
+        }
+    }
+
+    .benefits-table-wrapper {
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+
+        table {
+            th {
+                background: #f9fafb !important;
+                color: #111827 !important;
+                border-bottom-color: #d1d5db !important;
+            }
+            td {
+                border-bottom-color: #f3f4f6 !important;
+            }
+            tbody tr:nth-child(even) td {
+                background: #f9fafb !important;
+            }
+        }
+    }
+
+    .help-section {
+        border-top-color: #e5e7eb !important;
+        
+        h3 { 
+            color: #111827 !important;
+            &::before { box-shadow: none !important; }
+        }
+    }
+
+    .legal-text {
+        .legal-note {
+            background: #f9fafb !important;
+            border-left-color: var(--primary) !important;
+        }
+    }
+
+    .benefit-mobile-card {
+        border-color: #d1d5db !important;
+        background: #ffffff !important;
+        
+        .card-header {
+            border-bottom-color: #f3f4f6 !important;
+        }
+    }
+}

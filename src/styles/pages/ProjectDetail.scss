@@ -191,4 +191,80 @@
         position: static !important;
         margin-top: 1rem;
     }
-}
+}
+
+/* Light Mode Contrast Overrides */
+[data-theme="light"] {
+    .sidebar-sticky {
+        background-color: #ffffff !important;
+        border-color: #d1d5db !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .pricing-box {
+        background-color: #ffffff !important;
+    }
+
+    .sidebar-reviews-section {
+        background: #f9fafb !important;
+        border-top-color: #e5e7eb !important;
+    }
+
+    .client-profile-card {
+        background-color: #ffffff !important;
+        border-color: #d1d5db !important;
+
+        &:hover {
+            background-color: #f3f4f6 !important;
+            border-color: var(--primary) !important;
+        }
+
+        .client-name {
+            color: #111827 !important;
+        }
+
+        .client-rating {
+            color: #4b5563 !important;
+        }
+    }
+
+    .project-status-badge {
+        background: #ecfdf5 !important;
+        border-color: #10b981 !important;
+    }
+
+    .detail-tag {
+        background: #f3f4f6 !important;
+        border-color: #d1d5db !important;
+        color: #374151 !important;
+
+        &:hover {
+            background: #e5e7eb !important;
+        }
+    }
+
+    .category-pill {
+        background: #f9fafb !important;
+        border-color: #e5e7eb !important;
+        
+        .pill-label { color: #6b7280 !important; }
+        .pill-value { color: #111827 !important; }
+    }
+
+    .specialty-tag {
+        background: #fff !important;
+        border-color: #d1d5db !important;
+        color: var(--primary) !important;
+    }
+
+    .detail-section {
+        border-top-color: #e5e7eb !important;
+        
+        h3 { color: #111827 !important; }
+    }
+
+    .faq-item.glass {
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+    }
+}

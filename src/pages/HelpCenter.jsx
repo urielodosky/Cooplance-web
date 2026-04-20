@@ -135,7 +135,7 @@ const HelpCenter = () => {
                 <ul>
                     <li>Es <strong>100% voluntario e ilimitado</strong>. Puedes activarlo y desactivarlo las veces que quieras desde tu perfil.</li>
                     <li>Mientras estás en pausa, tus servicios se mostrarán al final de los listados con un aviso especial, evitando que recibas nuevos pedidos mientras no estás disponible.</li>
-                    <li><strong>Sin penalizaciones por inactividad:</strong> No perderás XP ni nivel por tomarte el tiempo que necesites.</li>
+                    <li><strong>Sin penalizaciones por tiempo:</strong> No perderás XP ni nivel por tomarte el tiempo que necesites.</li>
                 </ul>
             </div>
 
@@ -184,15 +184,57 @@ const HelpCenter = () => {
     const renderCompanyGuide = () => (
         <div className="help-content fade-in">
             <h2>Guía para Empresas</h2>
-            <p>Soluciones robustas para organizaciones y contratación de equipos.</p>
+            <p>Cooplance ofrece un entorno de alto rendimiento para organizaciones que buscan escalar sus equipos con talento verificado y flujos de trabajo optimizados.</p>
+            
+            <div className="freelancer-invite-box" style={{ 
+                background: 'rgba(99, 102, 241, 0.1)', 
+                border: '1px solid var(--primary)', 
+                padding: '1rem', 
+                borderRadius: '12px',
+                marginBottom: '2rem',
+                fontSize: '0.9rem',
+                color: 'var(--text-primary)'
+            }}>
+                <strong>💡 Tip para Freelancers:</strong> Te invitamos a leer esta sección para conocer cómo piensan las empresas, qué campos adicionales ven al contratar y cómo puedes destacar tu perfil institucional.
+            </div>
 
             <div className="help-section">
-                <h3>Perfil de Empresa</h3>
+                <h3>Perfil de Empresa y Verificación</h3>
+                <p>Las cuentas de empresa acceden a un nivel de profesionalismo superior para atraer al mejor talento de la plataforma.</p>
                 <ul>
-                    <li><strong>Verificación:</strong> Insignia de empresa verificada.</li>
-                    <li><strong>Publicación Avanzada:</strong> Campos adicionales en proyectos (Vacantes, Duración de Contrato).</li>
-                    <li><strong>Gestión de Equipos:</strong> Herramientas para manejar múltiples freelancers.</li>
+                    <li><strong>Insignia de Verificación:</strong> Al completar el registro con CUIT y datos legales, tu empresa recibe un sello distintivo que genera confianza inmediata.</li>
+                    <li><strong>Visibilidad Premium:</strong> Las ofertas de empresas se destacan en los listados para atraer profesionales de Niveles 5 a 10.</li>
+                    <li><strong>Perfil Institucional:</strong> Muestra tu industria, tamaño de equipo y proyectos anteriores para construir tu reputación como empleador.</li>
                 </ul>
+            </div>
+
+            <div className="help-section">
+                <h3>Gestión de Postulaciones (Postulaciones)</h3>
+                <p>Hemos diseñado un flujo de trabajo intuitivo para que encuentres a la persona o equipo ideal sin fricciones:</p>
+                <ol>
+                    <li><strong>Recepción de Propuestas:</strong> Cada vez que un freelancer se postula, verás su propuesta económica, tiempo de entrega y una carta de presentación personalizada.</li>
+                    <li><strong>Análisis de Perfil:</strong> Puedes acceder al historial completo del postulante, sus insignias, nivel de XP y reseñas de otros clientes.</li>
+                    <li><strong>Entrevistas vía Chat:</strong> Inicia un hilo de conversación directo con los candidatos pre-seleccionados para profundizar en detalles técnicos o culturales.</li>
+                    <li><strong>Selección y Contratación:</strong> Una vez elegido el candidato, el sistema formaliza la contratación y los fondos quedan protegidos por el sistema de Escrow hasta la entrega.</li>
+                </ol>
+            </div>
+
+            <div className="help-section">
+                <h3>Publicación Avanzada de Vacantes</h3>
+                <p>A diferencia de los clientes individuales, las empresas pueden estructurar sus búsquedas laborales con campos específicos:</p>
+                <ul>
+                    <li><strong>Múltiples Vacantes:</strong> ¿Necesitas 5 desarrolladores para un mismo proyecto? Puedes definir el número de personas a contratar en una sola publicación.</li>
+                    <li><strong>Duración del Contrato:</strong> Establece si el trabajo es por un hito único, por meses o por tiempo indefinido.</li>
+                    <li><strong>Frecuencia de Pago:</strong> Define si los pagos serán semanales, quincenales o mensuales, adaptándose a la administración de tu empresa.</li>
+                </ul>
+            </div>
+
+            <div className="help-section">
+                <h3>Hiring Coops (Equipos)</h3>
+                <p>Nuestra mayor ventaja competitiva. Como empresa, no solo puedes contratar individuos, sino también <strong>Cooperativas (Coops)</strong>.</p>
+                <div className="legal-note">
+                    <p>Contratar una Coop te permite delegar la gestión interna del equipo al Líder de Proyecto de la Coop, reduciendo tu carga administrativa y asegurando que varios profesionales trabajen en sincronía bajo un mismo presupuesto.</p>
+                </div>
             </div>
         </div>
     );

@@ -449,4 +449,51 @@
         gap: 1rem;
     }
 }
+
+/* ========== LIGHT MODE VISIBILITY HARDENING ========== */
+[data-theme="light"] {
+    .detail-content, 
+    .detail-hero-section, 
+    .sidebar-sticky, 
+    .pricing-box, 
+    .faq-item, 
+    .review-card, 
+    .detail-section {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+        backdrop-filter: none !important;
+        color: #1a1a1a !important;
+
+        h1, h2, h3, h4, .detail-title, .price-amount {
+            color: #1a1a1a !important;
+        }
+
+        .detail-description, 
+        .freelancer-name-lg, 
+        .price-unit, 
+        .feature-item, 
+        .faq-answer {
+            color: #4a5568 !important;
+        }
+    }
+
+    .specialty-tag, .thumbnail-btn {
+        background: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #475569 !important;
+    }
+
+    .category-pill {
+        background: rgba(99, 102, 241, 0.08) !important;
+        border-color: rgba(99, 102, 241, 0.2) !important;
+    }
+
+    .detail-thumbnail-strip {
+        background: #f8fafc !important;
+        padding: 10px;
+        border-radius: var(--radius-md);
+        margin-top: 1rem;
+    }
+}
 

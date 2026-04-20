@@ -696,10 +696,13 @@ export const AuthProvider = ({ children }) => {
 
         if (error) {
             const techDetail = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
-            console.error('[AuthContext] Error updating profile:', error);
+            console.error('[AuthContext] Update Profile Failed:', error);
+            console.log('[AuthContext] Attempted Payload:', updatePayload); // Critical for debugging "no me deja usarlo"
             const enrichedError = new Error(`Fallo al actualizar perfil: ${techDetail}`);
             enrichedError.details = error;
             throw enrichedError;
+        } else {
+            console.log(`[AuthContext] Profile updated successfully for ${user.id}`);
         }
         await fetchProfile(user.id);
     };

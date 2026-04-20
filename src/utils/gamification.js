@@ -152,24 +152,20 @@ export const registerActivity = (user) => {
 
 export const activatePauseMode = (user) => {
     if (!user) return user;
-    const g = user.gamification || { pause_mode: { active: false, lastReset: Date.now() } };
-
-    // Migration check
-    if (g.vacation && !g.pause_mode) {
-        g.pause_mode = { ...g.vacation };
-        delete g.vacation;
-    }
-
-    if (g.pause_mode?.active) return user;
+    
+    // Explicitly destructure to remove legacy vacation fields if they exist
+    const { vacation, ...cleanGamification } = user.gamification || {};
+    const pauseMode = cleanGamification.pause_mode || {};
+    
+    if (pauseMode.active) return user;
     
     return {
         ...user,
         gamification: {
-            ...g,
+            ...cleanGamification,
             pause_mode: {
-                ...g.pause_mode,
                 active: true,
-                startDate: new Date().toISOString()
+                activated_at: new Date().toISOString()
             }
         }
     };
@@ -177,17 +173,19 @@ export const activatePauseMode = (user) => {
 
 export const deactivatePauseMode = (user) => {
     if (!user) return user;
-    const g = user.gamification;
-    if (!g || !g.pause_mode?.active) return user;
+    
+    const { vacation, ...cleanGamification } = user.gamification || {};
+    const pauseMode = cleanGamification.pause_mode || {};
+    
+    if (!pauseMode.active) return user;
 
     return {
         ...user,
         gamification: {
-            ...g,
+            ...cleanGamification,
             pause_mode: {
-                ...g.pause_mode,
                 active: false,
-                startDate: null
+                activated_at: null
             }
         }
     };

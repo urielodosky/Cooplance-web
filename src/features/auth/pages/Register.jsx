@@ -11,7 +11,7 @@ const Register = () => {
     const [role, setRole] = useState('freelancer');
     const [fileError, setFileError] = useState(null);
     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB Limit for local storage safety
-    
+
     // V38: Safety shield for unmounted components
     const isMounted = useRef(true);
     useEffect(() => {
@@ -106,7 +106,7 @@ const Register = () => {
                         password: '',
                         confirmPassword: ''
                     }));
-                    
+
                     // Recover file names only (not blobs)
                     if (draft.filenames) {
                         if (draft.filenames.document) setDocumentFileName(draft.filenames.document);
@@ -355,14 +355,14 @@ const Register = () => {
                 alert("Se requiere el email de un adulto responsable.");
                 return;
             }
-            
+
             // Optional but recommended for buyers - only validate if provided
             if (formData.parentEmail) {
                 setIsValidatingParent(true);
                 setLoading(true);
                 const parentResult = await validateParent(formData.parentEmail);
                 setIsValidatingParent(false);
-                
+
                 if (!parentResult.valid) {
                     setParentValidationError(parentResult.error);
                     alert(`Error de Tutor: ${parentResult.error}`);
@@ -458,7 +458,7 @@ const Register = () => {
                 if (field === 'dni') errorMsg = "El DNI ya se encuentra registrado con otra cuenta.";
                 if (field === 'cuil_cuit') errorMsg = "El CUIT/CUIL ya se encuentra registrado con otra cuenta.";
                 if (field === 'phone') errorMsg = "El número de teléfono ya está en uso.";
-                
+
                 alert(errorMsg);
                 clearTimeout(loadingWatchdog);
                 if (isMounted.current) setLoading(false);
@@ -471,7 +471,7 @@ const Register = () => {
                 dni: role === 'freelancer' ? formData.dni : null,
                 gender: role === 'company' ? 'other' : formData.gender,
                 terms_accepted: formData.termsAccepted,
-                profileImage: formData.profileImage, 
+                profileImage: formData.profileImage,
                 cvFile: formData.cvFile
             };
 
@@ -503,7 +503,7 @@ const Register = () => {
             // Navigate to the verification page
             console.log(" [REGISTER] SignUp exitoso. Supabase enviará el OTP al email.");
             clearTimeout(loadingWatchdog);
-            
+
             navigate('/verify-email', {
                 state: { email: registrationData.email, type: 'registration' }
             });
@@ -512,14 +512,14 @@ const Register = () => {
             localStorage.removeItem(STORAGE_KEY);
         } catch (err) {
             console.error(' [REGISTER] Error fatal durante el proceso:', err);
-            
+
             // Fix for the {} alert: Extract the message if it's an Error object
             const errorMessage = err.message || (typeof err === 'string' ? err : JSON.stringify(err));
             if (isMounted.current) {
                 setError(`Error: ${errorMessage}`);
                 alert(`Error de Registro: ${errorMessage}`);
             }
-            
+
             clearTimeout(loadingWatchdog);
         } finally {
             if (isMounted.current) setLoading(false);
@@ -545,7 +545,7 @@ const Register = () => {
 
 
                 <form onSubmit={handleSubmit} className="register-form">
-                    
+
                     {fileError && (
                         <div className="file-error-container">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -637,97 +637,97 @@ const Register = () => {
                     )}
 
                     {/* 5. Identity Verification */}
-                        <div className="form-group" style={{ marginBottom: '1rem' }}>
-                            {role === 'freelancer' && (
-                                <>
-                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
-                                        Datos de Identidad (Obligatorio)
-                                    </p>
-                                    
-                                    <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
-                                        <select name="documentType" value={formData.documentType} onChange={handleChange} style={{ height: '45px' }}>
-                                            <option value="dni">DNI</option>
-                                            <option value="passport">Pasaporte</option>
-                                            <option value="selfie">Cédula</option>
-                                        </select>
-                                        <input
-                                            type="text"
-                                            name="dni"
-                                            value={formData.dni}
-                                            placeholder="Número de Documento"
-                                            onChange={handleChange}
-                                            required
-                                            style={{ margin: 0, height: '45px' }}
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {/* CUIT Field only for companies */}
-                            {role === 'company' && (
-                                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
-                                        Datos de la Empresa
-                                    </p>
-                                    <input
-                                        type="text"
-                                        name="cuil_cuit"
-                                        value={formData.cuil_cuit}
-                                        placeholder="CUIT / CUIL de la Empresa"
-                                        onChange={handleChange}
-                                        required
-                                        style={{ margin: 0, height: '45px', width: '100%' }}
-                                    />
-                                </div>
-                            )}
-
-                            {/* V27/V38: Parental Email for Minors (16-17 years) */}
-                            {calculatedAge !== null && calculatedAge >= 16 && calculatedAge < 18 && role !== 'company' && (
-                                <div 
-                                    className="form-group" 
-                                    style={{ 
-                                        marginBottom: '1rem', 
-                                        padding: '1rem', 
-                                        background: role === 'freelancer' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)', 
-                                        borderRadius: '8px', 
-                                        border: `1px solid ${role === 'freelancer' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'}` 
-                                    }}
-                                >
-                                    <p className="field-label-sm" style={{ marginBottom: '0.5rem', color: role === 'freelancer' ? '#ef4444' : '#3b82f6' }}>
-                                        {role === 'freelancer' ? 'Autorización Parental Requerida' : 'Supervisión Parental (Recomendado)'}
-                                    </p>
-                                    <input
-                                        type="email"
-                                        name="parentEmail"
-                                        value={formData.parentEmail}
-                                        placeholder="Email de tu Padre, Madre o Tutor"
-                                        onChange={handleChange}
-                                        required={role === 'freelancer'}
-                                        style={{ margin: 0, height: '45px', width: '100%' }}
-                                    />
-                                    <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: '#6b7280' }}>
-                                        {role === 'freelancer' 
-                                            ? '* El tutor debe ser un Freelancer mayor de 18 años registrado en Cooplance.'
-                                            : '* Recomendado. Vincular un tutor elimina el límite de gasto mensual y permite contratar servicios presenciales.'}
-                                    </p>
-                                    {parentValidationError && (
-                                        <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.5rem' }}>
-                                            {parentValidationError}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
                         {role === 'freelancer' && (
                             <>
-                                <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <input type="file" name="documentFile" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                                    <span>{documentFileName || 'Subir Foto del Documento (Frente)'}</span>
-                                </label>
-                                <span className="file-limit-info">Identidad: Máx 2MB</span>
+                                <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
+                                    Datos de Identidad (Obligatorio)
+                                </p>
+
+                                <div className="form-grid-2" style={{ marginBottom: '1rem' }}>
+                                    <select name="documentType" value={formData.documentType} onChange={handleChange} style={{ height: '45px' }}>
+                                        <option value="dni">DNI</option>
+                                        <option value="passport">Pasaporte</option>
+                                        <option value="selfie">Cédula</option>
+                                    </select>
+                                    <input
+                                        type="text"
+                                        name="dni"
+                                        value={formData.dni}
+                                        placeholder="Número de Documento"
+                                        onChange={handleChange}
+                                        required
+                                        style={{ margin: 0, height: '45px' }}
+                                    />
+                                </div>
                             </>
                         )}
-                    
+
+                        {/* CUIT Field only for companies */}
+                        {role === 'company' && (
+                            <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                <p className="field-label-sm" style={{ marginBottom: '0.5rem' }}>
+                                    Datos de la Empresa
+                                </p>
+                                <input
+                                    type="text"
+                                    name="cuil_cuit"
+                                    value={formData.cuil_cuit}
+                                    placeholder="CUIT / CUIL de la Empresa"
+                                    onChange={handleChange}
+                                    required
+                                    style={{ margin: 0, height: '45px', width: '100%' }}
+                                />
+                            </div>
+                        )}
+
+                        {/* V27/V38: Parental Email for Minors (16-17 years) */}
+                        {calculatedAge !== null && calculatedAge >= 16 && calculatedAge < 18 && role !== 'company' && (
+                            <div
+                                className="form-group"
+                                style={{
+                                    marginBottom: '1rem',
+                                    padding: '1rem',
+                                    background: role === 'freelancer' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${role === 'freelancer' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'}`
+                                }}
+                            >
+                                <p className="field-label-sm" style={{ marginBottom: '0.5rem', color: role === 'freelancer' ? '#ef4444' : '#3b82f6' }}>
+                                    {role === 'freelancer' ? 'Autorización Parental Requerida' : 'Supervisión Parental (Recomendado)'}
+                                </p>
+                                <input
+                                    type="email"
+                                    name="parentEmail"
+                                    value={formData.parentEmail}
+                                    placeholder="Email de tu Padre, Madre o Tutor"
+                                    onChange={handleChange}
+                                    required={role === 'freelancer'}
+                                    style={{ margin: 0, height: '45px', width: '100%' }}
+                                />
+                                <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: '#6b7280' }}>
+                                    {role === 'freelancer'
+                                        ? '* El tutor debe ser un Freelancer mayor de 18 años registrado en Cooplance.'
+                                        : '* Recomendado. Vincular un tutor elimina el límite de gasto mensual y permite contratar servicios presenciales.'}
+                                </p>
+                                {parentValidationError && (
+                                    <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.5rem' }}>
+                                        {parentValidationError}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    {role === 'freelancer' && (
+                        <>
+                            <label className="custom-file-upload" style={{ width: '100%', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <input type="file" name="documentFile" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                                <span>{documentFileName || 'Subir Foto del Documento (Frente)'}</span>
+                            </label>
+                            <span className="file-limit-info">Identidad: Máx 2MB</span>
+                        </>
+                    )}
+
                     {/* 6. Country & Location */}
                     <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                         <CustomDropdown
@@ -743,10 +743,10 @@ const Register = () => {
                     {role === 'company' && (
                         <div className="form-group" style={{ marginBottom: '0.75rem' }}>
                             <p className="field-label-sm">Ubicación física (opcional)</p>
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: formData.country === 'Argentina' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', 
-                                gap: '1rem' 
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: formData.country === 'Argentina' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+                                gap: '1rem'
                             }}>
                                 {formData.country === 'Argentina' ? (
                                     <>
@@ -777,15 +777,15 @@ const Register = () => {
                                     </>
                                 )}
                             </div>
-                            
+
                             {formData.province && formData.city && (
-                                <input 
-                                    type="text" 
-                                    name="location" 
+                                <input
+                                    type="text"
+                                    name="location"
                                     value={formData.location || ''}
-                                    placeholder="Calle y Numeración" 
-                                    onChange={handleChange} 
-                                    style={{ marginTop: '0.9rem' }} 
+                                    placeholder="Calle y Numeración"
+                                    onChange={handleChange}
+                                    style={{ marginTop: '0.9rem' }}
                                     required
                                 />
                             )}
@@ -862,17 +862,17 @@ const Register = () => {
                     </div>
 
                     {/* 13. Terms & Privacy Checkbox */}
-                    <div 
-                        className="terms-container" 
+                    <div
+                        className="terms-container"
                         onClick={() => setFormData({ ...formData, termsAccepted: !formData.termsAccepted })}
                     >
                         <div className="checkbox-wrapper">
-                            <input 
-                                type="checkbox" 
-                                id="termsAccepted" 
-                                name="termsAccepted" 
+                            <input
+                                type="checkbox"
+                                id="termsAccepted"
+                                name="termsAccepted"
                                 checked={formData.termsAccepted}
-                                onChange={() => {}} // Controlled component
+                                onChange={() => { }} // Controlled component
                             />
                             <span className="checkmark"></span>
                         </div>

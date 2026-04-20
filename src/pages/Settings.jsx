@@ -114,7 +114,7 @@ const Settings = () => {
 
         try {
             setMessage({ text: 'Subiendo foto...', type: 'info' });
-            
+
             // Upload to Supabase Storage
             const fileExt = file.name.split('.').pop();
             const fileName = `${user.id}-${Date.now()}.${fileExt}`;
@@ -311,11 +311,11 @@ const Settings = () => {
                             fontSize: '0.9rem'
                         }}
                     >
-                        <div className="sync-spinner" style={{ 
-                            width: '16px', 
-                            height: '16px', 
-                            border: '2px solid #60a5fa', 
-                            borderTopColor: 'transparent', 
+                        <div className="sync-spinner" style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid #60a5fa',
+                            borderTopColor: 'transparent',
                             borderRadius: '50%',
                             animation: 'spin 1s linear infinite'
                         }}></div>
@@ -341,13 +341,13 @@ const Settings = () => {
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                             Error de Conexión
                         </div>
                         <p style={{ margin: 0, fontSize: '0.9rem' }}>
                             No logramos conectar con el servidor. Revisa tu internet o intenta más tarde.
                         </p>
-                        <button 
+                        <button
                             onClick={() => window.location.reload()}
                             style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.3rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '0.5rem' }}
                         >
@@ -384,12 +384,12 @@ const Settings = () => {
 
                     {user.cv_url && (
                         <div style={{ marginBottom: '1rem' }}>
-                            <button 
+                            <button
                                 onClick={() => window.open(user.cv_url, '_blank')}
                                 className="btn-secondary"
-                                style={{ 
-                                    fontSize: '0.8rem', 
-                                    padding: '6px 16px', 
+                                style={{
+                                    fontSize: '0.8rem',
+                                    padding: '6px 16px',
                                     borderRadius: '12px',
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -483,11 +483,11 @@ const Settings = () => {
                     let age = new Date().getFullYear() - birthDate.getFullYear();
                     const monthDiff = new Date().getMonth() - birthDate.getMonth();
                     if (monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate())) age--;
-                    
+
                     if (age < 18) {
                         const limit = user.parent_id ? (user.monthly_spending_limit || 50000) : 50000;
                         const percent = Math.min(100, (monthlySpend / limit) * 100);
-                        
+
                         return (
                             <div className="glass settings-section" style={{ padding: '1.5rem', marginBottom: '2rem', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid var(--primary-low)' }}>
                                 <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.1rem' }}>
@@ -495,11 +495,11 @@ const Settings = () => {
                                     Límite de Gasto Mensual
                                 </h3>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                                    {user.parent_id 
-                                        ? "Tu gasto está siendo supervisado por un adulto responsable." 
+                                    {user.parent_id
+                                        ? "Tu gasto está siendo supervisado por un adulto responsable."
                                         : "Cuentas no supervisadas tienen un límite de 50,000 ARS por mes."}
                                 </p>
-                                
+
                                 <div style={{ marginTop: '1.5rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                                         <span>Consumido: <strong>${monthlySpend.toLocaleString()}</strong></span>
@@ -515,7 +515,7 @@ const Settings = () => {
                                     )}
                                 </div>
                                 {!user.parent_id && (
-                                    <button 
+                                    <button
                                         onClick={() => setMessage({ text: 'Para aumentar tu límite, vincula un tutor en Ajustes > Cuenta.', type: 'info' })}
                                         style={{ marginTop: '1rem', background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
                                     >
@@ -546,8 +546,8 @@ const Settings = () => {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <select 
-                                            value={minor.monthly_spending_limit || 50000} 
+                                        <select
+                                            value={minor.monthly_spending_limit || 50000}
                                             onChange={(e) => handleUpdateMinorLimit(minor.id, parseInt(e.target.value))}
                                             style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
                                         >
@@ -666,14 +666,14 @@ const Settings = () => {
                             {user.role !== 'company' && (
                                 <div className="form-group">
                                     <label className="field-label">Fecha de Nacimiento</label>
-                                    <div 
-                                        className="datepicker-input glass input-readonly" 
+                                    <div
+                                        className="datepicker-input glass input-readonly"
                                         style={{ cursor: 'not-allowed', opacity: 0.8, background: 'rgba(255,255,255,0.02)' }}
                                     >
                                         <span className="value">
                                             {dob ? dob.split('-').reverse().join('/') : 'No definida'}
                                         </span>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
                                     </div>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', display: 'block' }}>
                                         La fecha de nacimiento no puede ser modificada.
@@ -812,8 +812,8 @@ const Settings = () => {
                         <button
                             type="submit"
                             className="btn-primary"
-                            style={{ 
-                                width: '100%', 
+                            style={{
+                                width: '100%',
                                 margin: '2rem 0',
                                 opacity: (isUpdating || (isSyncError && !user?.is_cached)) ? 0.6 : 1,
                                 cursor: (isUpdating || (isSyncError && !user?.is_cached)) ? 'not-allowed' : 'pointer'
@@ -842,9 +842,9 @@ const Settings = () => {
                                         await deleteAccount();
                                     } catch (err) {
                                         setIsUpdating(false);
-                                        setMessage({ 
-                                            text: 'Error al eliminar cuenta: ' + (err.message || 'Error de base de datos'), 
-                                            type: 'error' 
+                                        setMessage({
+                                            text: 'Error al eliminar cuenta: ' + (err.message || 'Error de base de datos'),
+                                            type: 'error'
                                         });
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }

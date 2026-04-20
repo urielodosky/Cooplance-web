@@ -427,6 +427,14 @@ const Dashboard = () => {
 
 
     const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+    const [pauseLoading, setPauseLoading] = useState(false);
+    
+    // V39: Derived Pause Mode state for UI
+    const isPaused = useMemo(() => {
+        if (!user || user.role !== 'freelancer') return false;
+        return user.gamification?.pause_mode?.active || user.gamification?.vacation?.active;
+    }, [user]);
+
     const [loading, setLoading] = useState(true);
     const [myPublishedProjects, setMyPublishedProjects] = useState([]);
     const [myProposals, setMyProposals] = useState([]);
@@ -544,18 +552,27 @@ const Dashboard = () => {
         updateUser({ ...user, level: newLevel, xp: newXp });
     };
 
-    const handlePauseModeClick = () => {
+    const handlePauseModeClick = async () => {
         const g = user.gamification || {};
         const isPaused = g.pause_mode?.active || g.vacation?.active;
         
-        if (isPaused) {
-            if (window.confirm("¿Desactivar el Modo Pausa? Tus servicios volverán a ser visibles normalmente.")) {
-                updateUser(deactivatePauseMode(user));
+        try {
+            if (isPaused) {
+                if (window.confirm("¿Desactivar el Modo Pausa? Tus servicios volverán a ser visibles normalmente.")) {
+                    setPauseLoading(true);
+                    await updateUser(deactivatePauseMode(user));
+                }
+            } else {
+                if (window.confirm("¿Activar Modo Pausa? Tus servicios se mostrarán al final de las listas para evitar nuevos pedidos. Puedes desactivarlo cuando quieras.")) {
+                    setPauseLoading(true);
+                    await updateUser(activatePauseMode(user));
+                }
             }
-        } else {
-            if (window.confirm("¿Activar Modo Pausa? Tus servicios se mostrarán al final de las listas y no se aplicarán penalizaciones de tiempo. Puedes desactivarlo cuando quieras.")) {
-                updateUser(activatePauseMode(user));
-            }
+        } catch (err) {
+            console.error("[Dashboard] Error toggling pause mode:", err);
+            alert("No se pudo cambiar el estado de disponibilidad: " + err.message);
+        } finally {
+            setPauseLoading(false);
         }
     };
 
@@ -673,9 +690,17 @@ const Dashboard = () => {
             <div className="dashboard-intro">
                 <div className="intro-left">
                     <img src={getProfilePicture(user)} alt="Profile" className="dashboard-avatar" />
-                    <div>
+                    <div className="dashboard-intro-info">
                         <h2>Hola, {user.first_name || user.company_name || user.username}</h2>
-                        <p>Bienvenido a tu panel.</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <p style={{ margin: 0 }}>Bienvenido a tu panel.</p>
+                            {isPaused && (
+                                <span className="status-badge-active-pause ripple-effect">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+                                    MODO PAUSA ACTIVO
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="dashboard-actions-inline">
@@ -710,32 +735,26 @@ const Dashboard = () => {
                     )}
                 </div>
                 {user.role === 'freelancer' && (
-                    <div className="glass stat-card">
+                    <div className="glass stat-card pause-stat-card">
                         <div className="pause-mode-header">
                             <h4>Modo Pausa</h4>
-                            <div className="help-icon">?</div>
-                            <span className="help-tooltip">En Modo Pausa, tus servicios aparecen al final de las listas y no recibes pedidos. Es ideal para vacaciones o periodos de alta demanda.</span>
+                            <div className="help-icon" title="En Modo Pausa, tus servicios aparecen al final de las listas y no recibes pedidos.">?</div>
                         </div>
-                        <p className="stat-value" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
-                            {user.gamification?.pause_mode?.active || user.gamification?.vacation?.active ? 'ACTIVO' : 'INACTIVO'}
-                        </p>
-                        <button
-                            onClick={handlePauseModeClick}
-                            style={{
-                                fontSize: '0.7rem',
-                                padding: '0.4rem',
-                                background: (user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? '#10b981' : 'var(--primary)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                width: '100%'
-                            }}
-                        >
-                            {(user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Desactivar' : 'Activar'}
-                        </button>
-                        <p style={{ fontSize: '0.7rem', marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
-                            Uso ilimitado y voluntario.
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                            <button
+                                onClick={handlePauseModeClick}
+                                className={`pause-toggle-btn ${(user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'active' : ''} ${pauseLoading ? 'loading' : ''}`}
+                                disabled={pauseLoading}
+                            >
+                                {pauseLoading ? (
+                                    <div className="sync-spinner" style={{ width: '30px', height: '30px', border: '3px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                ) : (
+                                    (user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Desactivar' : 'Activar'
+                                )}
+                            </button>
+                        </div>
+                        <p style={{ fontSize: '0.7rem', marginTop: '0.5rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                            { (user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Estás fuera de servicio.' : 'Uso ilimitado y voluntario.' }
                         </p>
                     </div>
                 )}
