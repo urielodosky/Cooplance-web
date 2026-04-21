@@ -222,7 +222,7 @@ const ServiceDetail = () => {
             ...service,
             price: price,
             deliveryTime: deliveryTime,
-            selectedTier: selectedTierForPayment?.name || 'Estándar',
+            selectedTier: 'Estándar',
             bookingDate: service?.bookingConfig?.requiresBooking ? selectedBooking.date : null,
             bookingTime: service?.bookingConfig?.requiresBooking ? selectedBooking.time : null
         }, user);

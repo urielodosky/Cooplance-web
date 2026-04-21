@@ -9,7 +9,7 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
     const [coverLetter, setCoverLetter] = useState('');
     const [expirationDays, setExpirationDays] = useState('');
     const [error, setError] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const questions = project.questions || [];
 
@@ -28,7 +28,7 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
             }
         }
 
-        setSubmitting(true);
+        setIsSubmitting(true);
         try {
             const userName = user.first_name
                 ? `${user.first_name} ${user.last_name || ''}`.trim()
@@ -54,7 +54,7 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
             console.error('Error submitting proposal:', err);
             setError(`Error: ${err.message || JSON.stringify(err)}`);
         } finally {
-            setSubmitting(false);
+            setIsSubmitting(false);
         }
     };
 
