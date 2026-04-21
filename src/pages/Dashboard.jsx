@@ -806,6 +806,20 @@ const Dashboard = () => {
             // 1. Update proposal status
             await updateProposalStatus(proposal.id, 'accepted');
 
+            // 1.5. Convert consultation chat from pre_contract to active (if exists)
+            const { data: consultationChats } = await supabase
+                .from('chats')
+                .select('id')
+                .eq('type', 'proposal')
+                .eq('context_id', proposal.id.toString());
+            
+            if (consultationChats && consultationChats.length > 0) {
+                await supabase
+                    .from('chats')
+                    .update({ status: 'active' })
+                    .eq('id', consultationChats[0].id);
+            }
+
             // 2. Create the formal Job/Order entry
             const freelancer = {
                 id: proposal.userId,

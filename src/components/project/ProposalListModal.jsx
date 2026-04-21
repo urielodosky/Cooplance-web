@@ -12,6 +12,8 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
     const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
     const navigate = useNavigate();
 
+    const { createChat } = useChat();
+
     useEffect(() => {
         const loadProposals = async () => {
             if (isOpen && projectId) {
@@ -31,14 +33,27 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
         setSelectedProposalForPayment(proposal);
     };
 
+    const handleMessageClick = async (proposal) => {
+        try {
+            // Create a consultation chat type "proposal", passing the proposal.userId and project title
+            const chatId = await createChat(
+                [user.id, proposal.userId],
+                'proposal',
+                proposal.id,
+                `Consulta: ${projectTitle}`,
+                { initialStatus: 'pre_contract' }
+            );
+            navigate(`/chat/${chatId}`);
+        } catch (error) {
+            console.error("Error creating consultation chat:", error);
+            alert("No se pudo iniciar el chat de consulta.");
+        }
+    };
+
     const handlePaymentSuccess = () => {
         if (!selectedProposalForPayment) return;
 
         // 1. Deduct Balance (Mock amount: assume project budget or fixed $50 for demo)
-        // Ideally we get the amount from the proposal or project.
-        // Let's assume a fixed mock price for now since we don't have project details here except title.
-        // Wait, we can fetch project details or pass them. 
-        // For simplicity, let's say $100.
         const amount = 100;
 
         if (user.balance < amount) {
@@ -94,23 +109,35 @@ const ProposalListModal = ({ isOpen, onClose, projectId, projectTitle, proposalC
                                         </div>
                                     </div>
 
-                                    {proposal.status === 'pending' ? (
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '300px' }}>
+                                        {proposal.status === 'pending' ? (
+                                            <>
+                                                <button
+                                                    className="btn-secondary"
+                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                                                    onClick={() => handleMessageClick(proposal)}
+                                                >
+                                                    Mensajear
+                                                </button>
+                                                <button
+                                                    className="btn-primary"
+                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
+                                                    onClick={() => handleContractClick(proposal)}
+                                                >
+                                                    Contratar
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <span className={`status-badge ${proposal.status}`}>{proposal.status}</span>
+                                        )}
                                         <button
-                                            className="btn-primary"
-                                            onClick={() => handleContractClick(proposal)}
+                                            className="btn-secondary"
+                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
+                                            onClick={() => navigate(`/freelancer/${proposal.userId}`)}
                                         >
-                                            Contratar
+                                            Ver Perfil
                                         </button>
-                                    ) : (
-                                        <span className={`status-badge ${proposal.status}`}>{proposal.status}</span>
-                                    )}
-                                    <button
-                                        className="btn-secondary"
-                                        style={{ marginLeft: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
-                                        onClick={() => navigate(`/freelancer/${proposal.userId}`)}
-                                    >
-                                        Ver Perfil
-                                    </button>
+                                    </div>
                                 </div>
 
                                 {/* Freelancer Answers Section */}

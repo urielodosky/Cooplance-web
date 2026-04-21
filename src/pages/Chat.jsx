@@ -493,6 +493,12 @@ const Chat = () => {
                                 )}
                             </div>
 
+                            {activeChat.status === 'pre_contract' && (
+                                <div style={{ background: 'rgba(56, 189, 248, 0.1)', borderBottom: '1px solid rgba(56, 189, 248, 0.2)', padding: '0.75rem', textAlign: 'center', color: '#0284c7', fontSize: '0.9rem', fontWeight: '500' }}>
+                                    Chat de Consulta (Pre-Contrato). Mensajes restantes: <strong>{Math.max(0, 25 - messages.length)}/25</strong>
+                                </div>
+                            )}
+
                             <div className="messages-container">
                                 {isLoadingMessages ? (
                                     <div className="skeleton-messages">
@@ -646,6 +652,15 @@ const Chat = () => {
                                 <div className="message-input-area" style={{ justifyContent: 'center', background: 'rgba(239, 68, 68, 0.1)' }}>
                                     <p style={{ color: '#ef4444', fontWeight: 'bold' }}>Has bloqueado esta conversación.</p>
                                 </div>
+                            ) : activeChat.status === 'pre_contract' && (25 - messages.length) <= 0 ? (
+                                <div className="message-input-area" style={{ flexDirection: 'column', gap: '0.5rem', background: 'rgba(245, 158, 11, 0.1)', borderTop: '1px solid var(--border)' }}>
+                                    <p style={{ color: '#d97706', fontWeight: 'bold', margin: '0 0 5px 0', textAlign: 'center' }}>
+                                        Límite de mensajes de consulta alcanzado
+                                    </p>
+                                    <div style={{ textAlign: 'center', width: '100%', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                        Para continuar conversando y habilitar el envío de archivos adjuntos, el Cliente debe Aceptar la postulación en la vista del Proyecto.
+                                    </div>
+                                </div>
                             ) : activeJob && activeJob.status === 'canceled' ? (
                                 <div className="message-input-area" style={{ justifyContent: 'center', background: 'rgba(239, 68, 68, 0.05)', borderTop: '1px solid var(--border)' }}>
                                     <p style={{ color: '#ef4444', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -686,25 +701,29 @@ const Chat = () => {
                                 </div>
                             ) : (
                                 <form className="message-input-area" onSubmit={handleSendMessage}>
-                                    <button
-                                        type="button"
-                                        className="btn-attach"
-                                        onClick={() => document.getElementById('chat-file-input').click()}
-                                    >
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}>
-                                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                                        </svg>
-                                    </button>
-                                    <input
-                                        type="file"
-                                        id="chat-file-input"
-                                        style={{ display: 'none' }}
-                                        accept="image/*,video/*"
-                                        onChange={handleFileSelect}
-                                    />
+                                    {activeChat.status !== 'pre_contract' && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="btn-attach"
+                                                onClick={() => document.getElementById('chat-file-input').click()}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px' }}>
+                                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                                </svg>
+                                            </button>
+                                            <input
+                                                type="file"
+                                                id="chat-file-input"
+                                                style={{ display: 'none' }}
+                                                accept="image/*,video/*"
+                                                onChange={handleFileSelect}
+                                            />
+                                        </>
+                                    )}
                                     <input
                                         type="text"
-                                        placeholder="Escribe un mensaje..."
+                                        placeholder={activeChat.status === 'pre_contract' ? `Escribe un mensaje de consulta (${Math.max(0, 25 - messages.length)} restantes)...` : "Escribe un mensaje..."}
                                         value={messageInput}
                                         onChange={(e) => setMessageInput(e.target.value)}
                                         className="chat-input"

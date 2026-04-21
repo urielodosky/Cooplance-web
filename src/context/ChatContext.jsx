@@ -82,7 +82,7 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
-    const createChat = async (participantIds, type = 'direct', contextId = null, contextTitle = null) => {
+    const createChat = async (participantIds, type = 'direct', contextId = null, contextTitle = null, options = {}) => {
         if (!user) throw new Error("Debe estar autenticado");
 
         const normalizedContextId = contextId?.toString();
@@ -93,18 +93,18 @@ export const ChatProvider = ({ children }) => {
             // 1. BUSCAR CHAT EXISTENTE GLOBALMENTE EN LA BASE DE DATOS
             let targetChatId = null;
 
-            if (type === 'order' && normalizedContextId) {
-                // Para pedidos, el contextId es la clave única definitiva
+            if ((type === 'order' || type === 'proposal') && normalizedContextId) {
+                // Para pedidos o propuestas, el contextId es la clave única definitiva
                 const { data: existingChat } = await supabase
                     .from('chats')
                     .select('id')
-                    .eq('type', 'order')
+                    .eq('type', type)
                     .eq('context_id', normalizedContextId)
                     .maybeSingle();
                 
                 if (existingChat) {
                     targetChatId = existingChat.id;
-                    console.log("[ChatContext] Encontrado chat de pedido existente en DB:", targetChatId);
+                    console.log(`[ChatContext] Encontrado chat de ${type} existente en DB:`, targetChatId);
                 }
             } else if (type === 'direct') {
                 // Para chats directos, buscamos si ya existe uno compartido entre estos dos usuarios
@@ -174,6 +174,7 @@ export const ChatProvider = ({ children }) => {
                     type,
                     context_id: normalizedContextId,
                     context_title: contextTitle,
+                    status: options.initialStatus || 'active',
                     last_message: 'Nueva conversación',
                     last_message_at: new Date().toISOString()
                 })
