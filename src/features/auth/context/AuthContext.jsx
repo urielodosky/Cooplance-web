@@ -61,12 +61,39 @@ export const AuthProvider = ({ children }) => {
             console.log("[AuthContext] Initializing...");
             try {
                 const { data: { session }, error } = await supabase.auth.getSession();
+                
                 if (error) {
-                    console.error("[AuthContext] getSession error:", error);
-                    if (isMounted) setLoading(false);
+                    console.error("[AuthContext] getSession error:", error.message);
+                    
+                    // V40: Handle Invalid/Expired Refresh Token
+                    // If the token is invalid, we must clear the session to prevent loops and red errors.
+                    const isRefreshTokenError = error.message?.toLowerCase().includes('refresh_token') || 
+                                              error.status === 400 || 
+                                              error.message?.toLowerCase().includes('not found');
+                    
+                    if (isRefreshTokenError) {
+                        console.warn("[AuthContext] Corrupted session detected. Cleaning up storage...");
+                        await supabase.auth.signOut();
+                        // Clear any legacy cooplance profile keys just in case
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key?.startsWith('cooplance_profile_')) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                    }
+
+                    if (isMounted) {
+                        setLoading(false);
+                        setIsInitialized(true);
+                    }
                     return;
                 }
-                if (isMounted) handleSession(session); // V14: Remove await here too
+                
+                if (isMounted) {
+                    await handleSession(session);
+                    setIsInitialized(true);
+                }
             } catch (err) {
                 console.error("[AuthContext] Critical init error:", err);
                 if (isMounted) setLoading(false);
@@ -629,10 +656,39 @@ export const AuthProvider = ({ children }) => {
 
     // ─── LOGOUT ─────────────────────────────────────────────────────────────
     const logout = async () => {
-        const userId = user?.id;
-        await supabase.auth.signOut();
-        if (userId) localStorage.removeItem(`cooplance_profile_${userId}`);
-        setUser(null);
+        try {
+            console.log("[AuthContext] Logging out...");
+            const userId = user?.id;
+            
+            // 1. Supabase Sign Out (clears server-side and client tokens)
+            await supabase.auth.signOut();
+            
+            // 2. Clear Local Cache for profiles
+            if (userId) {
+                localStorage.removeItem(`cooplance_profile_${userId}`);
+            } else {
+                // If we don't have a user ID, scan for all profile caches
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('cooplance_profile_')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+            }
+            
+            // 3. Reset State
+            setUser(null);
+            setIsTutorView(false);
+            setSupervisedUser(null);
+            
+            console.log("[AuthContext] Logout complete.");
+        } catch (err) {
+            console.error("[AuthContext] Logout error (forced reset anyway):", err);
+            // Even if signOut fails, we reset state locally
+            setUser(null);
+            setIsTutorView(false);
+            setSupervisedUser(null);
+        }
     };
 
     // ─── UPDATE USER PROFILE ────────────────────────────────────────────────
