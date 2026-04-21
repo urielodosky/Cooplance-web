@@ -581,7 +581,9 @@ const Register = () => {
                     )}
 
                     {/* 3. Bio / Description */}
-                    <textarea name="bio" value={formData.bio} placeholder={role === 'company' ? "Biografía / Descripción de la Empresa" : "Cuéntanos sobre ti (Biografía)"} rows="3" onChange={handleChange} required />
+                    {role !== 'buyer' && (
+                        <textarea name="bio" value={formData.bio} placeholder={role === 'company' ? "Biografía / Descripción de la Empresa" : "Cuéntanos sobre ti (Biografía)"} rows="3" onChange={handleChange} required />
+                    )}
 
                     {/* 4. Birth Date */}
                     {role !== 'company' && (

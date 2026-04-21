@@ -51,34 +51,60 @@ export const createReview = async (reviewData) => {
             throw reviewError;
         }
 
-        // 2. XP Penalty Logic (V39)
-        // Only apply if rating <= 3 and freelancer is Level 6+
+        // 2. XP Penalty Logic (Universally applied to all levels, both Clients and Freelancers)
         if (review.rating <= 3) {
-            // Get service owner
-            const { data: service } = await supabase
-                .from('services')
-                .select('owner_id')
-                .eq('id', review.service_id)
-                .single();
-            
-            if (service?.owner_id) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('level, xp')
-                    .eq('id', service.owner_id)
+            let userToPenalize = null;
+
+            if (review.job_id) {
+                // Determine who is being reviewed based on the job
+                const { data: job } = await supabase
+                    .from('jobs')
+                    .select('client_id, provider_id')
+                    .eq('id', review.job_id)
                     .single();
 
-                if (profile && profile.level >= 6) {
+                if (job) {
+                    if (job.client_id === review.reviewer_id) {
+                        // Client is reviewing the freelancer. The freelancer is penalized.
+                        userToPenalize = job.provider_id;
+                    } else if (job.provider_id === review.reviewer_id) {
+                        // Freelancer is reviewing the client. The client is penalized.
+                        userToPenalize = job.client_id;
+                    }
+                }
+            } 
+            
+            // Fallback for older workflow or reviews without job_id
+            if (!userToPenalize && review.service_id) {
+                const { data: service } = await supabase
+                    .from('services')
+                    .select('owner_id')
+                    .eq('id', review.service_id)
+                    .single();
+                
+                if (service && service.owner_id !== review.reviewer_id) {
+                    userToPenalize = service.owner_id;
+                }
+            }
+
+            if (userToPenalize) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('xp')
+                    .eq('id', userToPenalize)
+                    .single();
+
+                if (profile) {
+                    // Penalty applies to ALL levels without exception
                     const penalty = review.rating <= 2 ? 100 : 20;
                     const newXP = Math.max(0, (profile.xp || 0) - penalty);
                     
-                    // Update profile XP
                     await supabase
                         .from('profiles')
                         .update({ xp: newXP })
-                        .eq('id', service.owner_id);
+                        .eq('id', userToPenalize);
                     
-                    console.log(`[ReviewService] Quality Penalty applied to ${service.owner_id}: -${penalty} XP`);
+                    console.log(`[ReviewService] Quality Penalty applied to ${userToPenalize}: -${penalty} XP`);
                 }
             }
         }

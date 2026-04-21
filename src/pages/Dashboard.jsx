@@ -473,6 +473,7 @@ const ReceivedProposalsSection = ({
     navigate, 
     getTimeAgo, 
     handleAcceptProposal,
+    handleRejectProposal,
     expandedProposalId,
     setExpandedProposalId 
 }) => (
@@ -511,13 +512,22 @@ const ReceivedProposalsSection = ({
 
                                 <div className="proposal-actions">
                                     <button 
-                                        className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
+                                        className="btn-secondary"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRejectProposal(proposal);
+                                        }}
+                                    >
+                                        Rechazar
+                                    </button>
+                                    <button 
+                                        className="btn-secondary"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setExpandedProposalId(isExpanded ? null : proposal.id);
                                         }}
                                     >
-                                        {isExpanded ? 'Ocultar Carta' : 'Ver Propuesta'}
+                                        {isExpanded ? 'Ocultar Carta' : 'Ver Carta'}
                                     </button>
                                     
                                     <button className="btn-primary" onClick={(e) => {
@@ -815,6 +825,18 @@ const Dashboard = () => {
         }
     };
 
+    const handleRejectProposal = async (proposal) => {
+        if (window.confirm('¿Estás seguro de que deseas rechazar esta postulación?')) {
+            try {
+                await updateProposalStatus(proposal.id, 'rejected');
+                setReceivedProposals(prev => prev.filter(p => p.id !== proposal.id));
+            } catch (err) {
+                console.error("[Dashboard] Error rejecting proposal:", err);
+                alert("No se pudo rechazar la postulación.");
+            }
+        }
+    };
+
     const handleCancelProposal = async (e, id) => {
         e.stopPropagation();
         if (window.confirm('¿Cancelar postulación?')) {
@@ -1012,6 +1034,7 @@ const Dashboard = () => {
                         navigate={navigate} 
                         getTimeAgo={getTimeAgo} 
                         handleAcceptProposal={handleAcceptProposal}
+                        handleRejectProposal={handleRejectProposal}
                         expandedProposalId={expandedProposalId}
                         setExpandedProposalId={setExpandedProposalId}
                     />

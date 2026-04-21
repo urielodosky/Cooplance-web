@@ -408,6 +408,11 @@ const ProjectCreateForm = ({ onCancel, initialData }) => {
         e.preventDefault();
 
         // Validation logic
+        if (!formData.description || formData.description.trim().length < 30) {
+            alert('La descripción debe tener al menos 30 caracteres.');
+            return;
+        }
+
         if (!formData.budget || Number(formData.budget) < 1000) {
             alert('El presupuesto debe ser mayor o igual a $1000 ARS.');
             return;

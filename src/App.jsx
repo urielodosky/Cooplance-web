@@ -40,6 +40,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { TeamProvider } from './context/TeamContext'
 import { ChatProvider } from './context/ChatContext'
 import React, { useEffect } from 'react'
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 function App() {
   useEffect(() => {
@@ -94,6 +95,7 @@ function App() {
             </Routes>
           </main>
           <SupportChatbot />
+          <SpeedInsights />
         </div>
       </TeamProvider>
     </ThemeProvider>

@@ -521,6 +521,12 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             return;
         }
 
+        if (!formData.description || formData.description.trim().length < 30) {
+            setFormError('La descripción completa de tu servicio debe tener al menos 30 caracteres.');
+            setIsSubmitting(false);
+            return;
+        }
+
         // Level-based publication limit check (for new services only)
         if (!initialData) {
             const currentLevel = user.level || 1;
