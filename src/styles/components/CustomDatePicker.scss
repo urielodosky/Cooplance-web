@@ -242,11 +242,13 @@
 @media (max-width: 480px) {
     .datepicker-dropdown {
         position: fixed;
-        left: 1rem;
-        right: 1rem;
+        left: 50%;
         top: 50%;
-        transform: translateY(-50%);
-        width: auto;
+        transform: translate(-50%, -50%);
+        width: calc(100% - 2rem);
+        max-width: 320px;
         min-width: 0;
+        box-shadow: 0 0 0 100vh rgba(0, 0, 0, 0.6), 0 20px 50px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
 }

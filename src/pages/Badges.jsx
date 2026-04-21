@@ -185,7 +185,14 @@ const Badges = () => {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                        <div className="custom-scrollbar" style={{ 
+                            display: 'flex', 
+                            gap: '1rem', 
+                            overflowX: 'auto', 
+                            padding: '1rem 0.5rem 2rem 0.5rem',
+                            scrollSnapType: 'x mandatory',
+                            WebkitOverflowScrolling: 'touch'
+                        }}>
                             {family.badges.map((badge, bIndex) => {
                                 const isAchieved = (family.currentProgress >= badge.required) || savedUnlockedIds.includes(badge.id);
                                 const tierStyle = getTierStyle(bIndex, family.badges.length);
@@ -206,7 +213,11 @@ const Badges = () => {
                                         filter: isAchieved ? 'none' : 'grayscale(100%)',
                                         position: 'relative',
                                         transition: 'all 0.3s ease',
-                                        transform: isAchieved ? 'scale(1)' : 'scale(0.95)'
+                                        transform: isAchieved ? 'scale(1)' : 'scale(0.95)',
+                                        minWidth: '180px',
+                                        maxWidth: '180px',
+                                        flexShrink: 0,
+                                        scrollSnapAlign: 'start'
                                     }} onMouseOver={e => {
                                         if (isAchieved) {
                                             e.currentTarget.style.transform = 'translateY(-5px) scale(1.02)';

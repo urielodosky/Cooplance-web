@@ -1,12 +1,14 @@
 .otp-container {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 2rem;
     max-width: 450px;
+    width: 90%;
     margin: 2rem auto;
     text-align: center;
     backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-lg);
 }
 
 .otp-container h3 {
@@ -24,22 +26,27 @@
 
 .otp-inputs {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     justify-content: center;
     margin-bottom: 2rem;
+    flex-wrap: wrap; /* Permite envolver en pantallas muy pequeñas */
 }
 
 .otp-inputs input {
-    width: 3.5rem;
-    height: 4rem;
+    width: clamp(2.5rem, 12vw, 3.5rem);
+    height: clamp(3rem, 15vw, 4rem);
     border: 2px solid var(--border);
     border-radius: var(--radius-md);
     background: rgba(0, 0, 0, 0.2);
     color: var(--text-primary);
     text-align: center;
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 5vw, 1.5rem);
     font-weight: 600;
     transition: all 0.2s;
+}
+
+[data-theme='light'] .otp-inputs input {
+    background: rgba(255, 255, 255, 0.8);
 }
 
 .otp-inputs input:focus {

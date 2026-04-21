@@ -12,5 +12,13 @@ if (import.meta.env.DEV) {
     console.log("=================================");
 }
 
-// 2. Creamos el Singleton (una única instancia del cliente para toda la app)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// 2. Creamos el Singleton con configuración de sesión aislada (V4.1)
+// Usamos una storageKey personalizada para evitar colisiones entre dispositivos y entornos.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        storageKey: 'cooplance-auth-v4-session',
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
+});

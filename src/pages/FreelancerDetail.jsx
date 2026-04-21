@@ -260,14 +260,16 @@ const FreelancerDetail = () => {
                         </div>
 
                         <div className="bio-container-premium" style={{
-                            background: 'rgba(255,255,255,0.02)',
+                            background: 'var(--bg-card)',
                             padding: '1.25rem',
                             borderRadius: '20px',
                             border: '1px solid var(--border)',
                             lineHeight: 1.5,
                             color: 'var(--text-secondary)',
                             fontSize: '1rem',
-                            position: 'relative'
+                            position: 'relative',
+                            wordBreak: 'break-word',
+                            overflowWrap: 'anywhere'
                         }}>
                             <svg style={{ position: 'absolute', top: '15px', right: '20px', opacity: 0.1 }} width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017V14C19.017 11.2386 16.7784 9 14.017 9V7C17.883 7 21.017 10.134 21.017 14V21H14.017ZM3.01701 21L3.01701 18C3.01701 16.8954 3.91244 16 5.01701 16H8.01701V14C8.01701 11.2386 5.77844 9 3.01701 9V7C6.88301 7 10.017 10.134 10.017 14V21H3.01701Z"/></svg>
                             {freelancer.bio || `¡Hola! Soy ${freelancer.first_name || freelancer.username}. Me apasiona crear soluciones excepcionales y ayudar a mis clientes a alcanzar sus objetivos con profesionalismo y creatividad.`}
@@ -483,7 +485,9 @@ const FreelancerDetail = () => {
                             <div key={review.id} className="glass" style={{
                                 borderRadius: '16px',
                                 padding: '1.75rem',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                boxShadow: 'var(--shadow-md)'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div
@@ -565,7 +569,9 @@ const FreelancerDetail = () => {
                             <div key={review.id} className="glass" style={{
                                 borderRadius: '16px',
                                 padding: '1.75rem',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                boxShadow: 'var(--shadow-md)'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div

@@ -97,8 +97,11 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
                         />
                     </div>
                     <div className="avatar-details-col" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <div className="username-row" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div className="username-row" style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
                             <span className="username-text" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>@{displayUsername}</span>
+                            {project.clientName && (
+                                <span className="real-name-text" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '-2px' }}>{project.clientName}</span>
+                            )}
                         </div>
                         <div className="status-info-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span className="level-dot-text" style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600 }}>• Nivel {projectLevel}</span>
