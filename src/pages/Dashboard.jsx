@@ -12,7 +12,7 @@ import ProposalListModal from '../components/project/ProposalListModal';
 import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, deactivatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { getBenefitsForRole } from '../data/levelBenefits';
-import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi } from '../lib/proposalService';
+import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi, getReceivedProposals } from '../lib/proposalService';
 import { getProjectsByClient, deleteProject as deleteProjectApi } from '../lib/projectService';
 import { supabase } from '../lib/supabase';
 import { BADGE_FAMILIES, CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
@@ -138,17 +138,17 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
     </div>
 );
 
-const ProposalsSection = ({ 
-    loading, 
-    activeProposalTab, 
-    setActiveProposalTab, 
-    myProposals, 
-    filteredProposals, 
-    navigate, 
-    getTimeAgo, 
-    openMenuId, 
-    setOpenMenuId, 
-    handleCancelProposal, 
+const ProposalsSection = ({
+    loading,
+    activeProposalTab,
+    setActiveProposalTab,
+    myProposals,
+    filteredProposals,
+    navigate,
+    getTimeAgo,
+    openMenuId,
+    setOpenMenuId,
+    handleCancelProposal,
     handleDeleteProposal,
     expandedProposalId,
     setExpandedProposalId,
@@ -169,7 +169,7 @@ const ProposalsSection = ({
                 filteredProposals.map(proposal => {
                     const daysLeft = getRemainingDays(proposal.projectDeadline);
                     const isExpanded = expandedProposalId === proposal.id;
-                    
+
                     return (
                         <div key={proposal.id} className={`proposal-card enhanced status-${proposal.status} ${isExpanded ? 'expanded' : ''}`} onClick={() => navigate(`/project/${proposal.projectId}`)}>
                             <div className="proposal-card-content">
@@ -190,12 +190,12 @@ const ProposalsSection = ({
                                     <h4>{proposal.projectTitle}</h4>
                                     <div className="proposal-meta">
                                         <span className="meta-item time">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                                             Enviada {getTimeAgo(proposal.createdAt)}
                                         </span>
                                         {proposal.status === 'pending' && daysLeft !== null && (
                                             <span className={`meta-item deadline ${daysLeft <= 2 ? 'urgent' : ''}`}>
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                                                 {daysLeft > 0 ? `Quedan ${daysLeft} días` : 'Vence hoy'}
                                             </span>
                                         )}
@@ -203,7 +203,7 @@ const ProposalsSection = ({
                                 </div>
 
                                 <div className="proposal-actions">
-                                    <button 
+                                    <button
                                         className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -212,9 +212,9 @@ const ProposalsSection = ({
                                     >
                                         {isExpanded ? 'Ocultar Carta' : 'Ver Carta'}
                                     </button>
-                                    
+
                                     <span className={`status-badge ${proposal.status}`}>{proposal.status}</span>
-                                    
+
                                     <div className="proposal-dots-wrapper" onClick={e => e.stopPropagation()}>
                                         <button className="proposal-dots-btn" onClick={() => setOpenMenuId(openMenuId === proposal.id ? null : proposal.id)}>⋮</button>
                                         {openMenuId === proposal.id && (
@@ -284,9 +284,9 @@ const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setS
             ) : myPublishedProjects.length > 0 ? (
                 myPublishedProjects.map(project => (
                     <div key={project.id} style={{ position: 'relative' }}>
-                        <ProjectCard 
-                            project={project} 
-                            onApply={() => navigate(`/explore-clients?highlight=${project.id}`)} 
+                        <ProjectCard
+                            project={project}
+                            onApply={() => navigate(`/explore-clients?highlight=${project.id}`)}
                             onDelete={onDelete}
                         />
                         {project.proposalCount > 0 && (
@@ -362,10 +362,10 @@ const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
                 <GridSkeleton />
             ) : tutorados.length > 0 ? (
                 tutorados.map(minor => (
-                    <div key={minor.id} className="glass" style={{ 
-                        padding: '1.5rem', 
-                        borderRadius: '20px', 
-                        background: 'var(--bg-card)', 
+                    <div key={minor.id} className="glass" style={{
+                        padding: '1.5rem',
+                        borderRadius: '20px',
+                        background: 'var(--bg-card)',
                         border: '1px solid var(--border)',
                         display: 'flex',
                         flexDirection: 'column',
@@ -380,8 +380,8 @@ const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
                             <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>{minor.first_name || minor.username}</h4>
                             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{minor.username}</p>
                         </div>
-                        <button 
-                            className="btn-primary" 
+                        <button
+                            className="btn-primary"
                             style={{ width: '100%', padding: '0.6rem' }}
                             onClick={() => enterMirrorMode(minor.id)}
                         >
@@ -398,15 +398,15 @@ const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
     </div>
 );
 
-import { 
-    CreditCard as Coin, 
-    Zap as Flame, 
-    Rocket, 
-    Heart, 
-    Zap as Lightning, 
-    Star, 
-    Handshake, 
-    Eye 
+import {
+    CreditCard as Coin,
+    Zap as Flame,
+    Rocket,
+    Heart,
+    Zap as Lightning,
+    Star,
+    Handshake,
+    Eye
 } from 'lucide-react';
 
 const BadgesSection = ({ user, navigate }) => {
@@ -467,33 +467,113 @@ const BadgesSection = ({ user, navigate }) => {
 };
 
 
+const ReceivedProposalsSection = ({ 
+    loading, 
+    receivedProposals, 
+    navigate, 
+    getTimeAgo, 
+    handleAcceptProposal,
+    expandedProposalId,
+    setExpandedProposalId 
+}) => (
+    <div style={{ marginTop: '2.5rem' }}>
+        <h3 className="section-title">Postulantes a Mis Proyectos</h3>
+        <div className="jobs-list">
+            {loading && receivedProposals.length === 0 ? (
+                <ListSkeleton />
+            ) : receivedProposals.length > 0 ? (
+                receivedProposals.map(proposal => {
+                    const isExpanded = expandedProposalId === proposal.id;
+                    return (
+                        <div key={proposal.id} className={`proposal-card enhanced status-${proposal.status} ${isExpanded ? 'expanded' : ''}`}>
+                            <div className="proposal-card-content">
+                                <div className="proposal-client-info" onClick={() => navigate(`/freelancer/${proposal.userId}`)}>
+                                    <div className="client-avatar-wrapper">
+                                        <img src={getProfilePicture({ role: proposal.userRole, avatar: proposal.userAvatar })} alt={proposal.userName} />
+                                    </div>
+                                    <div className="client-details">
+                                        <span className="client-username">@{proposal.userUsername || 'candidato'}</span>
+                                        <span className="client-realname">{proposal.userName}</span>
+                                    </div>
+                                </div>
+
+                                <div className="proposal-main-details">
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '800', marginBottom: '0.3rem', letterSpacing: '0.5px' }}>PARA TU PROYECTO:</div>
+                                    <h4>{proposal.projectTitle}</h4>
+                                    <div className="proposal-meta">
+                                        <span className="meta-item time">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                            Enviada {getTimeAgo(proposal.createdAt)}
+                                        </span>
+                                        <span className="meta-item">Nivel {proposal.userLevel}</span>
+                                    </div>
+                                </div>
+
+                                <div className="proposal-actions">
+                                    <button 
+                                        className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedProposalId(isExpanded ? null : proposal.id);
+                                        }}
+                                    >
+                                        {isExpanded ? 'Ocultar Carta' : 'Ver Propuesta'}
+                                    </button>
+                                    
+                                    <button className="btn-primary" onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAcceptProposal(proposal);
+                                    }}>
+                                        Contratar
+                                    </button>
+                                </div>
+                            </div>
+
+                            {isExpanded && (
+                                <div className="proposal-letter-box" onClick={e => e.stopPropagation()}>
+                                    <h5>Carta de Presentación</h5>
+                                    <p>{proposal.coverLetter || 'Sin mensaje adjunto.'}</p>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })
+            ) : (
+                <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                    <p>No tienes candidatos nuevos para tus proyectos aún.</p>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
 // --- Main Dashboard Component ---
 
 const Dashboard = () => {
-    const { 
-        user: authUser, 
-        updateUser, 
-        isTutorView, 
-        supervisedUser, 
-        enterMirrorMode, 
-        exitMirrorMode 
+    const {
+        user: authUser,
+        updateUser,
+        isTutorView,
+        supervisedUser,
+        enterMirrorMode,
+        exitMirrorMode
     } = useAuth();
-    
+
     // Determine effective user for this view
     const user = isTutorView ? supervisedUser : authUser;
-    
+
     const { jobs, updateJobStatus: updateJobStatusApi, createJob } = useJobs();
     const { services } = useServices();
     const { createChat } = useChat();
     const navigate = useNavigate();
-    
+
     const [tutorados, setTutorados] = useState([]);
 
 
 
     const [showLevelUpModal, setShowLevelUpModal] = useState(false);
     const [pauseLoading, setPauseLoading] = useState(false);
-    
+
     // V39: Derived Pause Mode state for UI
     const isPaused = useMemo(() => {
         if (!user || user.role !== 'freelancer') return false;
@@ -503,6 +583,7 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [myPublishedProjects, setMyPublishedProjects] = useState([]);
     const [myProposals, setMyProposals] = useState([]);
+    const [receivedProposals, setReceivedProposals] = useState([]);
     const [activeProposalTab, setActiveProposalTab] = useState('active');
     const [openMenuId, setOpenMenuId] = useState(null);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -542,8 +623,10 @@ const Dashboard = () => {
             try {
                 const projects = await getProjectsByClient(user.id);
                 const proposals = await getProposalsByUser(user.id);
+                const received = await getReceivedProposals(user.id);
                 setMyPublishedProjects(projects);
                 setMyProposals(proposals);
+                setReceivedProposals(received);
                 localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(projects));
                 localStorage.setItem(`cooplance_proposals_${user.id}`, JSON.stringify(proposals));
             } catch (err) { console.error(err); }
@@ -572,11 +655,11 @@ const Dashboard = () => {
 
         // Use a stable, non-circular check to avoid infinite loops
         const processedUser = processGamificationRules(user);
-        
+
         // Only update if there is a meaningful data change
-        const hasChanges = 
-            processedUser.xp !== user.xp || 
-            processedUser.level !== user.level || 
+        const hasChanges =
+            processedUser.xp !== user.xp ||
+            processedUser.level !== user.level ||
             JSON.stringify(processedUser.gamification) !== JSON.stringify(user.gamification);
 
         if (hasChanges) {
@@ -628,7 +711,7 @@ const Dashboard = () => {
     const handlePauseModeClick = async () => {
         const g = user.gamification || {};
         const isPaused = g.pause_mode?.active || g.vacation?.active;
-        
+
         try {
             if (isPaused) {
                 if (window.confirm("¿Desactivar el Modo Pausa? Tus servicios volverán a ser visibles normalmente.")) {
@@ -657,7 +740,7 @@ const Dashboard = () => {
         if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto de forma permanente? Esta acción no se puede deshacer.')) {
             try {
                 await deleteProjectApi(projectId);
-                
+
                 // Update state and localStorage with the NEW filtered list
                 const updatedProjects = myPublishedProjects.filter(p => p.id !== projectId);
                 setMyPublishedProjects(updatedProjects);
@@ -707,26 +790,26 @@ const Dashboard = () => {
     const handleAcceptProposal = async (proposal) => {
         const project = myPublishedProjects.find(p => p.id === proposal.projectId);
         if (!project) return;
-        
+
         try {
             setLoading(true);
             // 1. Update proposal status
             await updateProposalStatus(proposal.id, 'accepted');
-            
+
             // 2. Create the formal Job/Order entry
             const freelancer = {
                 id: proposal.userId,
                 name: proposal.userName,
                 role: 'freelancer'
             };
-            
+
             await createJob(project, user);
-            
+
             alert('¡Contratación exitosa! El pedido ya figura en tu panel.');
             window.location.reload();
-        } catch (err) { 
+        } catch (err) {
             console.error("[Dashboard] Error accepting proposal:", err);
-            alert("No se pudo completar la contratación: " + err.message); 
+            alert("No se pudo completar la contratación: " + err.message);
         } finally {
             setLoading(false);
         }
@@ -787,7 +870,7 @@ const Dashboard = () => {
                             <p style={{ margin: 0 }}>Bienvenido a tu panel.</p>
                             {isPaused && (
                                 <span className="status-badge-active-pause ripple-effect">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10" /><line x1="10" y1="15" x2="10" y2="9" /><line x1="14" y1="15" x2="14" y2="9" /></svg>
                                     MODO PAUSA ACTIVO
                                 </span>
                             )}
@@ -845,7 +928,7 @@ const Dashboard = () => {
                             </button>
                         </div>
                         <p style={{ fontSize: '0.7rem', marginTop: '0.5rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                            { (user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Estás fuera de servicio.' : 'Uso ilimitado y voluntario.' }
+                            {(user.gamification?.pause_mode?.active || user.gamification?.vacation?.active) ? 'Estás fuera de servicio.' : 'Uso ilimitado y voluntario.'}
                         </p>
                     </div>
                 )}
@@ -871,39 +954,39 @@ const Dashboard = () => {
 
             <XPProgressSection user={user} levelLabel={levelLabel} xpPercentage={xpPercentage} isMaxLevel={isMaxLevel} xpDisplayText={xpDisplayText} nextLevelXP={nextLevelXP} currentXP={currentXP} />
 
-            <BadgesSection 
-                user={user} 
-                myWork={myWork} 
-                myOrders={myOrders} 
+            <BadgesSection
+                user={user}
+                myWork={myWork}
+                myOrders={myOrders}
                 navigate={navigate}
             />
 
             {(user.role === 'freelancer' || user.role === 'company') && (
                 <>
                     <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} />
-                    <ProposalsSection 
-                        loading={loading} 
-                        activeProposalTab={activeProposalTab} 
-                        setActiveProposalTab={setActiveProposalTab} 
-                        myProposals={myProposals} 
-                        filteredProposals={filteredProposals} 
-                        navigate={navigate} 
-                        getTimeAgo={getTimeAgo} 
-                        openMenuId={openMenuId} 
-                        setOpenMenuId={setOpenMenuId} 
-                        handleCancelProposal={handleCancelProposal} 
+                    <ProposalsSection
+                        loading={loading}
+                        activeProposalTab={activeProposalTab}
+                        setActiveProposalTab={setActiveProposalTab}
+                        myProposals={myProposals}
+                        filteredProposals={filteredProposals}
+                        navigate={navigate}
+                        getTimeAgo={getTimeAgo}
+                        openMenuId={openMenuId}
+                        setOpenMenuId={setOpenMenuId}
+                        handleCancelProposal={handleCancelProposal}
                         handleDeleteProposal={handleDeleteProposal}
                         expandedProposalId={expandedProposalId}
                         setExpandedProposalId={setExpandedProposalId}
                         getRemainingDays={getRemainingDays}
                     />
-                    
+
                     {/* V27: Tutorados Section (Adults only) */}
                     {!isTutorView && authUser.role === 'freelancer' && (
-                        <TutoradosSection 
-                            loading={loading} 
-                            tutorados={tutorados} 
-                            enterMirrorMode={enterMirrorMode} 
+                        <TutoradosSection
+                            loading={loading}
+                            tutorados={tutorados}
+                            enterMirrorMode={enterMirrorMode}
                         />
                     )}
 
@@ -914,15 +997,24 @@ const Dashboard = () => {
             {(user.role === 'buyer' || user.role === 'company' || myOrders.length > 0) && (
                 <>
                     {(user.role === 'buyer' || user.role === 'company') && (
-                        <PublishedProjectsSection 
-                            loading={loading} 
-                            myPublishedProjects={myPublishedProjects} 
-                            navigate={navigate} 
-                            setSelectedProjectForProposals={setSelectedProjectForProposals} 
-                            user={user} 
+                        <PublishedProjectsSection
+                            loading={loading}
+                            myPublishedProjects={myPublishedProjects}
+                            navigate={navigate}
+                            setSelectedProjectForProposals={setSelectedProjectForProposals}
+                            user={user}
                             onDelete={handleDeleteProject}
                         />
                     )}
+                    <ReceivedProposalsSection 
+                        loading={loading} 
+                        receivedProposals={receivedProposals} 
+                        navigate={navigate} 
+                        getTimeAgo={getTimeAgo} 
+                        handleAcceptProposal={handleAcceptProposal}
+                        expandedProposalId={expandedProposalId}
+                        setExpandedProposalId={setExpandedProposalId}
+                    />
                     <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} />
                 </>
             )}

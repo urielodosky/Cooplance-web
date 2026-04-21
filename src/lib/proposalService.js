@@ -178,3 +178,78 @@ export const deleteProposal = async (proposalId) => {
         throw err;
     }
 };
+
+export const getReceivedProposals = async (clientId) => {
+    try {
+        console.log(`[ProposalService] Fetching received proposals for client ID: ${clientId}`);
+        
+        // 1. Fetch all projects owned by the client
+        const { data: projects, error: projectsError } = await supabase
+            .from('projects')
+            .select('id, title')
+            .eq('client_id', clientId);
+            
+        if (projectsError) throw projectsError;
+        if (!projects || projects.length === 0) return [];
+        
+        const projectIds = projects.map(p => p.id);
+        const projectMap = projects.reduce((acc, p) => {
+            acc[p.id] = p.title;
+            return acc;
+        }, {});
+        
+        // 2. Fetch all pending proposals for these projects
+        const { data: proposals, error: proposalsError } = await supabase
+            .from('proposals')
+            .select(`
+                *,
+                freelancer_id
+            `)
+            .in('project_id', projectIds)
+            .eq('status', 'pending');
+            
+        if (proposalsError) throw proposalsError;
+        if (!proposals || proposals.length === 0) return [];
+        
+        // 3. Manually fetch profiles for each freelancer to get their user details
+        const freelancerIds = proposals.map(p => p.freelancer_id);
+        const uniqueFreelancerIds = [...new Set(freelancerIds)];
+        
+        const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, username, first_name, last_name, avatar_url, role, level')
+            .in('id', uniqueFreelancerIds);
+            
+        if (profilesError) throw profilesError;
+        
+        const profileMap = profiles?.reduce((acc, profile) => {
+            acc[profile.id] = profile;
+            return acc;
+        }, {}) || {};
+
+        // 4. Map the data back into the expected frontend format
+        return proposals.map(proposal => {
+            const freelancer = profileMap[proposal.freelancer_id] || {};
+            return {
+                id: proposal.id,
+                projectId: proposal.project_id,
+                projectTitle: projectMap[proposal.project_id] || 'Proyecto',
+                createdAt: proposal.created_at,
+                status: proposal.status,
+                coverLetter: proposal.cover_letter,
+                
+                // Formatted Freelancer Details
+                userId: freelancer.id,
+                userUsername: freelancer.username,
+                userName: freelancer.first_name ? `${freelancer.first_name} ${freelancer.last_name || ''}`.trim() : freelancer.username,
+                userAvatar: freelancer.avatar_url,
+                userRole: freelancer.role,
+                userLevel: freelancer.level || 1
+            };
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by newest
+        
+    } catch (err) {
+        console.error('[ProposalService] Exact error fetching received proposals:', err);
+        return [];
+    }
+};
