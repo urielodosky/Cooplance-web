@@ -138,43 +138,108 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
     </div>
 );
 
-const ProposalsSection = ({ loading, activeProposalTab, setActiveProposalTab, myProposals, filteredProposals, navigate, getTimeAgo, openMenuId, setOpenMenuId, handleCancelProposal, handleDeleteProposal }) => (
+const ProposalsSection = ({ 
+    loading, 
+    activeProposalTab, 
+    setActiveProposalTab, 
+    myProposals, 
+    filteredProposals, 
+    navigate, 
+    getTimeAgo, 
+    openMenuId, 
+    setOpenMenuId, 
+    handleCancelProposal, 
+    handleDeleteProposal,
+    expandedProposalId,
+    setExpandedProposalId,
+    getRemainingDays
+}) => (
     <div style={{ marginTop: '2rem' }}>
         <div className="proposal-section-header">
             <h3 className="section-title">Mis Postulaciones</h3>
             <div className="proposal-tabs">
-                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>Activas <span className="tab-count">{myProposals.filter(p => p.status === 'pending').length}</span></button>
-                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => p.status !== 'pending').length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>Activas <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase() === 'pending').length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase() !== 'pending').length}</span></button>
             </div>
         </div>
         <div className="jobs-list">
             {loading && myProposals.length === 0 ? (
                 <ListSkeleton />
             ) : filteredProposals.length > 0 ? (
-                filteredProposals.map(proposal => (
-                    <div key={proposal.id} className={`proposal-card status-${proposal.status}`} onClick={() => navigate(`/project/${proposal.projectId}`)}>
-                        <div className="proposal-card-info">
-                            <h4>{proposal.projectTitle}</h4>
-                            <span className="proposal-time-ago">{getTimeAgo(proposal.createdAt)}</span>
-                        </div>
-                        <div className="proposal-card-right">
-                            <span className={`status-badge ${proposal.status}`}>{proposal.status}</span>
-                            <div className="proposal-dots-wrapper" onClick={e => e.stopPropagation()}>
-                                <button className="proposal-dots-btn" onClick={() => setOpenMenuId(openMenuId === proposal.id ? null : proposal.id)}>⋮</button>
-                                {openMenuId === proposal.id && (
-                                    <div className="proposal-dots-menu">
-                                        <button onClick={() => navigate(`/project/${proposal.projectId}`)}>Ver Detalles</button>
-                                        {proposal.status === 'pending' ? (
-                                            <button className="danger" onClick={(e) => handleCancelProposal(e, proposal.id)}>Cancelar</button>
-                                        ) : (
-                                            <button className="danger" onClick={(e) => handleDeleteProposal(e, proposal.id)}>Borrar</button>
+                filteredProposals.map(proposal => {
+                    const daysLeft = getRemainingDays(proposal.projectDeadline);
+                    const isExpanded = expandedProposalId === proposal.id;
+                    
+                    return (
+                        <div key={proposal.id} className={`proposal-card enhanced status-${proposal.status} ${isExpanded ? 'expanded' : ''}`} onClick={() => navigate(`/project/${proposal.projectId}`)}>
+                            <div className="proposal-card-content">
+                                <div className="proposal-client-info" onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(proposal.clientRole === 'company' ? `/company/${proposal.clientId}` : `/client/${proposal.clientId}`);
+                                }}>
+                                    <div className="client-avatar-wrapper">
+                                        <img src={getProfilePicture({ role: proposal.clientRole, avatar: proposal.clientAvatar })} alt={proposal.clientUsername} />
+                                    </div>
+                                    <div className="client-details">
+                                        <span className="client-username">@{proposal.clientUsername || 'usuario'}</span>
+                                        {proposal.clientRealName && <span className="client-realname">{proposal.clientRealName}</span>}
+                                    </div>
+                                </div>
+
+                                <div className="proposal-main-details">
+                                    <h4>{proposal.projectTitle}</h4>
+                                    <div className="proposal-meta">
+                                        <span className="meta-item time">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                            Enviada {getTimeAgo(proposal.createdAt)}
+                                        </span>
+                                        {proposal.status === 'pending' && daysLeft !== null && (
+                                            <span className={`meta-item deadline ${daysLeft <= 2 ? 'urgent' : ''}`}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y1="16" y2="16"/></svg>
+                                                {daysLeft > 0 ? `Quedan ${daysLeft} días` : 'Vence hoy'}
+                                            </span>
                                         )}
                                     </div>
-                                )}
+                                </div>
+
+                                <div className="proposal-actions">
+                                    <button 
+                                        className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedProposalId(isExpanded ? null : proposal.id);
+                                        }}
+                                    >
+                                        {isExpanded ? 'Ocultar Carta' : 'Ver Carta'}
+                                    </button>
+                                    
+                                    <span className={`status-badge ${proposal.status}`}>{proposal.status}</span>
+                                    
+                                    <div className="proposal-dots-wrapper" onClick={e => e.stopPropagation()}>
+                                        <button className="proposal-dots-btn" onClick={() => setOpenMenuId(openMenuId === proposal.id ? null : proposal.id)}>⋮</button>
+                                        {openMenuId === proposal.id && (
+                                            <div className="proposal-dots-menu">
+                                                <button onClick={() => navigate(`/project/${proposal.projectId}`)}>Ver Detalles</button>
+                                                {proposal.status === 'pending' ? (
+                                                    <button className="danger" onClick={(e) => handleCancelProposal(e, proposal.id)}>Cancelar</button>
+                                                ) : (
+                                                    <button className="danger" onClick={(e) => handleDeleteProposal(e, proposal.id)}>Borrar</button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
+
+                            {isExpanded && (
+                                <div className="proposal-letter-box" onClick={e => e.stopPropagation()}>
+                                    <h5>Mi Carta de Presentación</h5>
+                                    <p>{proposal.coverLetter || 'Sin mensaje adjunto.'}</p>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))
+                    );
+                })
             ) : (
                 <div className="proposal-empty">
                     <p>{activeProposalTab === 'active' ? 'No tienes postulaciones activas.' : 'Tu historial está vacío.'}</p>
@@ -442,7 +507,15 @@ const Dashboard = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
     const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null);
+    const [expandedProposalId, setExpandedProposalId] = useState(null);
     const { refreshBadges } = useBadgeNotification();
+
+    const getRemainingDays = (deadline) => {
+        if (!deadline) return null;
+        const diff = new Date(deadline) - new Date();
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        return days;
+    };
 
     // V27: Update Job Status with Read-Only check
     const updateJobStatus = async (jobId, status) => {
@@ -790,7 +863,22 @@ const Dashboard = () => {
             {(user.role === 'freelancer' || user.role === 'company') && (
                 <>
                     <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} />
-                    <ProposalsSection loading={loading} activeProposalTab={activeProposalTab} setActiveProposalTab={setActiveProposalTab} myProposals={myProposals} filteredProposals={filteredProposals} navigate={navigate} getTimeAgo={getTimeAgo} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} handleCancelProposal={handleCancelProposal} handleDeleteProposal={handleDeleteProposal} />
+                    <ProposalsSection 
+                        loading={loading} 
+                        activeProposalTab={activeProposalTab} 
+                        setActiveProposalTab={setActiveProposalTab} 
+                        myProposals={myProposals} 
+                        filteredProposals={filteredProposals} 
+                        navigate={navigate} 
+                        getTimeAgo={getTimeAgo} 
+                        openMenuId={openMenuId} 
+                        setOpenMenuId={setOpenMenuId} 
+                        handleCancelProposal={handleCancelProposal} 
+                        handleDeleteProposal={handleDeleteProposal}
+                        expandedProposalId={expandedProposalId}
+                        setExpandedProposalId={setExpandedProposalId}
+                        getRemainingDays={getRemainingDays}
+                    />
                     
                     {/* V27: Tutorados Section (Adults only) */}
                     {!isTutorView && authUser.role === 'freelancer' && (

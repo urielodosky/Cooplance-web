@@ -18,26 +18,25 @@ export const AuthProvider = ({ children }) => {
 
     const handleSession = async (session) => {
         try {
-            console.log("[AuthContext] Handling session:", session?.user ? "User detected" : "No user");
+            console.log("[AuthContext] Handling session state change...");
             if (session?.user) {
                 // V24: Deduplication - Don't start a horizontal sync if one for this UI is already running
                 if (syncInProgress.current === session.user.id) {
-                    console.log("[AuthContext] Sync already in progress for this user. Skipping.");
+                    console.log("[AuthContext] Sync already in progress. Skipping duplicate hit.");
                     return;
                 }
 
                 // V13: Carga instantánea desde caché local
                 const cachedProfile = localStorage.getItem(`cooplance_profile_${session.user.id}`);
                 if (cachedProfile) {
-                    console.log("[AuthContext] Instant boot from cache.");
-                    setUser({ ...JSON.parse(cachedProfile), is_cached: true });
+                    const parsed = JSON.parse(cachedProfile);
+                    setUser({ ...parsed, is_cached: true });
                     setLoading(false);
                 } else {
                     setLoading(true);
                 }
                 
                 // V14: No bloqueamos el inicio de la App. Sincronizamos en segundo plano.
-                // We don't await here to keep the bootstrap fast, but fetchProfile is now self-guarded.
                 fetchProfile(session.user.id, session.user).catch(err => {
                     console.error("[AuthContext] Background sync failed:", err);
                 });
@@ -65,16 +64,16 @@ export const AuthProvider = ({ children }) => {
                 if (error) {
                     console.error("[AuthContext] getSession error:", error.message);
                     
-                    // V40: Handle Invalid/Expired Refresh Token
-                    // If the token is invalid, we must clear the session to prevent loops and red errors.
-                    const isRefreshTokenError = error.message?.toLowerCase().includes('refresh_token') || 
-                                              error.status === 400 || 
-                                              error.message?.toLowerCase().includes('not found');
+                    // V4.1: Be more selective before wiping a session
+                    const isRefreshTokenError = 
+                        error.message?.toLowerCase().includes('refresh_token') || 
+                        error.message?.toLowerCase().includes('api key') || // Catch key rotation errors without wiping!
+                        error.status === 400;
                     
-                    if (isRefreshTokenError) {
+                    if (isRefreshTokenError && !error.message?.toLowerCase().includes('api key')) {
                         console.warn("[AuthContext] Corrupted session detected. Cleaning up storage...");
                         await supabase.auth.signOut();
-                        // Clear any legacy cooplance profile keys just in case
+                        // Clear any legacy cooplance profile keys
                         for (let i = 0; i < localStorage.length; i++) {
                             const key = localStorage.key(i);
                             if (key?.startsWith('cooplance_profile_')) {

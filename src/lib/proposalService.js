@@ -45,7 +45,15 @@ export const getProposalsByUser = async (userId) => {
     try {
         const { data, error } = await supabase
             .from('proposals')
-            .select('*')
+            .select(`
+                *,
+                project:project_id(
+                    title, 
+                    deadline, 
+                    client_id,
+                    profiles:client_id(username, first_name, last_name, avatar_url, role)
+                )
+            `)
             .eq('freelancer_id', userId)
             .order('created_at', { ascending: false });
 
@@ -54,18 +62,29 @@ export const getProposalsByUser = async (userId) => {
             return [];
         }
 
-        return (data || []).map(row => ({
-            id: row.id,
-            projectId: row.project_id,
-            userId: row.freelancer_id,
-            userName: row.user_name,
-            userRole: row.user_role,
-            coverLetter: row.cover_letter,
-            amount: row.amount,
-            deliveryDays: row.delivery_days,
-            status: row.status,
-            createdAt: row.created_at,
-        }));
+        return (data || []).map(row => {
+            const project = row.project || {};
+            const client = project.profiles || {};
+            return {
+                id: row.id,
+                projectId: row.project_id,
+                projectTitle: project.title || 'Proyecto sin título',
+                projectDeadline: project.deadline,
+                clientId: project.client_id,
+                clientUsername: client.username,
+                clientRealName: client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : null,
+                clientAvatar: client.avatar_url,
+                clientRole: client.role,
+                userId: row.freelancer_id,
+                userName: row.user_name,
+                userRole: row.user_role,
+                coverLetter: row.cover_letter,
+                amount: row.amount,
+                deliveryDays: row.delivery_days,
+                status: row.status,
+                createdAt: row.created_at,
+            };
+        });
     } catch (err) {
         console.error('[ProposalService] Critical error fetching user proposals:', err);
         return [];
