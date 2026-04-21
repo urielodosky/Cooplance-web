@@ -195,7 +195,7 @@ const ProposalsSection = ({
                                         </span>
                                         {proposal.status === 'pending' && daysLeft !== null && (
                                             <span className={`meta-item deadline ${daysLeft <= 2 ? 'urgent' : ''}`}>
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y1="16" y2="16"/></svg>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                                 {daysLeft > 0 ? `Quedan ${daysLeft} días` : 'Vence hoy'}
                                             </span>
                                         )}
@@ -482,7 +482,7 @@ const Dashboard = () => {
     // Determine effective user for this view
     const user = isTutorView ? supervisedUser : authUser;
     
-    const { jobs, updateJobStatus: updateJobStatusApi } = useJobs();
+    const { jobs, updateJobStatus: updateJobStatusApi, createJob } = useJobs();
     const { services } = useServices();
     const { createChat } = useChat();
     const navigate = useNavigate();
@@ -707,11 +707,29 @@ const Dashboard = () => {
     const handleAcceptProposal = async (proposal) => {
         const project = myPublishedProjects.find(p => p.id === proposal.projectId);
         if (!project) return;
+        
         try {
+            setLoading(true);
+            // 1. Update proposal status
             await updateProposalStatus(proposal.id, 'accepted');
-            alert('Propuesta aceptada.');
+            
+            // 2. Create the formal Job/Order entry
+            const freelancer = {
+                id: proposal.userId,
+                name: proposal.userName,
+                role: 'freelancer'
+            };
+            
+            await createJob(project, user);
+            
+            alert('¡Contratación exitosa! El pedido ya figura en tu panel.');
             window.location.reload();
-        } catch (err) { alert(err.message); }
+        } catch (err) { 
+            console.error("[Dashboard] Error accepting proposal:", err);
+            alert("No se pudo completar la contratación: " + err.message); 
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCancelProposal = async (e, id) => {

@@ -866,7 +866,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     gap: 0;
-    overflow: hidden;
+    // overflow: hidden; // V4.1: Disabled to allow 3-dot menu to overlap card boundaries
 
     &:hover {
         transform: translateY(-4px);
