@@ -41,6 +41,7 @@ import { TeamProvider } from './context/TeamContext'
 import { ChatProvider } from './context/ChatContext'
 import React, { useEffect } from 'react'
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import LegalModal from './components/common/LegalModal'
 
 function App() {
   useEffect(() => {
@@ -53,6 +54,7 @@ function App() {
     <ThemeProvider>
       <TeamProvider>
         <div className="app-container">
+          <LegalModal />
           <MirrorModeBanner />
           <Navbar />
           <main>
