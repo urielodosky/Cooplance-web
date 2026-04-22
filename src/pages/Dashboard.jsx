@@ -550,7 +550,8 @@ const ReceivedProposalsSection = ({
 
                                 <div className="proposal-actions">
                                     <button 
-                                        className="btn-secondary"
+                                        className="btn-text-link"
+                                        style={{ color: '#ef4444' }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleRejectProposal(proposal);
@@ -559,7 +560,7 @@ const ReceivedProposalsSection = ({
                                         Rechazar
                                     </button>
                                     <button 
-                                        className="btn-secondary"
+                                        className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setExpandedProposalId(isExpanded ? null : proposal.id);
