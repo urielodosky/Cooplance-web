@@ -821,13 +821,12 @@ const Dashboard = () => {
             }
 
             // 2. Create the formal Job/Order entry
-            const freelancer = {
-                id: proposal.userId,
-                name: proposal.userName,
-                role: 'freelancer'
+            const projectWithFreelancer = {
+                ...project,
+                freelancerId: proposal.userId
             };
 
-            await createJob(project, user);
+            await createJob(projectWithFreelancer, user);
 
             alert('¡Contratación exitosa! El pedido ya figura en tu panel.');
             window.location.reload();

@@ -49,7 +49,7 @@ const mapJobToDB = (job, serviceOrProject, buyer) => {
         project_id: isProject ? (serviceOrProject?.id || job.projectId || null) : null,
         service_title: serviceOrProject?.title || job.serviceTitle || null,
         client_id: buyer?.id || job.buyerId,
-        provider_id: isProject ? (job.freelancerId || null) : (serviceOrProject?.freelancerId || job.freelancerId),
+        provider_id: job.freelancerId || serviceOrProject?.freelancerId || null,
         amount: parseFloat(serviceOrProject?.price || serviceOrProject?.budget || job.amount) || 0,
         tier: serviceOrProject?.selectedTier || job.tier || 'Standard',
         status: isProject ? 'active' : 'pending_approval',
@@ -120,7 +120,7 @@ export const JobProvider = ({ children }) => {
                 type: NotificationService.NOTIFICATION_TYPES.HIRED,
                 title: '¡Nuevo pedido recibido!',
                 message: `${mapped.buyerName} acaba de contratar tu servicio: ${mapped.serviceTitle}.`,
-                link: `/chat/order_${mapped.id}`
+                link: '/dashboard'
             });
 
             // Register Activity for Buyer
@@ -210,7 +210,7 @@ export const JobProvider = ({ children }) => {
                         type: NotificationService.NOTIFICATION_TYPES.ACCEPTED,
                         title: '¡Trabajo Completado!',
                         message: `El cliente ha aceptado y finalizado el servicio: ${job.serviceTitle}.`,
-                        link: `/chat/order_${job.id}`
+                        link: '/dashboard'
                     });
 
                     // Award XP via profiles

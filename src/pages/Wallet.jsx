@@ -70,7 +70,7 @@ const Wallet = () => {
                         title: t.description || 'Transacción',
                         date: t.created_at,
                         status: t.status,
-                        serviceLink: t.related_id ? `/chat/order_${t.related_id}` : '#'
+                        serviceLink: t.related_id ? '/dashboard' : '#'
                     };
                 });
 
