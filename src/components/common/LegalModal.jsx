@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../../features/auth/context/AuthContext';
+import { useAuth } from '../../features/auth/context/AuthContext';
 import { Link } from 'react-router-dom';
 
 export const CURRENT_LEGAL_VERSION = 2;
