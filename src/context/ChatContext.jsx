@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from '../features/auth/context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { registerActivity } from '../utils/gamification';
+import { sanitizeText } from '../utils/security';
 import * as NotificationService from '../services/NotificationService';
 
 const ChatContext = createContext();
@@ -289,6 +290,9 @@ export const ChatProvider = ({ children }) => {
                 console.warn("[ChatContext] No se pudo determinar el receptor del mensaje.");
             }
 
+            // Sanitización contra inyección/XSS antes de guardar a DB
+            const cleanText = text ? sanitizeText(text) : text;
+
             const { data: message, error } = await supabase
                 .from('messages')
                 .insert({
@@ -296,7 +300,7 @@ export const ChatProvider = ({ children }) => {
                     sender_id: options.isSystem ? null : user.id,
                     sender_name: options.senderName || (options.isSystem ? 'Sistema' : (user.username || user.first_name || 'Usuario')),
                     receiver_id: receiverId, // Campo obligatorio crítico
-                    content: text,
+                    content: cleanText,
                     attachments: attachments,
                     is_system: options.isSystem || false
                 })
@@ -309,7 +313,7 @@ export const ChatProvider = ({ children }) => {
             await supabase
                 .from('chats')
                 .update({
-                    last_message: text || (attachments.length ? 'Archivo adjunto' : ''),
+                    last_message: cleanText || (attachments.length ? 'Archivo adjunto' : ''),
                     last_message_at: new Date().toISOString()
                 })
                 .eq('id', chatId);

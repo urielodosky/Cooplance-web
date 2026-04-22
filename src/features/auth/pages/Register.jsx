@@ -324,6 +324,7 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading || isLoadingLoc || isValidatingParent) return;
         setParentValidationError(null);
 
         // Required Fields Basic Check
@@ -465,8 +466,15 @@ const Register = () => {
                 return;
             }
 
+            const { sanitizeText } = await import('../../../utils/security');
             const registrationData = {
                 ...formData,
+                firstName: sanitizeText(formData.firstName),
+                lastName: sanitizeText(formData.lastName),
+                companyName: sanitizeText(formData.companyName),
+                responsibleFirstName: sanitizeText(formData.responsibleFirstName),
+                responsibleLastName: sanitizeText(formData.responsibleLastName),
+                bio: sanitizeText(formData.bio),
                 dob: role !== 'company' ? formData.birthDate : null,
                 dni: role === 'freelancer' ? formData.dni : null,
                 gender: role === 'company' ? 'other' : formData.gender,

@@ -8,6 +8,9 @@ import { supabase } from '../lib/supabase';
 import { useTeams } from '../context/TeamContext'; // Import TeamContext
 import ReportModal from '../components/common/ReportModal';
 import '../styles/pages/Chat.scss';
+import { createThrottler } from '../utils/security';
+
+const chatThrottler = createThrottler(1500);
 
 const Chat = () => {
     const { chatId } = useParams();
@@ -137,6 +140,11 @@ const Chat = () => {
             return;
         }
         if (!activeChat || !messageInput.trim()) return;
+
+        if (!chatThrottler()) {
+            console.warn("Throttling activado: Evitando spam de mensajes.");
+            return;
+        }
 
         const text = messageInput.trim();
         setMessageInput('');

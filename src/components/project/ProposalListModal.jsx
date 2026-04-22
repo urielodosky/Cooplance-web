@@ -3,6 +3,7 @@ import { getProfilePicture } from '../../utils/avatarUtils';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/context/AuthContext';
 import { getProposalsByProject } from '../../lib/proposalService';
+import { useChat } from '../../context/ChatContext';
 import PaymentModal from '../common/PaymentModal';
 import '../../styles/components/ProposalListModal.scss';
 

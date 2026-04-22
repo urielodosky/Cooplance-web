@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { registerActivity } from '../../utils/gamification';
 import { useAuth } from '../../features/auth/context/AuthContext';
 import { createProposal } from '../../lib/proposalService';
+import { sanitizeText } from '../../utils/security';
 
 const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
     const { user, updateUser } = useAuth();
@@ -20,6 +21,7 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
 
         for (const q of questions) {
             if (!answers[q.id] || answers[q.id].trim() === '') {
@@ -34,12 +36,21 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
                 ? `${user.first_name} ${user.last_name || ''}`.trim()
                 : (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.username);
 
+            // Sanitizando texto libre contra XSS persistente en Base de Datos
+            const cleanCoverLetter = coverLetter ? sanitizeText(coverLetter) : 'Hola, estoy interesado en tu proyecto.';
+
+            const processedAnswers = {};
+            for (const [key, value] of Object.entries(answers)) {
+                processedAnswers[key] = sanitizeText(value);
+            }
+
             await createProposal({
                 projectId: project.id,
                 userId: user.id,
                 userName: userName,
                 userRole: user.role || 'freelancer',
-                coverLetter: coverLetter || 'Hola, estoy interesado en tu proyecto.',
+                coverLetter: cleanCoverLetter,
+                answers: processedAnswers,
                 amount: project.budget || 0,
                 deliveryDays: expirationDays ? parseInt(expirationDays) : 30,
             });
