@@ -143,12 +143,12 @@ const HelpCenter = () => {
                 <h3>Ganancia de Experiencia (XP) y Calidad</h3>
                 <p>Tu XP te permite subir de nivel y se obtiene principalmente al concretar ventas exitosas:</p>
                 <ul>
-                    <li>Venta Mayor a $140.000: <strong>80 XP</strong></li>
-                    <li>Venta Mayor a $70.000: <strong>40 XP</strong></li>
-                    <li>Venta Mayor a $28.000: <strong>30 XP</strong></li>
-                    <li>De $7.000 a $28.000: <strong>10 XP</strong></li>
+                    <li>Venta Mayor a $140.000 ARS (ciento cuarenta mil pesos): <strong>80 XP</strong></li>
+                    <li>Venta Mayor a $70.000 ARS (setenta mil pesos): <strong>40 XP</strong></li>
+                    <li>Venta Mayor a $28.000 ARS (veintiocho mil pesos): <strong>30 XP</strong></li>
+                    <li>De $7.000 ARS (siete mil pesos) a $28.000 ARS (veintiocho mil pesos): <strong>10 XP</strong></li>
                 </ul>
-                <p><em>* Nivel 1: Menos de $140.000 otorga 40 XP fijos.</em></p>
+                <p><em>* Nivel 1: Menos de $140.000 ARS (ciento cuarenta mil pesos) otorga 40 XP fijos.</em></p>
                 
                 <h4 style={{ marginTop: '1.2rem', color: 'var(--primary)' }}>Penalizaciones por Calidad (Nivel 6+)</h4>
                 <p>Para asegurar la excelencia en los niveles superiores, los profesionales de <strong>Nivel 6 o más</strong> están sujetos a deducciones de XP si reciben bajas calificaciones:</p>
@@ -255,7 +255,7 @@ const HelpCenter = () => {
                 <ul>
                     <li><strong>1. Proporcional por Nivel (Automática):</strong> El pago se divide en "partes" basadas en el nivel de cada participante.
                         <div className="legal-note" style={{ marginTop: '0.5rem' }}>
-                            <p><strong>Ejemplo:</strong> En un proyecto de $100.000 con dos Nivel 6 y un Nivel 3, se divide en 15 partes (6+6+3). El Nivel 3 recibe 3 partes (~$20.000) y los Nivel 6 reciben 6 partes cada uno (~$40.000). Esto incentiva la meritocracia y el apoyo a nuevos talentos.</p>
+                            <p><strong>Ejemplo:</strong> En un proyecto de $100.000 ARS (cien mil pesos) con dos Nivel 6 y un Nivel 3, se divide en 15 partes (6+6+3). El Nivel 3 recibe 3 partes (~$20.000 ARS - veinte mil pesos) y los Nivel 6 reciben 6 partes cada uno (~$40.000 ARS - cuarenta mil pesos). Esto incentiva la meritocracia y el apoyo a nuevos talentos.</p>
                         </div>
                     </li>
                     <li><strong>2. División Equitativa (Automática):</strong> Los fondos netos se distribuyen en partes exactamente iguales entre todos los miembros que participaron en el trabajo, independientemente de su nivel personal.</li>
@@ -266,7 +266,7 @@ const HelpCenter = () => {
             <div className="help-section">
                 <h3>Distribución de Pagos</h3>
                 <div className="legal-note">
-                    <p><strong>Ejemplo:</strong> Al cobrar un proyecto de $100.000 ARS donde trabajaron un freelancer Nivel 6, otro de Nivel 6, y un talento nuevo de Nivel 3. Se obtienen 15 partes (6+6+3). El Nivel 3 obtiene ~$20.000 y los Nivel 6 ~$40.000 cada uno.</p>
+                    <p><strong>Ejemplo:</strong> Al cobrar un proyecto de $100.000 ARS (cien mil pesos) donde trabajaron un freelancer Nivel 6, otro de Nivel 6, y un talento nuevo de Nivel 3. Se obtienen 15 partes (6+6+3). El Nivel 3 obtiene ~$20.000 ARS (veinte mil pesos) y los Nivel 6 ~$40.000 ARS (cuarenta mil pesos) cada uno.</p>
                 </div>
             </div>
         </div>
@@ -325,7 +325,7 @@ const HelpCenter = () => {
                 <h3>6. Sistema de Niveles y Experiencia (XP)</h3>
                 <ul>
                     <li><strong>Obtención de XP:</strong> Se obtienen puntos de experiencia al concretar ventas exitosas.</li>
-                    <li><strong>Restricciones:</strong> Ventas inferiores a $5.000 no generan XP. El tope máximo de experiencia por transacción es de 100 XP.</li>
+                    <li><strong>Restricciones:</strong> Ventas inferiores a $5.000 ARS (cinco mil pesos) no generan XP. El tope máximo de experiencia por transacción es de 100 XP.</li>
                     <li><strong>Evolución:</strong> Cooplance podrá incorporar en el futuro métricas adicionales (como reseñas de clientes) para la progresión de niveles.</li>
                 </ul>
 
@@ -342,6 +342,9 @@ const HelpCenter = () => {
                     <li>Recibir el reembolso del 100% de los fondos a su medio de pago original (sujeto a los tiempos de procesamiento de la entidad financiera), o</li>
                     <li>Elegir que dicho monto se acredite íntegramente como "Saldo a favor" en su cuenta de Cooplance para ser utilizado en futuras contrataciones.</li>
                 </ol>
+                <div className="legal-note" style={{ marginTop: '0.5rem', marginBottom: '1rem', borderLeftColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.05)' }}>
+                    <p style={{ color: '#ef4444' }}><strong>Aviso Legal sobre Incumplimiento Grave:</strong> En caso de incumplimiento contractual grave o fraude comprobado por alguna de las partes, Cooplance se reserva el derecho de otorgar la información privada (datos de identidad y contacto) del sujeto que incumpla a la parte afectada, para que esta pueda realizar las acciones legales y extrajudiciales que considere necesarias.</p>
+                </div>
                 <p><strong>Aprobación Automática:</strong> Si el Cliente no responde tras una entrega final, el sistema marcará el pedido como completado automáticamente tras tres (3) días hábiles.</p>
 
                 <h3>8. Propiedad Intelectual y Derechos de Autor</h3>
@@ -425,7 +428,7 @@ const HelpCenter = () => {
                 <h3>7. Seguridad, Moderación y Contenido Inapropiado</h3>
                 <p>Nos reservamos el derecho de monitorear y moderar el contenido para prevenir actividades ilícitas.</p>
                 <ul>
-                    <li><strong>Contenido prohibido:</strong> Queda estrictamente prohibida la publicación de contenido para adultos (+18), material pornográfico o que fomente la violencia.</li>
+                    <li><strong>Prohibición de Distribución y Trabajos (+18):</strong> Queda estrictamente prohibida la distribución, realización de trabajos, o publicación de proyectos relacionados con temas sexuales o para mayores de dieciocho (+18) años, así como cualquier material pornográfico o que fomente la violencia. El incumplimiento de esta norma derivará en la suspensión inmediata y permanente de la cuenta.</li>
                     <li><strong>Baneo y Apelación:</strong> Si un usuario viola estas normativas, su cuenta será suspendida. El usuario tiene 15 días hábiles para apelar enviando un correo a <strong>cooplance.org@gmail.com</strong>.</li>
                 </ul>
 
