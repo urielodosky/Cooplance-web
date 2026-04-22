@@ -76,9 +76,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
     
     const filteredWork = useMemo(() => {
         return myWork.filter(job => {
-            if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
-            if (activeTab === 'pendientes') return ['pending_approval'].includes(job.status);
-            return ['completed', 'canceled', 'rejected'].includes(job.status);
+            if (activeTab === 'activos') return ['active'].includes(job.status);
+            return ['completed', 'delivered', 'canceled', 'rejected'].includes(job.status);
         });
     }, [myWork, activeTab]);
 
@@ -87,9 +86,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
             <div className="proposal-section-header">
                 <h3 className="section-title">Pedidos / Trabajos Recibidos</h3>
                 <div className="proposal-tabs">
-                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>En Proceso <span className="tab-count">{myWork.filter(j => ['active', 'delivered'].includes(j.status)).length}</span></button>
-                    <button className={`proposal-tab ${activeTab === 'pendientes' ? 'active' : ''}`} onClick={() => setActiveTab('pendientes')}>Nuevos Pedidos <span className="tab-count">{myWork.filter(j => ['pending_approval'].includes(j.status)).length}</span></button>
-                    <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>Activos <span className="tab-count">{myWork.filter(j => ['active'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'delivered', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
             <div className="jobs-list">
@@ -177,8 +175,8 @@ const ProposalsSection = ({
         <div className="proposal-section-header">
             <h3 className="section-title">Mis Postulaciones</h3>
             <div className="proposal-tabs">
-                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>Activas <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase() === 'pending').length}</span></button>
-                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase() !== 'pending').length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>En Proceso <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase() === 'pending').length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => ['accepted', 'rejected', 'canceled', 'completed'].includes((p.status || '').toLowerCase())).length}</span></button>
             </div>
         </div>
         <div className="jobs-list">
@@ -331,7 +329,6 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
     const filteredOrders = useMemo(() => {
         return myOrders.filter(job => {
             if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
-            if (activeTab === 'pendientes') return ['pending_approval'].includes(job.status);
             return ['completed', 'canceled', 'rejected'].includes(job.status);
         });
     }, [myOrders, activeTab]);
@@ -339,10 +336,9 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
     return (
         <div style={{ marginTop: '2.5rem' }}>
             <div className="proposal-section-header">
-                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>Mis Pedidos (Compras)</h3>
+                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>Mis Pedidos / Servicios Contratados</h3>
                 <div className="proposal-tabs">
-                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>En Proceso <span className="tab-count">{myOrders.filter(j => ['active', 'delivered'].includes(j.status)).length}</span></button>
-                    <button className={`proposal-tab ${activeTab === 'pendientes' ? 'active' : ''}`} onClick={() => setActiveTab('pendientes')}>Nuevos Pedidos <span className="tab-count">{myOrders.filter(j => ['pending_approval'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>Activos <span className="tab-count">{myOrders.filter(j => ['active', 'delivered'].includes(j.status)).length}</span></button>
                     <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myOrders.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
@@ -514,14 +510,17 @@ const ReceivedProposalsSection = ({
     handleRejectProposal,
     expandedProposalId,
     setExpandedProposalId 
-}) => (
-    <div style={{ marginTop: '2.5rem' }}>
-        <h3 className="section-title">Postulantes a Mis Proyectos</h3>
-        <div className="jobs-list">
-            {loading && receivedProposals.length === 0 ? (
-                <ListSkeleton />
-            ) : receivedProposals.length > 0 ? (
-                receivedProposals.map(proposal => {
+}) => {
+    const pendingProposals = receivedProposals.filter(p => (p.status || '').toLowerCase() === 'pending');
+
+    return (
+        <div style={{ marginTop: '2.5rem' }}>
+            <h3 className="section-title">Postulantes a Mis Proyectos</h3>
+            <div className="jobs-list">
+                {loading && receivedProposals.length === 0 ? (
+                    <ListSkeleton />
+                ) : pendingProposals.length > 0 ? (
+                    pendingProposals.map(proposal => {
                     const isExpanded = expandedProposalId === proposal.id;
                     return (
                         <div key={proposal.id} className={`proposal-card enhanced status-${proposal.status} ${isExpanded ? 'expanded' : ''}`}>
@@ -595,6 +594,7 @@ const ReceivedProposalsSection = ({
         </div>
     </div>
 );
+};
 
 // --- Main Dashboard Component ---
 
@@ -842,10 +842,13 @@ const Dashboard = () => {
 
         try {
             setLoading(true);
+            setIsCreatingChat(true);
+
             // 1. Update proposal status
             await updateProposalStatus(proposal.id, 'accepted');
 
-            // 1.5. Convert consultation chat from pre_contract to active (if exists)
+            // 2. Handle Chat: Convert pre_contract to active OR create new one
+            let chatId = null;
             const { data: consultationChats } = await supabase
                 .from('chats')
                 .select('id')
@@ -853,13 +856,17 @@ const Dashboard = () => {
                 .eq('context_id', proposal.id.toString());
             
             if (consultationChats && consultationChats.length > 0) {
+                chatId = consultationChats[0].id;
                 await supabase
                     .from('chats')
                     .update({ status: 'active' })
-                    .eq('id', consultationChats[0].id);
+                    .eq('id', chatId);
+            } else {
+                // Create a new definitive chat if it doesn't exist
+                chatId = await createChat([user.id, proposal.userId], 'proposal', proposal.id, project.title);
             }
 
-            // 2. Create the formal Job/Order entry
+            // 3. Create the formal Job/Order entry
             const projectWithFreelancer = {
                 ...project,
                 freelancerId: proposal.userId
@@ -867,13 +874,19 @@ const Dashboard = () => {
 
             await createJob(projectWithFreelancer, user);
 
-            alert('¡Contratación exitosa! El pedido ya figura en tu panel.');
-            window.location.reload();
+            // 4. Redirect to chat for immediate communication
+            if (chatId) {
+                navigate(`/chat/${chatId}`);
+            } else {
+                alert('¡Contratación exitosa! Redirigiendo al chat...');
+                navigate('/chat');
+            }
         } catch (err) {
             console.error("[Dashboard] Error accepting proposal:", err);
             alert("No se pudo completar la contratación: " + err.message);
         } finally {
             setLoading(false);
+            setIsCreatingChat(false);
         }
     };
 

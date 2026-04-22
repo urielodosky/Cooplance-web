@@ -218,7 +218,7 @@ const ServiceDetail = () => {
 
         updateBalance(price, 'debit');
 
-        createJob({
+        const newJob = await createJob({
             ...service,
             price: price,
             deliveryTime: deliveryTime,
@@ -227,9 +227,23 @@ const ServiceDetail = () => {
             bookingTime: service?.bookingConfig?.requiresBooking ? selectedBooking.time : null
         }, user);
 
+        // Auto-create chat for the job
+        let chatId = null;
+        try {
+            chatId = await createChat([user.id, service.freelancerId], 'order', newJob.id, service.title);
+        } catch (chatErr) {
+            console.error("Chat creation failed after hiring:", chatErr);
+        }
+
         setShowPaymentModal(false);
-        alert('¡Contratación exitosa! El dinero ha sido retenido en garantía.');
-        navigate('/dashboard');
+        
+        if (chatId) {
+            alert('¡Contratación exitosa! El dinero ha sido retenido en garantía. Redirigiendo al chat con el profesional...');
+            navigate(`/chat/${chatId}`);
+        } else {
+            alert('¡Contratación exitosa! El dinero ha sido retenido en garantía.');
+            navigate('/dashboard');
+        }
     };
 
     const handleDelete = async () => {
