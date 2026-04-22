@@ -72,11 +72,12 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
 };
 
 const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user }) => {
-    const [activeTab, setActiveTab] = useState('active');
+    const [activeTab, setActiveTab] = useState('activos');
     
     const filteredWork = useMemo(() => {
         return myWork.filter(job => {
-            if (activeTab === 'active') return ['active', 'pending_approval', 'delivered'].includes(job.status);
+            if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
+            if (activeTab === 'pendientes') return ['pending_approval'].includes(job.status);
             return ['completed', 'canceled', 'rejected'].includes(job.status);
         });
     }, [myWork, activeTab]);
@@ -86,8 +87,9 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
             <div className="proposal-section-header">
                 <h3 className="section-title">Pedidos / Trabajos Recibidos</h3>
                 <div className="proposal-tabs">
-                    <button className={`proposal-tab ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>Activos <span className="tab-count">{myWork.filter(j => ['active', 'pending_approval', 'delivered'].includes(j.status)).length}</span></button>
-                    <button className={`proposal-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>En Proceso <span className="tab-count">{myWork.filter(j => ['active', 'delivered'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'pendientes' ? 'active' : ''}`} onClick={() => setActiveTab('pendientes')}>Nuevos Pedidos <span className="tab-count">{myWork.filter(j => ['pending_approval'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
             <div className="jobs-list">
@@ -324,11 +326,12 @@ const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setS
 );
 
 const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user }) => {
-    const [activeTab, setActiveTab] = useState('active');
+    const [activeTab, setActiveTab] = useState('activos');
 
     const filteredOrders = useMemo(() => {
         return myOrders.filter(job => {
-            if (activeTab === 'active') return ['active', 'pending_approval', 'delivered'].includes(job.status);
+            if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
+            if (activeTab === 'pendientes') return ['pending_approval'].includes(job.status);
             return ['completed', 'canceled', 'rejected'].includes(job.status);
         });
     }, [myOrders, activeTab]);
@@ -338,8 +341,9 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
             <div className="proposal-section-header">
                 <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>Mis Pedidos (Compras)</h3>
                 <div className="proposal-tabs">
-                    <button className={`proposal-tab ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>Activos <span className="tab-count">{myOrders.filter(j => ['active', 'pending_approval', 'delivered'].includes(j.status)).length}</span></button>
-                    <button className={`proposal-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Historial <span className="tab-count">{myOrders.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>En Proceso <span className="tab-count">{myOrders.filter(j => ['active', 'delivered'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'pendientes' ? 'active' : ''}`} onClick={() => setActiveTab('pendientes')}>Nuevos Pedidos <span className="tab-count">{myOrders.filter(j => ['pending_approval'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myOrders.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
             <div className="jobs-list">
