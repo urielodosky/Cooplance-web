@@ -71,72 +71,89 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
     );
 };
 
-const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user }) => (
-    <div style={{ marginTop: '2rem' }}>
-        <h3 className="section-title">Pedidos / Trabajos Recibidos</h3>
-        <div className="jobs-list">
-            {loading && myWork.length === 0 ? (
-                <ListSkeleton />
-            ) : myWork.length > 0 ? (
-                myWork.map(job => (
-                    <div key={job.id} className="glass job-card order-card" style={{
-                        display: 'grid',
-                        gridTemplateColumns: '70px 1fr auto',
-                        gap: '1.5rem',
-                        alignItems: 'center',
-                        padding: '1.5rem',
-                        borderRadius: '20px',
-                        marginBottom: '1rem',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)'
-                    }}>
-                        <div style={{
-                            width: '70px', height: '70px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--primary)', position: 'relative'
+const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user }) => {
+    const [activeTab, setActiveTab] = useState('active');
+    
+    const filteredWork = useMemo(() => {
+        return myWork.filter(job => {
+            if (activeTab === 'active') return ['active', 'pending_approval', 'delivered'].includes(job.status);
+            return ['completed', 'canceled', 'rejected'].includes(job.status);
+        });
+    }, [myWork, activeTab]);
+
+    return (
+        <div style={{ marginTop: '2rem' }}>
+            <div className="proposal-section-header">
+                <h3 className="section-title">Pedidos / Trabajos Recibidos</h3>
+                <div className="proposal-tabs">
+                    <button className={`proposal-tab ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>Activos <span className="tab-count">{myWork.filter(j => ['active', 'pending_approval', 'delivered'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
+                </div>
+            </div>
+            <div className="jobs-list">
+                {loading && myWork.length === 0 ? (
+                    <ListSkeleton />
+                ) : filteredWork.length > 0 ? (
+                    filteredWork.map(job => (
+                        <div key={job.id} className="glass job-card order-card" style={{
+                            display: 'grid',
+                            gridTemplateColumns: '70px 1fr auto',
+                            gap: '1.5rem',
+                            alignItems: 'center',
+                            padding: '1.5rem',
+                            borderRadius: '20px',
+                            marginBottom: '1rem',
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border)'
                         }}>
-                            <img src={getProfilePicture({ role: job.buyerRole, avatar: job.buyerAvatar })} alt={job.buyerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                        <div className="job-details">
-                            <h4 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
-                                {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'}
-                                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>({job.buyerRealName || job.buyerName})</span>
-                            </h4>
-                            <p style={{ margin: '0.2rem 0', color: 'var(--text-primary)', fontSize: '0.95rem' }}>Contrató: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong> ({job.tier || 'Estándar'})</p>
-                            <span style={{ fontSize: '0.8rem', padding: '4px 12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
-                                Estado: <strong style={{ color: job.status === 'active' ? '#10b981' : job.status === 'delivered' ? '#3b82f6' : 'inherit' }}>{job.status}</strong>
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem' }}>
-                            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)' }}>${job.amount}</div>
-                            <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                <button className="btn-secondary" onClick={async () => {
-                                    setIsCreatingChat(true);
-                                    try {
-                                        const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
-                                        if (chatId) navigate(`/chat/${chatId}`);
-                                        else setIsCreatingChat(false);
-                                    } catch { setIsCreatingChat(false); }
-                                }}>Chat</button>
-                                {job.status === 'pending_approval' && (
-                                    <>
-                                        <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'active')}>Aceptar</button>
-                                        <button className="btn-secondary" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} onClick={() => updateJobStatus(job.id, 'canceled')}>Rechazar</button>
-                                    </>
-                                )}
-                                {job.status === 'active' && (
-                                    <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
-                                )}
+                            <div style={{
+                                width: '70px', height: '70px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--primary)', position: 'relative'
+                            }}>
+                                <img src={getProfilePicture({ role: job.buyerRole, avatar: job.buyerAvatar })} alt={job.buyerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                            <div className="job-details">
+                                <h4 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                                    {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'}
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>({job.buyerRealName || job.buyerName})</span>
+                                </h4>
+                                <p style={{ margin: '0.2rem 0', color: 'var(--text-primary)', fontSize: '0.95rem' }}>Contrató: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong> ({job.tier || 'Estándar'})</p>
+                                <span style={{ fontSize: '0.8rem', padding: '4px 12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
+                                    Estado: <strong style={{ color: job.status === 'active' ? '#10b981' : job.status === 'delivered' ? '#3b82f6' : 'inherit' }}>{job.status}</strong>
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)' }}>${job.amount}</div>
+                                <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                    <button className="btn-secondary" onClick={async () => {
+                                        setIsCreatingChat(true);
+                                        try {
+                                            const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
+                                            if (chatId) navigate(`/chat/${chatId}`);
+                                            else setIsCreatingChat(false);
+                                        } catch { setIsCreatingChat(false); }
+                                    }}>Chat</button>
+                                    {job.status === 'pending_approval' && (
+                                        <>
+                                            <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'active')}>Aceptar</button>
+                                            <button className="btn-secondary" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} onClick={() => updateJobStatus(job.id, 'canceled')}>Rechazar</button>
+                                        </>
+                                    )}
+                                    {job.status === 'active' && (
+                                        <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
+                                    )}
+                                </div>
                             </div>
                         </div>
+                    ))
+                ) : (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                        <p>{activeTab === 'active' ? 'No tienes pedidos o trabajos recibidos aún.' : 'Tu historial está vacío.'}</p>
                     </div>
-                ))
-            ) : (
-                <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-                    <p>No tienes pedidos o trabajos recibidos aún.</p>
-                </div>
-            )}
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const ProposalsSection = ({
     loading,
@@ -306,50 +323,67 @@ const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setS
     </div>
 );
 
-const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user }) => (
-    <div style={{ marginTop: '2.5rem' }}>
-        <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>Mis Pedidos (Compras)</h3>
-        <div className="jobs-list">
-            {loading && myOrders.length === 0 ? (
-                <ListSkeleton />
-            ) : myOrders.length > 0 ? (
-                myOrders.map(job => (
-                    <div key={job.id} className="glass job-card order-card" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', padding: '1.2rem', borderRadius: '18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                        <div style={{ width: '60px', height: '60px', borderRadius: '16px', overflow: 'hidden', border: '2px solid var(--primary-soft)' }}>
-                            <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{job.serviceTitle}</h4>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>{job.freelancerName}</strong></p>
-                            <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6' }}>{job.status}</span>
-                        </div>
-                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}>
-                            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff' }}>${job.amount}</div>
-                            <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                <button className="btn-secondary" onClick={async () => {
-                                    setIsCreatingChat(true);
-                                    try {
-                                        const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
-                                        if (chatId) navigate(`/chat/${chatId}`);
-                                        else setIsCreatingChat(false);
-                                    } catch { setIsCreatingChat(false); }
-                                }}>Chat</button>
-                                <button className="btn-primary" onClick={() => navigate(`/service/${job.serviceId}`)}>Detalle</button>
-                                {job.status === 'delivered' && (
-                                    <button className="btn-primary" style={{ backgroundColor: '#10b981' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
-                                )}
+const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user }) => {
+    const [activeTab, setActiveTab] = useState('active');
+
+    const filteredOrders = useMemo(() => {
+        return myOrders.filter(job => {
+            if (activeTab === 'active') return ['active', 'pending_approval', 'delivered'].includes(job.status);
+            return ['completed', 'canceled', 'rejected'].includes(job.status);
+        });
+    }, [myOrders, activeTab]);
+
+    return (
+        <div style={{ marginTop: '2.5rem' }}>
+            <div className="proposal-section-header">
+                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>Mis Pedidos (Compras)</h3>
+                <div className="proposal-tabs">
+                    <button className={`proposal-tab ${activeTab === 'active' ? 'active' : ''}`} onClick={() => setActiveTab('active')}>Activos <span className="tab-count">{myOrders.filter(j => ['active', 'pending_approval', 'delivered'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Historial <span className="tab-count">{myOrders.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
+                </div>
+            </div>
+            <div className="jobs-list">
+                {loading && myOrders.length === 0 ? (
+                    <ListSkeleton />
+                ) : filteredOrders.length > 0 ? (
+                    filteredOrders.map(job => (
+                        <div key={job.id} className="glass job-card order-card" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', padding: '1.2rem', borderRadius: '18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                            <div style={{ width: '60px', height: '60px', borderRadius: '16px', overflow: 'hidden', border: '2px solid var(--primary-soft)' }}>
+                                <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{job.serviceTitle}</h4>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>{job.freelancerName}</strong></p>
+                                <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6' }}>{job.status}</span>
+                            </div>
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff' }}>${job.amount}</div>
+                                <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                    <button className="btn-secondary" onClick={async () => {
+                                        setIsCreatingChat(true);
+                                        try {
+                                            const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
+                                            if (chatId) navigate(`/chat/${chatId}`);
+                                            else setIsCreatingChat(false);
+                                        } catch { setIsCreatingChat(false); }
+                                    }}>Chat</button>
+                                    <button className="btn-primary" onClick={() => navigate(`/service/${job.serviceId}`)}>Detalle</button>
+                                    {job.status === 'delivered' && (
+                                        <button className="btn-primary" style={{ backgroundColor: '#10b981' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
+                                    )}
+                                </div>
                             </div>
                         </div>
+                    ))
+                ) : (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '18px', border: '1px dashed var(--border)' }}>
+                        <p>{activeTab === 'active' ? 'No tienes pedidos activos. ¡Explora servicios!' : 'Tu historial está vacío.'}</p>
                     </div>
-                ))
-            ) : (
-                <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '18px', border: '1px dashed var(--border)' }}>
-                    <p>No tienes pedidos activos. ¡Explora servicios!</p>
-                </div>
-            )}
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
     <div style={{ marginTop: '2.5rem' }}>
