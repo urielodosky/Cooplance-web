@@ -76,8 +76,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
     
     const filteredWork = useMemo(() => {
         return myWork.filter(job => {
-            if (activeTab === 'activos') return ['active'].includes(job.status);
-            return ['completed', 'delivered', 'canceled', 'rejected'].includes(job.status);
+            if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
+            return ['completed', 'canceled', 'rejected'].includes(job.status);
         });
     }, [myWork, activeTab]);
 
@@ -118,7 +118,9 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                 </h4>
                                 <p style={{ margin: '0.2rem 0', color: 'var(--text-primary)', fontSize: '0.95rem' }}>Contrató: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong> ({job.tier || 'Estándar'})</p>
                                 <span style={{ fontSize: '0.8rem', padding: '4px 12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
-                                    Estado: <strong style={{ color: job.status === 'active' ? '#10b981' : job.status === 'delivered' ? '#3b82f6' : 'inherit' }}>{job.status}</strong>
+                                    Estado: <strong style={{ color: job.status === 'active' ? '#10b981' : job.status === 'delivered' ? '#3b82f6' : 'inherit' }}>
+                                        {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
+                                    </strong>
                                 </span>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem' }}>
@@ -175,8 +177,8 @@ const ProposalsSection = ({
         <div className="proposal-section-header">
             <h3 className="section-title">Mis Postulaciones</h3>
             <div className="proposal-tabs">
-                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>En Proceso <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase() === 'pending').length}</span></button>
-                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => ['accepted', 'rejected', 'canceled', 'completed'].includes((p.status || '').toLowerCase())).length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>En Proceso <span className="tab-count">{myProposals.filter(p => ['pending', 'accepted'].includes((p.status || '').toLowerCase())).length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => ['rejected', 'canceled', 'completed'].includes((p.status || '').toLowerCase())).length}</span></button>
             </div>
         </div>
         <div className="jobs-list">
@@ -354,7 +356,9 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             <div style={{ flex: 1 }}>
                                 <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{job.serviceTitle}</h4>
                                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>{job.freelancerName}</strong></p>
-                                <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6' }}>{job.status}</span>
+                                <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6' }}>
+                                    {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
+                                </span>
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff' }}>${job.amount}</div>
@@ -840,6 +844,10 @@ const Dashboard = () => {
         const project = myPublishedProjects.find(p => p.id === proposal.projectId);
         if (!project) return;
 
+        if (!window.confirm("¿Deseas confirmar el pago y comenzar este trabajo?")) {
+            return;
+        }
+
         try {
             setLoading(true);
             setIsCreatingChat(true);
@@ -934,7 +942,7 @@ const Dashboard = () => {
 
     const filteredProposals = myProposals.filter(p => {
         const status = (p.status || '').toLowerCase();
-        return activeProposalTab === 'active' ? status === 'pending' : ['accepted', 'rejected', 'canceled', 'completed'].includes(status);
+        return activeProposalTab === 'active' ? ['pending', 'accepted'].includes(status) : ['completed', 'canceled', 'rejected'].includes(status);
     });
 
     return (

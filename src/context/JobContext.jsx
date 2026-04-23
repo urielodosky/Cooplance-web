@@ -129,10 +129,6 @@ export const JobProvider = ({ children }) => {
                 updateUser(updated).catch(err => console.warn('[JobContext] Silently failed to register activity:', err));
             }
 
-            // Auto-approve for demo
-            setTimeout(() => {
-                updateJobStatus(mapped.id, 'active');
-            }, 1000);
 
             return mapped;
         } catch (err) {
