@@ -312,36 +312,56 @@ const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }
     </div>
 );
 
-const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setSelectedProjectForProposals, user, onDelete }) => (
-    <div style={{ marginTop: '2rem' }}>
-        <h3 className="section-title">{user.role === 'company' ? 'Mis Ofertas Laborales' : 'Mis Proyectos Publicados'}</h3>
-        <div className="services-grid">
-            {loading && myPublishedProjects.length === 0 ? (
-                <GridSkeleton />
-            ) : myPublishedProjects.length > 0 ? (
-                myPublishedProjects.map(project => (
-                    <div key={project.id} style={{ position: 'relative' }}>
-                        <ProjectCard
-                            project={project}
-                            onApply={() => navigate(`/explore-clients?highlight=${project.id}`)}
-                            onDelete={onDelete}
-                        />
-                        {project.proposalCount > 0 && (
-                            <div className="proposal-badge" style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold' }} onClick={(e) => { e.stopPropagation(); setSelectedProjectForProposals({ id: project.id, title: project.title }); }}>
-                                {project.proposalCount}
-                            </div>
-                        )}
-                    </div>
-                ))
-            ) : (
-                <div className="glass" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
-                    <p>No tienes proyectos publicados aún.</p>
-                    <button className="btn-primary" style={{ marginTop: '1rem' }} onClick={() => navigate('/create-project')}>Publicar Ahora</button>
+const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setSelectedProjectForProposals, user, onDelete }) => {
+    const [activeTab, setActiveTab] = useState('open');
+
+    const filtered = useMemo(() => {
+        return myPublishedProjects.filter(p => {
+            if (activeTab === 'open') return (p.status || 'open') === 'open';
+            return p.status === 'hired' || p.status === 'closed';
+        });
+    }, [myPublishedProjects, activeTab]);
+
+    return (
+        <div style={{ marginTop: '2.5rem' }}>
+            <div className="proposal-section-header">
+                <h3 className="section-title">{user.role === 'company' ? 'Mis Ofertas Laborales' : 'Mis Proyectos Publicados'}</h3>
+                <div className="proposal-tabs">
+                    <button className={`proposal-tab ${activeTab === 'open' ? 'active' : ''}`} onClick={() => setActiveTab('open')}>Abiertos <span className="tab-count">{myPublishedProjects.filter(p => (p.status || 'open') === 'open').length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Historial <span className="tab-count">{myPublishedProjects.filter(p => p.status === 'hired' || p.status === 'closed').length}</span></button>
                 </div>
-            )}
+            </div>
+            <div className="services-grid">
+                {loading && myPublishedProjects.length === 0 ? (
+                    <GridSkeleton />
+                ) : filtered.length > 0 ? (
+                    filtered.map(project => (
+                        <div key={project.id} style={{ position: 'relative' }}>
+                            <ProjectCard
+                                project={project}
+                                onApply={() => navigate(`/explore-clients?highlight=${project.id}`)}
+                                onDelete={onDelete}
+                            />
+                            {project.proposalCount > 0 && project.status === 'open' && (
+                                <div className="proposal-badge" style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} onClick={(e) => { e.stopPropagation(); setSelectedProjectForProposals({ id: project.id, title: project.title }); }}>
+                                    {project.proposalCount}
+                                </div>
+                            )}
+                            {project.status === 'hired' && (
+                                <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#10b981', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '800', zIndex: 5 }}>CONTRATADO</div>
+                            )}
+                        </div>
+                    ))
+                ) : (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                        <p>{activeTab === 'open' ? 'No tienes proyectos abiertos ahora mismo.' : 'Tu historial de proyectos está vacío.'}</p>
+                        {activeTab === 'open' && <button className="btn-primary" style={{ marginTop: '1rem' }} onClick={() => navigate('/create-project')}>Publicar Ahora</button>}
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user }) => {
     const [activeTab, setActiveTab] = useState('activos');
@@ -1002,7 +1022,19 @@ const Dashboard = () => {
 
             await createJob(projectWithPayment, user);
 
-            // 4. Redirect to chat for immediate communication
+            // 4. Update the project status in DB and local state
+            const { error: pError } = await supabase
+                .from('projects')
+                .update({ status: 'hired' })
+                .eq('id', project.id);
+
+            if (!pError) {
+                setMyPublishedProjects(prev => prev.map(p => 
+                    p.id === project.id ? { ...p, status: 'hired' } : p
+                ));
+            }
+
+            // 5. Redirect to chat for immediate communication
             if (chatId) {
                 navigate(`/chat/${chatId}`);
             } else {

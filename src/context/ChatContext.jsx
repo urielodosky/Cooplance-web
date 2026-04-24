@@ -94,51 +94,43 @@ export const ChatProvider = ({ children }) => {
             // 1. BUSCAR CHAT EXISTENTE GLOBALMENTE EN LA BASE DE DATOS
             let targetChatId = null;
 
-            if ((type === 'order' || type === 'proposal') && normalizedContextId) {
-                // Para pedidos o propuestas, el contextId es la clave única definitiva
-                const { data: existingChat } = await supabase
+            if (normalizedContextId) {
+                // Si hay un contexto (Pedido, Propuesta, Proyecto), es la clave única definitiva.
+                // Buscamos cualquier chat con ese context_id, sin importar el tipo exacto (robustez).
+                const { data: existingChats } = await supabase
                     .from('chats')
-                    .select('id')
-                    .eq('type', type)
+                    .select('id, type')
                     .eq('context_id', normalizedContextId)
-                    .maybeSingle();
+                    .order('created_at', { ascending: false });
                 
-                if (existingChat) {
-                    targetChatId = existingChat.id;
-                    console.log(`[ChatContext] Encontrado chat de ${type} existente en DB:`, targetChatId);
+                if (existingChats && existingChats.length > 0) {
+                    // Si encontramos uno que coincida con el tipo pedido, lo priorizamos
+                    const perfectMatch = existingChats.find(c => c.type === type);
+                    targetChatId = perfectMatch ? perfectMatch.id : existingChats[0].id;
+                    console.log(`[ChatContext] Encontrado chat existente para contexto ${normalizedContextId}:`, targetChatId);
                 }
-            } else if (type === 'direct') {
-                // Para chats directos, buscamos si ya existe uno compartido entre estos dos usuarios
+            } 
+            
+            // Si no encontramos por contexto o es un chat directo, buscamos por participantes
+            if (!targetChatId && type === 'direct') {
                 const otherId = participantIds.find(id => id !== user.id);
-                
-                // 1. Obtener chats donde participo YO
-                const { data: myParts } = await supabase
-                    .from('chat_participants')
-                    .select('chat_id')
-                    .eq('user_id', user.id);
-                
-                if (myParts && myParts.length > 0) {
-                    const myChatIds = myParts.map(p => p.chat_id);
-                    // 2. ¿En alguno de esos participa también el OTRO?
+                if (otherId) {
+                    // Buscamos chats de tipo direct donde ambos participemos
                     const { data: commonPart } = await supabase
-                        .from('chat_participants')
-                        .select('chat_id')
-                        .in('chat_id', myChatIds)
-                        .eq('user_id', otherId)
-                        .limit(1);
+                        .rpc('get_common_chats', { user_a: user.id, user_b: otherId });
                     
                     if (commonPart && commonPart.length > 0) {
-                        // 3. Verificar que sea de tipo 'direct'
-                        const { data: finalChat } = await supabase
+                        // Verificamos cuál de esos es 'direct'
+                        const { data: directChats } = await supabase
                             .from('chats')
                             .select('id')
-                            .eq('id', commonPart[0].chat_id)
+                            .in('id', commonPart.map(cp => cp.chat_id))
                             .eq('type', 'direct')
-                            .maybeSingle();
+                            .limit(1);
                         
-                        if (finalChat) {
-                            targetChatId = finalChat.id;
-                            console.log("[ChatContext] Encontrado chat directo compartido en DB:", targetChatId);
+                        if (directChats && directChats.length > 0) {
+                            targetChatId = directChats[0].id;
+                            console.log("[ChatContext] Encontrado chat directo compartido por participantes:", targetChatId);
                         }
                     }
                 }
