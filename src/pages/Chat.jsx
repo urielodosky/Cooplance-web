@@ -7,6 +7,7 @@ import { useJobs } from '../context/JobContext';
 import { supabase } from '../lib/supabase';
 import { useTeams } from '../context/TeamContext'; // Import TeamContext
 import ReportModal from '../components/common/ReportModal';
+import { getProfilePicture } from '../utils/avatarUtils';
 import '../styles/pages/Chat.scss';
 import { createThrottler } from '../utils/security';
 
@@ -413,8 +414,16 @@ const Chat = () => {
                                     onClick={() => handleChatSelect(chat.id)}
                                     style={{ position: 'relative', opacity: chat.status === 'blocked' ? 0.6 : 1 }}
                                 >
-                                    <div className="chat-avatar-placeholder" style={{ background: chat.status === 'blocked' ? '#64748b' : 'var(--gradient-primary)' }}>
-                                        {getChatName(chat).charAt(0).toUpperCase()}
+                                    <div className="chat-avatar-placeholder" style={{ 
+                                        background: chat.status === 'blocked' ? '#64748b' : 'var(--gradient-primary)',
+                                        padding: 0, overflow: 'hidden'
+                                    }}>
+                                        {(() => {
+                                            const other = chat.participants?.find(p => p.id !== user.id);
+                                            const avatar = other?.avatar;
+                                            if (avatar) return <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+                                            return getChatName(chat).charAt(0).toUpperCase();
+                                        })()}
                                     </div>
                                     <div className="chat-info">
                                         <div className="chat-name-row" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -485,29 +494,56 @@ const Chat = () => {
                     </div>
                 </div>
 
-                {/* Main Chat Window */}
-                <div className="chat-main">
+                             <div className="chat-main">
                     {activeChat ? (
                         <>
-                            <div className="chat-window-header">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                    <h3>{getChatName(activeChat)}</h3>
-                                    {activeChat.contextTitle && <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>| {activeChat.contextTitle}</span>}
-                                    {getOtherUserVacation(activeChat) !== false && (
-                                        <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.7rem', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '3px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                                            De vacaciones — faltan {getOtherUserVacation(activeChat)} días
-                                        </span>
-                                    )}
+                            <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    {(() => {
+                                        const other = activeChat.participants?.find(p => p.id !== user.id);
+                                        return (
+                                            <>
+                                                <div className="header-avatar" style={{ width: '45px', height: '45px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)' }}>
+                                                    <img 
+                                                        src={getProfilePicture({ avatar: other?.avatar })} 
+                                                        alt="avatar" 
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
+                                                        {activeChat.displayName || activeChat.context_title}
+                                                    </h3>
+                                                    {other && (
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                            <span style={{ fontWeight: '600', color: 'var(--primary-soft)' }}>@{other.username}</span>
+                                                            {other.fullName && <span style={{ opacity: 0.8 }}>({other.fullName})</span>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
-                                {activeChat.type === 'order' && (
-                                    <span className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px', marginRight: '4px', verticalAlign: 'middle' }}>
-                                            <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-                                        </svg>
-                                        {getJobTimeRemaining(activeChat) || 'Sin plazo'}
-                                    </span>
-                                )}
+                                <div style={{ textAlign: 'right' }}>
+                                    {activeChat.type === 'order' && (
+                                        <div className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`} style={{ 
+                                            background: getJobTimeRemaining(activeChat) === 'Vencido' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                                            color: getJobTimeRemaining(activeChat) === 'Vencido' ? '#ef4444' : 'var(--primary)',
+                                            padding: '4px 12px',
+                                            borderRadius: '10px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '700',
+                                            border: '1px solid currentColor'
+                                        }}>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px', marginRight: '6px', verticalAlign: 'middle' }}>
+                                                <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                            {getJobTimeRemaining(activeChat) || 'Sin plazo'}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {activeChat.status === 'pre_contract' && (

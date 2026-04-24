@@ -371,7 +371,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             <div style={{ width: '60px', height: '60px', borderRadius: '16px', overflow: 'hidden', border: '2px solid var(--primary-soft)' }}>
                                 <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
-                             <div style={{ flex: 1, position: 'relative' }}>
+                            <div style={{ flex: 1, position: 'relative' }}>
                                 {(() => {
                                     const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
                                     if (daysLeft === null || job.status !== 'active') return null;
@@ -649,7 +649,7 @@ const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, ti
     } else if (typeof methods === 'string' && methods.trim()) {
         availableMethods = methods.split(',').map(m => m.trim());
     }
-    
+
     // Default fallback
     if (availableMethods.length === 0) {
         availableMethods = ['Mercado Pago', 'PayPal', 'Transferencia'];
@@ -671,14 +671,14 @@ const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, ti
                         <span className="amount-label">Monto a abonar:</span>
                         <span className="amount-value">${amount}</span>
                     </div>
-                    
+
                     <div className="payment-methods-list">
                         {availableMethods.map((method, idx) => (
                             <label key={idx} className={`payment-method-item ${selectedMethod === method ? 'active' : ''}`}>
-                                <input 
-                                    type="radio" 
-                                    name="payment-method" 
-                                    value={method} 
+                                <input
+                                    type="radio"
+                                    name="payment-method"
+                                    value={method}
                                     checked={selectedMethod === method}
                                     onChange={() => setSelectedMethod(method)}
                                 />
@@ -695,8 +695,8 @@ const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, ti
                 </div>
                 <div className="payment-modal-footer">
                     <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-                    <button 
-                        className="btn-primary confirm-pay-btn" 
+                    <button
+                        className="btn-primary confirm-pay-btn"
                         disabled={!selectedMethod}
                         onClick={() => onConfirm(selectedMethod)}
                     >
@@ -963,7 +963,7 @@ const Dashboard = () => {
 
     const confirmHiringWithPayment = async (paymentMethod) => {
         if (!selectedProposalForPayment) return;
-        
+
         const { proposal, project } = selectedProposalForPayment;
         setSelectedProposalForPayment(null);
 
@@ -981,7 +981,7 @@ const Dashboard = () => {
                 .select('id')
                 .eq('type', 'proposal')
                 .eq('context_id', proposal.id.toString());
-            
+
             if (consultationChats && consultationChats.length > 0) {
                 chatId = consultationChats[0].id;
                 await supabase
@@ -1068,9 +1068,9 @@ const Dashboard = () => {
     return (
         <div className="dashboard-container">
             <ProposalListModal isOpen={!!selectedProjectForProposals} onClose={() => setSelectedProjectForProposals(null)} projectId={selectedProjectForProposals?.id} projectTitle={selectedProjectForProposals?.title} onAccept={handleAcceptProposal} />
-            
-            <PaymentSelectionModal 
-                isOpen={!!selectedProposalForPayment} 
+
+            <PaymentSelectionModal
+                isOpen={!!selectedProposalForPayment}
                 onClose={() => setSelectedProposalForPayment(null)}
                 onConfirm={confirmHiringWithPayment}
                 methods={selectedProposalForPayment?.project?.paymentMethods}
