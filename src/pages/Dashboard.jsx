@@ -111,17 +111,35 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             }}>
                                 <img src={getProfilePicture({ role: job.buyerRole, avatar: job.buyerAvatar })} alt={job.buyerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
-                            <div className="job-details">
-                                <h4 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                            <div className="job-details" style={{ position: 'relative' }}>
+                                {(() => {
+                                    const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                                    if (daysLeft === null || job.status !== 'active') return null;
+                                    return (
+                                        <div style={{
+                                            position: 'absolute', top: '-2.2rem', right: '-1.5rem',
+                                            fontSize: '0.75rem', color: daysLeft <= 2 ? '#ef4444' : 'var(--text-muted)',
+                                            fontWeight: '600', background: 'rgba(0,0,0,0.03)', padding: '2px 8px', borderRadius: '8px'
+                                        }}>
+                                            {daysLeft > 0 ? `Quedan ${daysLeft} días` : daysLeft === 0 ? 'Vence hoy' : 'Vencido'}
+                                        </div>
+                                    );
+                                })()}
+                                <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'}
-                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '0.5rem' }}>({job.buyerRealName || job.buyerName})</span>
+                                    {job.buyerRealName && <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '400' }}>({job.buyerRealName})</span>}
                                 </h4>
-                                <p style={{ margin: '0.2rem 0', color: 'var(--text-primary)', fontSize: '0.95rem' }}>Contrató: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong> ({job.tier || 'Estándar'})</p>
-                                <span style={{ fontSize: '0.8rem', padding: '4px 12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
-                                    Estado: <strong style={{ color: job.status === 'active' ? '#10b981' : job.status === 'delivered' ? '#3b82f6' : 'inherit' }}>
-                                        {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
-                                    </strong>
-                                </span>
+                                <p style={{ margin: '0.3rem 0', color: 'var(--text-primary)', fontSize: '1rem' }}>
+                                    Contrató: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong>
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.4rem' }}>
+                                    <span style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '10px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase' }}>
+                                        {job.tier || 'Estándar'}
+                                    </span>
+                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : job.status === 'delivered' ? '#3b82f6' : 'var(--text-secondary)' }}>
+                                        ● {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
+                                    </span>
+                                </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)' }}>${job.amount}</div>
@@ -353,12 +371,31 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             <div style={{ width: '60px', height: '60px', borderRadius: '16px', overflow: 'hidden', border: '2px solid var(--primary-soft)' }}>
                                 <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
-                            <div style={{ flex: 1 }}>
+                             <div style={{ flex: 1, position: 'relative' }}>
+                                {(() => {
+                                    const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                                    if (daysLeft === null || job.status !== 'active') return null;
+                                    return (
+                                        <div style={{
+                                            position: 'absolute', top: '-1rem', right: '0',
+                                            fontSize: '0.75rem', color: daysLeft <= 2 ? '#ef4444' : 'var(--text-muted)',
+                                            fontWeight: '600'
+                                        }}>
+                                            {daysLeft > 0 ? `Quedan ${daysLeft} días` : daysLeft === 0 ? 'Vence hoy' : 'Vencido'}
+                                        </div>
+                                    );
+                                })()}
                                 <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{job.serviceTitle}</h4>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>{job.freelancerName}</strong></p>
-                                <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6' }}>
-                                    {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: </span>
+                                    <strong style={{ color: 'var(--primary-soft)', fontSize: '0.9rem' }}>@{job.freelancerUsername || 'usuario'}</strong>
+                                    {job.freelancerName && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({job.freelancerName})</span>}
+                                </div>
+                                <div style={{ marginTop: '0.4rem' }}>
+                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6', fontWeight: '600' }}>
+                                        {job.status === 'active' ? '● En Progreso' : job.status === 'delivered' ? '● Entregado' : `● ${job.status}`}
+                                    </span>
+                                </div>
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff' }}>${job.amount}</div>

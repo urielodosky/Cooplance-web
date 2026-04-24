@@ -417,15 +417,24 @@ const Chat = () => {
                                         {getChatName(chat).charAt(0).toUpperCase()}
                                     </div>
                                     <div className="chat-info">
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div className="chat-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div className="chat-name-row" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <div className="chat-main-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                                                 {getChatName(chat)}
-                                                {chat.contextTitle && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>• {chat.contextTitle}</span>}
-                                                {getOtherUserVacation(chat) !== false && <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '0.6rem', fontWeight: '700', padding: '1px 6px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)', whiteSpace: 'nowrap' }}>Vacaciones</span>}
+                                                {chat.status === 'blocked' && <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: '900' }}>[BLOQUEADO]</span>}
                                             </div>
-                                            {chat.status === 'blocked' && <span style={{ fontSize: '10px', color: '#ef4444' }}>BLOQUEADO</span>}
+                                            {(() => {
+                                                const other = chat.participants?.find(p => p.id !== user.id);
+                                                if (!other) return null;
+                                                return (
+                                                    <div className="chat-sub-name" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                                                        @{other.username} {other.fullName && <span style={{ opacity: 0.7 }}>({other.fullName})</span>}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
-                                        <div className="chat-preview">{chat.status === 'blocked' ? <i>Chat bloqueado</i> : (chat.last_message || 'Nuevo chat')}</div>
+                                        <div className="chat-preview" style={{ marginTop: '4px', fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {chat.status === 'blocked' ? <i>Chat bloqueado</i> : (chat.last_message || 'Nueva conversación')}
+                                        </div>
                                     </div>
 
                                     {/* Three Dots Button */}
