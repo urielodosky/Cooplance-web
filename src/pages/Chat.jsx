@@ -510,47 +510,66 @@ const Chat = () => {
                 </div>
 
                 <div className="chat-main">
-                    {activeChat ? (
-                        <>
-                            <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                    {activeChat ? (                            <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     {(() => {
-                                        const other = activeChat.participants?.find(p => p.id !== user.id);
+                                        // Robust participant detection (handle both string/number IDs)
+                                        const other = activeChat.participants?.find(p => String(p.id) !== String(user.id));
                                         return (
                                             <>
-                                                <div className="header-avatar" style={{ width: '45px', height: '45px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)' }}>
-                                                    <img
-                                                        src={getProfilePicture({ avatar: other?.avatar })}
-                                                        alt="avatar"
-                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    />
+                                                <div className="header-avatar" style={{ 
+                                                    width: '48px', 
+                                                    height: '48px', 
+                                                    borderRadius: '12px', 
+                                                    overflow: 'hidden', 
+                                                    border: '2px solid var(--primary)',
+                                                    background: 'var(--gradient-primary)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '1.2rem',
+                                                    fontWeight: 'bold',
+                                                    color: 'white'
+                                                }}>
+                                                    {other?.avatar ? (
+                                                        <img 
+                                                            src={other.avatar} 
+                                                            alt="avatar" 
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                        />
+                                                    ) : (
+                                                        (activeChat.displayName || activeChat.context_title || 'C').charAt(0).toUpperCase()
+                                                    )}
                                                 </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <h3
-                                                        style={{
-                                                            margin: 0,
-                                                            fontSize: '1.1rem',
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <h3 
+                                                        style={{ 
+                                                            margin: 0, 
+                                                            fontSize: '1.15rem', 
+                                                            fontWeight: '800',
                                                             cursor: activeChat.contextId ? 'pointer' : 'default',
-                                                            transition: 'color 0.2s'
+                                                            color: 'var(--text-primary)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
                                                         }}
                                                         className="chat-header-title-link"
                                                         onClick={() => {
                                                             if (activeChat.contextId) {
-                                                                // If it's a project/order, go to project. If it's a service, go to service.
                                                                 const isService = activeChat.type === 'service';
                                                                 navigate(isService ? `/service/${activeChat.contextId}` : `/project/${activeChat.contextId}`);
                                                             }
                                                         }}
                                                     >
                                                         {activeChat.displayName || activeChat.context_title}
+                                                        {activeChat.status === 'blocked' && <span style={{ fontSize: '0.7rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>BLOQUEADO</span>}
                                                     </h3>
                                                     {other && (
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                            <span
-                                                                style={{ fontWeight: '600', color: 'var(--primary-soft)', cursor: 'pointer' }}
+                                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span 
+                                                                style={{ fontWeight: '700', color: 'var(--primary-soft)', cursor: 'pointer', textDecoration: 'underline' }}
                                                                 className="chat-header-user-link"
                                                                 onClick={() => {
-                                                                    // Navigate based on user role if available, default to client
                                                                     const role = other.role || (activeChat.type === 'order' ? 'client' : 'freelancer');
                                                                     if (role === 'company') navigate(`/company/${other.id}`);
                                                                     else if (role === 'freelancer') navigate(`/freelancer/${other.id}`);
@@ -559,7 +578,7 @@ const Chat = () => {
                                                             >
                                                                 @{other.username}
                                                             </span>
-                                                            {other.fullName && <span style={{ opacity: 0.8 }}>({other.fullName})</span>}
+                                                            {other.fullName && <span style={{ opacity: 0.8, fontWeight: '500' }}>• {other.fullName}</span>}
                                                         </div>
                                                     )}
                                                 </div>
@@ -567,26 +586,34 @@ const Chat = () => {
                                         );
                                     })()}
                                 </div>
-
                                 <div style={{ textAlign: 'right' }}>
                                     {(activeChat.type === 'order' || activeChat.type === 'project' || activeChat.contextId) && (
-                                        <div className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`} style={{
-                                            background: getJobTimeRemaining(activeChat) === 'Vencido' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)',
-                                            color: getJobTimeRemaining(activeChat) === 'Vencido' ? '#ef4444' : 'var(--primary)',
-                                            padding: '4px 12px',
-                                            borderRadius: '10px',
-                                            fontSize: '0.85rem',
-                                            fontWeight: '700',
-                                            border: '1px solid currentColor'
-                                        }}>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px', marginRight: '6px', verticalAlign: 'middle' }}>
-                                                <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                                        <div 
+                                            className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`} 
+                                            style={{ 
+                                                background: getJobTimeRemaining(activeChat) === 'Vencido' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(139, 92, 246, 0.15)',
+                                                color: getJobTimeRemaining(activeChat) === 'Vencido' ? '#ef4444' : 'var(--primary)',
+                                                padding: '0.6rem 1rem',
+                                                borderRadius: '12px',
+                                                fontSize: '0.9rem',
+                                                fontWeight: '800',
+                                                border: '1.5px solid currentColor',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                            }}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
                                             </svg>
                                             {getJobTimeRemaining(activeChat)}
                                         </div>
                                     )}
                                 </div>
                             </div>
+                     </div>
 
                             {activeChat.status === 'pre_contract' && (
                                 <div style={{ background: 'rgba(56, 189, 248, 0.1)', borderBottom: '1px solid rgba(56, 189, 248, 0.2)', padding: '0.75rem', textAlign: 'center', color: '#0284c7', fontSize: '0.9rem', fontWeight: '500' }}>
