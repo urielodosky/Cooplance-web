@@ -913,8 +913,12 @@ const Dashboard = () => {
     };
 
     const handleAcceptProposal = async (proposal) => {
-        const project = myPublishedProjects.find(p => p.id === proposal.projectId);
-        if (!project) return;
+        // Safe comparison for IDs (could be string/number mix)
+        const project = myPublishedProjects.find(p => String(p.id) === String(proposal.projectId));
+        if (!project) {
+            console.warn("[Dashboard] Project not found for proposal:", proposal.projectId);
+            return;
+        }
 
         // Set state to show payment modal instead of window.confirm
         setSelectedProposalForPayment({ proposal, project });
