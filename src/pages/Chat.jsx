@@ -174,24 +174,39 @@ const Chat = () => {
 
     // Helper to calculate time remaining
     const getJobTimeRemaining = (chat) => {
-        if (!chat || chat.type !== 'order' || !chat.contextId) return null;
+        if (!chat || !chat.contextId) return null;
 
-        const job = jobs.find(j => j.id === parseInt(chat.contextId) || j.id === chat.contextId); // robustness
-        if (!job) return null;
+        // Try to find a JOB first (active contract)
+        const job = jobs.find(j => String(j.id) === String(chat.contextId) || String(j.projectId) === String(chat.contextId));
+        
+        let deadline = null;
+        if (job) {
+            if (job.status === 'completed') return 'Completado';
+            deadline = job.deadline;
+        } else {
+            // Fallback: If no job, check if it's a project context and has deadline ( negotiation phase )
+            // This would require project data, but we can try to guess or use Sin Plazo
+            return chat.type === 'order' || chat.type === 'project' ? 'Sin plazo' : null;
+        }
 
-        if (job.status === 'completed') return 'Completado';
+        if (!deadline) return 'Sin plazo';
 
-        const deadline = new Date(job.deadline);
+        const deadlineDate = new Date(deadline);
         const now = new Date();
-        const diffMs = deadline.getTime() - now.getTime();
+        const diffMs = deadlineDate.getTime() - now.getTime();
 
         if (diffMs <= 0) return 'Vencido';
 
-        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
 
-        if (days > 0) return `${days}d ${hours}h restantes`;
-        return `${hours}h restantes`;
+        if (days > 0) {
+            return `${days}d ${hours}h restantes`;
+        } else {
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            return `${hours}h ${minutes}m restantes`;
+        }
     };
 
     const compressImage = (file) => {
@@ -520,10 +535,10 @@ const Chat = () => {
                                                         }}
                                                         className="chat-header-title-link"
                                                         onClick={() => {
-                                                            if (activeChat.type === 'order' && activeChat.contextId) {
-                                                                navigate(`/project/${activeChat.contextId}`);
-                                                            } else if (activeChat.type === 'service' && activeChat.contextId) {
-                                                                navigate(`/service/${activeChat.contextId}`);
+                                                            if (activeChat.contextId) {
+                                                                // If it's a project/order, go to project. If it's a service, go to service.
+                                                                const isService = activeChat.type === 'service';
+                                                                navigate(isService ? `/service/${activeChat.contextId}` : `/project/${activeChat.contextId}`);
                                                             }
                                                         }}
                                                     >
@@ -554,7 +569,7 @@ const Chat = () => {
                                 </div>
 
                                 <div style={{ textAlign: 'right' }}>
-                                    {activeChat.type === 'order' && (
+                                    {(activeChat.type === 'order' || activeChat.type === 'project' || activeChat.contextId) && (
                                         <div className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`} style={{ 
                                             background: getJobTimeRemaining(activeChat) === 'Vencido' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)',
                                             color: getJobTimeRemaining(activeChat) === 'Vencido' ? '#ef4444' : 'var(--primary)',
@@ -567,7 +582,7 @@ const Chat = () => {
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px', marginRight: '6px', verticalAlign: 'middle' }}>
                                                 <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
                                             </svg>
-                                            {getJobTimeRemaining(activeChat) || 'Sin plazo'}
+                                            {getJobTimeRemaining(activeChat)}
                                         </div>
                                     )}
                                 </div>
