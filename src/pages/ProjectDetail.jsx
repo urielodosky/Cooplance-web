@@ -196,13 +196,15 @@ const ProjectDetail = () => {
                     alignItems: 'center'
                 }}>
                     <span><strong>Es tu publicación.</strong> Así es como la ven los demás.</span>
-                    <button 
-                        className="btn-secondary danger" 
-                        onClick={handleDelete} 
-                        style={{ fontSize: '0.9rem', padding: '0.4rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}
-                    >
-                        Eliminar Publicación
-                    </button>
+                    {(project.status === 'open' || !project.status) && (
+                        <button 
+                            className="btn-secondary danger" 
+                            onClick={handleDelete} 
+                            style={{ fontSize: '0.9rem', padding: '0.4rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}
+                        >
+                            Eliminar Publicación
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -505,8 +507,12 @@ const ProjectDetail = () => {
                                     Ya te has postulado
                                 </button>
                             ) : (
-                                <button className="btn-primary full-width-btn hire-button" onClick={handleApply}>
-                                    Postularse Ahora
+                                <button 
+                                    className="btn-primary full-width-btn hire-button" 
+                                    onClick={isOwner ? null : handleApply}
+                                    style={isOwner ? { cursor: 'default', opacity: 0.8, background: 'var(--glass-bg)', border: '1px solid var(--border)', color: 'var(--text-muted)' } : {}}
+                                >
+                                    {isOwner ? 'Este es tu pedido' : 'Postularse Ahora'}
                                 </button>
                             )}
                         </div>
