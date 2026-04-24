@@ -161,6 +161,10 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     {job.status === 'active' && (
                                         <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
                                     )}
+                                    <button className="btn-primary" onClick={() => {
+                                        if (job.projectId) navigate(`/project/${job.projectId}`);
+                                        else if (job.serviceId) navigate(`/service/${job.serviceId}`);
+                                    }}>Detalle</button>
                                 </div>
                             </div>
                         </div>
@@ -428,7 +432,10 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             else setIsCreatingChat(false);
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
-                                    <button className="btn-primary" onClick={() => navigate(`/service/${job.serviceId}`)}>Detalle</button>
+                                    <button className="btn-primary" onClick={() => {
+                                        if (job.projectId) navigate(`/project/${job.projectId}`);
+                                        else if (job.serviceId) navigate(`/service/${job.serviceId}`);
+                                    }}>Detalle</button>
                                     {job.status === 'delivered' && (
                                         <button className="btn-primary" style={{ backgroundColor: '#10b981' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
                                     )}
