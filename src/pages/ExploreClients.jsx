@@ -37,12 +37,17 @@ const ExploreClients = () => {
                 const data = await getProjects();
                 const now = new Date();
 
-                // Robust filtering for expired projects (already done in mapper but just in case)
+                // Robust filtering for visibility
                 const validProjects = data.filter(p => {
+                    // 1. Never show company projects here
                     if (p.clientRole === 'company') return false;
-                    // Only show projects that are still open for applications
-                    if (p.status && p.status !== 'open') return false;
+                    
+                    // 2. ONLY show 'open' projects. 
+                    // If status is null/undefined, we assume it's open, but if it says 'hired' or anything else, we hide it.
+                    const currentStatus = (p.status || 'open').toLowerCase();
+                    if (currentStatus !== 'open') return false;
 
+                    // 3. Filter out expired projects by deadline
                     if (!p.deadline) return true;
 
                     try {
