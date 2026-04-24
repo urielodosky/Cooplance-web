@@ -135,20 +135,26 @@ export const ChatProvider = ({ children }) => {
                 }
             }
 
-            // 2. SI EL CHAT EXISTE, ASEGURAR QUE EL USUARIO ACTUAL ES PARTICIPANTE (RE-UNIÓN)
+            // 2. SI EL CHAT EXISTE, ASEGURAR QUE TODOS LOS PARTICIPANTES ESTÁN DENTRO (RE-UNIÓN)
             if (targetChatId) {
-                const { data: participation } = await supabase
-                    .from('chat_participants')
-                    .select('id')
-                    .eq('chat_id', targetChatId)
-                    .eq('user_id', user.id)
-                    .maybeSingle();
+                console.log("[ChatContext] El chat ya existe. Verificando participantes...");
                 
-                if (!participation) {
-                    console.log("[ChatContext] El chat existe pero el usuario no es participante. Re-uniendo...");
-                    await supabase
-                        .from('chat_participants')
-                        .insert({ chat_id: targetChatId, user_id: user.id });
+                // Obtenemos participantes actuales en DB
+                const { data: currentParticipants } = await supabase
+                    .from('chat_participants')
+                    .select('user_id')
+                    .eq('chat_id', targetChatId);
+                
+                const existingUserIds = (currentParticipants || []).map(p => String(p.user_id));
+                const missingParticipants = participantIds.filter(pid => !existingUserIds.includes(String(pid)));
+
+                if (missingParticipants.length > 0) {
+                    console.log("[ChatContext] Re-uniendo participantes faltantes:", missingParticipants);
+                    const joinData = missingParticipants.map(pid => ({
+                        chat_id: targetChatId,
+                        user_id: pid
+                    }));
+                    await supabase.from('chat_participants').insert(joinData);
                 }
 
                 // Recargar si no está en el estado local

@@ -510,10 +510,11 @@ const Chat = () => {
                 </div>
 
                 <div className="chat-main">
-                    {activeChat ? (                            <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                    {activeChat ? (
+                        <>
+                            <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     {(() => {
-                                        // Robust participant detection (handle both string/number IDs)
                                         const other = activeChat.participants?.find(p => String(p.id) !== String(user.id));
                                         return (
                                             <>
@@ -532,27 +533,14 @@ const Chat = () => {
                                                     color: 'white'
                                                 }}>
                                                     {other?.avatar ? (
-                                                        <img 
-                                                            src={other.avatar} 
-                                                            alt="avatar" 
-                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                                        />
+                                                        <img src={other.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
                                                         (activeChat.displayName || activeChat.context_title || 'C').charAt(0).toUpperCase()
                                                     )}
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                     <h3 
-                                                        style={{ 
-                                                            margin: 0, 
-                                                            fontSize: '1.15rem', 
-                                                            fontWeight: '800',
-                                                            cursor: activeChat.contextId ? 'pointer' : 'default',
-                                                            color: 'var(--text-primary)',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '8px'
-                                                        }}
+                                                        style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', cursor: activeChat.contextId ? 'pointer' : 'default', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                         className="chat-header-title-link"
                                                         onClick={() => {
                                                             if (activeChat.contextId) {
@@ -613,7 +601,6 @@ const Chat = () => {
                                     )}
                                 </div>
                             </div>
-                     </div>
 
                             {activeChat.status === 'pre_contract' && (
                                 <div style={{ background: 'rgba(56, 189, 248, 0.1)', borderBottom: '1px solid rgba(56, 189, 248, 0.2)', padding: '0.75rem', textAlign: 'center', color: '#0284c7', fontSize: '0.9rem', fontWeight: '500' }}>
