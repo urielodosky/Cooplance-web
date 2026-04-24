@@ -521,7 +521,7 @@ const Chat = () => {
                                                 <div className="header-avatar" style={{ 
                                                     width: '48px', 
                                                     height: '48px', 
-                                                    borderRadius: '12px', 
+                                                    borderRadius: '50%', 
                                                     overflow: 'hidden', 
                                                     border: '2px solid var(--primary)',
                                                     background: 'var(--gradient-primary)',
@@ -596,7 +596,7 @@ const Chat = () => {
                                                 <circle cx="12" cy="12" r="10"></circle>
                                                 <polyline points="12 6 12 12 16 14"></polyline>
                                             </svg>
-                                            {getJobTimeRemaining(activeChat)}
+                                            {getJobTimeRemaining(activeChat) || 'Sin plazo'}
                                         </div>
                                     )}
                                 </div>
