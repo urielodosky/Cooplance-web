@@ -511,12 +511,39 @@ const Chat = () => {
                                                     />
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
+                                                    <h3 
+                                                        style={{ 
+                                                            margin: 0, 
+                                                            fontSize: '1.1rem', 
+                                                            cursor: activeChat.contextId ? 'pointer' : 'default',
+                                                            transition: 'color 0.2s'
+                                                        }}
+                                                        className="chat-header-title-link"
+                                                        onClick={() => {
+                                                            if (activeChat.type === 'order' && activeChat.contextId) {
+                                                                navigate(`/project/${activeChat.contextId}`);
+                                                            } else if (activeChat.type === 'service' && activeChat.contextId) {
+                                                                navigate(`/service/${activeChat.contextId}`);
+                                                            }
+                                                        }}
+                                                    >
                                                         {activeChat.displayName || activeChat.context_title}
                                                     </h3>
                                                     {other && (
                                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                            <span style={{ fontWeight: '600', color: 'var(--primary-soft)' }}>@{other.username}</span>
+                                                            <span 
+                                                                style={{ fontWeight: '600', color: 'var(--primary-soft)', cursor: 'pointer' }}
+                                                                className="chat-header-user-link"
+                                                                onClick={() => {
+                                                                    // Navigate based on user role if available, default to client
+                                                                    const role = other.role || (activeChat.type === 'order' ? 'client' : 'freelancer');
+                                                                    if (role === 'company') navigate(`/company/${other.id}`);
+                                                                    else if (role === 'freelancer') navigate(`/freelancer/${other.id}`);
+                                                                    else navigate(`/client/${other.id}`);
+                                                                }}
+                                                            >
+                                                                @{other.username}
+                                                            </span>
                                                             {other.fullName && <span style={{ opacity: 0.8 }}>({other.fullName})</span>}
                                                         </div>
                                                     )}
