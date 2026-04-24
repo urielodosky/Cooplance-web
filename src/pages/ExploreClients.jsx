@@ -39,7 +39,10 @@ const ExploreClients = () => {
 
                 // Robust filtering for expired projects (already done in mapper but just in case)
                 const validProjects = data.filter(p => {
-                    if (p.clientRole === 'company') return false; 
+                    if (p.clientRole === 'company') return false;
+                    // Only show projects that are still open for applications
+                    if (p.status && p.status !== 'open') return false;
+
                     if (!p.deadline) return true;
 
                     try {
