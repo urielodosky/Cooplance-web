@@ -143,8 +143,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)' }}>${job.amount}</div>
-                                <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                    <button className="btn-secondary" onClick={async () => {
+                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                                    <button className="btn-secondary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={async () => {
                                         setIsCreatingChat(true);
                                         try {
                                             const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
@@ -152,19 +152,20 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             else setIsCreatingChat(false);
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
-                                    {job.status === 'pending_approval' && (
-                                        <>
-                                            <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'active')}>Aceptar</button>
-                                            <button className="btn-secondary" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }} onClick={() => updateJobStatus(job.id, 'canceled')}>Rechazar</button>
-                                        </>
-                                    )}
-                                    {job.status === 'active' && (
-                                        <button className="btn-primary" onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
-                                    )}
-                                    <button className="btn-primary" onClick={() => {
+                                    
+                                    <button className="btn-outline" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem', borderColor: 'var(--border)' }} onClick={() => {
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
+
+                                    {job.status === 'pending_approval' && (
+                                        <>
+                                            <button className="btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={() => updateJobStatus(job.id, 'active')}>Aceptar</button>
+                                        </>
+                                    )}
+                                    {job.status === 'active' && (
+                                        <button className="btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -423,8 +424,8 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff' }}>${job.amount}</div>
-                                <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                    <button className="btn-secondary" onClick={async () => {
+                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                                    <button className="btn-secondary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={async () => {
                                         setIsCreatingChat(true);
                                         try {
                                             const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
@@ -432,12 +433,14 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             else setIsCreatingChat(false);
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
-                                    <button className="btn-primary" onClick={() => {
+
+                                    <button className="btn-outline" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem', borderColor: 'var(--border)' }} onClick={() => {
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
+
                                     {job.status === 'delivered' && (
-                                        <button className="btn-primary" style={{ backgroundColor: '#10b981' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
+                                        <button className="btn-primary" style={{ backgroundColor: '#10b981', padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
                                     )}
                                 </div>
                             </div>
