@@ -28,10 +28,51 @@ const Chat = () => {
     const [filterTab, setFilterTab] = useState('general'); // 'general', 'companies', 'clients', 'coops'
     const [showExtensionModal, setShowExtensionModal] = useState(false);
     const [extensionDays, setExtensionDays] = useState('2');
+    const [contextDeadline, setContextDeadline] = useState(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [purgeResult, setPurgeResult] = useState(null);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const messagesEndRef = useRef(null);
+
+    // FETCH CONTEXT DEADLINE (Project or Job)
+    useEffect(() => {
+        if (!activeChat || !activeChat.contextId) {
+            setContextDeadline(null);
+            return;
+        }
+
+        const fetchDeadline = async () => {
+            // 1. Try to find in loaded jobs first
+            const job = jobs.find(j => String(j.id) === String(activeChat.contextId) || String(j.projectId) === String(activeChat.contextId));
+            
+            if (job && job.deadline) {
+                setContextDeadline(job.deadline);
+                return;
+            }
+
+            // 2. Fallback: Fetch directly from projects table if it's a project context
+            if (activeChat.type === 'project' || activeChat.type === 'order' || activeChat.contextId) {
+                try {
+                    const { data, error } = await supabase
+                        .from('projects')
+                        .select('deadline')
+                        .eq('id', activeChat.contextId)
+                        .maybeSingle();
+                    
+                    if (data && data.deadline) {
+                        setContextDeadline(data.deadline);
+                    } else {
+                        setContextDeadline(null);
+                    }
+                } catch (err) {
+                    console.error("[Chat] Error fetching project deadline:", err);
+                    setContextDeadline(null);
+                }
+            }
+        };
+
+        fetchDeadline();
+    }, [activeChat, jobs]);
 
     // --- MERGE CHATS LOGIC ---
     const userChats = getUserChats();
@@ -176,17 +217,16 @@ const Chat = () => {
     const getJobTimeRemaining = (chat) => {
         if (!chat || !chat.contextId) return null;
 
-        // Try to find a JOB first (active contract)
-        const job = jobs.find(j => String(j.id) === String(chat.contextId) || String(j.projectId) === String(chat.contextId));
+        // Prioritize the reactive contextDeadline state
+        let deadline = contextDeadline;
 
-        let deadline = null;
-        if (job) {
-            if (job.status === 'completed') return 'Completado';
-            deadline = job.deadline;
-        } else {
-            // Fallback: If no job, check if it's a project context and has deadline ( negotiation phase )
-            // This would require project data, but we can try to guess or use Sin Plazo
-            return chat.type === 'order' || chat.type === 'project' ? 'Sin plazo' : null;
+        // If contextDeadline is not set, try a quick look in jobs for fallback
+        if (!deadline) {
+            const job = jobs.find(j => String(j.id) === String(chat.contextId) || String(j.projectId) === String(chat.contextId));
+            if (job) {
+                if (job.status === 'completed') return 'Completado';
+                deadline = job.deadline;
+            }
         }
 
         if (!deadline) return 'Sin plazo';
@@ -202,10 +242,10 @@ const Chat = () => {
         const hours = totalHours % 24;
 
         if (days > 0) {
-            return `${days}d ${hours}h restantes`;
+            return `${days}d ${hours}h`;
         } else {
             const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            return `${hours}h ${minutes}m restantes`;
+            return `${hours}h ${minutes}m`;
         }
     };
 
