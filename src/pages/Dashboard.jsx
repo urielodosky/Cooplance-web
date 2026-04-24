@@ -73,7 +73,7 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
 
 const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user }) => {
     const [activeTab, setActiveTab] = useState('activos');
-    
+
     const filteredWork = useMemo(() => {
         return myWork.filter(job => {
             if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
@@ -505,15 +505,15 @@ const BadgesSection = ({ user, navigate }) => {
 };
 
 
-const ReceivedProposalsSection = ({ 
-    loading, 
-    receivedProposals, 
-    navigate, 
-    getTimeAgo, 
+const ReceivedProposalsSection = ({
+    loading,
+    receivedProposals,
+    navigate,
+    getTimeAgo,
     handleAcceptProposal,
     handleRejectProposal,
     expandedProposalId,
-    setExpandedProposalId 
+    setExpandedProposalId
 }) => {
     const pendingProposals = receivedProposals.filter(p => (p.status || '').toLowerCase() === 'pending');
 
@@ -525,79 +525,79 @@ const ReceivedProposalsSection = ({
                     <ListSkeleton />
                 ) : pendingProposals.length > 0 ? (
                     pendingProposals.map(proposal => {
-                    const isExpanded = expandedProposalId === proposal.id;
-                    return (
-                        <div key={proposal.id} className={`proposal-card enhanced status-${proposal.status} ${isExpanded ? 'expanded' : ''}`}>
-                            <div className="proposal-card-content">
-                                <div className="proposal-client-info" onClick={() => navigate(`/freelancer/${proposal.userId}`)}>
-                                    <div className="client-avatar-wrapper">
-                                        <img src={getProfilePicture({ role: proposal.userRole, avatar: proposal.userAvatar })} alt={proposal.userName} />
+                        const isExpanded = expandedProposalId === proposal.id;
+                        return (
+                            <div key={proposal.id} className={`proposal-card enhanced status-${proposal.status} ${isExpanded ? 'expanded' : ''}`}>
+                                <div className="proposal-card-content">
+                                    <div className="proposal-client-info" onClick={() => navigate(`/freelancer/${proposal.userId}`)}>
+                                        <div className="client-avatar-wrapper">
+                                            <img src={getProfilePicture({ role: proposal.userRole, avatar: proposal.userAvatar })} alt={proposal.userName} />
+                                        </div>
+                                        <div className="client-details">
+                                            <span className="client-username">@{proposal.userUsername || 'candidato'}</span>
+                                            <span className="client-realname">{proposal.userName}</span>
+                                        </div>
                                     </div>
-                                    <div className="client-details">
-                                        <span className="client-username">@{proposal.userUsername || 'candidato'}</span>
-                                        <span className="client-realname">{proposal.userName}</span>
+
+                                    <div className="proposal-main-details">
+                                        <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '800', marginBottom: '0.3rem', letterSpacing: '0.5px' }}>PARA TU PROYECTO:</div>
+                                        <h4>{proposal.projectTitle}</h4>
+                                        <div className="proposal-meta">
+                                            <span className="meta-item time">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                Enviada {getTimeAgo(proposal.createdAt)}
+                                            </span>
+                                            <span className="meta-item">Nivel {proposal.userLevel}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="proposal-actions">
+                                        <button
+                                            className="btn-text-link"
+                                            style={{ color: '#ef4444' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRejectProposal(proposal);
+                                            }}
+                                        >
+                                            Rechazar
+                                        </button>
+                                        <button
+                                            className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setExpandedProposalId(isExpanded ? null : proposal.id);
+                                            }}
+                                        >
+                                            {isExpanded ? 'Ocultar Carta' : 'Ver Carta'}
+                                        </button>
+
+                                        <button className="btn-primary" onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleAcceptProposal(proposal);
+                                        }}>
+                                            Contratar
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div className="proposal-main-details">
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '800', marginBottom: '0.3rem', letterSpacing: '0.5px' }}>PARA TU PROYECTO:</div>
-                                    <h4>{proposal.projectTitle}</h4>
-                                    <div className="proposal-meta">
-                                        <span className="meta-item time">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                            Enviada {getTimeAgo(proposal.createdAt)}
-                                        </span>
-                                        <span className="meta-item">Nivel {proposal.userLevel}</span>
+                                {isExpanded && (
+                                    <div className="proposal-letter-box" onClick={e => e.stopPropagation()}>
+                                        <h5>Carta de Presentación</h5>
+                                        <p>{proposal.coverLetter || 'Sin mensaje adjunto.'}</p>
                                     </div>
-                                </div>
-
-                                <div className="proposal-actions">
-                                    <button 
-                                        className="btn-text-link"
-                                        style={{ color: '#ef4444' }}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRejectProposal(proposal);
-                                        }}
-                                    >
-                                        Rechazar
-                                    </button>
-                                    <button 
-                                        className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setExpandedProposalId(isExpanded ? null : proposal.id);
-                                        }}
-                                    >
-                                        {isExpanded ? 'Ocultar Carta' : 'Ver Carta'}
-                                    </button>
-                                    
-                                    <button className="btn-primary" onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleAcceptProposal(proposal);
-                                    }}>
-                                        Contratar
-                                    </button>
-                                </div>
+                                )}
                             </div>
-
-                            {isExpanded && (
-                                <div className="proposal-letter-box" onClick={e => e.stopPropagation()}>
-                                    <h5>Carta de Presentación</h5>
-                                    <p>{proposal.coverLetter || 'Sin mensaje adjunto.'}</p>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })
-            ) : (
-                <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-                    <p>No tienes candidatos nuevos para tus proyectos aún.</p>
-                </div>
-            )}
+                        );
+                    })
+                ) : (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                        <p>No tienes candidatos nuevos para tus proyectos aún.</p>
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
 };
 
 // --- Main Dashboard Component ---
@@ -862,7 +862,7 @@ const Dashboard = () => {
                 .select('id')
                 .eq('type', 'proposal')
                 .eq('context_id', proposal.id.toString());
-            
+
             if (consultationChats && consultationChats.length > 0) {
                 chatId = consultationChats[0].id;
                 await supabase
@@ -1101,11 +1101,11 @@ const Dashboard = () => {
                             onDelete={handleDeleteProject}
                         />
                     )}
-                    <ReceivedProposalsSection 
-                        loading={loading} 
-                        receivedProposals={receivedProposals} 
-                        navigate={navigate} 
-                        getTimeAgo={getTimeAgo} 
+                    <ReceivedProposalsSection
+                        loading={loading}
+                        receivedProposals={receivedProposals}
+                        navigate={navigate}
+                        getTimeAgo={getTimeAgo}
                         handleAcceptProposal={handleAcceptProposal}
                         handleRejectProposal={handleRejectProposal}
                         expandedProposalId={expandedProposalId}

@@ -55,10 +55,6 @@ const mapJobToDB = (job, serviceOrProject, buyer) => {
         status: isProject ? 'active' : 'pending_approval',
         duration: parseInt(serviceOrProject?.deliveryTime || serviceOrProject?.executionTime || job.duration) || 5,
         deadline: serviceOrProject?.deadline ? new Date(serviceOrProject.deadline).toISOString() : new Date(Date.now() + (parseInt(serviceOrProject?.deliveryTime || job.duration) || 5) * 24 * 60 * 60 * 1000).toISOString(),
-        buyer_name: buyer?.role === 'company'
-            ? buyer.companyName || buyer.company_name
-            : `${buyer?.first_name || buyer?.firstName || ''} ${buyer?.last_name || buyer?.lastName || ''}`.trim(),
-        buyer_role: buyer?.role || 'client',
         booking_date: serviceOrProject?.bookingConfig?.requiresBooking ? job.bookingDate : null,
         booking_time: serviceOrProject?.bookingConfig?.requiresBooking ? job.bookingTime : null,
     };
