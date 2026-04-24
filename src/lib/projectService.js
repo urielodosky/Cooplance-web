@@ -108,6 +108,24 @@ export const updateProject = async (id, projectData) => {
 
 export const deleteProject = async (id) => {
     try {
+        // 1. Delete associated proposals first to maintain integrity
+        const { error: propError } = await supabase
+            .from('proposals')
+            .delete()
+            .eq('project_id', id);
+        
+        if (propError) console.warn('[ProjectService] Warning deleting proposals:', propError);
+
+        // 2. Delete associated order chats if any
+        const { error: chatError } = await supabase
+            .from('chats')
+            .delete()
+            .eq('context_id', id)
+            .eq('type', 'order');
+            
+        if (chatError) console.warn('[ProjectService] Warning deleting associated chats:', chatError);
+
+        // 3. Delete the project itself
         const { error } = await supabase
             .from('projects')
             .delete()
