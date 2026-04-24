@@ -83,8 +83,8 @@ const Chat = () => {
                 filter: `chat_id=eq.${chatId}`
             }, (payload) => {
                 setMessages(prev => {
-                    const exists = prev.find(m => 
-                        (m.id === payload.new.id) || 
+                    const exists = prev.find(m =>
+                        (m.id === payload.new.id) ||
                         (m.isOptimistic && m.text === payload.new.content && String(m.senderId) === String(payload.new.sender_id))
                     );
                     if (exists) {
@@ -158,7 +158,7 @@ const Chat = () => {
             senderName: user.username || user.first_name || 'Tú',
             text: text,
             timestamp: new Date().toISOString(),
-            isOptimistic: true 
+            isOptimistic: true
         };
 
         setMessages(prev => [...prev, optimisticMsg]);
@@ -178,7 +178,7 @@ const Chat = () => {
 
         // Try to find a JOB first (active contract)
         const job = jobs.find(j => String(j.id) === String(chat.contextId) || String(j.projectId) === String(chat.contextId));
-        
+
         let deadline = null;
         if (job) {
             if (job.status === 'completed') return 'Completado';
@@ -369,7 +369,7 @@ const Chat = () => {
                     <div className="sidebar-header" style={{ padding: '1rem', borderBottom: '1px solid var(--border)', marginBottom: '0.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                             <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Mensajes</h2>
-                            <button 
+                            <button
                                 className="btn-sweep"
                                 onClick={handlePurge}
                                 disabled={isCleaning}
@@ -429,7 +429,7 @@ const Chat = () => {
                                     onClick={() => handleChatSelect(chat.id)}
                                     style={{ position: 'relative', opacity: chat.status === 'blocked' ? 0.6 : 1 }}
                                 >
-                                    <div className="chat-avatar-placeholder" style={{ 
+                                    <div className="chat-avatar-placeholder" style={{
                                         background: chat.status === 'blocked' ? '#64748b' : 'var(--gradient-primary)',
                                         padding: 0, overflow: 'hidden'
                                     }}>
@@ -509,7 +509,7 @@ const Chat = () => {
                     </div>
                 </div>
 
-                             <div className="chat-main">
+                <div className="chat-main">
                     {activeChat ? (
                         <>
                             <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
@@ -519,17 +519,17 @@ const Chat = () => {
                                         return (
                                             <>
                                                 <div className="header-avatar" style={{ width: '45px', height: '45px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)' }}>
-                                                    <img 
-                                                        src={getProfilePicture({ avatar: other?.avatar })} 
-                                                        alt="avatar" 
-                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                    <img
+                                                        src={getProfilePicture({ avatar: other?.avatar })}
+                                                        alt="avatar"
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     />
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <h3 
-                                                        style={{ 
-                                                            margin: 0, 
-                                                            fontSize: '1.1rem', 
+                                                    <h3
+                                                        style={{
+                                                            margin: 0,
+                                                            fontSize: '1.1rem',
                                                             cursor: activeChat.contextId ? 'pointer' : 'default',
                                                             transition: 'color 0.2s'
                                                         }}
@@ -546,7 +546,7 @@ const Chat = () => {
                                                     </h3>
                                                     {other && (
                                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                            <span 
+                                                            <span
                                                                 style={{ fontWeight: '600', color: 'var(--primary-soft)', cursor: 'pointer' }}
                                                                 className="chat-header-user-link"
                                                                 onClick={() => {
@@ -570,7 +570,7 @@ const Chat = () => {
 
                                 <div style={{ textAlign: 'right' }}>
                                     {(activeChat.type === 'order' || activeChat.type === 'project' || activeChat.contextId) && (
-                                        <div className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`} style={{ 
+                                        <div className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`} style={{
                                             background: getJobTimeRemaining(activeChat) === 'Vencido' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)',
                                             color: getJobTimeRemaining(activeChat) === 'Vencido' ? '#ef4444' : 'var(--primary)',
                                             padding: '4px 12px',
@@ -842,7 +842,7 @@ const Chat = () => {
             </div>
 
             {activeChat && (
-                <ReportModal 
+                <ReportModal
                     isOpen={isReportModalOpen}
                     onClose={() => setIsReportModalOpen(false)}
                     itemId={activeChat.id}

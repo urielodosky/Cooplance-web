@@ -98,6 +98,45 @@ export const JobProvider = ({ children }) => {
         fetchJobs().catch(err => console.error('[JobContext] Unhandled fetchJobs error:', err));
     }, [fetchJobs]);
 
+    // REAL-TIME SUBSCRIPTION
+    useEffect(() => {
+        if (!user) return;
+
+        const channel = supabase
+            .channel(`jobs_realtime:${user.id}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'jobs',
+            }, (payload) => {
+                console.log('[JobContext] Real-time event:', payload.eventType, payload.new);
+                
+                if (payload.eventType === 'INSERT') {
+                    // Full refetch to get joined profile data (client/provider)
+                    fetchJobs();
+                } else if (payload.eventType === 'UPDATE') {
+                    setJobs(prev => prev.map(job => 
+                        job.id === payload.new.id ? {
+                            ...job,
+                            status: payload.new.status,
+                            deadline: payload.new.deadline,
+                            amount: payload.new.amount,
+                            duration: payload.new.duration,
+                            completedAt: payload.new.completed_at,
+                            deliveryResult: payload.new.delivery_result
+                        } : job
+                    ));
+                } else if (payload.eventType === 'DELETE') {
+                    setJobs(prev => prev.filter(j => j.id !== payload.old.id));
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user, fetchJobs]);
+
     const createJob = async (service, buyer) => {
         try {
             const dbRow = mapJobToDB({}, service, buyer);

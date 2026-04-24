@@ -95,19 +95,18 @@ export const ChatProvider = ({ children }) => {
             let targetChatId = null;
 
             if (normalizedContextId) {
-                // Si hay un contexto (Pedido, Propuesta, Proyecto), es la clave única definitiva.
-                // Buscamos cualquier chat con ese context_id, sin importar el tipo exacto (robustez).
+                // AGGRESSIVE SEARCH: If there's a contextId, we MUST find any existing chat for it
+                // We don't care about the type here, because one context (Project/Order) should only have ONE chat.
                 const { data: existingChats } = await supabase
                     .from('chats')
                     .select('id, type')
-                    .eq('context_id', normalizedContextId)
-                    .order('created_at', { ascending: false });
+                    .eq('context_id', normalizedContextId);
                 
                 if (existingChats && existingChats.length > 0) {
-                    // Si encontramos uno que coincida con el tipo pedido, lo priorizamos
-                    const perfectMatch = existingChats.find(c => c.type === type);
-                    targetChatId = perfectMatch ? perfectMatch.id : existingChats[0].id;
-                    console.log(`[ChatContext] Encontrado chat existente para contexto ${normalizedContextId}:`, targetChatId);
+                    // We found at least one. We take the one that is NOT empty if possible.
+                    // But for now, just taking the first one found is enough to prevent duplicates.
+                    targetChatId = existingChats[0].id;
+                    console.log(`[ChatContext] Found existing chat for context ${normalizedContextId}:`, targetChatId);
                 }
             } 
             
