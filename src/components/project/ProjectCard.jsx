@@ -136,6 +136,10 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
 
                 <div className="title-desc-section">
                     <h3 className="card-title">{project.title}</h3>
+                    {/* DEBUG INFO - REMOVE AFTER FIXING */}
+                    <div style={{ fontSize: '10px', color: 'red', background: 'rgba(255,0,0,0.1)', padding: '2px 5px', borderRadius: '4px', marginBottom: '5px' }}>
+                        DEBUG: ID {project.id.substring(0,8)} | STATUS: {project.status || 'NULL'}
+                    </div>
                     <p className="card-description">{project.description}</p>
                 </div>
 

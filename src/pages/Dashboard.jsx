@@ -1029,7 +1029,7 @@ const Dashboard = () => {
                 .eq('id', project.id);
 
             if (!pError) {
-                setMyPublishedProjects(prev => prev.map(p => 
+                setMyPublishedProjects(prev => prev.map(p =>
                     p.id === project.id ? { ...p, status: 'hired' } : p
                 ));
             }
