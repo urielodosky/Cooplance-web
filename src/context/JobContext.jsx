@@ -57,6 +57,7 @@ const mapJobToDB = (job, serviceOrProject, buyer) => {
         deadline: serviceOrProject?.deadline ? new Date(serviceOrProject.deadline).toISOString() : new Date(Date.now() + (parseInt(serviceOrProject?.deliveryTime || job.duration) || 5) * 24 * 60 * 60 * 1000).toISOString(),
         booking_date: serviceOrProject?.bookingConfig?.requiresBooking ? job.bookingDate : null,
         booking_time: serviceOrProject?.bookingConfig?.requiresBooking ? job.bookingTime : null,
+        payment_method: serviceOrProject?.selectedPaymentMethod || job.paymentMethod || 'platform',
     };
 };
 

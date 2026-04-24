@@ -600,6 +600,77 @@ const ReceivedProposalsSection = ({
     );
 };
 
+const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, title }) => {
+    const [selectedMethod, setSelectedMethod] = useState('');
+
+    if (!isOpen) return null;
+
+    // Parse methods - handle string or array
+    let availableMethods = [];
+    if (Array.isArray(methods)) {
+        availableMethods = methods;
+    } else if (typeof methods === 'string' && methods.trim()) {
+        availableMethods = methods.split(',').map(m => m.trim());
+    }
+    
+    // Default fallback
+    if (availableMethods.length === 0) {
+        availableMethods = ['Mercado Pago', 'PayPal', 'Transferencia'];
+    }
+
+    return (
+        <div className="payment-modal-overlay" onClick={onClose}>
+            <div className="payment-modal-card glass-strong" onClick={e => e.stopPropagation()}>
+                <div className="payment-modal-header">
+                    <h3>Finalizar Contratación</h3>
+                    <p>Selecciona tu medio de pago preferido</p>
+                </div>
+                <div className="payment-modal-body">
+                    <div className="payment-project-summary">
+                        <span className="summary-label">Proyecto:</span>
+                        <span className="summary-value">{title}</span>
+                    </div>
+                    <div className="payment-amount-box">
+                        <span className="amount-label">Monto a abonar:</span>
+                        <span className="amount-value">${amount}</span>
+                    </div>
+                    
+                    <div className="payment-methods-list">
+                        {availableMethods.map((method, idx) => (
+                            <label key={idx} className={`payment-method-item ${selectedMethod === method ? 'active' : ''}`}>
+                                <input 
+                                    type="radio" 
+                                    name="payment-method" 
+                                    value={method} 
+                                    checked={selectedMethod === method}
+                                    onChange={() => setSelectedMethod(method)}
+                                />
+                                <div className="method-content">
+                                    <span className="method-icon">
+                                        {method.toLowerCase().includes('mercado') ? '💳' : method.toLowerCase().includes('paypal') ? '🅿️' : '🏦'}
+                                    </span>
+                                    <span className="method-name">{method}</span>
+                                </div>
+                                {selectedMethod === method && <span className="check-mark">✓</span>}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+                <div className="payment-modal-footer">
+                    <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+                    <button 
+                        className="btn-primary confirm-pay-btn" 
+                        disabled={!selectedMethod}
+                        onClick={() => onConfirm(selectedMethod)}
+                    >
+                        Confirmar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Main Dashboard Component ---
 
 const Dashboard = () => {
@@ -641,6 +712,7 @@ const Dashboard = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [isCreatingChat, setIsCreatingChat] = useState(false);
     const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null);
+    const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
     const [expandedProposalId, setExpandedProposalId] = useState(null);
     const { refreshBadges } = useBadgeNotification();
 
@@ -844,9 +916,15 @@ const Dashboard = () => {
         const project = myPublishedProjects.find(p => p.id === proposal.projectId);
         if (!project) return;
 
-        if (!window.confirm("¿Deseas confirmar el pago y comenzar este trabajo?")) {
-            return;
-        }
+        // Set state to show payment modal instead of window.confirm
+        setSelectedProposalForPayment({ proposal, project });
+    };
+
+    const confirmHiringWithPayment = async (paymentMethod) => {
+        if (!selectedProposalForPayment) return;
+        
+        const { proposal, project } = selectedProposalForPayment;
+        setSelectedProposalForPayment(null);
 
         try {
             setLoading(true);
@@ -862,7 +940,7 @@ const Dashboard = () => {
                 .select('id')
                 .eq('type', 'proposal')
                 .eq('context_id', proposal.id.toString());
-
+            
             if (consultationChats && consultationChats.length > 0) {
                 chatId = consultationChats[0].id;
                 await supabase
@@ -875,12 +953,13 @@ const Dashboard = () => {
             }
 
             // 3. Create the formal Job/Order entry
-            const projectWithFreelancer = {
+            const projectWithPayment = {
                 ...project,
-                freelancerId: proposal.userId
+                freelancerId: proposal.userId,
+                selectedPaymentMethod: paymentMethod
             };
 
-            await createJob(projectWithFreelancer, user);
+            await createJob(projectWithPayment, user);
 
             // 4. Redirect to chat for immediate communication
             if (chatId) {
@@ -948,6 +1027,15 @@ const Dashboard = () => {
     return (
         <div className="dashboard-container">
             <ProposalListModal isOpen={!!selectedProjectForProposals} onClose={() => setSelectedProjectForProposals(null)} projectId={selectedProjectForProposals?.id} projectTitle={selectedProjectForProposals?.title} onAccept={handleAcceptProposal} />
+            
+            <PaymentSelectionModal 
+                isOpen={!!selectedProposalForPayment} 
+                onClose={() => setSelectedProposalForPayment(null)}
+                onConfirm={confirmHiringWithPayment}
+                methods={selectedProposalForPayment?.project?.paymentMethods}
+                amount={selectedProposalForPayment?.project?.budget}
+                title={selectedProposalForPayment?.project?.title}
+            />
 
             {isCreatingChat && (
                 <div className="dashboard-loading-overlay">
