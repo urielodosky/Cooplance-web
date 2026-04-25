@@ -4,7 +4,6 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useServices } from '../features/services/context/ServiceContext';
 import { useChat } from '../context/ChatContext';
-import { useNotifications } from '../context/NotificationContext';
 import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
@@ -90,7 +89,7 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                     <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'delivered', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
-            <div className="jobs-list">
+            <div className="dashboard-list-scroll">
                 {loading && myWork.length === 0 ? (
                     <ListSkeleton />
                 ) : filteredWork.length > 0 ? (
@@ -99,9 +98,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             display: 'flex',
                             gap: '1.2rem',
                             alignItems: 'center',
-                            padding: '1.2rem 1.5rem',
-                            borderRadius: '24px',
-                            marginBottom: '1rem',
+                            padding: '0.8rem 1.2rem',
+                            borderRadius: '20px',
                             background: 'rgba(255, 255, 255, 0.03)',
                             border: '1px solid var(--border)',
                             position: 'relative',
@@ -222,7 +220,7 @@ const ProposalsSection = ({
                 <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => ['rejected', 'canceled', 'completed'].includes((p.status || '').toLowerCase())).length}</span></button>
             </div>
         </div>
-        <div className="jobs-list">
+        <div className="dashboard-list-scroll">
             {loading && myProposals.length === 0 ? (
                 <ListSkeleton />
             ) : filteredProposals.length > 0 ? (
@@ -312,25 +310,27 @@ const ProposalsSection = ({
 const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }) => (
     <div style={{ marginTop: '2rem' }}>
         <h3 className="section-title">Mis Servicios Activos</h3>
-        <div className="services-grid">
-            {loading && myServices.length === 0 ? (
-                <GridSkeleton />
-            ) : myServices.length > 0 ? (
-                <>
-                    {myServices.map(service => (
-                        <ServiceCard key={service.id} service={{ ...service, level: user.level || 1 }} />
-                    ))}
-                    <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-card)', padding: '1.5rem 1rem' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.6rem', fontSize: '1.3rem' }}>+</div>
-                        <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', margin: 0 }}>Crear Nuevo</h4>
+        <div className="dashboard-list-scroll">
+            <div className="services-grid">
+                {loading && myServices.length === 0 ? (
+                    <GridSkeleton />
+                ) : myServices.length > 0 ? (
+                    <>
+                        {myServices.map(service => (
+                            <ServiceCard key={service.id} service={{ ...service, level: user.level || 1 }} />
+                        ))}
+                        <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-card)', padding: '1.5rem 1rem' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.6rem', fontSize: '1.3rem' }}>+</div>
+                            <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', margin: 0 }}>Crear Nuevo</h4>
+                        </div>
+                    </>
+                ) : (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                        <p style={{ marginBottom: '1rem' }}>No tienes servicios publicados aún.</p>
+                        <button className="btn-primary" onClick={handleCreateServiceClick}>Publicar mi primer servicio</button>
                     </div>
-                </>
-            ) : (
-                <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-                    <p style={{ marginBottom: '1rem' }}>No tienes servicios publicados aún.</p>
-                    <button className="btn-primary" onClick={handleCreateServiceClick}>Publicar mi primer servicio</button>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     </div>
 );
@@ -405,68 +405,33 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                     <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myOrders.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
-            <div className="jobs-list">
+            <div className="dashboard-list-scroll">
                 {loading && myOrders.length === 0 ? (
                     <ListSkeleton />
                 ) : filteredOrders.length > 0 ? (
                     filteredOrders.map(job => (
-                        <div key={job.id} className="glass job-card order-card premium-job-card" style={{
-                            display: 'flex',
-                            gap: '1.2rem',
-                            alignItems: 'center',
-                            padding: '1.2rem 1.5rem',
-                            borderRadius: '24px',
-                            marginBottom: '1rem',
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid var(--border)',
-                            position: 'relative',
-                            transition: 'all 0.3s ease'
-                        }}>
-                            {/* Avatar Section */}
-                            <div style={{
-                                width: '60px', 
-                                height: '60px', 
-                                borderRadius: '50%', 
-                                overflow: 'hidden', 
-                                border: '2px solid var(--primary-soft)',
-                                flexShrink: 0
-                            }}>
+                        <div key={job.id} className="glass job-card order-card premium-job-card" style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0.8rem 1.2rem', borderRadius: '20px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', position: 'relative', transition: 'all 0.3s ease' }}>
+                            <div style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary-soft)', flexShrink: 0 }}>
                                 <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
-
-                            {/* Info Section */}
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
-                                    <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {job.serviceTitle}
-                                    </h4>
-                                    
-                                    {/* Inline Deadline Badge */}
+                                    <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h4>
                                     {(() => {
                                         const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
                                         if (daysLeft === null || job.status !== 'active') return null;
                                         return (
-                                            <span style={{
-                                                fontSize: '0.7rem',
-                                                padding: '2px 8px',
-                                                borderRadius: '6px',
-                                                background: daysLeft <= 2 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)',
-                                                color: daysLeft <= 2 ? '#ef4444' : 'var(--primary-soft)',
-                                                fontWeight: '800',
-                                                border: '1px solid currentColor'
-                                            }}>
+                                            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '6px', background: daysLeft <= 2 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)', color: daysLeft <= 2 ? '#ef4444' : 'var(--primary-soft)', fontWeight: '800', border: '1px solid currentColor' }}>
                                                 {daysLeft > 0 ? `${daysLeft} DÍAS` : daysLeft === 0 ? 'HOY' : 'VENCIDO'}
                                             </span>
                                         );
                                     })()}
                                 </div>
-
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '6px' }}>
                                     <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: </span>
                                     <strong style={{ color: 'var(--primary-soft)', fontSize: '0.9rem' }}>@{job.freelancerUsername || 'usuario'}</strong>
                                     {job.freelancerName && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({job.freelancerName})</span>}
                                 </div>
-
                                 <div>
                                     <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
@@ -474,8 +439,6 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     </span>
                                 </div>
                             </div>
-
-                            {/* Price & Actions Section */}
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '160px' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', letterSpacing: '-0.5px' }}>${job.amount}</div>
                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -487,19 +450,15 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             else setIsCreatingChat(false);
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
-
                                     <button className="btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px', borderColor: 'var(--border)' }} onClick={() => {
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
-
                                     {job.status === 'delivered' && (
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button className="btn-outline" style={{ borderColor: '#f59e0b', color: '#f59e0b', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={async () => {
                                                 await updateJobStatus(job.id, 'active');
-                                                // The notification is handled in JobContext's updateJobStatus for status 'active' when previous was 'delivered'
                                             }}>Pedir Ajustes</button>
-                                            
                                             <button className="btn-primary" style={{ backgroundColor: '#10b981', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
                                         </div>
                                     )}
@@ -648,7 +607,7 @@ const ReceivedProposalsSection = ({
     return (
         <div style={{ marginTop: '2.5rem' }}>
             <h3 className="section-title">Postulantes a Mis Proyectos</h3>
-            <div className="jobs-list">
+            <div className="dashboard-list-scroll">
                 {loading && receivedProposals.length === 0 ? (
                     <ListSkeleton />
                 ) : pendingProposals.length > 0 ? (
@@ -807,8 +766,7 @@ const Dashboard = () => {
         updateUser,
         isTutorView,
         supervisedUser,
-        enterMirrorMode,
-        exitMirrorMode
+        enterMirrorMode
     } = useAuth();
 
     // Determine effective user for this view
