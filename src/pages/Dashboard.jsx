@@ -118,7 +118,7 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
 
     const filteredWork = useMemo(() => {
         return myWork.filter(job => {
-            if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
+            if (activeTab === 'activos') return ['active', 'delivered', 'pending_approval'].includes(job.status);
             return ['completed', 'canceled', 'rejected'].includes(job.status);
         });
     }, [myWork, activeTab]);
@@ -128,8 +128,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
             <div className="proposal-section-header">
                 <h3 className="section-title">Pedidos / Trabajos Recibidos</h3>
                 <div className="proposal-tabs">
-                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>Activos <span className="tab-count">{myWork.filter(j => ['active'].includes(j.status)).length}</span></button>
-                    <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'delivered', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>Activos <span className="tab-count">{myWork.filter(j => ['active', 'delivered', 'pending_approval'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myWork.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
             <div className="dashboard-list-scroll">
@@ -203,9 +203,11 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: 'var(--bg-body)', color: 'var(--text-muted)', fontWeight: '700', border: '1px solid var(--border)', textTransform: 'uppercase' }}>
                                         {job.tier || 'Estándar'}
                                     </span>
-                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#3b82f6' : '#f59e0b'), fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
-                                        {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
+                                        {job.status === 'active' ? 'En Progreso' : 
+                                         job.status === 'delivered' ? 'Entregado' : 
+                                         job.status === 'pending_approval' ? 'Por Aceptar' : job.status}
                                     </span>
                                 </div>
                             </div>
@@ -255,7 +257,26 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             border: 'none',
                                             boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
                                             fontWeight: '700'
-                                        }} onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
+                                        }} onClick={async () => {
+                                            if (window.confirm("¿Estás seguro de que deseas entregar este trabajo? Se notificará al cliente para su revisión.")) {
+                                                await updateJobStatus(job.id, 'delivered');
+                                                alert("¡Trabajo entregado con éxito! El cliente ha sido notificado.");
+                                            }
+                                        }}>Entregar</button>
+                                    )}
+
+                                    {job.status === 'pending_approval' && (
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', borderRadius: '12px' }} onClick={() => {
+                                                if(window.confirm("¿Rechazar este trabajo? Se le devolverá el dinero al cliente.")) {
+                                                    updateJobStatus(job.id, 'rejected');
+                                                }
+                                            }}>Rechazar</button>
+                                            <button className="btn-primary" style={{ backgroundColor: '#10b981', border: 'none', borderRadius: '12px' }} onClick={() => {
+                                                updateJobStatus(job.id, 'active');
+                                                alert("¡Trabajo aceptado! Ahora puedes empezar a trabajar.");
+                                            }}>Aceptar Trabajo</button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -466,7 +487,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
 
     const filteredOrders = useMemo(() => {
         return myOrders.filter(job => {
-            if (activeTab === 'activos') return ['active', 'delivered'].includes(job.status);
+            if (activeTab === 'activos') return ['active', 'delivered', 'pending_approval'].includes(job.status);
             return ['completed', 'canceled', 'rejected'].includes(job.status);
         });
     }, [myOrders, activeTab]);
@@ -476,7 +497,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
             <div className="proposal-section-header">
                 <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>Mis Pedidos / Servicios Contratados</h3>
                 <div className="proposal-tabs">
-                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>Activos <span className="tab-count">{myOrders.filter(j => ['active', 'delivered'].includes(j.status)).length}</span></button>
+                    <button className={`proposal-tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>Activos <span className="tab-count">{myOrders.filter(j => ['active', 'delivered', 'pending_approval'].includes(j.status)).length}</span></button>
                     <button className={`proposal-tab ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Historial <span className="tab-count">{myOrders.filter(j => ['completed', 'canceled', 'rejected'].includes(j.status)).length}</span></button>
                 </div>
             </div>
@@ -521,9 +542,11 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     {job.freelancerName && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({job.freelancerName})</span>}
                                 </div>
                                 <div>
-                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#3b82f6' : '#f59e0b'), fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
                                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
-                                        {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
+                                        {job.status === 'active' ? 'En Progreso' : 
+                                         job.status === 'delivered' ? 'Entregado' : 
+                                         job.status === 'pending_approval' ? 'Esperando Aceptación' : job.status}
                                     </span>
                                 </div>
                             </div>

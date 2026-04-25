@@ -262,7 +262,7 @@ export const JobProvider = ({ children }) => {
             // Send Notifications based on status change
             const job = jobs.find(j => j.id === jobId);
             if (job) {
-                if (status === 'pending_approval') {
+                if (status === 'delivered') {
                     // Freelancer delivered -> Notify Client
                     NotificationService.createNotification(job.buyerId, {
                         type: 'job_delivered',
@@ -286,7 +286,7 @@ export const JobProvider = ({ children }) => {
                         message: `Ajustes solicitados ⚠️. ${job.buyerName} pidió correcciones en '${job.serviceTitle}'.`,
                         link: '/dashboard'
                     });
-                } else if (status === 'active' && job.status === 'pending_approval') {
+                } else if (status === 'active') {
                     // Client accepted a proposal or a job -> Notify Freelancer (already handled in proposalService, but here's a fallback)
                     NotificationService.createNotification(job.freelancerId, {
                         type: 'job_active',
