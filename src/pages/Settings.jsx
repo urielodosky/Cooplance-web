@@ -210,6 +210,19 @@ const Settings = () => {
                 return;
             }
 
+            // Username changes logic
+            let finalUsernameChanges = user.username_changes || 0;
+            const remainingChanges = 3 - finalUsernameChanges;
+
+            if (cleanUsername !== user.username && user.role !== 'company') {
+                if (remainingChanges <= 0) {
+                    setMessage({ text: 'Error: Ya has alcanzado el límite máximo de 3 cambios de nombre de usuario.', type: 'error' });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                finalUsernameChanges += 1;
+            }
+
             // Check for duplicates (excluding self) - V30: Expanded uniqueness check
             const { exists, field } = await checkUserExists({
                 username: user.role !== 'company' ? cleanUsername : undefined,
@@ -237,6 +250,7 @@ const Settings = () => {
             await updateUser({
                 ...user,
                 username: user.role !== 'company' ? cleanUsername : user.username,
+                username_changes: finalUsernameChanges,
                 first_name: firstName || null,
                 last_name: lastName || null,
                 company_name: companyName || null,
@@ -389,20 +403,28 @@ const Settings = () => {
                     </h3>
 
                     {/* BIO - Hover to edit - Premium Styling */}
-                    <div className="inline-bio-container" style={{ marginTop: '0.5rem', width: '100%', maxWidth: '600px' }}>
+                    <div className="inline-bio-container" style={{ 
+                        marginTop: '0.5rem', 
+                        width: '100%', 
+                        maxWidth: '600px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px'
+                    }}>
                         {isEditingBioInline ? (
-                            <div className="bio-edit-wrapper" style={{ position: 'relative' }}>
+                            <div className="bio-edit-wrapper" style={{ position: 'relative', flex: 1 }}>
                                 <textarea
                                     className="settings-input inline-bio-textarea"
                                     value={bio}
-                                    onChange={(e) => setBio(e.target.value)}
+                                    onChange={(e) => setBio(e.target.value.slice(0, 150))}
                                     placeholder="Cuéntanos sobre ti..."
                                     autoFocus
                                     onBlur={() => setIsEditingBioInline(false)}
+                                    maxLength={150}
                                     style={{
                                         width: '100%',
                                         minHeight: '120px',
-                                        padding: '1.2rem',
+                                        padding: '1rem',
                                         borderRadius: '16px',
                                         background: 'rgba(255,255,255,0.05)',
                                         border: '2px solid var(--primary)',
@@ -410,70 +432,70 @@ const Settings = () => {
                                         fontSize: '1rem',
                                         lineHeight: '1.5',
                                         outline: 'none',
-                                        resize: 'vertical'
+                                        resize: 'none'
                                     }}
                                 />
-                                <div className="bio-inline-hint" style={{ 
-                                    fontSize: '0.75rem', 
-                                    color: 'var(--primary)', 
+                                <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
                                     marginTop: '0.5rem',
-                                    fontWeight: '600',
-                                    textAlign: 'right'
+                                    fontSize: '0.7rem',
+                                    fontWeight: '600'
                                 }}>
-                                    Presiona fuera para confirmar
+                                    <span style={{ color: bio.length >= 150 ? '#ef4444' : 'var(--text-muted)' }}>
+                                        {bio.length}/150 caracteres
+                                    </span>
+                                    <span style={{ color: 'var(--primary)' }}>Presiona fuera para confirmar</span>
                                 </div>
                             </div>
                         ) : (
-                            <div
-                                className="settings-bio-preview-premium"
-                                onClick={() => setIsEditingBioInline(true)}
-                                title="Haz clic para editar biografía"
-                                style={{
-                                    padding: '1.2rem',
-                                    borderRadius: '20px',
-                                    background: 'rgba(255,255,255,0.02)',
-                                    border: '1px solid var(--border)',
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '1rem',
-                                    lineHeight: '1.6',
-                                    textAlign: 'center',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    position: 'relative',
-                                    minHeight: '60px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)';
-                                    e.currentTarget.style.borderColor = 'var(--primary)';
-                                    e.currentTarget.querySelector('.edit-overlay').style.opacity = '1';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
-                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                    e.currentTarget.querySelector('.edit-overlay').style.opacity = '0';
-                                }}
-                            >
-                                {bio || <span style={{ opacity: 0.5 }}>Cuéntanos un poco sobre ti...</span>}
-                                <div className="edit-overlay" style={{
-                                    position: 'absolute',
-                                    top: 0, left: 0, width: '100%', height: '100%',
-                                    background: 'rgba(139, 92, 246, 0.1)',
-                                    borderRadius: '20px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    opacity: 0,
-                                    transition: 'opacity 0.3s ease'
-                                }}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <>
+                                <div
+                                    className="settings-bio-preview-premium"
+                                    style={{
+                                        padding: '0.5rem 0',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-secondary)',
+                                        fontSize: '1.05rem',
+                                        lineHeight: '1.6',
+                                        textAlign: 'center',
+                                        flex: 1,
+                                        maxHeight: '8.5rem', // ~5 lines with 1.6 line-height
+                                        overflowY: 'auto',
+                                        scrollbarWidth: 'thin',
+                                        position: 'relative',
+                                        wordBreak: 'break-word'
+                                    }}
+                                >
+                                    {bio || <span style={{ opacity: 0.5 }}>Cuéntanos un poco sobre ti...</span>}
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsEditingBioInline(true)}
+                                    style={{
+                                        background: 'rgba(139, 92, 246, 0.1)',
+                                        border: 'none',
+                                        borderRadius: '10px',
+                                        padding: '8px',
+                                        cursor: 'pointer',
+                                        color: 'var(--primary)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginTop: '4px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'}
+                                    title="Editar biografía"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                     </svg>
-                                </div>
-                            </div>
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -492,15 +514,20 @@ const Settings = () => {
                                         onChange={(e) => setUsername(e.target.value)}
                                         placeholder="Username"
                                         className="settings-input"
+                                        disabled={3 - (user.username_changes || 0) <= 0}
+                                        style={(3 - (user.username_changes || 0) <= 0) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                                     />
                                     <span className="field-warning" style={{ 
                                         display: 'block', 
                                         marginTop: '0.5rem', 
                                         fontSize: '0.75rem', 
-                                        color: '#fbbf24',
+                                        color: (3 - (user.username_changes || 0)) <= 0 ? '#ef4444' : '#fbbf24',
                                         fontWeight: '600'
                                     }}>
-                                        ⚠️ Puedes cambiar tu nombre de usuario un máximo de 3 veces.
+                                        { (3 - (user.username_changes || 0)) <= 0 
+                                            ? '❌ Ya no puedes cambiar tu nombre de usuario (Límite alcanzado).'
+                                            : `⚠️ Te quedan ${(3 - (user.username_changes || 0))} cambios disponibles de nombre de usuario.`
+                                        }
                                     </span>
                                 </div>
                             </div>

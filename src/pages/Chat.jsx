@@ -929,7 +929,29 @@ const Chat = () => {
                                     )}
                                 </div>
                             ) : (
-                                <form className="message-input-area" onSubmit={handleSendMessage}>
+                                <div className="chat-input-wrapper" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                    {activeJob && activeJob.status === 'delivered' && (
+                                        <div className="pending-confirmation-banner" style={{ 
+                                            background: 'rgba(245, 158, 11, 0.1)', 
+                                            borderTop: '1px solid rgba(245, 158, 11, 0.2)',
+                                            padding: '8px 1.5rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '10px',
+                                            fontSize: '0.85rem',
+                                            color: '#f59e0b',
+                                            fontWeight: '600'
+                                        }}>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                            </svg>
+                                            El pedido está pendiente de confirmación
+                                        </div>
+                                    )}
+                                    <form className="message-input-area" onSubmit={handleSendMessage} style={{ borderTop: activeJob?.status === 'delivered' ? 'none' : '1px solid var(--border)' }}>
                                     {activeChat.status !== 'pre_contract' && (
                                         <>
                                             <button
@@ -965,8 +987,9 @@ const Chat = () => {
                                         </svg>
                                     </button>
                                 </form>
-                            )}
-                        </>
+                            </div>
+                        )}
+                    </>
                     ) : (
                         <div className="no-chat-selected">
                             <p>Selecciona una conversación para comenzar a chatear.</p>
