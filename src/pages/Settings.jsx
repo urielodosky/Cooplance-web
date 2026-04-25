@@ -211,7 +211,8 @@ const Settings = () => {
             }
 
             // Username changes logic
-            let finalUsernameChanges = user.username_changes || 0;
+            let currentGamification = { ...(user.gamification || {}) };
+            let finalUsernameChanges = currentGamification.username_changes || 0;
             const remainingChanges = 3 - finalUsernameChanges;
 
             if (cleanUsername !== user.username && user.role !== 'company') {
@@ -221,6 +222,7 @@ const Settings = () => {
                     return;
                 }
                 finalUsernameChanges += 1;
+                currentGamification.username_changes = finalUsernameChanges;
             }
 
             // Check for duplicates (excluding self) - V30: Expanded uniqueness check
@@ -250,7 +252,7 @@ const Settings = () => {
             await updateUser({
                 ...user,
                 username: user.role !== 'company' ? cleanUsername : user.username,
-                username_changes: finalUsernameChanges,
+                gamification: currentGamification,
                 first_name: firstName || null,
                 last_name: lastName || null,
                 company_name: companyName || null,
@@ -514,19 +516,19 @@ const Settings = () => {
                                         onChange={(e) => setUsername(e.target.value)}
                                         placeholder="Username"
                                         className="settings-input"
-                                        disabled={3 - (user.username_changes || 0) <= 0}
-                                        style={(3 - (user.username_changes || 0) <= 0) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                        disabled={3 - (user.gamification?.username_changes || 0) <= 0}
+                                        style={(3 - (user.gamification?.username_changes || 0) <= 0) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                                     />
                                     <span className="field-warning" style={{ 
                                         display: 'block', 
                                         marginTop: '0.5rem', 
                                         fontSize: '0.75rem', 
-                                        color: (3 - (user.username_changes || 0)) <= 0 ? '#ef4444' : '#fbbf24',
+                                        color: (3 - (user.gamification?.username_changes || 0)) <= 0 ? '#ef4444' : '#fbbf24',
                                         fontWeight: '600'
                                     }}>
-                                        { (3 - (user.username_changes || 0)) <= 0 
+                                        { (3 - (user.gamification?.username_changes || 0)) <= 0 
                                             ? '❌ Ya no puedes cambiar tu nombre de usuario (Límite alcanzado).'
-                                            : `⚠️ Te quedan ${(3 - (user.username_changes || 0))} cambios disponibles de nombre de usuario.`
+                                            : `⚠️ Te quedan ${(3 - (user.gamification?.username_changes || 0))} cambios disponibles de nombre de usuario.`
                                         }
                                     </span>
                                 </div>
