@@ -219,59 +219,120 @@
 }
 
 .dashboard-badges-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 1rem;
-    justify-content: flex-start;
+    width: 100%;
 }
 
-.badge-mini-card {
+.badge-family-card {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 1rem;
-    width: 120px;
-    border-radius: 16px;
-    background: var(--bg-card) !important;
+    padding: 1.25rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid var(--border);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    &:hover {
-        transform: translateY(-4px);
-        background: var(--bg-card) !important;
-        opacity: 0.9;
-        border-color: var(--primary);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        
-        .badge-icon-container {
-            background: var(--primary);
-            box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 140px;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: radial-gradient(circle at top right, var(--tier-color), transparent 70%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        z-index: 0;
+    }
+
+    &.unlocked {
+        &:hover {
+            transform: translateY(-5px);
+            border-color: var(--tier-color);
+            background: rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+            &::before {
+                opacity: 0.15;
+            }
+
+            .badge-icon-wrapper {
+                transform: scale(1.1) rotate(5deg);
+                background: var(--tier-color);
+                box-shadow: 0 0 20px var(--tier-color);
+                color: #1a1a1a;
+                border-color: transparent;
+            }
         }
     }
 
-    .badge-icon-container {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: var(--primary);
-        opacity: 0.15;
+    &.locked {
+        opacity: 0.4;
+        filter: grayscale(1);
+        border-style: dashed;
+
+        .badge-icon-wrapper {
+            background: var(--text-muted);
+            opacity: 0.3;
+        }
+
+        .badge-name {
+            color: var(--text-muted);
+        }
+    }
+
+    .badge-icon-wrapper {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 0.6rem;
-        color: #fff;
-        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+        color: var(--tier-color, var(--primary));
+        transition: all 0.4s ease;
+        z-index: 1;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .badge-mini-title {
-        font-size: 0.75rem;
-        font-weight: 700;
-        margin: 0;
-        color: var(--text-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
+    .badge-content {
+        z-index: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .family-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
+            color: var(--text-muted);
+        }
+
+        .badge-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin: 0;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .badge-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin: 0.2rem 0 0 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     }
 }
 

@@ -48,10 +48,20 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
                         <div className="help-tooltip" style={{ width: '220px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'normal', textAlign: 'left', bottom: '100%', marginBottom: '10px' }}>
                             <strong>Ganancia de XP por Trabajo:</strong>
                             <ul style={{ paddingLeft: '1rem', marginTop: '0.5rem', marginBottom: 0, fontSize: '0.8rem' }}>
-                                <li>Mayor a $100.000: <strong>80 XP</strong></li>
-                                <li>De $45.000 a $100.000: <strong>40 XP</strong></li>
-                                <li>De $15.000 a $45.000: <strong>30 XP</strong></li>
-                                <li>De $5.000 a $15.000: <strong>10 XP</strong></li>
+                                {user.level > 1 ? (
+                                    <>
+                                        <li>Mayor a $100.000: <strong>80 XP</strong></li>
+                                        <li>De $45.000 a $100.000: <strong>40 XP</strong></li>
+                                        <li>De $15.000 a $45.000: <strong>30 XP</strong></li>
+                                        <li>De $5.000 a $15.000: <strong>10 XP</strong></li>
+                                    </>
+                                ) : (
+                                    <>
+                                        <li>Mayor a $100.000: <strong>80 XP</strong></li>
+                                        <li>De $5.000 a $100.000: <strong>40 XP</strong></li>
+                                        <li style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '0.3rem' }}>* Los trabajos menores a $5.000 no otorgan XP en Nivel 1.</li>
+                                    </>
+                                )}
                             </ul>
                         </div>
                     </div>
@@ -531,7 +541,8 @@ import {
     Zap as Lightning,
     Star,
     Handshake,
-    Eye
+    Eye,
+    Users
 } from 'lucide-react';
 
 const BadgesSection = ({ user, navigate }) => {
@@ -543,31 +554,51 @@ const BadgesSection = ({ user, navigate }) => {
         Speed: <Lightning size={20} />,
         Review: <Star size={20} />,
         Handshake: <Handshake size={20} />,
-        Eye: <Eye size={20} />
+        Eye: <Eye size={20} />,
+        Users: <Users size={20} />
     };
 
     const isClient = user.role === 'buyer' || user.role === 'company';
     const unlockedIds = user.gamification?.badges || [];
 
     const getIconForFamily = (familyId) => {
-        const map = { sales: Icons.Sales, purchases: Icons.Sales, levels: Icons.Level, services: Icons.Service, loyalty: Icons.Loyalty, speed: Icons.Speed, reviews: Icons.Review, talent: Icons.Handshake, projects: Icons.Eye };
+        const map = { 
+            sales: Icons.Sales, purchases: Icons.Sales, 
+            levels: Icons.Level, services: Icons.Service, 
+            loyalty: Icons.Loyalty, speed: Icons.Speed, 
+            reviews: Icons.Review, talent: Icons.Users, 
+            projects: Icons.Eye 
+        };
         return map[familyId] || Icons.Review;
     };
 
     const families = isClient ? CLIENT_BADGE_FAMILIES : BADGE_FAMILIES;
-    const unlockedList = [];
 
-    families.forEach(f => {
-        f.badges.forEach(b => {
-            if (unlockedIds.includes(b.id)) {
-                unlockedList.push({ ...b, icon: getIconForFamily(f.familyId) });
-            }
-        });
+    const badgeTiers = [
+        { name: 'bronze', color: '#cd7f32' },
+        { name: 'silver', color: '#c0c0c0' },
+        { name: 'gold', color: '#ffd700' },
+        { name: 'platinum', color: '#e5e4e2' },
+        { name: 'diamond', color: '#b9f2ff' }
+    ];
+
+    const familyStatus = families.map(f => {
+        const unlockedInFamily = f.badges.filter(b => unlockedIds.includes(b.id));
+        const highestBadgeIndex = unlockedInFamily.length - 1;
+        const latestBadge = highestBadgeIndex >= 0 ? unlockedInFamily[highestBadgeIndex] : null;
+        
+        // Find the index of the latestBadge in the original family array to determine tier
+        const tierIndex = latestBadge ? f.badges.findIndex(b => b.id === latestBadge.id) : -1;
+        const tier = tierIndex >= 0 ? badgeTiers[Math.min(tierIndex, badgeTiers.length - 1)] : null;
+
+        return {
+            familyId: f.familyId,
+            familyTitle: f.title,
+            badge: latestBadge,
+            tier: tier,
+            icon: getIconForFamily(f.familyId)
+        };
     });
-
-    // Sort to show newest or most relevant first (optional, here we just limit)
-    const featured = unlockedList.slice(0, 6);
-    if (featured.length === 0) return null;
 
     return (
         <div className="dashboard-badges-section">
@@ -578,12 +609,20 @@ const BadgesSection = ({ user, navigate }) => {
                 </button>
             </div>
             <div className="dashboard-badges-grid">
-                {featured.map((badge, idx) => (
-                    <div key={idx} className="glass badge-mini-card" title={badge.description}>
-                        <div className="badge-icon-container">
-                            {badge.icon}
+                {familyStatus.map((status, idx) => (
+                    <div 
+                        key={idx} 
+                        className={`badge-family-card ${status.badge ? 'unlocked' : 'locked'} tier-${status.tier?.name || 'none'}`}
+                        style={status.tier ? { '--tier-color': status.tier.color } : {}}
+                    >
+                        <div className="badge-icon-wrapper">
+                            {status.icon}
                         </div>
-                        <span className="badge-mini-title">{badge.title}</span>
+                        <div className="badge-content">
+                            <span className="family-label">{status.familyTitle}</span>
+                            <h4 className="badge-name">{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
+                            {status.badge && <p className="badge-desc">{status.badge.desc}</p>}
+                        </div>
                     </div>
                 ))}
             </div>

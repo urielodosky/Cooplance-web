@@ -378,403 +378,95 @@ const Settings = () => {
                         style={{ display: 'none' }}
                         accept="image/*"
                     />
-                    <h3 className="settings-greeting" style={{ marginBottom: user.cv_url ? '0.5rem' : '1rem' }}>
-                        Hola, {user.role === 'company' ? (companyName || user.company_name) : (firstName || user.first_name || user.username)}
+                    <h3 className="settings-greeting">
+                        Hola, {user.username || 'Usuario'}
                     </h3>
 
-                    {user.cv_url && (
-                        <div style={{ marginBottom: '1rem' }}>
-                            <button
-                                onClick={() => window.open(user.cv_url, '_blank')}
-                                className="btn-secondary"
-                                style={{
-                                    fontSize: '0.8rem',
-                                    padding: '6px 16px',
-                                    borderRadius: '12px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    cursor: 'pointer',
-                                    background: 'rgba(255,255,255,0.03)',
-                                    border: '1px solid var(--border)',
-                                    color: 'var(--text-primary)'
-                                }}
+                    {/* BIO - Hover to edit */}
+                    <div className="inline-bio-container" style={{ marginTop: '1rem' }}>
+                        {isEditingBioInline ? (
+                            <div className="bio-edit-wrapper">
+                                <textarea
+                                    className="settings-input inline-bio-textarea"
+                                    value={bio}
+                                    onChange={(e) => setBio(e.target.value)}
+                                    placeholder="Cuéntanos sobre ti..."
+                                    autoFocus
+                                    onBlur={() => setIsEditingBioInline(false)}
+                                />
+                                <div className="bio-inline-hint">Se guarda al hacer clic fuera o al guardar abajo</div>
+                            </div>
+                        ) : (
+                            <div
+                                className="settings-bio-preview clickable"
+                                onClick={() => setIsEditingBioInline(true)}
+                                title="Haz clic para editar biografía"
                             >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                                Ver mi CV
-                            </button>
-                        </div>
-                    )}
-
-                    <div style={{ margin: '1rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Tema:</span>
-                        <div
-                            onClick={toggleTheme}
-                            style={{
-                                cursor: 'pointer',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid var(--border)',
-                                padding: '0.4rem 1rem',
-                                borderRadius: 'var(--radius-full)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.6rem',
-                                color: 'var(--text-primary)',
-                                fontSize: '0.9rem'
-                            }}
-                        >
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
-                                {theme === 'dark' ? (
-                                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="5"></circle>
-                                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                                    </svg>
-                                ) : (
-                                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                                    </svg>
-                                )}
-                            </span>
-                            <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
-                        </div>
+                                {bio || <span className="empty-bio-text">Añade una biografía...</span>}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="edit-icon-inline">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </div>
+                        )}
                     </div>
-
-                    {user.role !== 'buyer' && (
-                        <div className="inline-bio-container">
-                            {isEditingBioInline ? (
-                                <div className="bio-edit-wrapper">
-                                    <textarea
-                                        className="settings-input inline-bio-textarea"
-                                        value={bio}
-                                        onChange={(e) => setBio(e.target.value)}
-                                        placeholder={user.role === 'company' ? "Descripción de la empresa..." : "Cuéntanos sobre ti..."}
-                                        autoFocus
-                                        onBlur={() => setIsEditingBioInline(false)}
-                                    />
-                                    <div className="bio-inline-hint">Se guarda al hacer clic fuera o al guardar todo abajo</div>
-                                </div>
-                            ) : (
-                                <div
-                                    className="settings-bio-preview clickable"
-                                    onClick={() => setIsEditingBioInline(true)}
-                                    title="Haz clic para editar biografía"
-                                >
-                                    {bio || <span className="empty-bio-text">{user.role === 'company' ? 'Añadir descripción de empresa...' : 'Añadir biografía...'}</span>}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="edit-icon-inline">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                    </svg>
-                                </div>
-                            )}
-                        </div>
-                    )}
                 </div>
 
-                {/* V38: Spending Limit section for Minors */}
-                {user.role === 'buyer' && user.dob && (() => {
-                    const birthDate = new Date(user.dob);
-                    let age = new Date().getFullYear() - birthDate.getFullYear();
-                    const monthDiff = new Date().getMonth() - birthDate.getMonth();
-                    if (monthDiff < 0 || (monthDiff === 0 && new Date().getDate() < birthDate.getDate())) age--;
-
-                    if (age < 18) {
-                        const limit = user.parent_id ? (user.monthly_spending_limit || 50000) : 50000;
-                        const percent = Math.min(100, (monthlySpend / limit) * 100);
-
-                        return (
-                            <div className="glass settings-section" style={{ padding: '1.5rem', marginBottom: '2rem', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid var(--primary-low)' }}>
-                                <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.1rem' }}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                    Límite de Gasto Mensual
-                                </h3>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                                    {user.parent_id
-                                        ? "Tu gasto está siendo supervisado por un adulto responsable."
-                                        : "Cuentas no supervisadas tienen un límite de 50,000 ARS por mes."}
-                                </p>
-
-                                <div style={{ marginTop: '1.5rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                                        <span>Consumido: <strong>${monthlySpend.toLocaleString()}</strong></span>
-                                        <span>Límite: <strong>${limit.toLocaleString()}</strong></span>
-                                    </div>
-                                    <div style={{ height: '8px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{ height: '100%', width: `${percent}%`, background: percent > 90 ? '#ef4444' : percent > 70 ? '#f59e0b' : 'var(--primary)', transition: 'width 0.5s ease' }}></div>
-                                    </div>
-                                    {percent > 90 && (
-                                        <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 600 }}>
-                                            ⚠️ Estás por alcanzar tu límite.
-                                        </p>
-                                    )}
-                                </div>
-                                {!user.parent_id && (
-                                    <button
-                                        onClick={() => setMessage({ text: 'Para aumentar tu límite, vincula un tutor en Ajustes > Cuenta.', type: 'info' })}
-                                        style={{ marginTop: '1rem', background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
-                                    >
-                                        ¿Cómo aumentar mi límite?
-                                    </button>
-                                )}
-                            </div>
-                        );
-                    }
-                    return null;
-                })()}
-
-                {/* V38: Parental Controls for Parents */}
-                {minors.length > 0 && (
-                    <div className="glass settings-section" style={{ padding: '1.5rem', marginBottom: '2rem', border: '1px solid rgba(16, 185, 129, 0.2)', background: 'rgba(16, 185, 129, 0.03)' }}>
-                        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.1rem' }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                            Control Parental ({minors.length}/2)
-                        </h3>
-                        <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {minors.map(minor => (
-                                <div key={minor.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <img src={getProfilePicture(minor)} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
-                                        <div>
-                                            <p style={{ margin: 0, fontWeight: 600 }}>{minor.username}</p>
-                                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Límite: ${minor.monthly_spending_limit?.toLocaleString() || '50,000'}</p>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <select
-                                            value={minor.monthly_spending_limit || 50000}
-                                            onChange={(e) => handleUpdateMinorLimit(minor.id, parseInt(e.target.value))}
-                                            style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
-                                        >
-                                            <option value="10000">$10.000</option>
-                                            <option value="25000">$25.000</option>
-                                            <option value="50000">$50.000 (Default)</option>
-                                            <option value="100000">$100.000</option>
-                                            <option value="999999999">Ilimitado</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
                 <div className="settings-section">
-                    <form onSubmit={handleUpdateProfile}>
+                    <form onSubmit={handleUpdateProfile} className="settings-form-linear">
+                        
+                        {/* 1. USERNAME (With Warning) */}
                         {user.role !== 'company' && (
                             <div className="form-group">
-                                <label className="field-label">Género</label>
-                                <div className="gender-selector">
-                                    <button
-                                        type="button"
-                                        className={`gender-btn ${gender === 'male' ? 'active' : ''}`}
-                                        onClick={() => setGender('male')}
-                                    >
-                                        Hombre
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`gender-btn ${gender === 'female' ? 'active' : ''}`}
-                                        onClick={() => setGender('female')}
-                                    >
-                                        Mujer
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`gender-btn ${gender === 'other' ? 'active' : ''}`}
-                                        onClick={() => setGender('other')}
-                                    >
-                                        Prefiero no decirlo
-                                    </button>
+                                <label className="field-label">Nombre de Usuario</label>
+                                <div className="username-input-wrapper">
+                                    <input
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        placeholder="Username"
+                                        className="settings-input"
+                                    />
+                                    <span className="field-warning">⚠️ Puedes cambiar tu nombre de usuario un máximo de 3 veces.</span>
                                 </div>
                             </div>
                         )}
 
-                        {/* ROLE SPECIFIC FIELDS */}
-                        {user.role === 'freelancer' && (
-                            <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
-                                <div className="form-group">
-                                    <label className="field-label">Nombre</label>
-                                    <input
-                                        type="text"
-                                        value={firstName}
-                                        onChange={(e) => setFirstName(e.target.value)}
-                                        placeholder="Tu nombre"
-                                        className="settings-input"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="field-label">Apellido</label>
-                                    <input
-                                        type="text"
-                                        value={lastName}
-                                        onChange={(e) => setLastName(e.target.value)}
-                                        placeholder="Tu apellido"
-                                        className="settings-input"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {user.role === 'buyer' && (
-                            <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
-                                <div className="form-group">
-                                    <label className="field-label">Nombre</label>
-                                    <input
-                                        type="text"
-                                        value={firstName}
-                                        onChange={(e) => setFirstName(e.target.value)}
-                                        placeholder="Tu nombre"
-                                        className="settings-input"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="field-label">Apellido</label>
-                                    <input
-                                        type="text"
-                                        value={lastName}
-                                        onChange={(e) => setLastName(e.target.value)}
-                                        placeholder="Tu apellido"
-                                        className="settings-input"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
-                            {user.role === 'freelancer' && (
-                                <div className="form-group">
-                                    <label className="field-label">DNI / Documento</label>
-                                    <input
-                                        type="text"
-                                        value={dni}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val && !/^\d+$/.test(val)) return;
-                                            setDni(val);
-                                        }}
-                                        placeholder="Tu número de documento"
-                                        className="settings-input"
-                                    />
-                                </div>
-                            )}
-                            {user.role !== 'company' && (
-                                <div className="form-group">
-                                    <label className="field-label">Fecha de Nacimiento</label>
-                                    <div
-                                        className="datepicker-input glass input-readonly"
-                                        style={{ cursor: 'not-allowed', opacity: 0.8, background: 'rgba(255,255,255,0.02)' }}
-                                    >
-                                        <span className="value">
-                                            {dob ? dob.split('-').reverse().join('/') : 'No definida'}
-                                        </span>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
-                                    </div>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.4rem', display: 'block' }}>
-                                        La fecha de nacimiento no puede ser modificada.
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                            <label className="field-label">Celular / Teléfono</label>
+                        {/* 2. NAME & LAST NAME */}
+                        <div className="form-group">
+                            <label className="field-label">Nombre</label>
                             <input
-                                type="tel"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                placeholder="Ej. +54 9 11 ..."
+                                type="text"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                placeholder="Nombre"
+                                className="settings-input"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="field-label">Apellido</label>
+                            <input
+                                type="text"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                placeholder="Apellido"
                                 className="settings-input"
                             />
                         </div>
 
-                        {user.role === 'company' && (
-                            <>
-                                <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                    <label className="field-label">Nombre de la Empresa</label>
-                                    <input
-                                        type="text"
-                                        value={companyName}
-                                        onChange={(e) => setCompanyName(e.target.value)}
-                                        placeholder="Nombre de tu empresa"
-                                        className="settings-input"
-                                    />
-                                </div>
-                                <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                    <label className="field-label">Nombre del Responsable</label>
-                                    <input
-                                        type="text"
-                                        value={responsibleName}
-                                        onChange={(e) => setResponsibleName(e.target.value)}
-                                        placeholder="Nombre de la persona a cargo"
-                                        className="settings-input"
-                                    />
-                                </div>
-                                <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                    <label className="field-label">CUIT / CUIL de la Empresa</label>
-                                    <input
-                                        type="text"
-                                        value={cuilCuit}
-                                        onChange={(e) => setCuilCuit(e.target.value)}
-                                        placeholder="Tu número de CUIT/CUIL"
-                                        className="settings-input"
-                                    />
-                                </div>
-                                <div className="form-grid-2" style={{ marginTop: '1.5rem' }}>
-                                    <div className="form-group">
-                                        <label className="field-label">Horarios de Atención</label>
-                                        <input
-                                            type="text"
-                                            value={workHours}
-                                            onChange={(e) => setWorkHours(e.target.value)}
-                                            placeholder="Ej. Lun-Vie 9-18hs"
-                                            className="settings-input"
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="field-label">Vacantes</label>
-                                        <input
-                                            type="number"
-                                            value={vacancies}
-                                            onChange={(e) => setVacancies(e.target.value)}
-                                            placeholder="0"
-                                            className="settings-input"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                    <label className="field-label">Métodos de Pago</label>
-                                    <input
-                                        type="text"
-                                        value={paymentMethods}
-                                        onChange={(e) => setPaymentMethods(e.target.value)}
-                                        placeholder="Ej. Transferencia, BTC, PayPal"
-                                        className="settings-input"
-                                    />
-                                </div>
-                            </>
-                        )}
+                        {/* 3. DATE OF BIRTH (Read Only) */}
+                        <div className="form-group">
+                            <label className="field-label">Fecha de Nacimiento</label>
+                            <input
+                                type="text"
+                                value={dob ? dob.split('-').reverse().join('/') : ''}
+                                readOnly
+                                className="settings-input input-readonly"
+                            />
+                        </div>
 
-                        {/* SHARED FIELDS (Location if applicable for role) */}
-                        {user.role === 'company' && (
-                            <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                <label className="field-label">Ubicación / Ciudad</label>
-                                <input
-                                    type="text"
-                                    value={location}
-                                    onChange={(e) => setLocation(e.target.value)}
-                                    placeholder="Ej: Buenos Aires, Argentina"
-                                    className="settings-input"
-                                />
-                            </div>
-                        )}
-
-                        <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                        {/* 4. COUNTRY */}
+                        <div className="form-group">
                             <CustomDropdown
                                 label="País"
                                 value={country}
@@ -786,20 +478,20 @@ const Settings = () => {
                             />
                         </div>
 
-                        {user.role !== 'company' && (
-                            <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                                <label className="field-label">Nombre de Usuario</label>
-                                <input
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="Nuevo nombre de usuario"
-                                    className="settings-input"
-                                />
-                            </div>
-                        )}
+                        {/* 5. PHONE */}
+                        <div className="form-group">
+                            <label className="field-label">Celular / Teléfono</label>
+                            <input
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder="Ej. +54 9 11 ..."
+                                className="settings-input"
+                            />
+                        </div>
 
-                        <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                        {/* 6. EMAIL (Read Only) */}
+                        <div className="form-group">
                             <label className="field-label">Correo Electrónico</label>
                             <input
                                 type="email"
@@ -809,12 +501,36 @@ const Settings = () => {
                             />
                         </div>
 
+                        {/* COMPANY SPECIFIC FIELDS (If role is company) */}
+                        {user.role === 'company' && (
+                            <>
+                                <div className="form-group">
+                                    <label className="field-label">Nombre de la Empresa</label>
+                                    <input
+                                        type="text"
+                                        value={companyName}
+                                        onChange={(e) => setCompanyName(e.target.value)}
+                                        className="settings-input"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="field-label">Nombre del Responsable</label>
+                                    <input
+                                        type="text"
+                                        value={responsibleName}
+                                        onChange={(e) => setResponsibleName(e.target.value)}
+                                        className="settings-input"
+                                    />
+                                </div>
+                            </>
+                        )}
+
                         <button
                             type="submit"
                             className="btn-primary"
                             style={{
                                 width: '100%',
-                                margin: '2rem 0',
+                                marginTop: '2.5rem',
                                 opacity: (isUpdating || (isSyncError && !user?.is_cached)) ? 0.6 : 1,
                                 cursor: (isUpdating || (isSyncError && !user?.is_cached)) ? 'not-allowed' : 'pointer'
                             }}

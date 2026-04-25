@@ -36,14 +36,16 @@ const Chat = () => {
 
     // FETCH CONTEXT DEADLINE (Project or Job)
     useEffect(() => {
-        if (!activeChat || !activeChat.contextId) {
+        if (!activeChat || (!activeChat.context_id && !activeChat.contextId)) {
             setContextDeadline(null);
             return;
         }
 
+        const cid = activeChat.context_id || activeChat.contextId;
+
         const fetchDeadline = async () => {
             // 1. Try to find in loaded jobs first
-            const job = jobs.find(j => String(j.id) === String(activeChat.contextId) || String(j.projectId) === String(activeChat.contextId));
+            const job = jobs.find(j => String(j.id) === String(cid) || String(j.projectId) === String(cid));
 
             if (job && job.deadline) {
                 setContextDeadline(job.deadline);
@@ -51,12 +53,12 @@ const Chat = () => {
             }
 
             // 2. Fallback: Fetch directly from projects table if it's a project context
-            if (activeChat.type === 'project' || activeChat.type === 'order' || activeChat.contextId) {
+            if (activeChat.type === 'project' || activeChat.type === 'order' || cid) {
                 try {
                     const { data, error } = await supabase
                         .from('projects')
                         .select('deadline')
-                        .eq('id', activeChat.contextId)
+                        .eq('id', cid)
                         .maybeSingle();
 
                     if (data && data.deadline) {
@@ -215,7 +217,8 @@ const Chat = () => {
 
     // Helper to calculate time remaining
     const getJobTimeRemaining = (chat) => {
-        if (!chat || !chat.contextId) return null;
+        const cid = chat?.context_id || chat?.contextId;
+        if (!chat || !cid) return null;
 
         // Prioritize the reactive contextDeadline state
         let deadline = contextDeadline;
@@ -368,7 +371,8 @@ const Chat = () => {
     };
 
     // Expired Jobs Logic
-    const activeJob = activeChat?.type === 'order' && activeChat.contextId ? jobs.find(j => j.id === parseInt(activeChat.contextId) || j.id === activeChat.contextId) : null;
+    const cid = activeChat?.context_id || activeChat?.contextId;
+    const activeJob = activeChat?.type === 'order' && cid ? jobs.find(j => j.id === parseInt(cid) || j.id === cid) : null;
     const isJobExpired = getJobTimeRemaining(activeChat) === 'Vencido';
     const isClient = activeJob && activeJob.buyerId === user.id;
 
@@ -474,10 +478,28 @@ const Chat = () => {
                                         padding: 0, overflow: 'hidden'
                                     }}>
                                         {(() => {
-                                            const other = chat.participants?.find(p => p.id !== user.id);
-                                            const avatar = other?.avatar;
-                                            if (avatar) return <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
-                                            return getChatName(chat).charAt(0).toUpperCase();
+                                            // 1. Regular participant check
+                                            let other = chat.participants?.find(p => p.id !== user.id);
+                                            
+                                            // 2. Context fallback for sidebar
+                                            const cid = chat.context_id || chat.contextId;
+                                            if (!other && cid) {
+                                                const job = jobs.find(j => 
+                                                    String(j.id) === String(cid) || 
+                                                    String(j.projectId) === String(cid) ||
+                                                    (j.chat_id && String(j.chat_id) === String(chat.id))
+                                                );
+                                                if (job) {
+                                                    const isIClient = String(job.client_id || job.buyer_id) === String(user.id);
+                                                    other = {
+                                                        avatar: isIClient ? (job.provider_avatar || job.freelancer_avatar) : (job.client_avatar || job.buyer_avatar),
+                                                        username: isIClient ? (job.provider_username || job.freelancer_username) : (job.client_username || job.buyer_username)
+                                                    };
+                                                }
+                                            }
+
+                                            if (other?.avatar) return <img src={other.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+                                            return (other?.username || getChatName(chat)).charAt(0).toUpperCase();
                                         })()}
                                     </div>
                                     <div className="chat-info">
@@ -487,11 +509,28 @@ const Chat = () => {
                                                 {chat.status === 'blocked' && <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: '900' }}>[BLOQUEADO]</span>}
                                             </div>
                                             {(() => {
-                                                const other = chat.participants?.find(p => p.id !== user.id);
+                                                let other = chat.participants?.find(p => p.id !== user.id);
+                                                
+                                                // Sidebar Name Fallback
+                                                const cid = chat.context_id || chat.contextId;
+                                                if (!other && cid) {
+                                                    const job = jobs.find(j => 
+                                                        String(j.id) === String(cid) || 
+                                                        String(j.projectId) === String(cid)
+                                                    );
+                                                    if (job) {
+                                                        const isIClient = String(job.client_id || job.buyer_id) === String(user.id);
+                                                        other = {
+                                                            username: isIClient ? (job.provider_username || job.freelancer_username) : (job.client_username || job.buyer_username),
+                                                            fullName: isIClient ? (job.provider_name || job.freelancer_name) : (job.client_name || job.buyer_name)
+                                                        };
+                                                    }
+                                                }
+
                                                 if (!other) return null;
                                                 return (
                                                     <div className="chat-sub-name" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '500' }}>
-                                                        @{other.username} {other.fullName && <span style={{ opacity: 0.7 }}>({other.fullName})</span>}
+                                                        @{other.username || 'usuario'} {other.fullName && <span style={{ opacity: 0.7 }}>({other.fullName})</span>}
                                                     </div>
                                                 );
                                             })()}
@@ -555,20 +594,26 @@ const Chat = () => {
                             <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     {(() => {
-                                        // 1. Try to find the other participant in the chat list
+                                        // 1. Try to find the other participant in the active participants list
                                         let other = activeChat.participants?.find(p => String(p.id) !== String(user.id));
 
-                                        // 2. FALLBACK: If the other person deleted the chat, they are gone from participants.
-                                        // We look for them in the associated JOB or PROJECT.
+                                        // 2. FALLBACK: If the other person deleted the chat or purged it, they are gone from participants.
+                                        // We look for them in the associated JOB or PROJECT context.
                                         if (!other && activeChat.contextId) {
-                                            const contextJob = jobs.find(j => String(j.id) === String(activeChat.contextId) || String(j.projectId) === String(activeChat.contextId));
+                                            // Check in loaded jobs
+                                            const contextJob = jobs.find(j => 
+                                                String(j.id) === String(activeChat.contextId) || 
+                                                String(j.projectId) === String(activeChat.contextId) ||
+                                                (j.chat_id && String(j.chat_id) === String(activeChat.id))
+                                            );
+
                                             if (contextJob) {
                                                 const isIClient = String(contextJob.client_id || contextJob.buyer_id) === String(user.id);
                                                 other = {
-                                                    id: isIClient ? contextJob.provider_id || contextJob.freelancer_id : contextJob.client_id || contextJob.buyer_id,
-                                                    username: isIClient ? contextJob.provider_username || contextJob.freelancer_username : contextJob.client_username || contextJob.buyer_username,
-                                                    fullName: isIClient ? contextJob.provider_name || contextJob.freelancer_name : contextJob.client_name || contextJob.buyer_name,
-                                                    avatar: isIClient ? contextJob.provider_avatar || contextJob.freelancer_avatar : contextJob.client_avatar || contextJob.buyer_avatar,
+                                                    id: isIClient ? (contextJob.provider_id || contextJob.freelancer_id) : (contextJob.client_id || contextJob.buyer_id),
+                                                    username: isIClient ? (contextJob.provider_username || contextJob.freelancer_username) : (contextJob.client_username || contextJob.buyer_username),
+                                                    fullName: isIClient ? (contextJob.provider_name || contextJob.freelancer_name) : (contextJob.client_name || contextJob.buyer_name),
+                                                    avatar: isIClient ? (contextJob.provider_avatar || contextJob.freelancer_avatar) : (contextJob.client_avatar || contextJob.buyer_avatar),
                                                     role: isIClient ? 'freelancer' : 'client'
                                                 };
                                             }
@@ -633,7 +678,7 @@ const Chat = () => {
                                     })()}
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    {(activeChat.type === 'order' || activeChat.type === 'project' || activeChat.contextId) && (
+                                    {(activeChat.type === 'order' || activeChat.type === 'project' || activeChat.context_id || activeChat.contextId) && (
                                         <div
                                             className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`}
                                             style={{

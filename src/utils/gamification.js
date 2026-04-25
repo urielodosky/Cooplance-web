@@ -45,7 +45,9 @@ export const calculateXPForJob = (amount, userLevel = 1, receiverRole = 'freelan
 
     // Base Calculation (Standard for Freelancers)
     if (userLevel === 1) {
-        baseXP = amount >= 100000 ? 80 : 40;
+        if (amount >= 100000) baseXP = 80;
+        else if (amount > 5000) baseXP = 40;
+        else baseXP = 0;
     } else {
         if (amount >= 100000) baseXP = 80;
         else if (amount >= 45000) baseXP = 40;

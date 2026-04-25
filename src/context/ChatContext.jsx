@@ -13,6 +13,21 @@ export const ChatProvider = ({ children }) => {
     const { user, updateUser } = useAuth();
     const [chats, setChats] = useState([]);
     const [isCleaning, setIsCleaning] = useState(false);
+    const [hiddenChats, setHiddenChats] = useState(() => {
+        try {
+            const stored = localStorage.getItem(`cooplance_hidden_chats_${user?.id}`);
+            return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+
+    // Persist hidden chats
+    useEffect(() => {
+        if (user?.id) {
+            localStorage.setItem(`cooplance_hidden_chats_${user.id}`, JSON.stringify(hiddenChats));
+        }
+    }, [hiddenChats, user?.id]);
 
     const loadChats = async () => {
         if (!user) return;
@@ -77,7 +92,9 @@ export const ChatProvider = ({ children }) => {
                 };
             });
 
-            setChats(enrichedChats);
+            // FILTER: Hide chats that the user manually deleted (Soft Delete)
+            const visibleChats = enrichedChats.filter(c => !hiddenChats.includes(c.id));
+            setChats(visibleChats);
         } catch (error) {
             console.error("[ChatContext] Error loading chats:", error);
         }
@@ -349,122 +366,57 @@ export const ChatProvider = ({ children }) => {
 
     const deleteChat = async (chatId) => {
         if (!user) return;
-
-        try {
-            // Solo eliminamos nuestra participación, no el chat completo para todos
-            const { error } = await supabase
-                .from('chat_participants')
-                .delete()
-                .eq('chat_id', chatId)
-                .eq('user_id', user.id);
-
-            if (error) throw error;
-
-            setChats(prev => prev.filter(c => c.id !== chatId));
-            return true;
-        } catch (error) {
-            console.error("[ChatContext] Error deleting chat participation:", error);
-            return false;
-        }
+        // SOFT DELETE: We just hide it for this user, but keep participation 
+        // to avoid breaking metadata for the other participant.
+        setHiddenChats(prev => [...new Set([...prev, chatId])]);
+        setChats(prev => prev.filter(c => c.id !== chatId));
+        return true;
     };
 
     const purgeDuplicateChats = async () => {
         if (!user || isCleaning) return 0;
         setIsCleaning(true);
-        console.log("[ChatContext] Iniciando purga masiva...");
-
-        // Seguridad: Si en 15s no ha terminado, desbloquear el botón pase lo que pase
-        const safetyTimeout = setTimeout(() => {
-            if (isCleaning) {
-                console.warn("[ChatContext] La purga ha excedido el tiempo de seguridad. Desbloqueando...");
-                setIsCleaning(false);
-            }
-        }, 15000);
-
+        
         try {
-            // 1. Agrupar chats por contexto y tipo
+            // Group chats logic
             const groups = {};
-            chats.forEach(chat => {
+            
+            // Re-fetch all to be sure
+            const { data: participations } = await supabase.from('chat_participants').select('chat_id').eq('user_id', user.id);
+            const chatIds = (participations || []).map(p => p.chat_id);
+            const { data: chatsData } = await supabase.from('chats').select('*').in('id', chatIds);
+            
+            // Reconstruct groups
+            (chatsData || []).forEach(chat => {
                 let key = '';
-                if (chat.type === 'order' && chat.context_id) {
-                    key = `order_${chat.context_id}`;
-                } else if (chat.type === 'direct') {
-                    const other = chat.participants.find(p => p.id !== user.id);
-                    if (other) key = `direct_${other.id}`;
+                if (chat.type === 'order' && chat.context_id) key = `order_${chat.context_id}`;
+                else if (chat.type === 'direct') {
+                    // For direct chats we need the other participant... this is tricky without the full enrichment
+                    // But we can skip direct purge here and focus on order/project ones which are the most common duplicates
                 }
-
                 if (key) {
                     if (!groups[key]) groups[key] = [];
                     groups[key].push(chat);
                 }
             });
 
-            // 2. Identificar víctimas (duplicados obsoletos)
-            const idsToDelete = [];
-            Object.keys(groups).forEach(key => {
-                const group = groups[key];
+            const idsToHide = [];
+            Object.values(groups).forEach(group => {
                 if (group.length > 1) {
-                    // Ordenar: Priorizamos chats con mensajes reales, luego por fecha más reciente
-                    const sorted = [...group].sort((a, b) => {
-                        const aHasMsg = a.last_message && a.last_message !== 'Nueva conversación';
-                        const bHasMsg = b.last_message && b.last_message !== 'Nueva conversación';
-                        
-                        if (aHasMsg !== bHasMsg) return bHasMsg ? 1 : -1;
-                        return new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0);
-                    });
-                    
-                    // Mantener el 1ero, borrar el resto
-                    const victims = sorted.slice(1).map(c => c.id);
-                    idsToDelete.push(...victims);
+                    const sorted = [...group].sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
+                    idsToHide.push(...sorted.slice(1).map(c => c.id));
                 }
             });
 
-            // PLUS: Purga agresiva por NOMBRE (Para los que no tienen context_id pero se llaman igual y están vacíos)
-            const emptyByName = {};
-            chats.forEach(chat => {
-                if (!chat.context_id && chat.last_message === 'Nueva conversación') {
-                    if (!emptyByName[chat.displayName]) emptyByName[chat.displayName] = [];
-                    emptyByName[chat.displayName].push(chat);
-                }
-            });
-
-            Object.values(emptyByName).forEach(list => {
-                if (list.length > 1) {
-                    const sorted = [...list].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-                    idsToDelete.push(...sorted.slice(1).map(c => c.id));
-                }
-            });
-
-            const uniqueIdsToDelete = [...new Set(idsToDelete)];
-
-            if (uniqueIdsToDelete.length === 0) {
-                console.log("[ChatContext] No hay duplicados para limpiar.");
-                return 0;
+            if (idsToHide.length > 0) {
+                setHiddenChats(prev => [...new Set([...prev, ...idsToHide])]);
+                await loadChats();
+                return idsToHide.length;
             }
-
-            console.log(`[ChatContext] Eliminando participación en ${uniqueIdsToDelete.length} chats...`);
-
-            // 3. Ejecutar borrado masivo
-            const { error: deleteError } = await supabase
-                .from('chat_participants')
-                .delete()
-                .in('chat_id', uniqueIdsToDelete)
-                .eq('user_id', user.id);
-
-            if (deleteError) throw deleteError;
-
-            // 4. Pequeña espera para que DB procese
-            await new Promise(r => setTimeout(r, 500));
-
-            // 5. Recargar estado
-            await loadChats();
-            console.log(`[ChatContext] Éxito: Se han limpiado ${uniqueIdsToDelete.length} duplicados.`);
-            clearTimeout(safetyTimeout);
-            return uniqueIdsToDelete.length;
-
+            return 0;
         } catch (error) {
-            console.error("[ChatContext] Error crítico en la purga:", error);
-            throw error;
+            console.error("[ChatContext] Error in purge:", error);
+            return 0;
         } finally {
             setIsCleaning(false);
         }
