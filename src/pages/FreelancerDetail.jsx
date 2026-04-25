@@ -6,7 +6,136 @@ import ServiceCard from '../features/services/components/ServiceCard';
 import { supabase } from '../lib/supabase';
 import ReportModal from '../components/common/ReportModal';
 import { BADGE_FAMILIES } from '../data/badgeDefinitions';
+import {
+    CreditCard as Coin,
+    Zap as Flame,
+    Rocket,
+    Heart,
+    Zap as Lightning,
+    Star,
+    Handshake,
+    Eye,
+    Users
+} from 'lucide-react';
 import '../styles/pages/ServiceDetail.scss';
+
+const BadgesSection = ({ freelancer }) => {
+    const Icons = {
+        Sales: <Coin size={20} />,
+        Level: <Flame size={20} />,
+        Service: <Rocket size={20} />,
+        Loyalty: <Heart size={20} />,
+        Speed: <Lightning size={20} />,
+        Review: <Star size={20} />,
+        Handshake: <Handshake size={20} />,
+        Eye: <Eye size={20} />,
+        Users: <Users size={20} />
+    };
+
+    const unlockedIds = freelancer.gamification?.badges || freelancer.badges || [];
+
+    const getIconForFamily = (familyId) => {
+        const map = { 
+            sales: Icons.Sales, purchases: Icons.Sales, 
+            levels: Icons.Level, services: Icons.Service, 
+            loyalty: Icons.Loyalty, speed: Icons.Speed, 
+            reviews: Icons.Review, talent: Icons.Users, 
+            projects: Icons.Eye 
+        };
+        return map[familyId] || Icons.Review;
+    };
+
+    const badgeTiers = [
+        { name: 'bronze', color: '#cd7f32' },
+        { name: 'silver', color: '#c0c0c0' },
+        { name: 'gold', color: '#ffd700' },
+        { name: 'platinum', color: '#e5e4e2' },
+        { name: 'diamond', color: '#b9f2ff' }
+    ];
+
+    const familyStatus = BADGE_FAMILIES.map(f => {
+        const unlockedInFamily = f.badges.filter(b => unlockedIds.includes(b.id));
+        const highestBadgeIndex = unlockedInFamily.length - 1;
+        const latestBadge = highestBadgeIndex >= 0 ? unlockedInFamily[highestBadgeIndex] : null;
+        
+        const tierIndex = latestBadge ? f.badges.findIndex(b => b.id === latestBadge.id) : -1;
+        const tier = tierIndex >= 0 ? badgeTiers[Math.min(tierIndex, badgeTiers.length - 1)] : null;
+
+        return {
+            familyId: f.familyId,
+            familyTitle: f.title,
+            badge: latestBadge,
+            tier: tier,
+            icon: getIconForFamily(f.familyId)
+        };
+    });
+
+    return (
+        <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
+            <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Insignias del Freelancer</h3>
+            </div>
+            <div className="dashboard-badges-grid" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
+                gap: '1rem' 
+            }}>
+                {familyStatus.map((status, idx) => (
+                    <div 
+                        key={idx} 
+                        className={`badge-family-card ${status.badge ? 'unlocked' : 'locked'}`}
+                        style={status.tier ? { '--tier-color': status.tier.color } : {}}
+                    >
+                        <div className="badge-icon-wrapper" style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '1rem',
+                            color: status.tier?.color || 'var(--text-muted)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                            {status.icon}
+                        </div>
+                        <div className="badge-content">
+                            <span className="family-label" style={{
+                                fontSize: '0.65rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                fontWeight: '800',
+                                color: 'var(--text-muted)',
+                                display: 'block',
+                                marginBottom: '4px'
+                            }}>{status.familyTitle}</span>
+                            <h4 className="badge-name" style={{
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                margin: 0,
+                                color: status.badge ? '#fff' : 'rgba(255,255,255,0.3)',
+                                lineHeight: '1.2'
+                            }}>{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
+                            {status.badge && (
+                                <p className="badge-desc" style={{
+                                    fontSize: '0.7rem',
+                                    color: 'var(--text-secondary)',
+                                    margin: '0.4rem 0 0 0',
+                                    lineHeight: '1.4',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                }}>{status.badge.desc}</p>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 const FreelancerDetail = () => {
     const { id } = useParams();
@@ -277,47 +406,8 @@ const FreelancerDetail = () => {
                     </div>
                 </div>
 
-                {/* Badges Section - Moved inside hero but after flex row */}
-                <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
-                    {(() => {
-                        const badgesArray = freelancer.gamification?.badges || freelancer.badges || [];
-                        if (badgesArray.length === 0) return null;
-
-                        return (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                {BADGE_FAMILIES.flatMap(f => f.badges)
-                                    .filter(b => badgesArray.includes(b.id))
-                                    .map(badge => (
-                                        <div 
-                                            key={badge.id}
-                                            className="glass help-icon-wrapper"
-                                            style={{ 
-                                                padding: '6px 12px', 
-                                                borderRadius: '12px', 
-                                                border: '1px solid var(--primary)', 
-                                                background: 'rgba(139, 92, 246, 0.05)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                cursor: 'help'
-                                            }}
-                                        >
-                                            <div style={{ color: 'var(--primary)' }}>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                            </div>
-                                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>{badge.title}</span>
-                                            
-                                            <div className="help-tooltip" style={{ bottom: '100%', marginBottom: '8px', width: '200px' }}>
-                                                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badge.title}</div>
-                                                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{badge.desc}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                }
-                            </div>
-                        );
-                    })()}
-                </div>
+                {/* Badges Section - Premium Grid */}
+                <BadgesSection freelancer={freelancer} />
             </div>
 
             {/* CV Section */}

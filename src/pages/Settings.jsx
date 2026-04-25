@@ -378,14 +378,20 @@ const Settings = () => {
                         style={{ display: 'none' }}
                         accept="image/*"
                     />
-                    <h3 className="settings-greeting">
+                    <h3 className="settings-greeting" style={{ 
+                        marginTop: '1.5rem', 
+                        fontSize: '2rem', 
+                        fontWeight: '800', 
+                        color: 'var(--text-primary)',
+                        letterSpacing: '-0.02em'
+                    }}>
                         Hola, {user.username || 'Usuario'}
                     </h3>
 
-                    {/* BIO - Hover to edit */}
-                    <div className="inline-bio-container" style={{ marginTop: '1rem' }}>
+                    {/* BIO - Hover to edit - Premium Styling */}
+                    <div className="inline-bio-container" style={{ marginTop: '0.5rem', width: '100%', maxWidth: '600px' }}>
                         {isEditingBioInline ? (
-                            <div className="bio-edit-wrapper">
+                            <div className="bio-edit-wrapper" style={{ position: 'relative' }}>
                                 <textarea
                                     className="settings-input inline-bio-textarea"
                                     value={bio}
@@ -393,20 +399,80 @@ const Settings = () => {
                                     placeholder="Cuéntanos sobre ti..."
                                     autoFocus
                                     onBlur={() => setIsEditingBioInline(false)}
+                                    style={{
+                                        width: '100%',
+                                        minHeight: '120px',
+                                        padding: '1.2rem',
+                                        borderRadius: '16px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '2px solid var(--primary)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '1rem',
+                                        lineHeight: '1.5',
+                                        outline: 'none',
+                                        resize: 'vertical'
+                                    }}
                                 />
-                                <div className="bio-inline-hint">Se guarda al hacer clic fuera o al guardar abajo</div>
+                                <div className="bio-inline-hint" style={{ 
+                                    fontSize: '0.75rem', 
+                                    color: 'var(--primary)', 
+                                    marginTop: '0.5rem',
+                                    fontWeight: '600',
+                                    textAlign: 'right'
+                                }}>
+                                    Presiona fuera para confirmar
+                                </div>
                             </div>
                         ) : (
                             <div
-                                className="settings-bio-preview clickable"
+                                className="settings-bio-preview-premium"
                                 onClick={() => setIsEditingBioInline(true)}
                                 title="Haz clic para editar biografía"
+                                style={{
+                                    padding: '1.2rem',
+                                    borderRadius: '20px',
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid var(--border)',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '1rem',
+                                    lineHeight: '1.6',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    position: 'relative',
+                                    minHeight: '60px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.05)';
+                                    e.currentTarget.style.borderColor = 'var(--primary)';
+                                    e.currentTarget.querySelector('.edit-overlay').style.opacity = '1';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                    e.currentTarget.querySelector('.edit-overlay').style.opacity = '0';
+                                }}
                             >
-                                {bio || <span className="empty-bio-text">Añade una biografía...</span>}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="edit-icon-inline">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
+                                {bio || <span style={{ opacity: 0.5 }}>Cuéntanos un poco sobre ti...</span>}
+                                <div className="edit-overlay" style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, width: '100%', height: '100%',
+                                    background: 'rgba(139, 92, 246, 0.1)',
+                                    borderRadius: '20px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    opacity: 0,
+                                    transition: 'opacity 0.3s ease'
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -419,7 +485,7 @@ const Settings = () => {
                         {user.role !== 'company' && (
                             <div className="form-group">
                                 <label className="field-label">Nombre de Usuario</label>
-                                <div className="username-input-wrapper">
+                                <div className="username-input-wrapper" style={{ position: 'relative' }}>
                                     <input
                                         type="text"
                                         value={username}
@@ -427,31 +493,41 @@ const Settings = () => {
                                         placeholder="Username"
                                         className="settings-input"
                                     />
-                                    <span className="field-warning">⚠️ Puedes cambiar tu nombre de usuario un máximo de 3 veces.</span>
+                                    <span className="field-warning" style={{ 
+                                        display: 'block', 
+                                        marginTop: '0.5rem', 
+                                        fontSize: '0.75rem', 
+                                        color: '#fbbf24',
+                                        fontWeight: '600'
+                                    }}>
+                                        ⚠️ Puedes cambiar tu nombre de usuario un máximo de 3 veces.
+                                    </span>
                                 </div>
                             </div>
                         )}
 
                         {/* 2. NAME & LAST NAME */}
-                        <div className="form-group">
-                            <label className="field-label">Nombre</label>
-                            <input
-                                type="text"
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                placeholder="Nombre"
-                                className="settings-input"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="field-label">Apellido</label>
-                            <input
-                                type="text"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                placeholder="Apellido"
-                                className="settings-input"
-                            />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div className="form-group">
+                                <label className="field-label">Nombre</label>
+                                <input
+                                    type="text"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                    placeholder="Nombre"
+                                    className="settings-input"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="field-label">Apellido</label>
+                                <input
+                                    type="text"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                    placeholder="Apellido"
+                                    className="settings-input"
+                                />
+                            </div>
                         </div>
 
                         {/* 3. DATE OF BIRTH (Read Only) */}
@@ -459,13 +535,37 @@ const Settings = () => {
                             <label className="field-label">Fecha de Nacimiento</label>
                             <input
                                 type="text"
-                                value={dob ? dob.split('-').reverse().join('/') : ''}
+                                value={dob ? dob.split('-').reverse().join('/') : 'No especificada'}
                                 readOnly
                                 className="settings-input input-readonly"
+                                style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-muted)' }}
                             />
                         </div>
 
-                        {/* 4. COUNTRY */}
+                        {/* 4. DNI (Masked - Only saved to DB) */}
+                        <div className="form-group">
+                            <label className="field-label">DNI (Documento Nacional de Identidad)</label>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="password"
+                                    value={dni}
+                                    onChange={(e) => setDni(e.target.value)}
+                                    placeholder="Ingresa tu DNI"
+                                    className="settings-input"
+                                    style={{ letterSpacing: '0.2em' }}
+                                />
+                                <span style={{ 
+                                    display: 'block', 
+                                    marginTop: '0.4rem', 
+                                    fontSize: '0.7rem', 
+                                    color: 'var(--text-muted)' 
+                                }}>
+                                    🔒 Tu DNI se guarda de forma segura y no es visible para otros usuarios.
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 5. COUNTRY */}
                         <div className="form-group">
                             <CustomDropdown
                                 label="País"
@@ -478,7 +578,7 @@ const Settings = () => {
                             />
                         </div>
 
-                        {/* 5. PHONE */}
+                        {/* 6. PHONE */}
                         <div className="form-group">
                             <label className="field-label">Celular / Teléfono</label>
                             <input
@@ -490,7 +590,7 @@ const Settings = () => {
                             />
                         </div>
 
-                        {/* 6. EMAIL (Read Only) */}
+                        {/* 7. EMAIL (Read Only) */}
                         <div className="form-group">
                             <label className="field-label">Correo Electrónico</label>
                             <input
@@ -498,6 +598,7 @@ const Settings = () => {
                                 value={user.email}
                                 readOnly
                                 className="settings-input input-readonly"
+                                style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-muted)' }}
                             />
                         </div>
 

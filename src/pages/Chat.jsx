@@ -82,10 +82,23 @@ const Chat = () => {
 
     // Filter based on Tab
     const filteredChats = allChats.filter(chat => {
-        if (filterTab === 'general') return true;
-        if (filterTab === 'companies') return ['order', 'project'].includes(chat.type);
-        if (filterTab === 'clients') return ['direct'].includes(chat.type); // Only Direct messages
-        if (filterTab === 'coops') return ['coop_client'].includes(chat.type); // Only Coop-Client messages
+        const otherParticipant = chat.participants?.find(p => String(p.id) !== String(user.id));
+        const otherRole = otherParticipant?.role;
+        
+        // Context-based detection (Coops priority)
+        const isCoopChat = chat.type === 'service' && chat.context_title?.toLowerCase().includes('coop');
+        
+        if (filterTab === 'coops') return isCoopChat || otherRole === 'coop';
+        
+        // If it's already identified as a coop chat, don't show it in other tabs
+        if (isCoopChat) return false;
+
+        if (filterTab === 'companies') return otherRole === 'company';
+        if (filterTab === 'clients') return otherRole === 'buyer';
+        
+        if (filterTab === 'general') {
+            return !['company', 'buyer', 'coop'].includes(otherRole) && !isCoopChat;
+        }
         return true;
     });
 
@@ -244,11 +257,15 @@ const Chat = () => {
         const days = Math.floor(totalHours / 24);
         const hours = totalHours % 24;
 
-        if (days > 0) {
+        if (totalHours >= 48) {
             return `${days}d ${hours}h`;
-        } else {
+        } else if (totalHours > 0) {
             const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
             return `${hours}h ${minutes}m`;
+        } else {
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+            return `${minutes}m ${seconds}s`;
         }
     };
 
@@ -614,7 +631,7 @@ const Chat = () => {
                                                     username: isIClient ? (contextJob.provider_username || contextJob.freelancer_username) : (contextJob.client_username || contextJob.buyer_username),
                                                     fullName: isIClient ? (contextJob.provider_name || contextJob.freelancer_name) : (contextJob.client_name || contextJob.buyer_name),
                                                     avatar: isIClient ? (contextJob.provider_avatar || contextJob.freelancer_avatar) : (contextJob.client_avatar || contextJob.buyer_avatar),
-                                                    role: isIClient ? 'freelancer' : 'client'
+                                                    role: isIClient ? 'freelancer' : 'buyer'
                                                 };
                                             }
                                         }
@@ -661,7 +678,7 @@ const Chat = () => {
                                                                 style={{ fontWeight: '700', color: 'var(--primary-soft)', cursor: 'pointer', textDecoration: 'underline' }}
                                                                 className="chat-header-user-link"
                                                                 onClick={() => {
-                                                                    const role = other.role || (activeChat.type === 'order' ? 'client' : 'freelancer');
+                                                                    const role = other.role || (activeChat.type === 'order' ? 'buyer' : 'freelancer');
                                                                     if (role === 'company') navigate(`/company/${other.id}`);
                                                                     else if (role === 'freelancer') navigate(`/freelancer/${other.id}`);
                                                                     else navigate(`/client/${other.id}`);

@@ -18,6 +18,39 @@ import { BADGE_FAMILIES, CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions'
 import { useBadgeNotification } from '../context/BadgeNotificationContext';
 import '../styles/pages/Dashboard.scss';
 
+// --- Utilities ---
+
+const getPreciseTimeRemaining = (deadline) => {
+    if (!deadline) return null;
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    const diffMs = deadlineDate.getTime() - now.getTime();
+
+    if (diffMs <= 0) return 'Vencido';
+
+    const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+
+    if (totalHours >= 48) {
+        return `${days}d ${hours}h`;
+    } else if (totalHours > 0) {
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        return `${hours}h ${minutes}m`;
+    } else {
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+        return `${minutes}m ${seconds}s`;
+    }
+};
+
+const getRemainingDays = (deadline) => {
+    if (!deadline) return null;
+    const diff = new Date(deadline) - new Date();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days;
+};
+
 // --- Sub-components for UI Blocks ---
 
 const ListSkeleton = () => (
@@ -74,7 +107,7 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
             {isMaxLevel ? (
                 <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#FFD700', textAlign: 'right' }}>★ Eres una Leyenda de Cooplance</p>
             ) : (
-                <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right' }}>Faltan {nextLevelXP - currentXP} XP para subir de nivel</p>
+                <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Faltan {nextLevelXP - currentXP} XP para subir de nivel</p>
             )}
         </div>
     );
@@ -110,10 +143,11 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             alignItems: 'center',
                             padding: '0.8rem 1.2rem',
                             borderRadius: '20px',
-                            background: 'rgba(255, 255, 255, 0.03)',
+                            background: 'var(--bg-card)',
                             border: '1px solid var(--border)',
                             position: 'relative',
-                            transition: 'all 0.3s ease'
+                            transition: 'all 0.3s ease',
+                            boxShadow: 'var(--shadow-sm)'
                         }}>
                             {/* Avatar Section */}
                             <div style={{
@@ -138,19 +172,24 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     
                                     {/* Inline Deadline Badge */}
                                     {(() => {
-                                        const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-                                        if (daysLeft === null || job.status !== 'active') return null;
+                                        const preciseTime = job.deadline ? getPreciseTimeRemaining(job.deadline) : null;
+                                        if (!preciseTime || job.status !== 'active') return null;
+                                        
+                                        const isUrgent = preciseTime.includes('h') && !preciseTime.includes('d'); // Less than 24h
+                                        const isVencido = preciseTime === 'Vencido';
+
                                         return (
                                             <span style={{
                                                 fontSize: '0.7rem',
                                                 padding: '2px 8px',
                                                 borderRadius: '6px',
-                                                background: daysLeft <= 2 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                                                color: daysLeft <= 2 ? '#ef4444' : '#10b981',
+                                                background: (isUrgent || isVencido) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                                color: (isUrgent || isVencido) ? '#ef4444' : '#10b981',
                                                 fontWeight: '800',
-                                                border: '1px solid currentColor'
+                                                border: '1px solid currentColor',
+                                                textTransform: 'uppercase'
                                             }}>
-                                                {daysLeft > 0 ? `${daysLeft} DÍAS` : daysLeft === 0 ? 'HOY' : 'VENCIDO'}
+                                                {preciseTime === 'Vencido' ? 'VENCIDO' : preciseTime}
                                             </span>
                                         );
                                     })()}
@@ -174,8 +213,18 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             {/* Price & Actions Section */}
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '160px' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>${job.amount}</div>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={async () => {
+                                <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                    <button className="btn-secondary" style={{ 
+                                        padding: '0.5rem 1.2rem', 
+                                        fontSize: '0.85rem', 
+                                        borderRadius: '12px',
+                                        background: 'var(--border)',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)',
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: 'var(--shadow-sm)'
+                                    }} onClick={async () => {
                                         setIsCreatingChat(true);
                                         try {
                                             const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
@@ -184,13 +233,29 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
                                     
-                                    <button className="btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px', borderColor: 'var(--border)' }} onClick={() => {
+                                    <button className="btn-outline" style={{ 
+                                        padding: '0.5rem 1.2rem', 
+                                        fontSize: '0.85rem', 
+                                        borderRadius: '12px', 
+                                        borderColor: 'var(--border)',
+                                        background: 'transparent',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: '500'
+                                    }} onClick={() => {
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
 
                                     {job.status === 'active' && (
-                                        <button className="btn-primary" style={{ padding: '0.4rem 1.2rem', fontSize: '0.85rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }} onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
+                                        <button className="btn-primary" style={{ 
+                                            padding: '0.5rem 1.4rem', 
+                                            fontSize: '0.85rem', 
+                                            borderRadius: '12px', 
+                                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                            border: 'none',
+                                            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                                            fontWeight: '700'
+                                        }} onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
                                     )}
                                 </div>
                             </div>
@@ -261,10 +326,10 @@ const ProposalsSection = ({
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                                             Enviada {getTimeAgo(proposal.createdAt)}
                                         </span>
-                                        {proposal.status === 'pending' && daysLeft !== null && (
-                                            <span className={`meta-item deadline ${daysLeft <= 2 ? 'urgent' : ''}`}>
+                                        {proposal.status === 'pending' && proposal.projectDeadline && (
+                                            <span className={`meta-item deadline ${getRemainingDays(proposal.projectDeadline) <= 2 ? 'urgent' : ''}`}>
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                                                {daysLeft > 0 ? `Quedan ${daysLeft} días` : 'Vence hoy'}
+                                                {getPreciseTimeRemaining(proposal.projectDeadline) === 'Vencido' ? 'Vencido' : `Quedan ${getPreciseTimeRemaining(proposal.projectDeadline)}`}
                                             </span>
                                         )}
                                     </div>
@@ -320,7 +385,7 @@ const ProposalsSection = ({
 const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }) => (
     <div style={{ marginTop: '2rem' }}>
         <h3 className="section-title">Mis Servicios Activos</h3>
-        <div className="dashboard-list-scroll">
+        <div className="dashboard-services-scroll">
             <div className="services-grid">
                 {loading && myServices.length === 0 ? (
                     <GridSkeleton />
@@ -329,9 +394,9 @@ const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }
                         {myServices.map(service => (
                             <ServiceCard key={service.id} service={{ ...service, level: user.level || 1 }} />
                         ))}
-                        <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-card)', padding: '1.5rem 1rem' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.6rem', fontSize: '1.3rem' }}>+</div>
-                            <h4 style={{ color: 'var(--primary)', fontSize: '0.95rem', margin: 0 }}>Crear Nuevo</h4>
+                        <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-card)', padding: '1.5rem 1rem', boxShadow: 'var(--shadow-sm)' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.6rem', fontSize: '1.3rem' }}>+</div>
+                            <h4 style={{ color: 'var(--text-primary)', fontSize: '0.95rem', margin: 0 }}>Crear Nuevo</h4>
                         </div>
                     </>
                 ) : (
@@ -420,19 +485,32 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                     <ListSkeleton />
                 ) : filteredOrders.length > 0 ? (
                     filteredOrders.map(job => (
-                        <div key={job.id} className="glass job-card order-card premium-job-card" style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0.8rem 1.2rem', borderRadius: '20px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border)', position: 'relative', transition: 'all 0.3s ease' }}>
+                        <div key={job.id} className="glass job-card order-card premium-job-card" style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', padding: '0.8rem 1.2rem', borderRadius: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)', position: 'relative', transition: 'all 0.3s ease', boxShadow: 'var(--shadow-sm)' }}>
                             <div style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary-soft)', flexShrink: 0 }}>
                                 <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
-                                    <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h4>
+                                    <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h4>
                                     {(() => {
-                                        const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-                                        if (daysLeft === null || job.status !== 'active') return null;
+                                        const preciseTime = job.deadline ? getPreciseTimeRemaining(job.deadline) : null;
+                                        if (!preciseTime || job.status !== 'active') return null;
+                                        
+                                        const isUrgent = preciseTime.includes('h') && !preciseTime.includes('d');
+                                        const isVencido = preciseTime === 'Vencido';
+
                                         return (
-                                            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '6px', background: daysLeft <= 2 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)', color: daysLeft <= 2 ? '#ef4444' : 'var(--primary-soft)', fontWeight: '800', border: '1px solid currentColor' }}>
-                                                {daysLeft > 0 ? `${daysLeft} DÍAS` : daysLeft === 0 ? 'HOY' : 'VENCIDO'}
+                                            <span style={{ 
+                                                fontSize: '0.7rem', 
+                                                padding: '2px 8px', 
+                                                borderRadius: '6px', 
+                                                background: (isUrgent || isVencido) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)', 
+                                                color: (isUrgent || isVencido) ? '#ef4444' : 'var(--primary-soft)', 
+                                                fontWeight: '800', 
+                                                border: '1px solid currentColor',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                {preciseTime === 'Vencido' ? 'VENCIDO' : preciseTime}
                                             </span>
                                         );
                                     })()}
@@ -450,9 +528,17 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                 </div>
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '160px' }}>
-                                <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', letterSpacing: '-0.5px' }}>${job.amount}</div>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <button className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={async () => {
+                                <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>${job.amount}</div>
+                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                                    <button className="btn-secondary" style={{ 
+                                        padding: '0.5rem 1.2rem', 
+                                        fontSize: '0.85rem', 
+                                        borderRadius: '12px',
+                                        background: 'var(--border)',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)',
+                                        fontWeight: '600'
+                                    }} onClick={async () => {
                                         setIsCreatingChat(true);
                                         try {
                                             const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
@@ -460,16 +546,62 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             else setIsCreatingChat(false);
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
-                                    <button className="btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px', borderColor: 'var(--border)' }} onClick={() => {
+                                    <button className="btn-outline" style={{ 
+                                        padding: '0.5rem 1.2rem', 
+                                        fontSize: '0.85rem', 
+                                        borderRadius: '12px', 
+                                        borderColor: 'var(--border)',
+                                        background: 'transparent',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: '500'
+                                    }} onClick={() => {
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
                                     {job.status === 'delivered' && (
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button className="btn-outline" style={{ borderColor: '#f59e0b', color: '#f59e0b', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={async () => {
-                                                await updateJobStatus(job.id, 'active');
-                                            }}>Pedir Ajustes</button>
-                                            <button className="btn-primary" style={{ backgroundColor: '#10b981', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%' }}>
+                                            <div className="auto-release-notice" style={{
+                                                fontSize: '0.75rem',
+                                                color: '#f59e0b',
+                                                background: 'rgba(245, 158, 11, 0.08)',
+                                                padding: '8px 12px',
+                                                borderRadius: '10px',
+                                                border: '1px dashed rgba(245, 158, 11, 0.3)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                lineHeight: '1.4'
+                                            }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                                <span><strong>REVISIÓN REQUERIDA:</strong> Tienes 24hs para aprobar o pedir ajustes. Pasado ese tiempo, el pago se liberará automáticamente al freelancer.</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                <button className="btn-outline" style={{ 
+                                                    borderColor: '#f59e0b', 
+                                                    color: '#f59e0b', 
+                                                    padding: '0.5rem 1rem', 
+                                                    fontSize: '0.85rem', 
+                                                    borderRadius: '12px',
+                                                    background: 'rgba(245, 158, 11, 0.05)'
+                                                }} onClick={async () => {
+                                                    await updateJobStatus(job.id, 'active');
+                                                    alert("Solicitud de ajustes enviada. El plazo ha sido reactivado.");
+                                                }}>Pedir Ajustes</button>
+                                                <button className="btn-primary" style={{ 
+                                                    backgroundColor: '#10b981', 
+                                                    padding: '0.5rem 1.2rem', 
+                                                    fontSize: '0.85rem', 
+                                                    borderRadius: '12px',
+                                                    border: 'none',
+                                                    color: 'white',
+                                                    fontWeight: '700',
+                                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                                                }} onClick={() => {
+                                                    if(window.confirm("¿Confirmas que el trabajo ha sido recibido satisfactoriamente? Se liberará el pago al freelancer.")) {
+                                                        updateJobStatus(job.id, 'completed');
+                                                    }
+                                                }}>Aprobar & Liberar Pago</button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -840,13 +972,6 @@ const Dashboard = () => {
     const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
     const [expandedProposalId, setExpandedProposalId] = useState(null);
     const { refreshBadges } = useBadgeNotification();
-
-    const getRemainingDays = (deadline) => {
-        if (!deadline) return null;
-        const diff = new Date(deadline) - new Date();
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        return days;
-    };
 
     // V27: Update Job Status with Read-Only check
     const updateJobStatus = async (jobId, status) => {

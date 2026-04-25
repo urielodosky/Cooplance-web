@@ -230,8 +230,9 @@
     flex-direction: column;
     padding: 1.25rem;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.03) !important;
+    background: var(--bg-card) !important;
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -269,9 +270,10 @@
     }
 
     &.locked {
-        opacity: 0.4;
-        filter: grayscale(1);
+        opacity: 0.6;
+        filter: grayscale(0.8);
         border-style: dashed;
+        background: transparent !important;
 
         .badge-icon-wrapper {
             background: var(--text-muted);
@@ -318,7 +320,7 @@
             font-size: 0.9rem;
             font-weight: 700;
             margin: 0;
-            color: #fff;
+            color: var(--text-primary);
             line-height: 1.2;
         }
 
@@ -708,10 +710,12 @@
 }
 
 .dashboard-list-scroll {
-    max-height: 330px; /* Adjust to fit ~3.3 items */
+    max-height: 360px; /* V4.1: Slightly taller */
     overflow-y: auto;
-    padding-right: 8px;
-    margin-bottom: 2rem;
+    padding-right: 10px;
+    padding-bottom: 110px; /* CRITICAL: Space for 3-dot menu to not get clipped */
+    margin-bottom: 1.5rem;
+    position: relative;
 
     /* Custom Scrollbar */
     &::-webkit-scrollbar {
@@ -721,7 +725,7 @@
         background: transparent;
     }
     &::-webkit-scrollbar-thumb {
-        background: var(--border);
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 10px;
     }
     &::-webkit-scrollbar-thumb:hover {
@@ -780,12 +784,10 @@
 .xp-bar-bg {
     width: 100%;
     height: 14px;
-    /* Thicker premium bar */
-    background: rgba(0, 0, 0, 0.05);
-    /* Low contrast track */
+    background: var(--border); /* Better contrast track */
     border-radius: 7px;
     overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative;
 }
 
 .xp-bar-fill {
@@ -1175,20 +1177,34 @@
     position: absolute;
     right: 0;
     top: 100%;
-    margin-top: 4px;
-    background: var(--bg-card);
+    margin-top: 8px;
+    background: var(--bg-card); /* Theme aware background */
     border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    min-width: 180px;
-    z-index: 50;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
+    min-width: 200px;
+    z-index: 9999;
     overflow: hidden;
-    animation: fadeInMenu 0.15s ease-out;
+    animation: fadeInMenu 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global Dashboard Button Hover Improvements */
+.btn-secondary:hover {
+    background: var(--primary) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline:hover {
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
+    background: rgba(139, 92, 246, 0.05) !important;
 }
 
 @keyframes fadeInMenu {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .proposal-dots-menu button {
@@ -1207,7 +1223,7 @@
 }
 
 .proposal-dots-menu button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--border);
 }
 
 .proposal-dots-menu button.danger {
@@ -1386,22 +1402,100 @@
 
 .payment-modal-card {
     width: 100%; max-width: 480px;
-    background: #141419;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 24px; padding: 2rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-xl);
 
     .payment-modal-header {
         text-align: center; margin-bottom: 2rem;
-        h3 { font-size: 1.5rem; color: white; margin-bottom: 0.5rem; }
-        p { color: #94a3b8; font-size: 0.9rem; }
+        h3 { font-size: 1.5rem; color: var(--text-primary); margin-bottom: 0.5rem; }
+        p { color: var(--text-secondary); font-size: 0.9rem; }
     }
 
-    .payment-project-summary { margin-bottom: 1.5rem; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; .summary-label { font-size: 0.8rem; color: #94a3b8; } .summary-value { font-weight: 600; color: white; } }
-    .payment-amount-box { display: flex; justify-content: space-between; padding: 1.2rem; background: rgba(139, 92, 246, 0.1); border-radius: 16px; margin-bottom: 1.5rem; .amount-label { color: #94a3b8; } .amount-value { font-size: 1.5rem; font-weight: 800; color: #8b5cf6; } }
+    .payment-project-summary { 
+        margin-bottom: 1.5rem; 
+        padding: 1rem; 
+        background: var(--bg-body); 
+        border-radius: 12px; 
+        .summary-label { font-size: 0.8rem; color: var(--text-secondary); } 
+        .summary-value { font-weight: 600; color: var(--text-primary); } 
+    }
+    .payment-amount-box { 
+        display: flex; 
+        justify-content: space-between; 
+        padding: 1.2rem; 
+        background: rgba(139, 92, 246, 0.1); 
+        border-radius: 16px; 
+        margin-bottom: 1.5rem; 
+        .amount-label { color: var(--text-secondary); } 
+        .amount-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); } 
+    }
     .payment-methods-list { display: flex; flex-direction: column; gap: 10px; }
-    .payment-method-item { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; cursor: pointer; border: 1px solid transparent; &.active { background: rgba(139, 92, 246, 0.15); border-color: #8b5cf6; } input { display: none; } .method-content { display: flex; align-items: center; gap: 10px; flex: 1; color: white; } .check-mark { color: #8b5cf6; font-weight: bold; } }
-    .payment-modal-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; margin-top: 2rem; button { padding: 0.8rem; border-radius: 12px; font-weight: bold; cursor: pointer; } .btn-ghost { background: transparent; border: 1px solid #334155; color: #94a3b8; } .confirm-pay-btn { background: #8b5cf6; color: white; border: none; &:disabled { opacity: 0.5; } } }
+    .payment-method-item { 
+        display: flex; 
+        align-items: center; 
+        gap: 1rem; 
+        padding: 0.8rem 1rem; 
+        background: var(--bg-body); 
+        border-radius: 12px; 
+        cursor: pointer; 
+        border: 1px solid var(--border); 
+        &.active { background: rgba(139, 92, 246, 0.15); border-color: var(--primary); } 
+        input { display: none; } 
+        .method-content { display: flex; align-items: center; gap: 10px; flex: 1; color: var(--text-primary); } 
+        .check-mark { color: var(--primary); font-weight: bold; } 
+    }
+    .payment-modal-footer { 
+        display: grid; 
+        grid-template-columns: 1fr 2fr; 
+        gap: 1rem; 
+        margin-top: 2rem; 
+        button { padding: 0.8rem; border-radius: 12px; font-weight: bold; cursor: pointer; } 
+        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); } 
+        .confirm-pay-btn { background: var(--primary); color: white; border: none; &:disabled { opacity: 0.5; } } 
+    }
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Horizontal Services Scroll */
+.dashboard-services-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0.2rem 1.2rem;
+    margin-bottom: 2rem;
+    scroll-behavior: smooth;
+    width: 100%;
+
+    /* Hide horizontal scrollbar if not needed, but show pretty one if it is */
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.2);
+        border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+    }
+
+    .services-grid {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 1.5rem;
+        width: fit-content;
+        min-width: 100%;
+        grid-template-columns: none !important; /* Override original grid */
+
+        .service-card, .service-card.clickable {
+            flex: 0 0 300px;
+            width: 300px;
+            min-width: 300px;
+            height: 100%; /* Match heights */
+        }
+    }
+}

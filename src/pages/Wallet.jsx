@@ -3,7 +3,7 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import '../styles/pages/Dashboard.scss';
+import '../styles/pages/Wallet.scss';
 
 const Wallet = () => {
     const { user: authUser, updateBalance, isTutorView, supervisedUser } = useAuth();
@@ -29,7 +29,7 @@ const Wallet = () => {
         pendingClearance: 0,
         completedJobs: 0,
         byMethod: {},
-        transactions: [] // NEW: Store all transactions
+        transactions: []
     });
 
     useEffect(() => {
@@ -91,7 +91,6 @@ const Wallet = () => {
 
         fetchTransactions();
 
-        // Optional: Real-time subscription for wallet
         const channel = supabase
             .channel('wallet-updates')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` }, () => fetchTransactions())
@@ -102,20 +101,18 @@ const Wallet = () => {
         };
     }, [user]);
 
-    // Derived stats
-    const currentStats = filterMethod === 'all'
-        ? { earned: stats.totalEarned, spent: stats.totalSpent, pending: stats.pendingClearance }
-        : {
-            earned: stats.byMethod[filterMethod]?.earned || 0,
-            spent: stats.byMethod[filterMethod]?.spent || 0,
-            pending: stats.byMethod[filterMethod]?.pending || 0
-        };
+    const filterOptions = [
+        { label: 'Todo (General)', value: 'all' },
+        { label: 'PayPal', value: 'paypal' },
+        { label: 'Mercado Pago', value: 'mercadopago' },
+        { label: 'Binance Pay', value: 'binance' },
+        { label: 'Tarjeta', value: 'card' }
+    ];
 
     const filteredTransactions = filterMethod === 'all'
         ? stats.transactions
         : stats.transactions.filter(t => t.method === filterMethod);
 
-    // Load initial state from user profile
     useEffect(() => {
         if (user?.paymentMethods) {
             setConnectedAccounts(prev => ({ ...prev, ...user.paymentMethods }));
@@ -128,148 +125,130 @@ const Wallet = () => {
             return;
         }
         const isConnected = connectedAccounts[provider];
-        let newStatus = !isConnected;
-
         if (!isConnected) {
             if (!confirm(`¿Conectar cuenta de ${provider.toUpperCase()}?`)) return;
         } else {
             if (!confirm(`¿Desconectar cuenta de ${provider.toUpperCase()}?`)) return;
         }
-
-        const updatedAccounts = { ...connectedAccounts, [provider]: newStatus };
+        const updatedAccounts = { ...connectedAccounts, [provider]: !isConnected };
         setConnectedAccounts(updatedAccounts);
-
-        // Persist to user profile logic (mock)
-        // updateUser({ ...user, paymentMethods: updatedAccounts });
-        console.log("Updated accounts:", updatedAccounts);
     };
 
     if (!user) return <div className="container">Cargando...</div>;
 
-    const getMethodIcon = (method) => {
-        switch (method) {
-            case 'paypal': return <div style={{ width: '32px', height: '32px', background: '#003087', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>P</div>;
-            case 'mercadopago': return <div style={{ width: '32px', height: '32px', background: '#009ee3', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 'bold' }}>MP</div>;
-            case 'binance': return <div style={{ width: '32px', height: '32px', background: '#F3BA2F', borderRadius: '50%', color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 'bold' }}>₿</div>;
-            case 'card': return <div style={{ width: '32px', height: '32px', background: '#333', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>💳</div>;
-            default: return <div style={{ width: '32px', height: '32px', background: 'var(--primary)', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>★</div>;
-        }
-    };
-
     const getMethodName = (method) => {
-        const names = {
-            paypal: 'PayPal',
-            mercadopago: 'Mercado Pago',
-            binance: 'Binance Pay',
-            card: 'Tarjeta',
-            platform: 'Saldo Plataforma'
-        };
+        const names = { paypal: 'PayPal', mercadopago: 'Mercado Pago', binance: 'Binance Pay', card: 'Tarjeta', platform: 'Saldo Plataforma' };
         return names[method] || method;
     };
 
     return (
-        <div className="container" style={{ padding: '2rem 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                <h1 className="page-title" style={{ margin: 0 }}>Billetera & Finanzas</h1>
+        <div className="wallet-container container">
+            {/* Header Area */}
+            <div className="wallet-header">
+                <div className="wallet-title-group">
+                    <h1 className="page-title" style={{ margin: 0 }}>Billetera & Finanzas</h1>
+                </div>
                 <button
-                    className={`btn-primary ${activeTab === 'methods' ? 'active' : ''}`}
+                    className="btn-primary"
                     onClick={() => setActiveTab(activeTab === 'methods' ? 'overview' : 'methods')}
-                    style={{ fontSize: '0.9rem', padding: '0.6rem 1.2rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                    style={{ fontSize: '0.9rem', padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
-                    {activeTab === 'methods' ? 'Ver Resumen' : 'Métodos de Pago'}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    {activeTab === 'methods' ? 'Ver Mi Panel' : 'Gestionar Métodos'}
                 </button>
             </div>
 
+
             {activeTab === 'overview' && (
-                <div className="dashboard-grid">
+                <>
                     {/* Main Balance Card */}
-                    <div className="glass stat-card" style={{
-                        gridColumn: '1 / -1',
-                        background: 'linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%)',
-                        border: 'none',
-                        borderRadius: '24px',
-                        padding: '2rem'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <h4 style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' }}>Ganancias Netas / Saldo</h4>
-                                <p style={{ fontSize: '3.5rem', fontWeight: 'bold', color: 'white', margin: 0, textShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                                    {((stats.totalEarned || 0) - (stats.totalSpent || 0)) >= 0 ? '+' : '-'}${Math.abs((stats.totalEarned || 0) - (stats.totalSpent || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    <span style={{ fontSize: '1.5rem', opacity: 0.8, marginLeft: '0.5rem' }}>ARS</span>
-                                </p>
+                    <div className="main-balance-card premium-glass">
+                        <div className="balance-content">
+                            <div className="balance-label">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                Saldo Disponible
+                                <div className="info-tooltip-wrapper">
+                                    <span className="info-icon">i</span>
+                                    <div className="tooltip-box">
+                                        <strong>REGISTRO VISUAL</strong>
+                                        Este saldo es un reflejo visual de tus operaciones para control personal. Los pagos reales se procesan externamente según los Términos y Condiciones.
+                                    </div>
+                                </div>
                             </div>
+                            <p className="balance-amount">
+                                {((stats.totalEarned || 0) - (stats.totalSpent || 0)) >= 0 ? '+' : '-'}${Math.abs((stats.totalEarned || 0) - (stats.totalSpent || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                <span className="currency">ARS</span>
+                            </p>
+                            <div className="card-dummy-number">**** **** **** {user.id.slice(-4)}</div>
+                            <div className="card-holder-name">{user.first_name || user.company_name || user.username}</div>
+                        </div>
+                        <div className="balance-chip">
+                            <div className="chip-line"></div>
+                            <div className="chip-line"></div>
+                            <div className="chip-line"></div>
                         </div>
                     </div>
 
-                    {/* Overall Stats (General) */}
-                    <div className="glass stat-card">
-                        <h4 style={{ color: 'var(--text-secondary)' }}>Ganancias Totales</h4>
-                        <p style={{ fontSize: '2rem', color: '#22c55e', fontWeight: 'bold' }}>+${stats.totalEarned.toLocaleString()} ARS</p>
-                        <small style={{ color: 'var(--text-secondary)' }}>En todos los métodos</small>
+                    {/* Mini Stats Grid */}
+                    <div className="wallet-stats-grid">
+                        <div className="mini-stat-card earned">
+                            <div className="stat-header">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                Ingresos Totales
+                            </div>
+                            <div className="stat-value">+${stats.totalEarned.toLocaleString()}</div>
+                            <div className="stat-footer">En todos los métodos</div>
+                        </div>
+
+                        <div className="mini-stat-card spent">
+                            <div className="stat-header">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                                Gastos Totales
+                            </div>
+                            <div className="stat-value">-${stats.totalSpent.toLocaleString()}</div>
+                            <div className="stat-footer">Compras realizadas</div>
+                        </div>
+
+                        <div className="mini-stat-card pending">
+                            <div className="stat-header">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                Pendiente
+                            </div>
+                            <div className="stat-value">${stats.pendingClearance.toLocaleString()}</div>
+                            <div className="stat-footer">Saldo en garantía</div>
+                        </div>
                     </div>
 
-                    <div className="glass stat-card">
-                        <h4 style={{ color: 'var(--text-secondary)' }}>Gastos Totales</h4>
-                        <p style={{ fontSize: '2rem', color: '#ef4444', fontWeight: 'bold' }}>-${stats.totalSpent.toLocaleString()} ARS</p>
-                        <small style={{ color: 'var(--text-secondary)' }}>Compras realizadas</small>
-                    </div>
-
-                    <div className="glass stat-card">
-                        <h4 style={{ color: 'var(--text-secondary)' }}>Pendiente</h4>
-                        <p style={{ fontSize: '2rem', color: '#f59e0b', fontWeight: 'bold' }}>${stats.pendingClearance.toLocaleString()} ARS</p>
-                        <small style={{ color: 'var(--text-secondary)' }}>En garantía</small>
-                    </div>
-
-                    {/* Breakdown by Payment Method Grid (Always Visible) */}
-                    <div style={{
-                        gridColumn: '1 / -1',
-                        borderRadius: '24px',
-                        padding: '1rem 0'
-                    }}>
+                    {/* Methods Breakdown */}
+                    <div className="methods-section">
+                        <h3 className="methods-breakdown-title">Desglose por Plataforma</h3>
                         {Object.keys(stats.byMethod).length === 0 ? (
-                            <p style={{ color: 'var(--text-secondary)' }}>No hay movimientos registrados aún.</p>
+                            <div className="glass" style={{ padding: '2rem', textAlign: 'center', borderRadius: '20px', color: 'var(--text-secondary)' }}>No hay movimientos registrados aún.</div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                            <div className="methods-grid">
                                 {Object.entries(stats.byMethod).map(([method, data]) => {
-                                    const totalVolume = data.earned + data.spent;
-                                    const earnedPct = totalVolume > 0 ? (data.earned / totalVolume) * 100 : 0;
-                                    const spentPct = totalVolume > 0 ? (data.spent / totalVolume) * 100 : 0;
+                                    const totalVol = data.earned + data.spent;
+                                    const ePct = totalVol > 0 ? (data.earned / totalVol) * 100 : 0;
+                                    const sPct = totalVol > 0 ? (data.spent / totalVol) * 100 : 0;
 
                                     return (
-                                        <div key={method} className="glass stat-card" style={{
-                                            background: 'var(--bg-card)',
-                                            borderRadius: '16px',
-                                            padding: '1.5rem',
-                                            border: '1px solid var(--border)',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: '1rem'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{getMethodName(method)}</span>
-                                                <span style={{ fontWeight: 'bold', color: (data.earned - data.spent) >= 0 ? 'var(--text-primary)' : '#ef4444' }}>
+                                        <div key={method} className="method-pill-card">
+                                            <div className="method-top">
+                                                <div className="method-info">
+                                                    <span className="method-name">{getMethodName(method)}</span>
+                                                </div>
+                                                <span className="method-balance" style={{ color: (data.earned - data.spent) >= 0 ? 'var(--text-primary)' : '#ef4444' }}>
                                                     ${(data.earned - data.spent).toLocaleString()}
                                                 </span>
                                             </div>
-
-                                            {/* Visual Bar Graph */}
-                                            <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
-                                                {earnedPct > 0 && (
-                                                    <div style={{ width: `${earnedPct}%`, background: '#22c55e', height: '100%' }}></div>
-                                                )}
-                                                {spentPct > 0 && (
-                                                    <div style={{ width: `${spentPct}%`, background: '#ef4444', height: '100%' }}></div>
-                                                )}
-                                            </div>
-
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Ingresos</span>
-                                                    <span style={{ color: '#22c55e', fontWeight: 'bold' }}>+${data.earned.toLocaleString()}</span>
+                                            <div className="progress-container">
+                                                <div className="progress-track">
+                                                    {ePct > 0 && <div style={{ width: `${ePct}%`, background: '#22c55e', height: '100%' }}></div>}
+                                                    {sPct > 0 && <div style={{ width: `${sPct}%`, background: '#ef4444', height: '100%' }}></div>}
                                                 </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Gastos</span>
-                                                    <span style={{ color: '#ef4444', fontWeight: 'bold' }}>-${data.spent.toLocaleString()}</span>
+                                                <div className="progress-labels">
+                                                    <span style={{ color: '#22c55e' }}>+{data.earned.toLocaleString()}</span>
+                                                    <span style={{ color: '#ef4444' }}>-{data.spent.toLocaleString()}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -279,188 +258,81 @@ const Wallet = () => {
                         )}
                     </div>
 
-                    {/* Filtered Transactions List */}
-                    <div className="glass dashboard-card" style={{
-                        gridColumn: '1 / -1',
-                        borderRadius: '24px',
-                        padding: '2rem'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 style={{ margin: 0 }}>Registro de Actividad</h3>
-                            <div className="custom-select-wrapper" style={{ position: 'relative', minWidth: '200px' }}>
-                                <select
-                                    value={filterMethod}
-                                    onChange={(e) => setFilterMethod(e.target.value)}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.6rem 2.5rem 0.6rem 1rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid var(--border)',
-                                        background: 'var(--bg-card)',
-                                        color: 'var(--text-primary)',
-                                        cursor: 'pointer',
-                                        appearance: 'none',
-                                        fontWeight: '500'
-                                    }}
-                                >
-                                    <option value="all">Todo (General)</option>
-                                    <option value="paypal">PayPal</option>
-                                    <option value="mercadopago">Mercado Pago</option>
-                                    <option value="binance">Binance Pay</option>
-                                    <option value="card">Tarjeta</option>
-                                </select>
-                                <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>▼</div>
-                            </div>
+                    {/* Transaction Activity */}
+                    <div className="transaction-list-card">
+                        <div className="list-header">
+                            <h3>Actividad Reciente</h3>
+                            <select
+                                className="wallet-select"
+                                value={filterMethod}
+                                onChange={(e) => setFilterMethod(e.target.value)}
+                            >
+                                {filterOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                            </select>
                         </div>
 
                         {filteredTransactions.length === 0 ? (
-                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                No hay registros para este filtro.
+                            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', borderRadius: '20px' }}>
+                                No se encontraron transacciones con este filtro.
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div className="tx-list">
                                 {filteredTransactions.map((t, idx) => (
-                                    <div key={idx} style={{
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                        padding: '1rem',
-                                        background: 'var(--bg-card-hover)',
-                                        borderRadius: '12px',
-                                        border: '1px solid var(--border)'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            <div style={{
-                                                width: '40px', height: '40px',
-                                                borderRadius: '50%',
-                                                background: t.type === 'income' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: t.type === 'income' ? '#22c55e' : '#ef4444'
-                                            }}>
+                                    <div key={idx} className="tx-item">
+                                        <div className="tx-left">
+                                            <div className={`tx-icon ${t.type === 'income' ? 'income' : 'expense'}`}>
                                                 {t.type === 'income' ? '↓' : '↑'}
                                             </div>
-                                            <div>
-                                                <div
-                                                    style={{ fontWeight: '600', cursor: 'pointer', display: 'inline-block' }}
-                                                    onClick={() => navigate(t.serviceLink)}
-                                                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                                                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                                                >
-                                                    {t.title}
-                                                </div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    {new Date(t.date).toLocaleDateString()} •
-                                                    <span style={{ fontWeight: '500' }}>
-                                                        {getMethodName(t.method)}
-                                                    </span>
-                                                    {t.partnerName && (
-                                                        <>
-                                                            •
-                                                            <span
-                                                                style={{ cursor: 'pointer', color: 'var(--primary)' }}
-                                                                onClick={() => navigate(t.partnerLink)}
-                                                                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                                                                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                                                            >
-                                                                {t.partnerName}
-                                                            </span>
-                                                        </>
-                                                    )}
+                                            <div className="tx-info">
+                                                <div className="tx-title" onClick={() => navigate(t.serviceLink)} style={{ cursor: 'pointer' }}>{t.title}</div>
+                                                <div className="tx-meta">
+                                                    {new Date(t.date).toLocaleDateString()} • {getMethodName(t.method)}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: t.type === 'income' ? '#22c55e' : '#ef4444' }}>
-                                            {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()} ARS
+                                        <div className="tx-right">
+                                            <div className={`tx-amount ${t.type === 'income' ? 'income' : 'expense'}`}>
+                                                {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                                            </div>
+                                            <div className="tx-status">{t.status}</div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
-                </div>
+                </>
             )}
 
             {activeTab === 'methods' && (
-                <div className="dashboard-grid">
-                    <div className="glass dashboard-card" style={{ gridColumn: '1 / -1' }}>
+                <div className="methods-section">
+                    <div className="glass transaction-list-card">
                         <h3>Cuentas Conectadas</h3>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Gestiona tus métodos de retiro y cobro automático.</p>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Gestiona tus métodos de retiro y cobro automático externos.</p>
 
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            {/* PayPal */}
-                            <div style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '48px', height: '48px', background: '#003087', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>P</div>
-                                    <div>
-                                        <h4 style={{ margin: 0 }}>PayPal</h4>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Pagos Internacionales</span>
+                        <div style={{ display: 'grid', gap: '1.2rem' }}>
+                            {[
+                                { id: 'paypal', name: 'PayPal', desc: 'Pagos Internacionales', color: '#003087', chip: 'P' },
+                                { id: 'mercadopago', name: 'Mercado Pago', desc: 'Argentina (CVU/Alias)', color: '#009ee3', chip: 'MP' },
+                                { id: 'binance', name: 'Binance Pay', desc: 'Criptomonedas (USDT/BTC)', color: '#F3BA2F', chip: '₿', textColor: 'black' }
+                            ].map(acc => (
+                                <div key={acc.id} className="tx-item" style={{ padding: '1.5rem', background: 'var(--bg-card)' }}>
+                                    <div className="tx-left">
+                                        <div style={{ width: '52px', height: '52px', background: acc.color, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: acc.textColor || 'white', fontWeight: '800', fontSize: '1.2rem' }}>{acc.chip}</div>
+                                        <div className="tx-info">
+                                            <div className="tx-title">{acc.name}</div>
+                                            <div className="tx-meta">{acc.desc}</div>
+                                        </div>
                                     </div>
+                                    <button
+                                        className={connectedAccounts[acc.id] ? 'btn-secondary' : 'btn-primary'}
+                                        onClick={() => handleConnect(acc.id)}
+                                        style={{ padding: '0.6rem 1.2rem', borderRadius: '10px' }}
+                                    >
+                                        {connectedAccounts[acc.id] ? 'Desconectar' : 'Conectar'}
+                                    </button>
                                 </div>
-                                <button
-                                    className={connectedAccounts.paypal ? 'btn-secondary' : 'btn-primary'}
-                                    onClick={() => handleConnect('paypal')}
-                                >
-                                    {connectedAccounts.paypal ? 'Desconectar' : 'Conectar'}
-                                </button>
-                            </div>
-
-                            {/* Mercado Pago */}
-                            <div style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '48px', height: '48px', background: '#009ee3', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>MP</div>
-                                    <div>
-                                        <h4 style={{ margin: 0 }}>Mercado Pago</h4>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Argentina (CVU/Alias)</span>
-                                    </div>
-                                </div>
-                                <button
-                                    className={connectedAccounts.mercadopago ? 'btn-secondary' : 'btn-primary'}
-                                    onClick={() => handleConnect('mercadopago')}
-                                >
-                                    {connectedAccounts.mercadopago ? 'Desconectar' : 'Conectar'}
-                                </button>
-                            </div>
-
-                            {/* Binance */}
-                            <div style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '48px', height: '48px', background: '#F3BA2F', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 'bold' }}>₿</div>
-                                    <div>
-                                        <h4 style={{ margin: 0 }}>Binance Pay</h4>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Criptomonedas (USDT/BTC)</span>
-                                    </div>
-                                </div>
-                                <button
-                                    className={connectedAccounts.binance ? 'btn-secondary' : 'btn-primary'}
-                                    onClick={() => handleConnect('binance')}
-                                >
-                                    {connectedAccounts.binance ? 'Desconectar' : 'Conectar'}
-                                </button>
-                            </div>
-
-                            {/* Credit Card */}
-                            <div style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ width: '48px', height: '48px', background: '#333', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>💳</div>
-                                    <div>
-                                        <h4 style={{ margin: 0 }}>Tarjeta de Crédito/Débito</h4>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Visa, Mastercard (Cuotas)</span>
-                                    </div>
-                                </div>
-                                <button className="btn-secondary" onClick={() => alert('Gestionado por procesador de pagos')}>
-                                    Gestionar
-                                </button>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>

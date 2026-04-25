@@ -61,7 +61,7 @@ export const ChatProvider = ({ children }) => {
                 .select(`
                     chat_id, 
                     user_id,
-                    user:user_id(username, first_name, last_name, avatar_url)
+                    user:user_id(username, first_name, last_name, avatar_url, role)
                 `)
                 .in('chat_id', chatIds);
 
@@ -74,7 +74,8 @@ export const ChatProvider = ({ children }) => {
                         id: p.user_id,
                         username: p.user?.username || 'Usuario',
                         fullName: p.user?.first_name ? `${p.user.first_name} ${p.user.last_name || ''}`.trim() : null,
-                        avatar: p.user?.avatar_url
+                        avatar: p.user?.avatar_url,
+                        role: p.user?.role
                     }));
 
                 // Calcular nombre amigable
@@ -291,6 +292,7 @@ export const ChatProvider = ({ children }) => {
                 }
 
                 if (!receiverId) {
+                    console.log(`[ChatContext] receiverId no hallado en estado local para chat ${chatId}. Consultando DB...`);
                     const { data: participants } = await supabase
                         .from('chat_participants')
                         .select('user_id')
@@ -300,6 +302,8 @@ export const ChatProvider = ({ children }) => {
                     if (other) receiverId = other.user_id;
                 }
             }
+
+            console.log(`[ChatContext] Enviando mensaje a receiverId: ${receiverId}`);
 
             // Sanitización contra inyección/XSS antes de guardar a DB
             const cleanText = text ? sanitizeText(text) : text;
@@ -337,18 +341,29 @@ export const ChatProvider = ({ children }) => {
                 // Anti-spam: Only notify if 15 seconds have passed since last one for this chat
                 if (now - lastTime > 15000) {
                     const senderName = user.first_name || user.username || 'Un usuario';
-                    const words = cleanText.split(' ').filter(w => w.length > 0);
-                    const preview = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '');
                     
-                    await NotificationService.createNotification(receiverId, {
-                        type: 'new_message',
-                        title: 'Nuevo mensaje',
-                        message: `Tienes nuevos mensajes de ${senderName}.`,
-                        link: `/chat/${chatId}`
-                    });
-                    
-                    setLastNotifMap(prev => ({ ...prev, [chatId]: now }));
+                    try {
+                        const notifResult = await NotificationService.createNotification(receiverId, {
+                            type: 'new_message',
+                            title: 'Nuevo mensaje',
+                            message: `Tienes nuevos mensajes de ${senderName}.`,
+                            link: `/chat/${chatId}`
+                        });
+                        
+                        if (notifResult) {
+                            console.log(`[ChatContext] Notificación creada con éxito para ${receiverId}`);
+                            setLastNotifMap(prev => ({ ...prev, [chatId]: now }));
+                        } else {
+                            console.warn(`[ChatContext] El servicio de notificaciones devolvió null para ${receiverId}. Posible error de RLS.`);
+                        }
+                    } catch (notifErr) {
+                        console.error("[ChatContext] Error crítico al crear notificación:", notifErr);
+                    }
+                } else {
+                    console.log(`[ChatContext] Notificación omitida por anti-spam (<15s) para chat ${chatId}`);
                 }
+            } else {
+                console.warn(`[ChatContext] No se pudo enviar notificación: receiverId=${receiverId}, isSystem=${options.isSystem}, cleanText=${!!cleanText}`);
             }
 
             // Registro de actividad gamificada
