@@ -150,9 +150,9 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
 
         // 3. Notify the Client
         await NotificationService.createNotification(project.client_id, {
-            type: 'proposal_new',
-            title: '¡Nueva propuesta! 🎉',
-            message: `${userName} se postuló para tu pedido '${project.title}'.`,
+            type: 'proposal_received',
+            title: 'Nueva propuesta',
+            message: `¡Nueva propuesta! 🎉 ${userName} se postuló para tu pedido '${project.title}'.`,
             link: `/dashboard`
         });
 
@@ -191,15 +191,15 @@ export const updateProposalStatus = async (proposalId, status, { clientId, clien
         if (status === 'accepted') {
             await NotificationService.createNotification(proposal.freelancer_id, {
                 type: 'proposal_accepted',
-                title: '¡Postulación aceptada! 🚀',
-                message: `${clientName || 'Un cliente'} te contrató para '${proposal.projects?.title}'. Entrá para comenzar a chatear.`,
+                title: 'Postulación aceptada',
+                message: `¡Postulación aceptada! 🚀 ${clientName || 'Un cliente'} te contrató para '${proposal.projects?.title}'.`,
                 link: `/dashboard`
             });
         } else if (status === 'rejected') {
             await NotificationService.createNotification(proposal.freelancer_id, {
                 type: 'proposal_rejected',
-                title: 'Postulación no seleccionada',
-                message: `Tu postulación para '${proposal.projects?.title}' no fue seleccionada esta vez. ¡Hay muchos pedidos más esperándote!`,
+                title: 'Novedades de tu postulación',
+                message: `Tu postulación para '${proposal.projects?.title}' no fue seleccionada esta vez.`,
                 link: `/explore-clients`
             });
         }

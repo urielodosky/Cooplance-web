@@ -324,9 +324,9 @@ export const ChatProvider = ({ children }) => {
                     const preview = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '');
                     
                     await NotificationService.createNotification(receiverId, {
-                        type: 'message',
-                        title: `Nuevo mensaje de ${senderName}`,
-                        message: `'${preview}'`,
+                        type: 'new_message',
+                        title: 'Nuevo mensaje',
+                        message: `Tienes nuevos mensajes de ${senderName}.`,
                         link: `/chat/${chatId}`
                     });
                     

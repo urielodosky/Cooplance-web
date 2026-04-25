@@ -90,9 +90,9 @@ export const createReview = async (reviewData) => {
             if (userToNotify) {
                 // Send Notification
                 await NotificationService.createNotification(userToNotify, {
-                    type: 'review_new',
-                    title: '¡Nueva reseña! ⭐',
-                    message: `${reviewerName} calificó tu trabajo. Entrá a tu perfil para ver qué escribió.`,
+                    type: 'new_review',
+                    title: 'Nueva reseña',
+                    message: `¡Nueva reseña! ⭐ ${reviewerName} calificó tu trabajo.`,
                     link: '/profile'
                 });
 

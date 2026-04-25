@@ -86,17 +86,63 @@ export const JobProvider = ({ children }) => {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setJobs((data || []).map(mapJobFromDB));
+            const mapped = (data || []).map(mapJobFromDB);
+            setJobs(mapped);
+            return mapped;
         } catch (err) {
             console.error('[JobContext] Supabase fetch error:', err);
+            return [];
         } finally {
             setLoading(false);
         }
     }, [user]);
 
+    const checkDeadlines = useCallback(async (activeJobs) => {
+        if (!user) return;
+        
+        const now = new Date();
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        
+        for (const job of activeJobs) {
+            if (job.status === 'active' && job.deadline && job.freelancerId === user.id) {
+                const deadline = new Date(job.deadline);
+                
+                // If deadline is in less than 24h and hasn't passed
+                if (deadline > now && deadline <= tomorrow) {
+                    // Avoid duplicate notifications (check if one was sent in the last 24h)
+                    // We can use a simple naming convention in the link or just trust the frequency
+                    try {
+                        const { data: existing } = await supabase
+                            .from('notifications')
+                            .select('id')
+                            .eq('user_id', user.id)
+                            .eq('type', 'deadline_warning')
+                            .ilike('message', `%${job.serviceTitle}%`)
+                            .gt('created_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
+
+                        if (!existing || existing.length === 0) {
+                            await NotificationService.createNotification(user.id, {
+                                type: 'deadline_warning',
+                                title: 'Recordatorio de plazo',
+                                message: `⏳ Recordatorio: El plazo para entregar '${job.serviceTitle}' vence pronto.`,
+                                link: '/dashboard'
+                            });
+                        }
+                    } catch (err) {
+                        console.error('[JobContext] Error checking for existing deadline notification:', err);
+                    }
+                }
+            }
+        }
+    }, [user]);
+
     useEffect(() => {
-        fetchJobs().catch(err => console.error('[JobContext] Unhandled fetchJobs error:', err));
-    }, [fetchJobs]);
+        fetchJobs()
+            .then(jobs => {
+                if (jobs) checkDeadlines(jobs);
+            })
+            .catch(err => console.error('[JobContext] Unhandled fetchJobs error:', err));
+    }, [fetchJobs, checkDeadlines]);
 
     // REAL-TIME SUBSCRIPTION
     useEffect(() => {
@@ -153,17 +199,17 @@ export const JobProvider = ({ children }) => {
 
             // Notify freelancer: New order received
             NotificationService.createNotification(mapped.freelancerId, {
-                type: 'job_new',
-                title: '¡Nueva venta! 💸',
-                message: `${mapped.buyerName} contrató tu servicio '${mapped.serviceTitle}'. Entrá para empezar.`,
+                type: 'service_purchased',
+                title: '¡Nueva Venta!',
+                message: `¡Nueva venta! 💸 ${mapped.buyerName} contrató tu servicio '${mapped.serviceTitle}'.`,
                 link: '/dashboard'
             });
 
             // Notify freelancer: Payment secured
             NotificationService.createNotification(mapped.freelancerId, {
                 type: 'payment_secured',
-                title: 'Pago asegurado 🔒',
-                message: `El cliente ya depositó los fondos para '${mapped.serviceTitle}'. Podés empezar a trabajar tranquilo.`,
+                title: 'Pago asegurado',
+                message: `Pago asegurado 🔒. Los fondos para '${mapped.serviceTitle}' ya están depositados.`,
                 link: '/dashboard'
             });
 
@@ -220,24 +266,24 @@ export const JobProvider = ({ children }) => {
                     // Freelancer delivered -> Notify Client
                     NotificationService.createNotification(job.buyerId, {
                         type: 'job_delivered',
-                        title: '¡Trabajo entregado! 📦',
-                        message: `${job.freelancerName} envió los resultados de '${job.serviceTitle}'. Revisalos para finalizar el contrato.`,
+                        title: 'Trabajo entregado',
+                        message: `¡Trabajo entregado! 📦 ${job.freelancerName} envió los resultados de '${job.serviceTitle}'.`,
                         link: '/dashboard'
                     });
                 } else if (status === 'completed') {
                     // Client approved -> Notify Freelancer
                     NotificationService.createNotification(job.freelancerId, {
                         type: 'job_completed',
-                        title: '¡Proyecto completado! ✅',
-                        message: `${job.buyerName} aprobó '${job.serviceTitle}'. ¡No te olvides de dejarle una reseña!`,
+                        title: 'Proyecto completado',
+                        message: `¡Proyecto completado! ✅ ${job.buyerName} aprobó '${job.serviceTitle}'.`,
                         link: '/dashboard'
                     });
                 } else if (status === 'active' && job.status === 'delivered') {
                     // Client asked for corrections
                     NotificationService.createNotification(job.freelancerId, {
-                        type: 'job_corrections',
-                        title: 'Ajustes solicitados ⚠️',
-                        message: `${job.buyerName} pidió correcciones en '${job.serviceTitle}'. Revisá sus comentarios en el chat.`,
+                        type: 'job_revision_requested',
+                        title: 'Ajustes solicitados',
+                        message: `Ajustes solicitados ⚠️. ${job.buyerName} pidió correcciones en '${job.serviceTitle}'.`,
                         link: '/dashboard'
                     });
                 } else if (status === 'active' && job.status === 'pending_approval') {
@@ -282,8 +328,8 @@ export const JobProvider = ({ children }) => {
                     // Notify Payment Released
                     NotificationService.createNotification(job.freelancerId, {
                         type: 'payment_released',
-                        title: '¡Pago liberado! 💰',
-                        message: `Se acreditaron ${job.amount} ARS en tu billetera por el trabajo '${job.serviceTitle}'.`,
+                        title: 'Pago liberado',
+                        message: `¡Pago liberado! 💰 Se acreditaron ${job.amount} ARS por '${job.serviceTitle}'.`,
                         link: '/wallet'
                     });
 
@@ -315,8 +361,8 @@ export const JobProvider = ({ children }) => {
                                     // Notify Level Up for Buyer
                                     NotificationService.createNotification(buyerProfile.id, {
                                         type: 'level_up',
-                                        title: '¡Subiste de Nivel! 🚀',
-                                        message: `Alcanzaste el Nivel ${newLevel}. Nuevos beneficios desbloqueados.`,
+                                        title: '¡Subiste de Nivel!',
+                                        message: `¡Subiste de Nivel! 🚀 Alcanzaste el Nivel ${newLevel}.`,
                                         link: '/settings'
                                     });
                                 }
@@ -335,8 +381,8 @@ export const JobProvider = ({ children }) => {
                                     // Notify Level Up for Freelancer
                                     NotificationService.createNotification(freelancerProfile.id, {
                                         type: 'level_up',
-                                        title: '¡Subiste de Nivel! 🚀',
-                                        message: `Alcanzaste el Nivel ${newLevel}. Nuevos beneficios desbloqueados.`,
+                                        title: '¡Subiste de Nivel!',
+                                        message: `¡Subiste de Nivel! 🚀 Alcanzaste el Nivel ${newLevel}.`,
                                         link: '/settings'
                                     });
                                 }

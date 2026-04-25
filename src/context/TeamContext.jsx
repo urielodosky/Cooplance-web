@@ -95,8 +95,8 @@ export const TeamProvider = ({ children }) => {
                 const inviterName = user.first_name || user.username || 'Un usuario';
                 await NotificationService.createNotification(newUserId, {
                     type: 'coop_invite',
-                    title: 'Invitación a Coop 🤝',
-                    message: `${inviterName} te invitó a unirte a su Coop '${team.name}'. ¿Aceptás el desafío?`,
+                    title: 'Invitación a Coop',
+                    message: `🤝 ${inviterName} te invitó a unirte a su Coop '${team.name}'.`,
                     link: '/my-coops'
                 });
             }
