@@ -309,7 +309,7 @@ export const AuthProvider = ({ children }) => {
         // Map frontend camelCase to backend snake_case
         const payload = {
             role: role,
-            username: (registrationData.username || registrationData.email?.split('@')[0])?.toLowerCase(),
+            username: (registrationData.username || registrationData.email?.split('@')[0]),
             first_name: registrationData.firstName || registrationData.first_name || '',
             last_name: registrationData.lastName || registrationData.last_name || '',
             gender: registrationData.role === 'company' ? (registrationData.gender || 'other') : (registrationData.gender || 'male'),

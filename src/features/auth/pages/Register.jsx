@@ -487,7 +487,7 @@ const Register = () => {
             if (role === 'company' && !cleanUsername) {
                 registrationData.username = registrationData.email.split('@')[0];
             } else if (cleanUsername) {
-                registrationData.username = cleanUsername.toLowerCase();
+                registrationData.username = cleanUsername;
             }
             if (registrationData.email) registrationData.email = registrationData.email.toLowerCase();
 

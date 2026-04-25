@@ -236,7 +236,7 @@ const Settings = () => {
 
             await updateUser({
                 ...user,
-                username: user.role !== 'company' ? cleanUsername.toLowerCase() : user.username,
+                username: user.role !== 'company' ? cleanUsername : user.username,
                 first_name: firstName || null,
                 last_name: lastName || null,
                 company_name: companyName || null,
