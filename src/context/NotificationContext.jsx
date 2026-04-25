@@ -27,8 +27,6 @@ export const NotificationProvider = ({ children }) => {
             setUnreadCount((userNotifs || []).filter(n => !n.read).length);
         } catch (err) {
             console.error('[NotificationContext] Error in loadNotifications:', err);
-            setNotifications([]);
-            setUnreadCount(0);
         }
     }, [user]);
 
@@ -37,7 +35,7 @@ export const NotificationProvider = ({ children }) => {
         if (!user) return;
 
         const channel = supabase
-            .channel(`public:notifications:user_id=eq.${user.id}`)
+            .channel(`user-notifications-${user.id}`)
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
@@ -45,7 +43,22 @@ export const NotificationProvider = ({ children }) => {
                 filter: `user_id=eq.${user.id}`
             }, (payload) => {
                 console.log('[NotificationContext] Real-time update:', payload);
-                loadNotifications();
+                if (payload.eventType === 'INSERT') {
+                    const newNotif = {
+                        id: payload.new.id,
+                        userId: payload.new.user_id,
+                        type: payload.new.type,
+                        title: payload.new.title,
+                        message: payload.new.message,
+                        link: payload.new.link,
+                        read: payload.new.is_read,
+                        timestamp: payload.new.created_at
+                    };
+                    setNotifications(prev => [newNotif, ...prev]);
+                    setUnreadCount(prev => prev + 1);
+                } else {
+                    loadNotifications();
+                }
             })
             .subscribe();
 
@@ -54,12 +67,11 @@ export const NotificationProvider = ({ children }) => {
         };
     }, [user, loadNotifications]);
 
-    // Load on mount
+    // Load on mount or user change
     useEffect(() => {
         loadNotifications();
     }, [loadNotifications]);
 
-    // Expose method to mark as read
     const markAsRead = async (notificationId) => {
         try {
             const updated = await NotificationService.markNotificationAsRead(notificationId);
@@ -73,9 +85,10 @@ export const NotificationProvider = ({ children }) => {
     };
 
     const markAllAsRead = async () => {
+        if (!user) return;
         try {
-            const didUpdate = await NotificationService.markAllAsRead(user.id);
-            if (didUpdate) {
+            const success = await NotificationService.markAllAsRead(user.id);
+            if (success) {
                 setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                 setUnreadCount(0);
             }
@@ -87,25 +100,13 @@ export const NotificationProvider = ({ children }) => {
     const deleteNotification = async (notificationId) => {
         try {
             await NotificationService.deleteNotification(notificationId);
-            await loadNotifications();
+            setNotifications(prev => prev.filter(n => n.id !== notificationId));
+            setUnreadCount(prev => {
+                const wasUnread = notifications.find(n => n.id === notificationId && !n.read);
+                return wasUnread ? Math.max(0, prev - 1) : prev;
+            });
         } catch (err) {
             console.error('[NotificationContext] Error deleting notification:', err);
-        }
-    };
-
-    // System hook for adding notification from anywhere if needed
-    const addNotification = async (userId, data) => {
-        try {
-            const newNotif = await NotificationService.createNotification(userId, data);
-            if (user && userId === user.id && newNotif) {
-                setNotifications(prev => {
-                    if (prev.some(n => n.id === newNotif.id)) return prev;
-                    return [newNotif, ...prev];
-                });
-                setUnreadCount(prev => prev + 1);
-            }
-        } catch (err) {
-            console.error('[NotificationContext] Error adding notification:', err);
         }
     };
 
@@ -116,7 +117,6 @@ export const NotificationProvider = ({ children }) => {
             markAsRead,
             markAllAsRead,
             deleteNotification,
-            addNotification,
             refresh: loadNotifications
         }}>
             {children}

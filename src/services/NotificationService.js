@@ -46,7 +46,7 @@ export const createNotification = async (userId, notificationData) => {
                 user_id: userId,
                 type: notificationData.type || NOTIFICATION_TYPES.SYSTEM,
                 title: notificationData.title,
-                content: notificationData.message || notificationData.content,
+                message: notificationData.message,
                 link: notificationData.link || null,
                 is_read: false
             })
@@ -137,7 +137,7 @@ function mapFromDB(row) {
         userId: row.user_id,
         type: row.type,
         title: row.title,
-        message: row.content,
+        message: row.message,
         link: row.link,
         read: row.is_read,
         timestamp: row.created_at

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
+import { Bell, Check, Trash2, ExternalLink } from 'lucide-react';
 import '../../styles/components/NotificationDropdown.scss';
 
 const NotificationDropdown = () => {
-    const { notifications, unreadCount, markAsRead, markAllAsRead, refresh } = useNotifications();
+    const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, refresh } = useNotifications();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -20,143 +21,132 @@ const NotificationDropdown = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Refresh notifications when opening dropdown just in case
-    useEffect(() => {
-        if (isOpen) refresh();
-    }, [isOpen, refresh]);
-
     const handleNotificationClick = (notification) => {
-        markAsRead(notification.id);
-        navigate('/notifications', { state: { selectedNotificationId: notification.id } });
+        if (!notification.read) {
+            markAsRead(notification.id);
+        }
+        if (notification.link) {
+            navigate(notification.link);
+        }
         setIsOpen(false);
     };
-
-    const toggleDropdown = () => setIsOpen(!isOpen);
 
     const formatRelativeTime = (timestamp) => {
         const diff = new Date() - new Date(timestamp);
         const minutes = Math.floor(diff / 60000);
-        if (minutes < 1) return 'Hace un momento';
-        if (minutes < 60) return `Hace ${minutes} min`;
+        if (minutes < 1) return 'Ahora';
+        if (minutes < 60) return `${minutes}m`;
         const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `Hace ${hours} h`;
+        if (hours < 24) return `${hours}h`;
         const days = Math.floor(hours / 24);
-        return `Hace ${days} d`;
+        return `${days}d`;
     };
-
-    const getIcon = (type) => {
-        switch (type) {
-            case 'job_hired': return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px' }}>
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                </svg>
-            );
-            case 'job_accepted': return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', color: '#10b981' }}>
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-            );
-            case 'message': return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', color: '#6366f1' }}>
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-            );
-            case 'coop_invite': return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', color: '#f59e0b' }}>
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-            );
-            case 'role_change': return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                </svg>
-            );
-            case 'level_up': return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', color: '#eab308' }}>
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-            );
-            case 'badge_earned': return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px', color: '#ef4444' }}>
-                    <circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
-                </svg>
-            );
-            default: return (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '18px', height: '18px' }}>
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-            );
-        }
-    };
-
-    const displayNotifications = notifications.slice(0, 2); // Show max 2 in dropdown
 
     return (
-        <div className="notification-dropdown-container" ref={dropdownRef}>
+        <div className="notification-dropdown-container" ref={dropdownRef} style={{ position: 'relative' }}>
             <button
                 className={`notification-bell-btn ${unreadCount > 0 ? 'has-unread' : ''} ${isOpen ? 'active' : ''}`}
-                onClick={() => navigate('/notifications')}
-                title="Notificaciones"
+                onClick={() => setIsOpen(!isOpen)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '8px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-                {unreadCount > 0 && <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+                <Bell size={22} strokeWidth={2.5} />
+                {unreadCount > 0 && (
+                    <span className="notification-badge" style={{
+                        position: 'absolute', top: '4px', right: '4px',
+                        background: '#ef4444', color: 'white',
+                        borderRadius: '50%', width: '18px', height: '18px',
+                        fontSize: '0.65rem', fontWeight: '800',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)',
+                        border: '2px solid var(--bg-card)'
+                    }}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                )}
             </button>
 
             {isOpen && (
-                <div className="notification-dropdown-menu glass">
-                    <div className="notification-header">
-                        <h4>Notificaciones</h4>
+                <div className="notification-dropdown-menu glass-strong" style={{
+                    position: 'absolute', top: '100%', right: 0,
+                    width: '340px', maxHeight: '480px', overflowY: 'hidden',
+                    zIndex: 1000, borderRadius: '20px', marginTop: '12px',
+                    border: '1px solid var(--border)', boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
+                    background: 'var(--bg-card)', display: 'flex', flexDirection: 'column'
+                }}>
+                    <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>Notificaciones</h4>
                         {unreadCount > 0 && (
-                            <button className="mark-all-read-btn" onClick={markAllAsRead}>
-                                Marcar todas como leídas
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}
+                                style={{ background: 'none', border: 'none', color: 'var(--primary-soft)', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                                <Check size={14} /> Marcar todo
                             </button>
                         )}
                     </div>
 
-                    <div className="notification-list custom-scrollbar">
-                        {displayNotifications.length === 0 ? (
-                            <div className="empty-notifications">
-                                <span className="empty-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '40px', height: '40px' }}>
-                                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                                    </svg>
-                                </span>
-                                <p>No tienes notificaciones nuevas</p>
+                    <div className="notification-list custom-scrollbar" style={{ overflowY: 'auto', flex: 1 }}>
+                        {notifications.length === 0 ? (
+                            <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <Bell size={40} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                                <p style={{ fontSize: '0.9rem', margin: 0 }}>No tienes notificaciones aún</p>
                             </div>
                         ) : (
-                            displayNotifications.map(notification => (
+                            notifications.map(n => (
                                 <div
-                                    key={notification.id}
-                                    className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                                    onClick={() => handleNotificationClick(notification)}
+                                    key={n.id}
+                                    className={`notification-item ${!n.read ? 'unread' : ''}`}
+                                    onClick={() => handleNotificationClick(n)}
+                                    style={{
+                                        padding: '1rem 1.2rem', borderBottom: '1px solid var(--border)',
+                                        cursor: 'pointer', transition: 'all 0.2s ease',
+                                        background: n.read ? 'transparent' : 'rgba(139, 92, 246, 0.05)',
+                                        position: 'relative', display: 'flex', gap: '1rem'
+                                    }}
                                 >
-                                    <div className="notification-icon">
-                                        {getIcon(notification.type)}
+                                    {!n.read && <div style={{ position: 'absolute', left: '0', top: '0', bottom: '0', width: '3px', background: 'var(--primary)' }}></div>}
+                                    
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: n.read ? '600' : '800', color: n.read ? 'var(--text-secondary)' : 'var(--text-primary)' }}>
+                                                {n.title}
+                                            </span>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                                                {formatRelativeTime(n.timestamp)}
+                                            </span>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                            {n.message}
+                                        </p>
+                                        {n.link && (
+                                            <div style={{ marginTop: '6px', fontSize: '0.7rem', color: 'var(--primary-soft)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700' }}>
+                                                <ExternalLink size={10} /> Ver detalle
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="notification-content">
-                                        <p className="notification-title">{notification.title}</p>
-                                        <p className="notification-message">{notification.message}</p>
-                                        <span className="notification-time">{formatRelativeTime(notification.timestamp)}</span>
-                                    </div>
-                                    {!notification.read && <div className="unread-dot"></div>}
+
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
+                                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', padding: '4px', cursor: 'pointer', opacity: 0.3, transition: 'opacity 0.2s' }}
+                                        className="delete-notif-btn"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             ))
                         )}
                     </div>
-                    <div className="notification-dropdown-footer">
-                        <button
-                            className="view-all-btn"
-                            onClick={() => {
-                                navigate('/notifications');
-                                setIsOpen(false);
-                            }}
-                        >
-                            Ver todas las notificaciones
-                        </button>
-                    </div>
+
+                    {notifications.length > 0 && (
+                        <div style={{ padding: '0.8rem', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                            <button 
+                                onClick={() => { navigate('/notifications'); setIsOpen(false); }}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                                Ver todas las notificaciones
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -44,7 +44,7 @@ const Chat = () => {
         const fetchDeadline = async () => {
             // 1. Try to find in loaded jobs first
             const job = jobs.find(j => String(j.id) === String(activeChat.contextId) || String(j.projectId) === String(activeChat.contextId));
-            
+
             if (job && job.deadline) {
                 setContextDeadline(job.deadline);
                 return;
@@ -58,7 +58,7 @@ const Chat = () => {
                         .select('deadline')
                         .eq('id', activeChat.contextId)
                         .maybeSingle();
-                    
+
                     if (data && data.deadline) {
                         setContextDeadline(data.deadline);
                     } else {
@@ -557,7 +557,7 @@ const Chat = () => {
                                     {(() => {
                                         // 1. Try to find the other participant in the chat list
                                         let other = activeChat.participants?.find(p => String(p.id) !== String(user.id));
-                                        
+
                                         // 2. FALLBACK: If the other person deleted the chat, they are gone from participants.
                                         // We look for them in the associated JOB or PROJECT.
                                         if (!other && activeChat.contextId) {
@@ -576,11 +576,11 @@ const Chat = () => {
 
                                         return (
                                             <>
-                                                <div className="header-avatar" style={{ 
-                                                    width: '48px', 
-                                                    height: '48px', 
-                                                    borderRadius: '50%', 
-                                                    overflow: 'hidden', 
+                                                <div className="header-avatar" style={{
+                                                    width: '48px',
+                                                    height: '48px',
+                                                    borderRadius: '50%',
+                                                    overflow: 'hidden',
                                                     border: '2px solid var(--primary)',
                                                     background: 'var(--gradient-primary)',
                                                     display: 'flex',
@@ -597,7 +597,7 @@ const Chat = () => {
                                                     )}
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                    <h3 
+                                                    <h3
                                                         style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', cursor: activeChat.contextId ? 'pointer' : 'default', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                         className="chat-header-title-link"
                                                         onClick={() => {
@@ -612,7 +612,7 @@ const Chat = () => {
                                                     </h3>
                                                     {other && (
                                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span 
+                                                            <span
                                                                 style={{ fontWeight: '700', color: 'var(--primary-soft)', cursor: 'pointer', textDecoration: 'underline' }}
                                                                 className="chat-header-user-link"
                                                                 onClick={() => {
@@ -634,9 +634,9 @@ const Chat = () => {
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     {(activeChat.type === 'order' || activeChat.type === 'project' || activeChat.contextId) && (
-                                        <div 
-                                            className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`} 
-                                            style={{ 
+                                        <div
+                                            className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`}
+                                            style={{
                                                 background: getJobTimeRemaining(activeChat) === 'Vencido' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(139, 92, 246, 0.15)',
                                                 color: getJobTimeRemaining(activeChat) === 'Vencido' ? '#ef4444' : 'var(--primary)',
                                                 padding: '0.6rem 1rem',
