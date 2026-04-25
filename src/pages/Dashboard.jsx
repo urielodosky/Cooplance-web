@@ -95,56 +95,79 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                     <ListSkeleton />
                 ) : filteredWork.length > 0 ? (
                     filteredWork.map(job => (
-                        <div key={job.id} className="glass job-card order-card" style={{
-                            display: 'grid',
-                            gridTemplateColumns: '70px 1fr auto',
-                            gap: '1.5rem',
+                        <div key={job.id} className="glass job-card order-card premium-job-card" style={{
+                            display: 'flex',
+                            gap: '1.2rem',
                             alignItems: 'center',
-                            padding: '1.5rem',
-                            borderRadius: '20px',
+                            padding: '1.2rem 1.5rem',
+                            borderRadius: '24px',
                             marginBottom: '1rem',
-                            background: 'var(--bg-card)',
-                            border: '1px solid var(--border)'
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid var(--border)',
+                            position: 'relative',
+                            transition: 'all 0.3s ease'
                         }}>
+                            {/* Avatar Section */}
                             <div style={{
-                                width: '70px', height: '70px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--primary)', position: 'relative'
+                                width: '60px', 
+                                height: '60px', 
+                                borderRadius: '50%', 
+                                overflow: 'hidden', 
+                                border: '2px solid var(--primary)',
+                                flexShrink: 0,
+                                boxShadow: '0 0 15px rgba(139, 92, 246, 0.2)'
                             }}>
                                 <img src={getProfilePicture({ role: job.buyerRole, avatar: job.buyerAvatar })} alt={job.buyerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
-                            <div className="job-details" style={{ position: 'relative' }}>
-                                {(() => {
-                                    const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-                                    if (daysLeft === null || job.status !== 'active') return null;
-                                    return (
-                                        <div style={{
-                                            position: 'absolute', top: '-2.2rem', right: '-1.5rem',
-                                            fontSize: '0.75rem', color: daysLeft <= 2 ? '#ef4444' : 'var(--text-muted)',
-                                            fontWeight: '600', background: 'rgba(0,0,0,0.03)', padding: '2px 8px', borderRadius: '8px'
-                                        }}>
-                                            {daysLeft > 0 ? `Quedan ${daysLeft} días` : daysLeft === 0 ? 'Vence hoy' : 'Vencido'}
-                                        </div>
-                                    );
-                                })()}
-                                <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'}
-                                    {job.buyerRealName && <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '400' }}>({job.buyerRealName})</span>}
-                                </h4>
-                                <p style={{ margin: '0.3rem 0', color: 'var(--text-primary)', fontSize: '1rem' }}>
-                                    Contrató: <strong style={{ color: 'var(--primary)' }}>{job.serviceTitle}</strong>
-                                </p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.4rem' }}>
-                                    <span style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: '10px', background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)', fontWeight: '600', textTransform: 'uppercase' }}>
+
+                            {/* Info Section */}
+                            <div className="job-main-info" style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
+                                    <h4 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'}
+                                    </h4>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>• {job.buyerRealName || 'Cliente'}</span>
+                                    
+                                    {/* Inline Deadline Badge */}
+                                    {(() => {
+                                        const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                                        if (daysLeft === null || job.status !== 'active') return null;
+                                        return (
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                padding: '2px 8px',
+                                                borderRadius: '6px',
+                                                background: daysLeft <= 2 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                                color: daysLeft <= 2 ? '#ef4444' : '#10b981',
+                                                fontWeight: '800',
+                                                border: '1px solid currentColor'
+                                            }}>
+                                                {daysLeft > 0 ? `${daysLeft} DÍAS` : daysLeft === 0 ? 'HOY' : 'VENCIDO'}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
+
+                                <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    Contrató: <strong style={{ color: 'var(--primary-soft)', fontWeight: '700' }}>{job.serviceTitle}</strong>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: 'var(--bg-body)', color: 'var(--text-muted)', fontWeight: '700', border: '1px solid var(--border)', textTransform: 'uppercase' }}>
                                         {job.tier || 'Estándar'}
                                     </span>
-                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : job.status === 'delivered' ? '#3b82f6' : 'var(--text-secondary)' }}>
-                                        ● {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
+                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
+                                        {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
                                     </span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.8rem' }}>
-                                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)' }}>${job.amount}</div>
-                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                                    <button className="btn-secondary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={async () => {
+
+                            {/* Price & Actions Section */}
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '160px' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>${job.amount}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={async () => {
                                         setIsCreatingChat(true);
                                         try {
                                             const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
@@ -153,18 +176,13 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
                                     
-                                    <button className="btn-outline" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem', borderColor: 'var(--border)' }} onClick={() => {
+                                    <button className="btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px', borderColor: 'var(--border)' }} onClick={() => {
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
 
-                                    {job.status === 'pending_approval' && (
-                                        <>
-                                            <button className="btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={() => updateJobStatus(job.id, 'active')}>Aceptar</button>
-                                        </>
-                                    )}
                                     {job.status === 'active' && (
-                                        <button className="btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
+                                        <button className="btn-primary" style={{ padding: '0.4rem 1.2rem', fontSize: '0.85rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }} onClick={() => updateJobStatus(job.id, 'delivered')}>Entregar</button>
                                     )}
                                 </div>
                             </div>
@@ -392,40 +410,76 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                     <ListSkeleton />
                 ) : filteredOrders.length > 0 ? (
                     filteredOrders.map(job => (
-                        <div key={job.id} className="glass job-card order-card" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', padding: '1.2rem', borderRadius: '18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                            <div style={{ width: '60px', height: '60px', borderRadius: '16px', overflow: 'hidden', border: '2px solid var(--primary-soft)' }}>
+                        <div key={job.id} className="glass job-card order-card premium-job-card" style={{
+                            display: 'flex',
+                            gap: '1.2rem',
+                            alignItems: 'center',
+                            padding: '1.2rem 1.5rem',
+                            borderRadius: '24px',
+                            marginBottom: '1rem',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid var(--border)',
+                            position: 'relative',
+                            transition: 'all 0.3s ease'
+                        }}>
+                            {/* Avatar Section */}
+                            <div style={{
+                                width: '60px', 
+                                height: '60px', 
+                                borderRadius: '50%', 
+                                overflow: 'hidden', 
+                                border: '2px solid var(--primary-soft)',
+                                flexShrink: 0
+                            }}>
                                 <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
-                            <div style={{ flex: 1, position: 'relative' }}>
-                                {(() => {
-                                    const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-                                    if (daysLeft === null || job.status !== 'active') return null;
-                                    return (
-                                        <div style={{
-                                            position: 'absolute', top: '-1rem', right: '0',
-                                            fontSize: '0.75rem', color: daysLeft <= 2 ? '#ef4444' : 'var(--text-muted)',
-                                            fontWeight: '600'
-                                        }}>
-                                            {daysLeft > 0 ? `Quedan ${daysLeft} días` : daysLeft === 0 ? 'Vence hoy' : 'Vencido'}
-                                        </div>
-                                    );
-                                })()}
-                                <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{job.serviceTitle}</h4>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+
+                            {/* Info Section */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
+                                    <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {job.serviceTitle}
+                                    </h4>
+                                    
+                                    {/* Inline Deadline Badge */}
+                                    {(() => {
+                                        const daysLeft = job.deadline ? Math.ceil((new Date(job.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                                        if (daysLeft === null || job.status !== 'active') return null;
+                                        return (
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                padding: '2px 8px',
+                                                borderRadius: '6px',
+                                                background: daysLeft <= 2 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                                                color: daysLeft <= 2 ? '#ef4444' : 'var(--primary-soft)',
+                                                fontWeight: '800',
+                                                border: '1px solid currentColor'
+                                            }}>
+                                                {daysLeft > 0 ? `${daysLeft} DÍAS` : daysLeft === 0 ? 'HOY' : 'VENCIDO'}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '6px' }}>
                                     <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: </span>
                                     <strong style={{ color: 'var(--primary-soft)', fontSize: '0.9rem' }}>@{job.freelancerUsername || 'usuario'}</strong>
                                     {job.freelancerName && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({job.freelancerName})</span>}
                                 </div>
-                                <div style={{ marginTop: '0.4rem' }}>
-                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6', fontWeight: '600' }}>
-                                        {job.status === 'active' ? '● En Progreso' : job.status === 'delivered' ? '● Entregado' : `● ${job.status}`}
+
+                                <div>
+                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : '#3b82f6', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
+                                        {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : job.status}
                                     </span>
                                 </div>
                             </div>
-                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}>
-                                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff' }}>${job.amount}</div>
-                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                                    <button className="btn-secondary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={async () => {
+
+                            {/* Price & Actions Section */}
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '160px' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: '900', color: '#fff', letterSpacing: '-0.5px' }}>${job.amount}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <button className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={async () => {
                                         setIsCreatingChat(true);
                                         try {
                                             const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
@@ -434,13 +488,13 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                         } catch { setIsCreatingChat(false); }
                                     }}>Chat</button>
 
-                                    <button className="btn-outline" style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem', borderColor: 'var(--border)' }} onClick={() => {
+                                    <button className="btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px', borderColor: 'var(--border)' }} onClick={() => {
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
 
                                     {job.status === 'delivered' && (
-                                        <button className="btn-primary" style={{ backgroundColor: '#10b981', padding: '0.5rem 1.2rem', fontSize: '0.9rem' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
+                                        <button className="btn-primary" style={{ backgroundColor: '#10b981', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
                                     )}
                                 </div>
                             </div>
