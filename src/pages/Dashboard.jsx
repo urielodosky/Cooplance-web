@@ -494,7 +494,14 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     }}>Detalle</button>
 
                                     {job.status === 'delivered' && (
-                                        <button className="btn-primary" style={{ backgroundColor: '#10b981', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button className="btn-outline" style={{ borderColor: '#f59e0b', color: '#f59e0b', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={async () => {
+                                                await updateJobStatus(job.id, 'active');
+                                                // The notification is handled in JobContext's updateJobStatus for status 'active' when previous was 'delivered'
+                                            }}>Pedir Ajustes</button>
+                                            
+                                            <button className="btn-primary" style={{ backgroundColor: '#10b981', padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: '10px' }} onClick={() => updateJobStatus(job.id, 'completed')}>Aprobar</button>
+                                        </div>
                                     )}
                                 </div>
                             </div>

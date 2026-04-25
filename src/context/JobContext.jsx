@@ -151,11 +151,19 @@ export const JobProvider = ({ children }) => {
             const mapped = mapJobFromDB(data);
             setJobs(prev => [mapped, ...prev]);
 
-            // Notify freelancer
+            // Notify freelancer: New order received
             NotificationService.createNotification(mapped.freelancerId, {
-                type: NotificationService.NOTIFICATION_TYPES.HIRED,
-                title: '¡Nuevo pedido recibido!',
-                message: `${mapped.buyerName} acaba de contratar tu servicio: ${mapped.serviceTitle}.`,
+                type: 'job_new',
+                title: '¡Nueva venta! 💸',
+                message: `${mapped.buyerName} contrató tu servicio '${mapped.serviceTitle}'. Entrá para empezar.`,
+                link: '/dashboard'
+            });
+
+            // Notify freelancer: Payment secured
+            NotificationService.createNotification(mapped.freelancerId, {
+                type: 'payment_secured',
+                title: 'Pago asegurado 🔒',
+                message: `El cliente ya depositó los fondos para '${mapped.serviceTitle}'. Podés empezar a trabajar tranquilo.`,
                 link: '/dashboard'
             });
 
@@ -224,6 +232,14 @@ export const JobProvider = ({ children }) => {
                         message: `${job.buyerName} aprobó '${job.serviceTitle}'. ¡No te olvides de dejarle una reseña!`,
                         link: '/dashboard'
                     });
+                } else if (status === 'active' && job.status === 'delivered') {
+                    // Client asked for corrections
+                    NotificationService.createNotification(job.freelancerId, {
+                        type: 'job_corrections',
+                        title: 'Ajustes solicitados ⚠️',
+                        message: `${job.buyerName} pidió correcciones en '${job.serviceTitle}'. Revisá sus comentarios en el chat.`,
+                        link: '/dashboard'
+                    });
                 } else if (status === 'active' && job.status === 'pending_approval') {
                     // Client accepted a proposal or a job -> Notify Freelancer (already handled in proposalService, but here's a fallback)
                     NotificationService.createNotification(job.freelancerId, {
@@ -263,10 +279,19 @@ export const JobProvider = ({ children }) => {
                         console.error('Transaction insertion error:', txErr);
                     }
 
+                    // Notify Payment Released
                     NotificationService.createNotification(job.freelancerId, {
-                        type: NotificationService.NOTIFICATION_TYPES.ACCEPTED,
-                        title: '¡Trabajo Completado!',
-                        message: `El cliente ha aceptado y finalizado el servicio: ${job.serviceTitle}.`,
+                        type: 'payment_released',
+                        title: '¡Pago liberado! 💰',
+                        message: `Se acreditaron ${job.amount} ARS en tu billetera por el trabajo '${job.serviceTitle}'.`,
+                        link: '/wallet'
+                    });
+
+                    // Notify Project Completed (already there, but unified)
+                    NotificationService.createNotification(job.freelancerId, {
+                        type: 'job_completed',
+                        title: '¡Proyecto completado! ✅',
+                        message: `${job.buyerName} aprobó '${job.serviceTitle}'. ¡No te olvides de dejarle una reseña!`,
                         link: '/dashboard'
                     });
 
@@ -285,7 +310,16 @@ export const JobProvider = ({ children }) => {
                                 const xpEarned = calculateXPForJob(job.amount, buyerProfile.level || 1, buyerProfile.role, freelancerProfile?.level || 1);
                                 const newXP = (buyerProfile.xp || 0) + xpEarned;
                                 let newLevel = buyerProfile.level || 1;
-                                if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) newLevel++;
+                                if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) {
+                                    newLevel++;
+                                    // Notify Level Up for Buyer
+                                    NotificationService.createNotification(buyerProfile.id, {
+                                        type: 'level_up',
+                                        title: '¡Subiste de Nivel! 🚀',
+                                        message: `Alcanzaste el Nivel ${newLevel}. Nuevos beneficios desbloqueados.`,
+                                        link: '/settings'
+                                    });
+                                }
                                 await supabase.from('profiles').update({ xp: newXP, level: newLevel }).eq('id', buyerProfile.id);
                                 if (user?.id === buyerProfile.id) {
                                     updateUser({ ...user, xp: newXP, level: newLevel }).catch(e => console.warn('[JobContext] XP sync failed:', e));
@@ -296,7 +330,16 @@ export const JobProvider = ({ children }) => {
                                 const xpEarned = calculateXPForJob(job.amount, freelancerProfile.level || 1, 'freelancer');
                                 const newXP = (freelancerProfile.xp || 0) + xpEarned;
                                 let newLevel = freelancerProfile.level || 1;
-                                if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) newLevel++;
+                                if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) {
+                                    newLevel++;
+                                    // Notify Level Up for Freelancer
+                                    NotificationService.createNotification(freelancerProfile.id, {
+                                        type: 'level_up',
+                                        title: '¡Subiste de Nivel! 🚀',
+                                        message: `Alcanzaste el Nivel ${newLevel}. Nuevos beneficios desbloqueados.`,
+                                        link: '/settings'
+                                    });
+                                }
                                 await supabase.from('profiles').update({ xp: newXP, level: newLevel }).eq('id', freelancerProfile.id);
                                 if (user?.id === freelancerProfile.id) {
                                     updateUser({ ...user, xp: newXP, level: newLevel }).catch(e => console.warn('[JobContext] XP sync failed:', e));

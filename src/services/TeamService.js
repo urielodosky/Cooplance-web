@@ -277,14 +277,36 @@ export const toggleTeamService = async (teamId, serviceId, actorId) => {
     return updated;
 };
 
-export const completeProject = async (teamId, projectId, ratings) => {
-    const { error } = await supabase
-        .from('team_projects')
-        .update({ status: 'completed', ratings, completed_at: new Date().toISOString() })
-        .eq('team_id', teamId)
-        .eq('project_id', projectId);
+import * as NotificationService from './NotificationService';
 
-    if (error) throw error;
+export const completeProject = async (teamId, projectId, ratings) => {
+    try {
+        // 1. Fetch distribution and project info
+        const distribution = await calculateFrozenDistribution(teamId, projectId);
+        const { data: team } = await supabase.from('teams').select('name').eq('id', teamId).single();
+
+        // 2. Update project status
+        const { error } = await supabase
+            .from('team_projects')
+            .update({ status: 'completed', ratings, completed_at: new Date().toISOString() })
+            .eq('team_id', teamId)
+            .eq('project_id', projectId);
+
+        if (error) throw error;
+
+        // 3. Notify all members about their commission
+        for (const dist of distribution) {
+            await NotificationService.createNotification(dist.userId, {
+                type: 'coop_victory',
+                title: '¡Victoria en equipo! 🤝',
+                message: `Tu Coop '${team?.name || 'equipo'}' cerró un trabajo y recibiste $${Math.round(dist.amount)} de comisión.`,
+                link: '/wallet'
+            });
+        }
+    } catch (err) {
+        console.error('[TeamService] Error completing project notifications:', err);
+        throw err;
+    }
 };
 
 export const updateTeamRules = async (teamId, rulesText, actorId) => {

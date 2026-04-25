@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import * as NotificationService from './NotificationService';
 
 /**
  * ReviewService - Supabase
@@ -51,12 +52,21 @@ export const createReview = async (reviewData) => {
             throw reviewError;
         }
 
-        // 2. XP Penalty Logic (Universally applied to all levels, both Clients and Freelancers)
-        if (review.rating <= 3) {
-            let userToPenalize = null;
+            let userToNotify = null;
+            let reviewerName = 'Alguien';
 
+            // 2. Fetch Reviewer Name
+            const { data: reviewerProfile } = await supabase
+                .from('profiles')
+                .select('first_name, username')
+                .eq('id', review.reviewer_id)
+                .single();
+            if (reviewerProfile) {
+                reviewerName = reviewerProfile.first_name || reviewerProfile.username;
+            }
+
+            // 3. Determine who is being reviewed
             if (review.job_id) {
-                // Determine who is being reviewed based on the job
                 const { data: job } = await supabase
                     .from('jobs')
                     .select('client_id, provider_id')
@@ -64,50 +74,43 @@ export const createReview = async (reviewData) => {
                     .single();
 
                 if (job) {
-                    if (job.client_id === review.reviewer_id) {
-                        // Client is reviewing the freelancer. The freelancer is penalized.
-                        userToPenalize = job.provider_id;
-                    } else if (job.provider_id === review.reviewer_id) {
-                        // Freelancer is reviewing the client. The client is penalized.
-                        userToPenalize = job.client_id;
-                    }
+                    userToNotify = (job.client_id === review.reviewer_id) ? job.provider_id : job.client_id;
                 }
-            } 
-            
-            // Fallback for older workflow or reviews without job_id
-            if (!userToPenalize && review.service_id) {
+            } else if (review.service_id) {
                 const { data: service } = await supabase
                     .from('services')
                     .select('owner_id')
                     .eq('id', review.service_id)
                     .single();
-                
                 if (service && service.owner_id !== review.reviewer_id) {
-                    userToPenalize = service.owner_id;
+                    userToNotify = service.owner_id;
                 }
             }
 
-            if (userToPenalize) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('xp')
-                    .eq('id', userToPenalize)
-                    .single();
+            if (userToNotify) {
+                // Send Notification
+                await NotificationService.createNotification(userToNotify, {
+                    type: 'review_new',
+                    title: '¡Nueva reseña! ⭐',
+                    message: `${reviewerName} calificó tu trabajo. Entrá a tu perfil para ver qué escribió.`,
+                    link: '/profile'
+                });
 
-                if (profile) {
-                    // Penalty applies to ALL levels without exception
-                    const penalty = review.rating <= 2 ? 100 : 20;
-                    const newXP = Math.max(0, (profile.xp || 0) - penalty);
-                    
-                    await supabase
+                // XP Penalty Logic (Universally applied)
+                if (review.rating <= 3) {
+                    const { data: profile } = await supabase
                         .from('profiles')
-                        .update({ xp: newXP })
-                        .eq('id', userToPenalize);
-                    
-                    console.log(`[ReviewService] Quality Penalty applied to ${userToPenalize}: -${penalty} XP`);
+                        .select('xp')
+                        .eq('id', userToNotify)
+                        .single();
+
+                    if (profile) {
+                        const penalty = review.rating <= 2 ? 100 : 20;
+                        const newXP = Math.max(0, (profile.xp || 0) - penalty);
+                        await supabase.from('profiles').update({ xp: newXP }).eq('id', userToNotify);
+                    }
                 }
             }
-        }
 
         return review ? mapFromDB(review) : null;
     } catch (err) {
