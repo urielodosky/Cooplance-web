@@ -555,7 +555,25 @@ const Chat = () => {
                             <div className="chat-window-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     {(() => {
-                                        const other = activeChat.participants?.find(p => String(p.id) !== String(user.id));
+                                        // 1. Try to find the other participant in the chat list
+                                        let other = activeChat.participants?.find(p => String(p.id) !== String(user.id));
+                                        
+                                        // 2. FALLBACK: If the other person deleted the chat, they are gone from participants.
+                                        // We look for them in the associated JOB or PROJECT.
+                                        if (!other && activeChat.contextId) {
+                                            const contextJob = jobs.find(j => String(j.id) === String(activeChat.contextId) || String(j.projectId) === String(activeChat.contextId));
+                                            if (contextJob) {
+                                                const isIClient = String(contextJob.client_id || contextJob.buyer_id) === String(user.id);
+                                                other = {
+                                                    id: isIClient ? contextJob.provider_id || contextJob.freelancer_id : contextJob.client_id || contextJob.buyer_id,
+                                                    username: isIClient ? contextJob.provider_username || contextJob.freelancer_username : contextJob.client_username || contextJob.buyer_username,
+                                                    fullName: isIClient ? contextJob.provider_name || contextJob.freelancer_name : contextJob.client_name || contextJob.buyer_name,
+                                                    avatar: isIClient ? contextJob.provider_avatar || contextJob.freelancer_avatar : contextJob.client_avatar || contextJob.buyer_avatar,
+                                                    role: isIClient ? 'freelancer' : 'client'
+                                                };
+                                            }
+                                        }
+
                                         return (
                                             <>
                                                 <div className="header-avatar" style={{ 
@@ -604,9 +622,9 @@ const Chat = () => {
                                                                     else navigate(`/client/${other.id}`);
                                                                 }}
                                                             >
-                                                                @{other.username}
+                                                                @{other.username || other.id}
                                                             </span>
-                                                            {other.fullName && <span style={{ opacity: 0.8, fontWeight: '500' }}>• {other.fullName}</span>}
+                                                            {(other.fullName || other.first_name) && <span style={{ opacity: 0.8, fontWeight: '500' }}>• {other.fullName || `${other.first_name || ''} ${other.last_name || ''}`}</span>}
                                                         </div>
                                                     )}
                                                 </div>
