@@ -110,6 +110,8 @@ export const hasUserApplied = async (projectId, userId) => {
         console.error('[ProposalService] Critical error checking application:', err);
         return false;
     }
+};
+
 export const getWeeklyProposalCount = async (userId) => {
     try {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();

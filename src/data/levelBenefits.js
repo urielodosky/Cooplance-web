@@ -5,6 +5,7 @@ export const FREELANCER_BENEFITS = {
         benefits: [
             '1 Proyecto a la vez',
             'Publicar 1 servicio',
+            '5 solicitudes de trabajo por semana',
             'Tus clientes reciben doble XP (incentivo de contratación)'
         ]
     },
@@ -13,7 +14,8 @@ export const FREELANCER_BENEFITS = {
         description: 'Trayectoria inicial confirmada con experiencia básica.',
         benefits: [
             'Manejar hasta 3 proyectos simultáneos',
-            'Publicar hasta 2 servicios'
+            'Publicar hasta 2 servicios',
+            '10 solicitudes de trabajo por semana'
         ]
     },
     3: {
@@ -21,7 +23,8 @@ export const FREELANCER_BENEFITS = {
         description: 'Colaborador recurrente con flujo de trabajo constante.',
         benefits: [
             'Manejar hasta 5 proyectos a la vez',
-            'Publicar hasta 3 servicios'
+            'Publicar hasta 3 servicios',
+            '20 solicitudes de trabajo por semana'
         ]
     },
     4: {
@@ -29,7 +32,8 @@ export const FREELANCER_BENEFITS = {
         description: 'Especialista con experiencia comprobada en múltiples proyectos.',
         benefits: [
             'Manejar hasta 10 proyectos activos',
-            'Publicar hasta 4 servicios'
+            'Publicar hasta 4 servicios',
+            '30 solicitudes de trabajo por semana'
         ]
     },
     5: {
@@ -38,6 +42,7 @@ export const FREELANCER_BENEFITS = {
         benefits: [
             'Sin límite de proyectos activos',
             'Publicar hasta 5 servicios',
+            '50 solicitudes de trabajo por semana',
             'Insignia por alcanzar la mitad del recorrido'
         ]
     },
@@ -46,6 +51,7 @@ export const FREELANCER_BENEFITS = {
         description: 'Reconocimiento avanzado y optimización de márgenes.',
         benefits: [
             'Comisión reducida al 11%',
+            '50 solicitudes de trabajo por semana',
             '¡Cuidado! Se desbloquea la pérdida de XP por inactividad',
             'Tip: Mantén actividad regular para no bajar de nivel'
         ]
@@ -54,21 +60,24 @@ export const FREELANCER_BENEFITS = {
         name: 'Especialista Senior',
         description: 'Referente técnico con prioridad de mercado.',
         benefits: [
-            'Comisión reducida al 10%'
+            'Comisión reducida al 10%',
+            '50 solicitudes de trabajo por semana'
         ]
     },
     8: {
         name: 'Consultor Estratégico',
         description: 'Liderazgo y excelencia en la ejecución de servicios.',
         benefits: [
-            'Comisión reducida al 9%'
+            'Comisión reducida al 9%',
+            '50 solicitudes de trabajo por semana'
         ]
     },
     9: {
         name: 'Socio de Élite',
         description: 'Máximo prestigio y beneficios exclusivos de plataforma.',
         benefits: [
-            'Comisión reducida al 8%'
+            'Comisión reducida al 8%',
+            '50 solicitudes de trabajo por semana'
         ]
     },
     10: {
@@ -76,6 +85,7 @@ export const FREELANCER_BENEFITS = {
         description: 'Máximo rango honorífico. Una leyenda del ecosistema.',
         benefits: [
             'Comisión reducida al 6%',
+            '50 solicitudes de trabajo por semana',
             'Estrella destacada en todos tus servicios'
         ]
     }
