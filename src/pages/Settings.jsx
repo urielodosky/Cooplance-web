@@ -542,28 +542,6 @@ const Settings = () => {
                             />
                         </div>
 
-                        {/* 4. DNI (Masked - Only saved to DB) */}
-                        <div className="form-group">
-                            <label className="field-label">DNI (Documento Nacional de Identidad)</label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type="password"
-                                    value={dni}
-                                    onChange={(e) => setDni(e.target.value)}
-                                    placeholder="Ingresa tu DNI"
-                                    className="settings-input"
-                                    style={{ letterSpacing: '0.2em' }}
-                                />
-                                <span style={{ 
-                                    display: 'block', 
-                                    marginTop: '0.4rem', 
-                                    fontSize: '0.7rem', 
-                                    color: 'var(--text-muted)' 
-                                }}>
-                                    🔒 Tu DNI se guarda de forma segura y no es visible para otros usuarios.
-                                </span>
-                            </div>
-                        </div>
 
                         {/* 5. COUNTRY */}
                         <div className="form-group">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PackageCheck, Send, MessageSquare, Info } from 'lucide-react';
+import { PackageCheck, Send, MessageSquare, Info, Check } from 'lucide-react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useServices } from '../features/services/context/ServiceContext';
@@ -219,8 +219,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     }}>
                                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
                                         {job.status === 'active' ? 'EN PROGRESO' : 
-                                         job.status === 'delivered' ? 'TRABAJO ENTREGADO' : 
-                                         job.status === 'pending_approval' ? 'POR ACEPTAR' : job.status.toUpperCase()}
+                                         job.status === 'delivered' ? 'PENDIENTE DE FINALIZAR' : 
+                                         job.status === 'pending_approval' ? 'POR ACEPTAR' : (job.status?.toUpperCase() || 'ESTADO')}
                                     </span>
                                 </div>
                             </div>
@@ -441,9 +441,34 @@ const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }
                         {myServices.map(service => (
                             <ServiceCard key={service.id} service={{ ...service, level: user.level || 1 }} />
                         ))}
-                        <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', background: 'var(--bg-card)', padding: '1.5rem 1rem', boxShadow: 'var(--shadow-sm)' }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.6rem', fontSize: '1.3rem' }}>+</div>
-                            <h4 style={{ color: 'var(--text-primary)', fontSize: '0.95rem', margin: 0 }}>Crear Nuevo</h4>
+                        <div className="glass service-card clickable" onClick={handleCreateServiceClick} style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            border: '2px dashed var(--border)', 
+                            background: 'var(--bg-card)', 
+                            padding: '2rem', 
+                            boxShadow: 'var(--shadow-sm)',
+                            minHeight: '420px',
+                            height: '100%',
+                            transition: 'all 0.3s ease'
+                        }}>
+                            <div style={{ 
+                                width: '56px', 
+                                height: '56px', 
+                                borderRadius: '50%', 
+                                background: 'rgba(139, 92, 246, 0.1)', 
+                                color: 'var(--primary)', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                marginBottom: '1rem', 
+                                fontSize: '1.5rem',
+                                border: '1px solid rgba(139, 92, 246, 0.2)'
+                            }}>+</div>
+                            <h4 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>Crear Nuevo Servicio</h4>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', textAlign: 'center' }}>Publica un nuevo servicio para empezar a vender</p>
                         </div>
                     </>
                 ) : (
@@ -582,8 +607,8 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     }}>
                                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
                                         {job.status === 'active' ? 'EN PROGRESO' : 
-                                         job.status === 'delivered' ? 'REVISIÓN REQUERIDA' : 
-                                         job.status === 'pending_approval' ? 'ESPERANDO ACEPTACIÓN' : job.status.toUpperCase()}
+                                         job.status === 'delivered' ? 'PENDIENTE DE TU APROBACIÓN' : 
+                                         job.status === 'pending_approval' ? 'ESPERANDO ACEPTACIÓN' : (job.status?.toUpperCase() || 'ESTADO')}
                                     </span>
                                 </div>
                             </div>
