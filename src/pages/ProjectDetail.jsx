@@ -90,6 +90,27 @@ const ProjectDetail = () => {
         }
 
         const checkLimitAndOpen = async () => {
+            const { getWeeklyProposalCount } = await import('../lib/proposalService');
+            const weeklyProposals = await getWeeklyProposalCount(user.id);
+            
+            const getProposalLimit = (level) => {
+                if (level <= 1) return 5;
+                if (level === 2) return 10;
+                if (level === 3) return 20;
+                if (level === 4) return 30;
+                return 50;
+            };
+
+            const pLimit = getProposalLimit(user.level || 1);
+            if (weeklyProposals >= pLimit) {
+                setApplyMessage({ 
+                    text: `Has alcanzado tu límite semanal de ${pLimit} postulaciones para el Nivel ${user.level || 1}. Espera a que se cumpla la semana o sube de nivel.`, 
+                    type: 'error' 
+                });
+                setTimeout(() => setApplyMessage({ text: '', type: '' }), 5000);
+                return;
+            }
+
             const activeJobsCount = await getActiveJobsCount(user.id);
 
             const getActiveJobLimit = (level) => {

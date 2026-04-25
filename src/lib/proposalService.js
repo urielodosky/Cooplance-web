@@ -110,15 +110,65 @@ export const hasUserApplied = async (projectId, userId) => {
         console.error('[ProposalService] Critical error checking application:', err);
         return false;
     }
+export const getWeeklyProposalCount = async (userId) => {
+    try {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { count, error } = await supabase
+            .from('proposals')
+            .select('*', { count: 'exact', head: true })
+            .eq('freelancer_id', userId)
+            .gt('created_at', sevenDaysAgo);
+
+        if (error) {
+            console.error('[ProposalService] Error counting weekly proposals:', error);
+            return 0;
+        }
+        return count || 0;
+    } catch (err) {
+        console.error('[ProposalService] Critical error counting weekly proposals:', err);
+        return 0;
+    }
 };
 
 import * as NotificationService from '../services/NotificationService';
 
 // ── Create proposal ─────────────────────────────────────────
 
+const getWeeklyLimit = (level) => {
+    if (level <= 1) return 5;
+    if (level === 2) return 10;
+    if (level === 3) return 20;
+    if (level === 4) return 30;
+    return 50; // Level 5+
+};
+
 export const createProposal = async ({ projectId, userId, userName, userRole, coverLetter, amount, deliveryDays }) => {
     try {
-        // 1. Fetch project details to get client_id and title
+        // 1. Fetch user level
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('level')
+            .eq('id', userId)
+            .single();
+        
+        const userLevel = profile?.level || 1;
+        const limit = getWeeklyLimit(userLevel);
+
+        // 2. Count proposals in the last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { count, error: countError } = await supabase
+            .from('proposals')
+            .select('*', { count: 'exact', head: true })
+            .eq('freelancer_id', userId)
+            .gt('created_at', sevenDaysAgo);
+
+        if (countError) throw countError;
+
+        if (count >= limit) {
+            throw new Error(`Has alcanzado tu límite semanal de ${limit} postulaciones para el Nivel ${userLevel}.`);
+        }
+
+        // 3. Fetch project details to get client_id and title
         const { data: project, error: projectError } = await supabase
             .from('projects')
             .select('title, client_id')
@@ -127,7 +177,7 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
 
         if (projectError) throw projectError;
 
-        // 2. Insert the proposal
+        // 4. Insert the proposal
         const { data, error } = await supabase
             .from('proposals')
             .insert({
@@ -148,7 +198,7 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
             throw error;
         }
 
-        // 3. Notify the Client
+        // 5. Notify the Client
         await NotificationService.createNotification(project.client_id, {
             type: 'proposal_received',
             title: 'Nueva propuesta',
