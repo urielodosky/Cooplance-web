@@ -112,10 +112,22 @@ export const hasUserApplied = async (projectId, userId) => {
     }
 };
 
+import * as NotificationService from '../services/NotificationService';
+
 // ── Create proposal ─────────────────────────────────────────
 
 export const createProposal = async ({ projectId, userId, userName, userRole, coverLetter, amount, deliveryDays }) => {
     try {
+        // 1. Fetch project details to get client_id and title
+        const { data: project, error: projectError } = await supabase
+            .from('projects')
+            .select('title, client_id')
+            .eq('id', projectId)
+            .single();
+
+        if (projectError) throw projectError;
+
+        // 2. Insert the proposal
         const { data, error } = await supabase
             .from('proposals')
             .insert({
@@ -136,6 +148,14 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
             throw error;
         }
 
+        // 3. Notify the Client
+        await NotificationService.createNotification(project.client_id, {
+            type: 'proposal_new',
+            title: '¡Nueva propuesta! 🎉',
+            message: `${userName} se postuló para tu pedido '${project.title}'.`,
+            link: `/dashboard`
+        });
+
         return data;
     } catch (err) {
         console.error('[ProposalService] Critical error creating proposal:', err);
@@ -145,8 +165,18 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
 
 // ── Update proposal status ──────────────────────────────────
 
-export const updateProposalStatus = async (proposalId, status) => {
+export const updateProposalStatus = async (proposalId, status, { clientId, clientName } = {}) => {
     try {
+        // 1. Fetch proposal and project info for notification
+        const { data: proposal, error: fetchError } = await supabase
+            .from('proposals')
+            .select('*, projects(title)')
+            .eq('id', proposalId)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        // 2. Update status
         const { error } = await supabase
             .from('proposals')
             .update({ status })
@@ -155,6 +185,23 @@ export const updateProposalStatus = async (proposalId, status) => {
         if (error) {
             console.error('[ProposalService] Error updating proposal:', error);
             throw error;
+        }
+
+        // 3. Send Notification to Freelancer
+        if (status === 'accepted') {
+            await NotificationService.createNotification(proposal.freelancer_id, {
+                type: 'proposal_accepted',
+                title: '¡Postulación aceptada! 🚀',
+                message: `${clientName || 'Un cliente'} te contrató para '${proposal.projects?.title}'. Entrá para comenzar a chatear.`,
+                link: `/dashboard`
+            });
+        } else if (status === 'rejected') {
+            await NotificationService.createNotification(proposal.freelancer_id, {
+                type: 'proposal_rejected',
+                title: 'Postulación no seleccionada',
+                message: `Tu postulación para '${proposal.projects?.title}' no fue seleccionada esta vez. ¡Hay muchos pedidos más esperándote!`,
+                link: `/explore-clients`
+            });
         }
     } catch (err) {
         console.error('[ProposalService] Critical error updating proposal status:', err);

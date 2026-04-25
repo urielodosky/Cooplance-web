@@ -79,8 +79,30 @@ export const TeamProvider = ({ children }) => {
     };
 
     const addMemberToTeam = async (teamId, newUserId) => {
-        await TeamService.addMember(teamId, newUserId, user.id);
-        await fetchTeams();
+        try {
+            // Fetch team info for the notification
+            const { data: team } = await supabase
+                .from('teams')
+                .select('name')
+                .eq('id', teamId)
+                .single();
+
+            await TeamService.addMember(teamId, newUserId, user.id);
+            await fetchTeams();
+
+            // Notify the new member
+            if (team && user) {
+                const inviterName = user.first_name || user.username || 'Un usuario';
+                await NotificationService.createNotification(newUserId, {
+                    type: 'coop_invite',
+                    title: 'Invitación a Coop 🤝',
+                    message: `${inviterName} te invitó a unirte a su Coop '${team.name}'. ¿Aceptás el desafío?`,
+                    link: '/my-coops'
+                });
+            }
+        } catch (err) {
+            console.error('[TeamContext] Error inviting member:', err);
+        }
     };
 
     const updateMemberRole = async (teamId, targetUserId, newRole) => {

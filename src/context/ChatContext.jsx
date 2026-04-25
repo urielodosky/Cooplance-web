@@ -256,6 +256,9 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
+    // Track last notification time per chat to avoid spam
+    const [lastNotifMap, setLastNotifMap] = useState({});
+
     const sendMessage = async (chatId, text, attachments = [], options = {}) => {
         if (!user && !options.isSystem) throw new Error("Debe estar autenticado");
 
@@ -264,14 +267,12 @@ export const ChatProvider = ({ children }) => {
             let receiverId = options.receiverId;
 
             if (!receiverId) {
-                // Intentar encontrarlo en el estado local
                 const chat = chats.find(c => c.id === chatId);
                 if (chat && chat.participants) {
                     const other = chat.participants.find(p => p.id !== user?.id);
                     receiverId = other ? other.id : null;
                 }
 
-                // Búsqueda exhaustiva en la base de datos si no está en el estado local
                 if (!receiverId) {
                     const { data: participants } = await supabase
                         .from('chat_participants')
@@ -283,10 +284,6 @@ export const ChatProvider = ({ children }) => {
                 }
             }
 
-            if (!receiverId && !options.isSystem) {
-                console.warn("[ChatContext] No se pudo determinar el receptor del mensaje.");
-            }
-
             // Sanitización contra inyección/XSS antes de guardar a DB
             const cleanText = text ? sanitizeText(text) : text;
 
@@ -296,7 +293,7 @@ export const ChatProvider = ({ children }) => {
                     chat_id: chatId,
                     sender_id: options.isSystem ? null : user.id,
                     sender_name: options.senderName || (options.isSystem ? 'Sistema' : (user.username || user.first_name || 'Usuario')),
-                    receiver_id: receiverId, // Campo obligatorio crítico
+                    receiver_id: receiverId, 
                     content: cleanText,
                     attachments: attachments,
                     is_system: options.isSystem || false
@@ -314,6 +311,28 @@ export const ChatProvider = ({ children }) => {
                     last_message_at: new Date().toISOString()
                 })
                 .eq('id', chatId);
+
+            // --- NOTIFICATION LOGIC ---
+            if (receiverId && !options.isSystem && cleanText) {
+                const now = Date.now();
+                const lastTime = lastNotifMap[chatId] || 0;
+                
+                // Anti-spam: Only notify if 15 seconds have passed since last one for this chat
+                if (now - lastTime > 15000) {
+                    const senderName = user.first_name || user.username || 'Un usuario';
+                    const words = cleanText.split(' ').filter(w => w.length > 0);
+                    const preview = words.slice(0, 5).join(' ') + (words.length > 5 ? '...' : '');
+                    
+                    await NotificationService.createNotification(receiverId, {
+                        type: 'message',
+                        title: `Nuevo mensaje de ${senderName}`,
+                        message: `'${preview}'`,
+                        link: `/chat/${chatId}`
+                    });
+                    
+                    setLastNotifMap(prev => ({ ...prev, [chatId]: now }));
+                }
+            }
 
             // Registro de actividad gamificada
             if (user && !options.isSystem) {

@@ -205,13 +205,38 @@ export const JobProvider = ({ children }) => {
 
             if (error) throw error;
 
-            setJobs(prev => prev.map(job =>
-                job.id === jobId ? { ...job, status, ...updateData } : job
-            ));
+            // Send Notifications based on status change
+            const job = jobs.find(j => j.id === jobId);
+            if (job) {
+                if (status === 'pending_approval') {
+                    // Freelancer delivered -> Notify Client
+                    NotificationService.createNotification(job.buyerId, {
+                        type: 'job_delivered',
+                        title: '¡Trabajo entregado! 📦',
+                        message: `${job.freelancerName} envió los resultados de '${job.serviceTitle}'. Revisalos para finalizar el contrato.`,
+                        link: '/dashboard'
+                    });
+                } else if (status === 'completed') {
+                    // Client approved -> Notify Freelancer
+                    NotificationService.createNotification(job.freelancerId, {
+                        type: 'job_completed',
+                        title: '¡Proyecto completado! ✅',
+                        message: `${job.buyerName} aprobó '${job.serviceTitle}'. ¡No te olvides de dejarle una reseña!`,
+                        link: '/dashboard'
+                    });
+                } else if (status === 'active' && job.status === 'pending_approval') {
+                    // Client accepted a proposal or a job -> Notify Freelancer (already handled in proposalService, but here's a fallback)
+                    NotificationService.createNotification(job.freelancerId, {
+                        type: 'job_active',
+                        title: '¡Trabajo activado! 🚀',
+                        message: `${job.buyerName} aceptó el inicio del trabajo: '${job.serviceTitle}'.`,
+                        link: '/dashboard'
+                    });
+                }
+            }
 
             // XP and Transaction logic for completed jobs
             if (status === 'completed') {
-                const job = jobs.find(j => j.id === jobId);
                 if (job) {
                     // Record Transaction
                     try {
