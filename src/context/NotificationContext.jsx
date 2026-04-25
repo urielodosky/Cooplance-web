@@ -80,6 +80,13 @@ export const NotificationProvider = ({ children }) => {
     // Load on mount or user change
     useEffect(() => {
         loadNotifications();
+        
+        // Polling fallback every 60 seconds
+        const interval = setInterval(() => {
+            loadNotifications();
+        }, 60000);
+
+        return () => clearInterval(interval);
     }, [loadNotifications]);
 
     const markAsRead = async (notificationId) => {

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PackageCheck, Send, MessageSquare, Info } from 'lucide-react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useServices } from '../features/services/context/ServiceContext';
 import { useChat } from '../context/ChatContext';
+import { useNotifications } from '../context/NotificationContext';
 import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
@@ -203,11 +205,22 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: 'var(--bg-body)', color: 'var(--text-muted)', fontWeight: '700', border: '1px solid var(--border)', textTransform: 'uppercase' }}>
                                         {job.tier || 'Estándar'}
                                     </span>
-                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#3b82f6' : '#f59e0b'), fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
-                                        {job.status === 'active' ? 'En Progreso' : 
-                                         job.status === 'delivered' ? 'Entregado' : 
-                                         job.status === 'pending_approval' ? 'Por Aceptar' : job.status}
+                                    <span style={{ 
+                                        fontSize: '0.85rem', 
+                                        color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), 
+                                        fontWeight: '800', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '6px',
+                                        padding: '4px 10px',
+                                        borderRadius: '8px',
+                                        background: job.status === 'active' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'delivered' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(245, 158, 11, 0.08)'),
+                                        border: '1px solid currentColor'
+                                    }}>
+                                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
+                                        {job.status === 'active' ? 'EN PROGRESO' : 
+                                         job.status === 'delivered' ? 'TRABAJO ENTREGADO' : 
+                                         job.status === 'pending_approval' ? 'POR ACEPTAR' : job.status.toUpperCase()}
                                     </span>
                                 </div>
                             </div>
@@ -249,20 +262,33 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     }}>Detalle</button>
 
                                     {job.status === 'active' && (
-                                        <button className="btn-primary" style={{ 
-                                            padding: '0.5rem 1.4rem', 
-                                            fontSize: '0.85rem', 
-                                            borderRadius: '12px', 
-                                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                                            border: 'none',
-                                            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-                                            fontWeight: '700'
-                                        }} onClick={async () => {
-                                            if (window.confirm("¿Estás seguro de que deseas entregar este trabajo? Se notificará al cliente para su revisión.")) {
-                                                await updateJobStatus(job.id, 'delivered');
-                                                alert("¡Trabajo entregado con éxito! El cliente ha sido notificado.");
-                                            }
-                                        }}>Entregar</button>
+                                        <button 
+                                            className="btn-primary premium-deliver-btn" 
+                                            style={{ 
+                                                padding: '0.6rem 1.6rem', 
+                                                fontSize: '0.85rem', 
+                                                borderRadius: '14px', 
+                                                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                                border: 'none',
+                                                boxShadow: '0 4px 15px rgba(79, 70, 229, 0.4)',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                color: 'white',
+                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                cursor: 'pointer'
+                                            }} 
+                                            onClick={async () => {
+                                                if (window.confirm("¿Estás seguro de que deseas entregar este trabajo? Se notificará al cliente para su revisión.")) {
+                                                    await updateJobStatus(job.id, 'delivered');
+                                                    alert("¡Trabajo entregado con éxito! El cliente ha sido notificado.");
+                                                }
+                                            }}
+                                        >
+                                            <PackageCheck size={18} />
+                                            Entregar Trabajo
+                                        </button>
                                     )}
 
                                     {job.status === 'pending_approval' && (
@@ -542,11 +568,22 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     {job.freelancerName && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({job.freelancerName})</span>}
                                 </div>
                                 <div>
-                                    <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#3b82f6' : '#f59e0b'), fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }}></span>
-                                        {job.status === 'active' ? 'En Progreso' : 
-                                         job.status === 'delivered' ? 'Entregado' : 
-                                         job.status === 'pending_approval' ? 'Esperando Aceptación' : job.status}
+                                    <span style={{ 
+                                        fontSize: '0.85rem', 
+                                        color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), 
+                                        fontWeight: '800', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '6px',
+                                        padding: '4px 10px',
+                                        borderRadius: '8px',
+                                        background: job.status === 'active' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'delivered' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(245, 158, 11, 0.08)'),
+                                        border: '1px solid currentColor'
+                                    }}>
+                                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
+                                        {job.status === 'active' ? 'EN PROGRESO' : 
+                                         job.status === 'delivered' ? 'REVISIÓN REQUERIDA' : 
+                                         job.status === 'pending_approval' ? 'ESPERANDO ACEPTACIÓN' : job.status.toUpperCase()}
                                     </span>
                                 </div>
                             </div>
@@ -582,48 +619,66 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
                                     {job.status === 'delivered' && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%' }}>
-                                            <div className="auto-release-notice" style={{
-                                                fontSize: '0.75rem',
-                                                color: '#f59e0b',
-                                                background: 'rgba(245, 158, 11, 0.08)',
-                                                padding: '8px 12px',
-                                                borderRadius: '10px',
-                                                border: '1px dashed rgba(245, 158, 11, 0.3)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                lineHeight: '1.4'
-                                            }}>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                                <span><strong>REVISIÓN REQUERIDA:</strong> Tienes 24hs para aprobar o pedir ajustes. Pasado ese tiempo, el pago se liberará automáticamente al freelancer.</span>
+                                        <div className="glass-strong buyer-action-card" style={{ 
+                                            display: 'flex', 
+                                            flexDirection: 'column', 
+                                            gap: '1rem', 
+                                            width: '100%',
+                                            padding: '1.2rem',
+                                            borderRadius: '18px',
+                                            background: 'rgba(99, 102, 241, 0.05)',
+                                            border: '1px solid rgba(99, 102, 241, 0.2)',
+                                            marginTop: '0.5rem',
+                                            boxShadow: 'inset 0 0 20px rgba(99, 102, 241, 0.03)'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{ background: '#f59e0b', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                                    <Info size={16} />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <h5 style={{ margin: 0, fontSize: '0.9rem', fontWeight: '800', color: 'var(--text-primary)' }}>REVISIÓN REQUERIDA</h5>
+                                                    <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                                                        Tienes 24hs para aprobar o pedir ajustes. Pasado ese tiempo, el pago se liberará automáticamente.
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                <button className="btn-outline" style={{ 
-                                                    borderColor: '#f59e0b', 
-                                                    color: '#f59e0b', 
-                                                    padding: '0.5rem 1rem', 
+                                            
+                                            <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                                                <button className="btn-ghost" style={{ 
+                                                    padding: '0.6rem 1.2rem', 
                                                     fontSize: '0.85rem', 
                                                     borderRadius: '12px',
-                                                    background: 'rgba(245, 158, 11, 0.05)'
+                                                    color: '#f59e0b',
+                                                    fontWeight: '700',
+                                                    background: 'rgba(245, 158, 11, 0.1)',
+                                                    border: '1px solid rgba(245, 158, 11, 0.2)'
                                                 }} onClick={async () => {
-                                                    await updateJobStatus(job.id, 'active');
-                                                    alert("Solicitud de ajustes enviada. El plazo ha sido reactivado.");
+                                                    if(window.confirm("¿Estás seguro de que deseas solicitar ajustes? El trabajo volverá a estar en progreso.")) {
+                                                        await updateJobStatus(job.id, 'active');
+                                                        alert("Solicitud de ajustes enviada. El freelancer ha sido notificado.");
+                                                    }
                                                 }}>Pedir Ajustes</button>
+                                                
                                                 <button className="btn-primary" style={{ 
-                                                    backgroundColor: '#10b981', 
-                                                    padding: '0.5rem 1.2rem', 
+                                                    padding: '0.6rem 1.5rem', 
                                                     fontSize: '0.85rem', 
                                                     borderRadius: '12px',
+                                                    background: 'linear-gradient(135deg, #10b981, #059669)',
                                                     border: 'none',
                                                     color: 'white',
-                                                    fontWeight: '700',
-                                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                                                    fontWeight: '800',
+                                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px'
                                                 }} onClick={() => {
-                                                    if(window.confirm("¿Confirmas que el trabajo ha sido recibido satisfactoriamente? Se liberará el pago al freelancer.")) {
+                                                    if(window.confirm("¿Confirmas que el trabajo ha sido recibido satisfactoriamente? Se liberará el pago inmediatamente.")) {
                                                         updateJobStatus(job.id, 'completed');
                                                     }
-                                                }}>Aprobar & Liberar Pago</button>
+                                                }}>
+                                                    <Check size={18} />
+                                                    Aprobar y Liberar Pago
+                                                </button>
                                             </div>
                                         </div>
                                     )}
@@ -969,6 +1024,7 @@ const Dashboard = () => {
     const { jobs, updateJobStatus: updateJobStatusApi, createJob } = useJobs();
     const { services } = useServices();
     const { createChat } = useChat();
+    const { refresh: refreshNotifications } = useNotifications();
     const navigate = useNavigate();
 
     const [tutorados, setTutorados] = useState([]);
@@ -1006,6 +1062,8 @@ const Dashboard = () => {
         if (status === 'completed' && refreshBadges) {
             refreshBadges();
         }
+        // Always refresh notifications locally too
+        if (refreshNotifications) refreshNotifications();
         return result;
     };
 

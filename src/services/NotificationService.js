@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase';
 export const NOTIFICATION_TYPES = {
     HIRED: 'job_hired',
     ACCEPTED: 'job_accepted',
+    DELIVERED: 'job_delivered',
+    COMPLETED: 'job_completed',
+    REVISION: 'job_revision_requested',
     MESSAGE: 'message',
     INVITE: 'coop_invite',
     ROLE_CHANGE: 'role_change',
