@@ -157,12 +157,19 @@ const ClientDetail = () => {
                 // 3. Fetch Completed Jobs (as Buyer)
                 const { data: jobsData, error: jError } = await supabase
                     .from('jobs')
-                    .select('*')
+                    .select('*, freelancer:profiles!freelancer_id(username, first_name, last_name), service:services!service_id(title)')
                     .eq('client_id', id)
                     .in('status', ['completed', 'canceled']);
                 
                 if (jError) throw jError;
-                setClientJobs(jobsData || []);
+                
+                // Map jobs to include serviceTitle and freelancerName
+                const mappedJobs = (jobsData || []).map(j => ({
+                    ...j,
+                    serviceTitle: j.service?.title || 'Servicio Personalizado',
+                    freelancerName: j.freelancer?.first_name ? `${j.freelancer.first_name} ${j.freelancer.last_name || ''}`.trim() : j.freelancer?.username
+                }));
+                setClientJobs(mappedJobs);
 
                 // 4. Fetch Reviews Received (as target)
                 const { data: recData, error: recError } = await supabase

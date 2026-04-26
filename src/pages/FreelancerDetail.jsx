@@ -165,16 +165,22 @@ const FreelancerDetail = () => {
                 setFreelancerServices(mappedServices);
 
                 // 3. Fetch Jobs (for work history)
-                // Note: We'll fetch completed jobs specifically
                 const { data: jobsData, error: jError } = await supabase
                     .from('jobs')
-                    .select('*')
+                    .select('*, client:profiles!client_id(username, first_name, last_name), service:services!service_id(title)')
                     .eq('freelancer_id', id)
                     .in('status', ['completed', 'canceled'])
                     .limit(10);
                 
                 if (jError) throw jError;
-                setFreelancerJobs(jobsData || []);
+
+                // Map jobs to include serviceTitle and clientName
+                const mappedJobs = (jobsData || []).map(j => ({
+                    ...j,
+                    serviceTitle: j.service?.title || 'Servicio Personalizado',
+                    clientName: j.client?.first_name ? `${j.client.first_name} ${j.client.last_name || ''}`.trim() : j.client?.username
+                }));
+                setFreelancerJobs(mappedJobs);
 
                 // 4. Fetch Reviews Received (as target)
                 const { data: recData, error: recError } = await supabase
@@ -460,7 +466,7 @@ const FreelancerDetail = () => {
                             <div key={job.id} className="glass" style={{ padding: '1.2rem 1.5rem', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                                 <div>
                                     <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', color: 'var(--text-primary)' }}>{job.serviceTitle}</h4>
-                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cliente: <strong>{job.buyerName}</strong></p>
+                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cliente: <strong>{job.clientName}</strong></p>
                                 </div>
                                 <div>
                                     <span style={{
