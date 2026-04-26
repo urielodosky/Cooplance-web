@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../features/auth/context/AuthContext';
 import { useTeams } from '../context/TeamContext';
 import { getProfilePicture } from '../utils/avatarUtils';
 import ServiceCard from '../features/services/components/ServiceCard';
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import '../styles/pages/ServiceDetail.scss';
 
-const BadgesSection = ({ freelancer }) => {
+const BadgesSection = ({ freelancer, isOwnProfile, navigate }) => {
     const Icons = {
         Sales: <Coin size={20} />,
         Level: <Flame size={20} />,
@@ -71,9 +71,18 @@ const BadgesSection = ({ freelancer }) => {
     });
 
     return (
-        <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
+        <div>
             <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Insignias del Freelancer</h3>
+                {isOwnProfile && (
+                    <button 
+                        className="btn-outline" 
+                        style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: '700', cursor: 'pointer' }}
+                        onClick={() => navigate('/badges')}
+                    >
+                        Ver mis insignias
+                    </button>
+                )}
             </div>
             <div className="dashboard-badges-grid" style={{ 
                 display: 'grid', 
@@ -140,8 +149,10 @@ const BadgesSection = ({ freelancer }) => {
 const FreelancerDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user: currentUser } = useAuth();
     const { teams } = useTeams();
     const [freelancer, setFreelancer] = useState(null);
+    const isOwnProfile = currentUser?.id === id;
     const [freelancerServices, setFreelancerServices] = useState([]);
     const [freelancerJobs, setFreelancerJobs] = useState([]);
     const [reviewsReceived, setReviewsReceived] = useState([]);
@@ -407,7 +418,7 @@ const FreelancerDetail = () => {
                 </div>
 
                 {/* Badges Section - Premium Grid */}
-                <BadgesSection freelancer={freelancer} />
+                <BadgesSection freelancer={freelancer} isOwnProfile={isOwnProfile} navigate={navigate} />
             </div>
 
             {/* CV Section */}

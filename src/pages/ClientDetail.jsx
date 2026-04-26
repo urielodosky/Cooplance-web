@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import '../styles/pages/ServiceDetail.scss';
 
-const BadgesSection = ({ client }) => {
+const BadgesSection = ({ client, isOwnProfile, navigate }) => {
     const Icons = {
         Sales: <Coin size={20} />,
         Level: <Flame size={20} />,
@@ -70,9 +70,17 @@ const BadgesSection = ({ client }) => {
     });
 
     return (
-        <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
             <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Insignias del Cliente</h3>
+                {isOwnProfile && (
+                    <button 
+                        className="btn-outline" 
+                        style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid #3b82f6', color: '#3b82f6', fontWeight: '700', cursor: 'pointer' }}
+                        onClick={() => navigate('/badges')}
+                    >
+                        Ver mis insignias
+                    </button>
+                )}
             </div>
             <div className="dashboard-badges-grid" style={{ 
                 display: 'grid', 
@@ -140,6 +148,7 @@ const ClientDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user: currentUser } = useAuth();
+    const isOwnProfile = currentUser?.id === id;
     const [client, setClient] = useState(null);
     const [clientProjects, setClientProjects] = useState([]);
     const [clientJobs, setClientJobs] = useState([]);
@@ -324,7 +333,7 @@ const ClientDetail = () => {
                 </div>
 
                 {/* Badges Section - Premium Grid */}
-                <BadgesSection client={client} />
+                <BadgesSection client={client} isOwnProfile={isOwnProfile} navigate={navigate} />
             </div>
 
             <div style={{ marginTop: '2rem' }}>

@@ -684,8 +684,15 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>@{job.freelancerUsername}</strong></span>
-                                            <span style={{ fontSize: '0.75rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), fontWeight: '800' }}>
-                                                • {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : 'Esperando'}
+                                            <span style={{ 
+                                                fontSize: '0.75rem', 
+                                                color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : '#f59e0b'), 
+                                                fontWeight: '800', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '4px'
+                                            }}>
+                                                • {job.status === 'active' ? 'EN PROGRESO' : job.status === 'delivered' ? 'ENTREGADO' : job.status === 'completed' ? 'FINALIZADO' : 'ESPERANDO'}
                                             </span>
                                         </div>
                                     </div>
