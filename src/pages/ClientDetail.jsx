@@ -157,8 +157,6 @@ const ClientDetail = () => {
                 // 3. Fetch Completed Jobs (as Buyer)
                 const { data: jobsData, error: jError } = await supabase
                     .from('jobs')
-                const { data: jobsData, error: jError } = await supabase
-                    .from('jobs')
                     .select('*, provider:profiles!provider_id(username, first_name, last_name, avatar_url)')
                     .eq('client_id', id)
                     .in('status', ['completed', 'canceled']);

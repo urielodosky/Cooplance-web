@@ -167,7 +167,6 @@ const CompanyDetail = () => {
 
                 // 3. Fetch Completed Jobs (as Buyer)
                 const { data: jobsData, error: jError } = await supabase
-                const { data: jobsData, error: jError } = await supabase
                     .from('jobs')
                     .select('*, client:profiles!client_id(username, first_name, last_name, avatar_url)')
                     .eq('provider_id', id)
