@@ -378,8 +378,10 @@ export const JobProvider = ({ children }) => {
                                 const newXP = (buyerProfile.xp || 0) + xpEarned;
                                 const newLevel = getLevelFromXP(newXP);
                                 
+                                // Update Balance / Stats for Buyer
+                                const newTotalSpent = (buyerProfile.total_spent || 0) + job.amount;
+
                                 if (newLevel > (buyerProfile.level || 1)) {
-                                    // Notify Level Up for Buyer
                                     await NotificationService.createNotification(buyerProfile.id, {
                                         type: 'level_up',
                                         title: '¡Subiste de Nivel!',
@@ -387,9 +389,13 @@ export const JobProvider = ({ children }) => {
                                         link: '/settings'
                                     });
                                 }
-                                await supabase.from('profiles').update({ xp: newXP, level: newLevel }).eq('id', buyerProfile.id);
+                                await supabase.from('profiles').update({ 
+                                    xp: newXP, 
+                                    level: newLevel,
+                                    total_spent: newTotalSpent
+                                }).eq('id', buyerProfile.id);
                                 if (user?.id === buyerProfile.id) {
-                                    updateUser({ ...user, xp: newXP, level: newLevel }).catch(e => console.warn('[JobContext] XP sync failed:', e));
+                                    updateUser({ ...user, xp: newXP, level: newLevel, total_spent: newTotalSpent }).catch(e => console.warn('[JobContext] Sync failed:', e));
                                 }
                             }
 
@@ -398,8 +404,11 @@ export const JobProvider = ({ children }) => {
                                 const newXP = (freelancerProfile.xp || 0) + xpEarned;
                                 const newLevel = getLevelFromXP(newXP);
                                 
+                                // Update Balance / Stats for Freelancer
+                                const newBalance = (freelancerProfile.balance || 0) + job.amount;
+                                const newTotalEarned = (freelancerProfile.total_earned || 0) + job.amount;
+
                                 if (newLevel > (freelancerProfile.level || 1)) {
-                                    // Notify Level Up for Freelancer
                                     await NotificationService.createNotification(freelancerProfile.id, {
                                         type: 'level_up',
                                         title: '¡Subiste de Nivel!',
@@ -407,9 +416,14 @@ export const JobProvider = ({ children }) => {
                                         link: '/settings'
                                     });
                                 }
-                                await supabase.from('profiles').update({ xp: newXP, level: newLevel }).eq('id', freelancerProfile.id);
+                                await supabase.from('profiles').update({ 
+                                    xp: newXP, 
+                                    level: newLevel,
+                                    balance: newBalance,
+                                    total_earned: newTotalEarned
+                                }).eq('id', freelancerProfile.id);
                                 if (user?.id === freelancerProfile.id) {
-                                    updateUser({ ...user, xp: newXP, level: newLevel }).catch(e => console.warn('[JobContext] XP sync failed:', e));
+                                    updateUser({ ...user, xp: newXP, level: newLevel, balance: newBalance, total_earned: newTotalEarned }).catch(e => console.warn('[JobContext] Sync failed:', e));
                                 }
                             }
                         }
