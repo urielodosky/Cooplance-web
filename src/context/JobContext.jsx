@@ -302,6 +302,18 @@ export const JobProvider = ({ children }) => {
             // XP and Transaction logic for completed jobs
             if (status === 'completed') {
                 if (job) {
+                    // Update related proposal if it exists (for projects)
+                    if (job.projectId) {
+                        try {
+                            await supabase
+                                .from('proposals')
+                                .update({ status: 'completed' })
+                                .eq('project_id', job.projectId)
+                                .eq('freelancer_id', job.freelancerId);
+                        } catch (pErr) {
+                            console.warn('Could not update related proposal:', pErr);
+                        }
+                    }
                     // Record Transaction
                     try {
                         const { error: txError } = await supabase.from('transactions').insert([

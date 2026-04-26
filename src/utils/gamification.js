@@ -49,11 +49,11 @@ export const calculateXPForJob = (amount, userLevel = 1, receiverRole = 'freelan
         else if (amount > 5000) baseXP = 40;
         else baseXP = 0;
     } else {
-        if (amount >= 100000) baseXP = 80;
-        else if (amount >= 45000) baseXP = 40;
-        else if (amount >= 15000) baseXP = 30;
-        else if (amount >= 5000) baseXP = 10;
-        else baseXP = 0;
+        if (amount >= 100000) baseXP = 100;
+        else if (amount >= 45000) baseXP = 60;
+        else if (amount >= 15000) baseXP = 40;
+        else if (amount >= 5000) baseXP = 25;
+        else baseXP = 5;
     }
 
     // Client/Company Multipliers
