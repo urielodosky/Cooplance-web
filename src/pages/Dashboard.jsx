@@ -613,8 +613,8 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                         <div key={job.id} className="glass job-card order-card premium-job-card" style={{ 
                             display: 'flex', 
                             flexDirection: 'column',
-                            gap: '0.8rem', 
-                            padding: '1rem', 
+                            gap: '0.4rem', 
+                            padding: '0.8rem 1rem', 
                             borderRadius: '20px', 
                             background: 'var(--bg-card)', 
                             border: '1px solid var(--border)', 
@@ -622,6 +622,53 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             transition: 'all 0.3s ease', 
                             boxShadow: 'var(--shadow-sm)' 
                         }}>
+                            {/* Top Row: Revision Actions (Linear, no box) */}
+                            {job.status === 'delivered' && (
+                                <div style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'space-between',
+                                    paddingBottom: '0.6rem',
+                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                    marginBottom: '0.2rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <Info size={14} color="#f59e0b" />
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-primary)' }}>REVISIÓN REQUERIDA</span>
+                                        </div>
+                                        <RevisionCountdown updatedAt={job.updatedAt || job.createdAt} />
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                        <button style={{ 
+                                            padding: '4px 12px', fontSize: '0.7rem', borderRadius: '6px',
+                                            color: '#f59e0b', fontWeight: '700', background: 'transparent', border: '1px solid rgba(245, 158, 11, 0.3)'
+                                        }} onClick={async () => {
+                                            const note = window.prompt("¿Qué ajustes necesitas?");
+                                            if (!note?.trim()) return;
+                                            try {
+                                                await updateJobStatus(job.id, 'active');
+                                                const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
+                                                if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
+                                                alert("Solicitud enviada.");
+                                            } catch (err) { console.error(err); }
+                                        }}>Pedir Ajustes</button>
+                                        
+                                        <button style={{ 
+                                            padding: '4px 14px', fontSize: '0.7rem', borderRadius: '6px',
+                                            background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
+                                            display: 'flex', alignItems: 'center', gap: '4px'
+                                        }} onClick={() => {
+                                            if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
+                                        }}>
+                                            <Check size={12} />
+                                            Aprobar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Main Content Area */}
                             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', width: '100%' }}>
                                 {/* Avatar */}
@@ -693,53 +740,6 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Second Row: Revision Actions (Linear, no box) */}
-                            {job.status === 'delivered' && (
-                                <div style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'space-between',
-                                    paddingTop: '0.5rem',
-                                    borderTop: '1px solid rgba(255,255,255,0.03)',
-                                    marginTop: '0.2rem'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Info size={14} color="#f59e0b" />
-                                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-primary)' }}>REVISIÓN REQUERIDA</span>
-                                        </div>
-                                        <RevisionCountdown updatedAt={job.updatedAt || job.createdAt} />
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                        <button style={{ 
-                                            padding: '4px 12px', fontSize: '0.7rem', borderRadius: '6px',
-                                            color: '#f59e0b', fontWeight: '700', background: 'transparent', border: '1px solid rgba(245, 158, 11, 0.3)'
-                                        }} onClick={async () => {
-                                            const note = window.prompt("¿Qué ajustes necesitas?");
-                                            if (!note?.trim()) return;
-                                            try {
-                                                await updateJobStatus(job.id, 'active');
-                                                const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
-                                                if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
-                                                alert("Solicitud enviada.");
-                                            } catch (err) { console.error(err); }
-                                        }}>Pedir Ajustes</button>
-                                        
-                                        <button style={{ 
-                                            padding: '4px 14px', fontSize: '0.7rem', borderRadius: '6px',
-                                            background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
-                                            display: 'flex', alignItems: 'center', gap: '4px'
-                                        }} onClick={() => {
-                                            if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
-                                        }}>
-                                            <Check size={12} />
-                                            Aprobar
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     ))
                 ) : (
