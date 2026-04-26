@@ -598,7 +598,7 @@ const ServiceDetail = () => {
             <div className="service-reviews-section" style={{ marginTop: '4rem', paddingBottom: '4rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                     <div>
-                        <h2 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Testimonios</h2>
+                        <h2 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Reseñas del servicio</h2>
                         <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>Lo que otros clientes dicen sobre este servicio</p>
                     </div>
                     {reviews.length > 0 && (
@@ -708,8 +708,7 @@ const ServiceDetail = () => {
                     </div>
                 ) : (
                     <div className="glass" style={{ padding: '5rem', textAlign: 'center', borderRadius: '30px', border: '1px dashed var(--border)' }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '1.5rem', opacity: 0.1 }}>⭐</div>
-                        <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Sin testimonios aún</h3>
+                        <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Sin reseñas aún</h3>
                         <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>Este servicio aún no ha recibido valoraciones. ¡Sé el primero en contratarlo y dejar tu opinión!</p>
                     </div>
                 )}

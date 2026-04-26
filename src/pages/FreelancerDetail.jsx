@@ -751,7 +751,6 @@ const FreelancerDetail = () => {
                             ))
                         ) : (
                             <div className="glass" style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.2 }}>⭐</div>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Aún no hay reseñas recibidas.</p>
                             </div>
                         )
