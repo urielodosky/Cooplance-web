@@ -712,7 +712,768 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                 </div>
                             </div>
                         </div>
-                    ));
+                    ))
+                ) : (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '18px', border: '1px dashed var(--border)' }}>
+                        <p>{activeTab === 'active' ? 'No tienes pedidos activos. ¡Explora servicios!' : 'Tu historial está vacío.'}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
+    <div style={{ marginTop: '2.5rem' }}>
+        <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <span>Mis Tutorados (Supervisión)</span>
+            <span style={{ fontSize: '0.75rem', background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: '10px' }}>Beta</span>
+        </h3>
+        <div className="services-grid">
+            {loading ? (
+                <GridSkeleton />
+            ) : tutorados.length > 0 ? (
+                tutorados.map(minor => (
+                    <div key={minor.id} className="glass" style={{
+                        padding: '1.5rem',
+                        borderRadius: '20px',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        textAlign: 'center'
+                    }}>
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid var(--primary)' }}>
+                            <img src={getProfilePicture({ role: minor.role, avatar: minor.avatar_url })} alt={minor.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <div>
+                            <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>{minor.first_name || minor.username}</h4>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>@{minor.username}</p>
+                        </div>
+                        <button
+                            className="btn-primary"
+                            style={{ width: '100%', padding: '0.6rem' }}
+                            onClick={() => enterMirrorMode(minor.id)}
+                        >
+                            Ver en Espejo
+                        </button>
+                    </div>
+                ))
+            ) : (
+                <div className="glass" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
+                    <p>No tienes menores a cargo registrados.</p>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
+import {
+    CreditCard as Coin,
+    Zap as Flame,
+    Rocket,
+    Heart,
+    Handshake,
+    Eye,
+    Users
+} from 'lucide-react';
+
+const BadgesSection = ({ user, navigate }) => {
+    const Icons = {
+        Sales: <Coin size={20} />,
+        Level: <Flame size={20} />,
+        Service: <Rocket size={20} />,
+        Loyalty: <Heart size={20} />,
+        Speed: <Flame size={20} />,
+        Review: <Star size={20} />,
+        Handshake: <Handshake size={20} />,
+        Eye: <Eye size={20} />,
+        Users: <Users size={20} />
+    };
+
+    const isClient = user.role === 'buyer' || user.role === 'company';
+    const unlockedIds = user.gamification?.badges || [];
+
+    const getIconForFamily = (familyId) => {
+        const map = { 
+            sales: Icons.Sales, purchases: Icons.Sales, 
+            levels: Icons.Level, services: Icons.Service, 
+            loyalty: Icons.Loyalty, speed: Icons.Speed, 
+            reviews: Icons.Review, talent: Icons.Users, 
+            projects: Icons.Eye 
+        };
+        return map[familyId] || Icons.Review;
+    };
+
+    const families = isClient ? CLIENT_BADGE_FAMILIES : BADGE_FAMILIES;
+
+    const badgeTiers = [
+        { name: 'bronze', color: '#cd7f32' },
+        { name: 'silver', color: '#c0c0c0' },
+        { name: 'gold', color: '#ffd700' },
+        { name: 'platinum', color: '#e5e4e2' },
+        { name: 'diamond', color: '#b9f2ff' }
+    ];
+
+    const familyStatus = families.map(f => {
+        const unlockedInFamily = f.badges.filter(b => unlockedIds.includes(b.id));
+        const highestBadgeIndex = unlockedInFamily.length - 1;
+        const latestBadge = highestBadgeIndex >= 0 ? unlockedInFamily[highestBadgeIndex] : null;
+        
+        // Find the index of the latestBadge in the original family array to determine tier
+        const tierIndex = latestBadge ? f.badges.findIndex(b => b.id === latestBadge.id) : -1;
+        const tier = tierIndex >= 0 ? badgeTiers[Math.min(tierIndex, badgeTiers.length - 1)] : null;
+
+        return {
+            familyId: f.familyId,
+            familyTitle: f.title,
+            badge: latestBadge,
+            tier: tier,
+            icon: getIconForFamily(f.familyId)
+        };
+    });
+
+    return (
+        <div className="dashboard-badges-section">
+            <div className="section-header-row">
+                <h3 className="section-title">Mis Insignias</h3>
+                <button onClick={() => navigate('/badges')} className="btn-text-link">
+                    Ver todas →
+                </button>
+            </div>
+            <div className="dashboard-badges-grid">
+                {familyStatus.map((status, idx) => (
+                    <div 
+                        key={idx} 
+                        className={`badge-family-card ${status.badge ? 'unlocked' : 'locked'} tier-${status.tier?.name || 'none'}`}
+                        style={status.tier ? { '--tier-color': status.tier.color } : {}}
+                    >
+                        <div className="badge-icon-wrapper">
+                            {status.icon}
+                        </div>
+                        <div className="badge-content">
+                            <span className="family-label">{status.familyTitle}</span>
+                            <h4 className="badge-name">{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
+                            {status.badge && <p className="badge-desc">{status.badge.desc}</p>}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
+const ReceivedProposalsSection = ({
+    loading,
+    receivedProposals,
+    navigate,
+    getTimeAgo,
+    handleAcceptProposal,
+    handleRejectProposal,
+    expandedProposalId,
+    setExpandedProposalId
+}) => {
+    const pendingProposals = receivedProposals.filter(p => (p.status || '').toLowerCase() === 'pending');
+
+    return (
+        <div style={{ marginTop: '2.5rem' }}>
+            <h3 className="section-title">Postulantes a Mis Proyectos</h3>
+            <div className="dashboard-list-scroll">
+                {loading && receivedProposals.length === 0 ? (
+                    <ListSkeleton />
+                ) : pendingProposals.length > 0 ? (
+                    pendingProposals.map(proposal => {
+                        const isExpanded = expandedProposalId === proposal.id;
+                        return (
+                            <div key={proposal.id} className={`proposal-card enhanced status-${proposal.status} ${isExpanded ? 'expanded' : ''}`}>
+                                <div className="proposal-card-content">
+                                    <div className="proposal-client-info" onClick={() => navigate(`/freelancer/${proposal.userId}`)}>
+                                        <div className="client-avatar-wrapper">
+                                            <img src={getProfilePicture({ role: proposal.userRole, avatar: proposal.userAvatar })} alt={proposal.userName} />
+                                        </div>
+                                        <div className="client-details">
+                                            <span className="client-username">@{proposal.userUsername || 'candidato'}</span>
+                                            <span className="client-realname">{proposal.userName}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="proposal-main-details">
+                                        <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: '800', marginBottom: '0.3rem', letterSpacing: '0.5px' }}>PARA TU PROYECTO:</div>
+                                        <h4>{proposal.projectTitle}</h4>
+                                        <div className="proposal-meta">
+                                            <span className="meta-item time">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                                Enviada {getTimeAgo(proposal.createdAt)}
+                                            </span>
+                                            <span className="meta-item">Nivel {proposal.userLevel}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="proposal-actions">
+                                        <button
+                                            className="btn-text-link"
+                                            style={{ color: '#ef4444' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRejectProposal(proposal);
+                                            }}
+                                        >
+                                            Rechazar
+                                        </button>
+                                        <button
+                                            className={`btn-text-link letter-toggle ${isExpanded ? 'active' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setExpandedProposalId(isExpanded ? null : proposal.id);
+                                            }}
+                                        >
+                                            {isExpanded ? 'Ocultar Carta' : 'Ver Carta'}
+                                        </button>
+
+                                        <button className="btn-primary" onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleAcceptProposal(proposal);
+                                        }}>
+                                            Contratar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {isExpanded && (
+                                    <div className="proposal-letter-box" onClick={e => e.stopPropagation()}>
+                                        <h5>Carta de Presentación</h5>
+                                        <p>{proposal.coverLetter || 'Sin mensaje adjunto.'}</p>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="glass" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                        <p>No tienes candidatos nuevos para tus proyectos aún.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, title }) => {
+    const [selectedMethod, setSelectedMethod] = useState('');
+
+    if (!isOpen) return null;
+
+    // Parse methods - handle string or array
+    let availableMethods = [];
+    if (Array.isArray(methods)) {
+        availableMethods = methods;
+    } else if (typeof methods === 'string' && methods.trim()) {
+        availableMethods = methods.split(',').map(m => m.trim());
+    }
+
+    // Default fallback
+    if (availableMethods.length === 0) {
+        availableMethods = ['Mercado Pago', 'PayPal', 'Transferencia'];
+    }
+
+    return (
+        <div className="payment-modal-overlay" onClick={onClose}>
+            <div className="payment-modal-card glass-strong" onClick={e => e.stopPropagation()}>
+                <div className="payment-modal-header">
+                    <h3>Finalizar Contratación</h3>
+                    <p>Selecciona tu medio de pago preferido</p>
+                </div>
+                <div className="payment-modal-body">
+                    <div className="payment-project-summary">
+                        <span className="summary-label">Proyecto:</span>
+                        <span className="summary-value">{title}</span>
+                    </div>
+                    <div className="payment-amount-box">
+                        <span className="amount-label">Monto a abonar:</span>
+                        <span className="amount-value">${amount}</span>
+                    </div>
+
+                    <div className="payment-methods-list">
+                        {availableMethods.map((method, idx) => (
+                            <label key={idx} className={`payment-method-item ${selectedMethod === method ? 'active' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="payment-method"
+                                    value={method}
+                                    checked={selectedMethod === method}
+                                    onChange={() => setSelectedMethod(method)}
+                                />
+                                <div className="method-content">
+                                    <span className="method-icon">
+                                        {method.toLowerCase().includes('mercado') ? '💳' : method.toLowerCase().includes('paypal') ? '🅿️' : '🏦'}
+                                    </span>
+                                    <span className="method-name">{method}</span>
+                                </div>
+                                {selectedMethod === method && <span className="check-mark">✓</span>}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+                <div className="payment-modal-footer">
+                    <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+                    <button
+                        className="btn-primary confirm-pay-btn"
+                        disabled={!selectedMethod}
+                        onClick={() => onConfirm(selectedMethod)}
+                    >
+                        Confirmar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Main Dashboard Component ---
+
+const Dashboard = () => {
+    const {
+        user: authUser,
+        updateUser,
+        isTutorView,
+        supervisedUser,
+        enterMirrorMode
+    } = useAuth();
+
+    // Determine effective user for this view
+    const user = isTutorView ? supervisedUser : authUser;
+
+    const { jobs, updateJobStatus: updateJobStatusApi, createJob } = useJobs();
+    const { services } = useServices();
+    const { createChat } = useChat();
+    const { refresh: refreshNotifications } = useNotifications();
+    const navigate = useNavigate();
+
+    const [tutorados, setTutorados] = useState([]);
+
+
+
+    const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+    const [pauseLoading, setPauseLoading] = useState(false);
+
+    // V39: Derived Pause Mode state for UI
+    const isPaused = useMemo(() => {
+        if (!user || user.role !== 'freelancer') return false;
+        return user.gamification?.pause_mode?.active || user.gamification?.vacation?.active;
+    }, [user]);
+
+    const [loading, setLoading] = useState(true);
+    const [myPublishedProjects, setMyPublishedProjects] = useState([]);
+    const [myProposals, setMyProposals] = useState([]);
+    const [receivedProposals, setReceivedProposals] = useState([]);
+    const [activeProposalTab, setActiveProposalTab] = useState('active');
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const [isCreatingChat, setIsCreatingChat] = useState(false);
+    const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null);
+    const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
+    const [expandedProposalId, setExpandedProposalId] = useState(null);
+    const [selectedJobForReview, setSelectedJobForReview] = useState(null);
+    const [reviewedJobs, setReviewedJobs] = useState({}); // { jobId: true/false }
+    const { refreshBadges } = useBadgeNotification();
+
+    // V27: Update Job Status with Read-Only check
+    const updateJobStatus = async (jobId, status) => {
+        if (isTutorView) {
+            alert("No puedes realizar esta acción en modo lectura.");
+            return;
+        }
+        const result = await updateJobStatusApi(jobId, status);
+        if (status === 'completed' && refreshBadges) {
+            refreshBadges();
+        }
+        // Always refresh notifications locally too
+        if (refreshNotifications) refreshNotifications();
+        return result;
+    };
+
+    // Initial load and sync
+    useEffect(() => {
+        if (!user) return;
+        const loadInitData = async () => {
+            const cachedProjects = localStorage.getItem(`cooplance_projects_${user.id}`);
+            const cachedProposals = localStorage.getItem(`cooplance_proposals_${user.id}`);
+            if (cachedProjects) setMyPublishedProjects(JSON.parse(cachedProjects));
+            if (cachedProposals) setMyProposals(JSON.parse(cachedProposals));
+
+            try {
+                const projects = await getProjectsByClient(user.id);
+                const proposals = await getProposalsByUser(user.id);
+                const received = await getReceivedProposals(user.id);
+                setMyPublishedProjects(projects);
+                setMyProposals(proposals);
+                setReceivedProposals(received);
+                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(projects));
+                localStorage.setItem(`cooplance_proposals_${user.id}`, JSON.stringify(proposals));
+            } catch (err) { console.error(err); }
+            finally { setLoading(false); }
+        };
+        loadInitData();
+
+        // 2. Fetch tutorados if adult freelancer
+        if (authUser?.id && authUser.role === 'freelancer' && !isTutorView) {
+            const fetchTutorados = async () => {
+                try {
+                    const { data, error } = await supabase.from('profiles').select('*').eq('parent_id', authUser.id);
+                    if (error) throw error;
+                    if (data) setTutorados(data);
+                } catch (err) {
+                    console.error("[Dashboard] Error fetching tutorados:", err);
+                }
+            };
+            fetchTutorados();
+        }
+    }, [user?.id, authUser.id, isTutorView]);
+
+    // Gamification Process - Stabilized
+    useEffect(() => {
+        if (!user || (user.role !== 'freelancer' && user.role !== 'company')) return;
+
+        // Use a stable, non-circular check to avoid infinite loops
+        const processedUser = processGamificationRules(user);
+
+        // Only update if there is a meaningful data change
+        const hasChanges =
+            processedUser.xp !== user.xp ||
+            processedUser.level !== user.level ||
+            JSON.stringify(processedUser.gamification) !== JSON.stringify(user.gamification);
+
+        if (hasChanges) {
+            console.log("[Dashboard] Applying gamification updates...");
+            updateUser(processedUser).catch(err => {
+                console.warn("[Dashboard] Silently failed to sync gamification rules:", err);
+            });
+        }
+    }, [user?.id, user?.xp, user?.level, updateUser]);
+
+    // Derived Data
+    const myOrders = useMemo(() => user ? (jobs || []).filter(j => j.buyerId === user.id) : [], [jobs, user?.id]);
+    const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);
+    const myServices = useMemo(() => user ? (services || []).filter(s => s.freelancerId === user.id) : [], [services, user?.id]);
+
+    // V42: Automatic Review Prompt for completed jobs (ONLY for Clients) + Track reviewed status
+    useEffect(() => {
+        if (!user || loading) return;
+        
+        const checkReviews = async () => {
+            // Only prompt automatically for jobs where I am the BUYER (myOrders)
+            const jobsToPrompt = myOrders.filter(j => j.status === 'completed');
+            const allJobsForTracking = [...myWork, ...myOrders].filter(j => j.status === 'completed');
+            
+            if (allJobsForTracking.length === 0) return;
+
+            try {
+                const results = await Promise.all(
+                    allJobsForTracking.map(async (job) => {
+                        const reviewed = await ReviewService.hasUserReviewedJob(job.id, user.id);
+                        return { id: job.id, reviewed };
+                    })
+                );
+
+                const newReviewedMap = {};
+                results.forEach(r => newReviewedMap[r.id] = r.reviewed);
+                setReviewedJobs(newReviewedMap);
+
+                // Auto prompt logic: ONLY if I am the buyer and haven't reviewed yet
+                if (!selectedJobForReview) {
+                    const sortedPromptJobs = jobsToPrompt.sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt));
+                    for (const job of sortedPromptJobs) {
+                        if (!newReviewedMap[job.id]) {
+                            console.log(`[Dashboard] Automatic review prompt for client job: ${job.id}`);
+                            setSelectedJobForReview(job);
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Error checking reviews:", e);
+            }
+        };
+        
+        const timer = setTimeout(checkReviews, 2000);
+        return () => clearTimeout(timer);
+    }, [myWork.length, myOrders.length, user?.id, loading]);
+
+    if (!user) return null;
+
+    const currentLevel = user.level || 1;
+    const currentXP = user.xp || 0;
+    const nextLevelXP = calculateNextLevelXP(currentLevel);
+    const baseXPForCurrentLevel = getBaseXPForLevel(currentLevel);
+    const relativeXP = Math.max(0, currentXP - baseXPForCurrentLevel);
+    
+    const isMaxLevel = currentLevel >= MAX_LEVEL;
+    const xpPercentage = isMaxLevel 
+        ? Math.min(Math.max(0, (currentXP - XP_TABLE[9]) / MAX_BUFFER_XP) * 100, 100) 
+        : Math.min((relativeXP / nextLevelXP) * 100, 100);
+        
+    const xpDisplayText = isMaxLevel 
+        ? `${currentXP - XP_TABLE[9]} / ${MAX_BUFFER_XP} Buffer XP` 
+        : `${relativeXP} / ${nextLevelXP} XP`;
+        
+    const levelLabel = isMaxLevel 
+        ? `Nivel Máximo (10) - ${getBenefitsForRole(user.role)[10]?.name}` 
+        : `Hacia Nivel ${currentLevel + 1}: ${getBenefitsForRole(user.role)[currentLevel + 1]?.name}`;
+    const currentLevelName = getBenefitsForRole(user.role)[currentLevel]?.name || '';
+
+    const handleDemoLevelUp = () => {
+        if ((user.level || 1) >= MAX_LEVEL) {
+            const currentXP = user.xp || 0;
+            const newXP = Math.min(currentXP + 1000, 10000 + MAX_BUFFER_XP);
+            updateUser({ ...user, xp: newXP });
+            alert(`¡XP sumada al Buffer! Total: ${newXP}`);
+            return;
+        }
+        const newLevel = (user.level || 1) + 1;
+        const newXp = calculateNextLevelXP(newLevel);
+        updateUser({ ...user, level: newLevel, xp: newXp });
+        setShowLevelUpModal(true);
+    };
+
+    const handleDemoLevelDown = () => {
+        const currentLevel = user.level || 1;
+        if (currentLevel <= 1) return;
+        const newLevel = currentLevel - 1;
+        const newXp = newLevel > 1 ? XP_TABLE[newLevel - 1] : 0;
+        updateUser({ ...user, level: newLevel, xp: newXp });
+    };
+
+    const handlePauseModeClick = async () => {
+        const g = user.gamification || {};
+        const isPaused = g.pause_mode?.active || g.vacation?.active;
+
+        try {
+            if (isPaused) {
+                if (window.confirm("¿Desactivar el Modo Pausa? Tus servicios volverán a ser visibles normalmente.")) {
+                    setPauseLoading(true);
+                    await updateUser(deactivatePauseMode(user));
+                }
+            } else {
+                if (window.confirm("¿Activar Modo Pausa? Tus servicios se mostrarán al final de las listas para evitar nuevos pedidos. Puedes desactivarlo cuando quieras.")) {
+                    setPauseLoading(true);
+                    await updateUser(activatePauseMode(user));
+                }
+            }
+        } catch (err) {
+            console.error("[Dashboard] Error toggling pause mode:", err);
+            alert("No se pudo cambiar el estado de disponibilidad: " + err.message);
+        } finally {
+            setPauseLoading(false);
+        }
+    };
+
+    const handleDeleteProject = async (projectId) => {
+        if (isTutorView) {
+            alert("No puedes realizar esta acción en modo lectura.");
+            return;
+        }
+        if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto de forma permanente? Esta acción no se puede deshacer.')) {
+            try {
+                await deleteProjectApi(projectId);
+
+                // Update state and localStorage with the NEW filtered list
+                const updatedProjects = myPublishedProjects.filter(p => p.id !== projectId);
+                setMyPublishedProjects(updatedProjects);
+                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(updatedProjects));
+            } catch (err) {
+                alert('No se pudo eliminar el proyecto: ' + err.message);
+            }
+        }
+    };
+
+    const handleCreateProjectClick = () => {
+        const currentLevel = user.level || 1;
+        const maxProjects = currentLevel >= 5 ? 5 : currentLevel;
+        const openProjects = myPublishedProjects.filter(p => p.status === 'open').length;
+
+        if (openProjects >= maxProjects) {
+            let msg = `Has alcanzado el límite de proyectos/pedidos publicados (${maxProjects}) para tu Nivel ${currentLevel}.`;
+            if (currentLevel < 5) {
+                msg += `\n\n¡Sube de nivel para desbloquear más espacios! (Máximo 5 en Nivel 5)`;
+            } else {
+                msg += `\n\nHas alcanzado el máximo de publicaciones permitidas.`;
+            }
+            alert(msg);
+            return;
+        }
+        navigate('/create-project');
+    };
+
+    const handleCreateServiceClick = () => {
+        const currentLevel = user.level || 1;
+        const maxServices = currentLevel >= 5 ? 5 : currentLevel;
+
+        if (myServices.length >= maxServices) {
+            let msg = `Has alcanzado el límite de servicios activos (${maxServices}) para tu Nivel ${currentLevel}.`;
+            if (currentLevel < 5) {
+                msg += `\n\n¡Sube de nivel completando trabajos para desbloquear más espacios! (Máximo 5 en Nivel 5)`;
+            } else {
+                msg += `\n\nHas alcanzado el máximo de servicios permitidos. A partir del Nivel 6, tus beneficios mejorarán las comisiones.`;
+            }
+            alert(msg);
+            return;
+        }
+
+        navigate('/create-service');
+    };
+
+    const handleAcceptProposal = async (proposal) => {
+        // Safe comparison for IDs (could be string/number mix)
+        const project = myPublishedProjects.find(p => String(p.id) === String(proposal.projectId));
+        if (!project) {
+            console.warn("[Dashboard] Project not found for proposal:", proposal.projectId);
+            return;
+        }
+
+        // Set state to show payment modal instead of window.confirm
+        setSelectedProposalForPayment({ proposal, project });
+    };
+
+    const confirmHiringWithPayment = async (paymentMethod) => {
+        if (!selectedProposalForPayment) return;
+
+        const { proposal, project } = selectedProposalForPayment;
+        setSelectedProposalForPayment(null);
+
+        try {
+            setLoading(true);
+            setIsCreatingChat(true);
+
+            // 1. Update proposal status
+            await updateProposalStatus(proposal.id, 'accepted');
+
+            // 2. Handle Chat: Convert pre_contract to active OR create new one
+            let chatId = null;
+            const { data: consultationChats } = await supabase
+                .from('chats')
+                .select('id')
+                .eq('type', 'proposal')
+                .eq('context_id', proposal.id.toString());
+
+            if (consultationChats && consultationChats.length > 0) {
+                chatId = consultationChats[0].id;
+                await supabase
+                    .from('chats')
+                    .update({ status: 'active' })
+                    .eq('id', chatId);
+            } else {
+                // Create a new definitive chat if it doesn't exist
+                chatId = await createChat([user.id, proposal.userId], 'proposal', proposal.id, project.title);
+            }
+
+            // 3. Create the formal Job/Order entry
+            const projectWithPayment = {
+                ...project,
+                freelancerId: proposal.userId,
+                selectedPaymentMethod: paymentMethod
+            };
+
+            await createJob(projectWithPayment, user);
+
+            // 4. Update the project status in DB and local state
+            const { error: pError } = await supabase
+                .from('projects')
+                .update({ status: 'hired' })
+                .eq('id', project.id);
+
+            if (!pError) {
+                setMyPublishedProjects(prev => prev.map(p =>
+                    p.id === project.id ? { ...p, status: 'hired' } : p
+                ));
+            }
+
+            // 5. Redirect to chat for immediate communication
+            if (chatId) {
+                navigate(`/chat/${chatId}`);
+            } else {
+                alert('¡Contratación exitosa! Redirigiendo al chat...');
+                navigate('/chat');
+            }
+        } catch (err) {
+            console.error("[Dashboard] Error accepting proposal:", err);
+            alert("No se pudo completar la contratación: " + err.message);
+        } finally {
+            setLoading(false);
+            setIsCreatingChat(false);
+        }
+    };
+
+    const handleRejectProposal = async (proposal) => {
+        if (window.confirm('¿Estás seguro de que deseas rechazar esta postulación?')) {
+            try {
+                await updateProposalStatus(proposal.id, 'rejected');
+                setReceivedProposals(prev => prev.filter(p => p.id !== proposal.id));
+            } catch (err) {
+                console.error("[Dashboard] Error rejecting proposal:", err);
+                alert("No se pudo rechazar la postulación.");
+            }
+        }
+    };
+
+    const handleCancelProposal = async (e, id) => {
+        e.stopPropagation();
+        if (window.confirm('¿Cancelar postulación?')) {
+            await updateProposalStatus(id, 'canceled');
+            setMyProposals(prev => prev.map(p => p.id === id ? { ...p, status: 'canceled' } : p));
+        }
+    };
+
+    const handleDeleteProposal = async (e, id) => {
+        if (isTutorView) {
+            alert("Acción bloqueada en modo lectura.");
+            return;
+        }
+        e.stopPropagation();
+        if (window.confirm('¿Borrar historial?')) {
+            await deleteProposalApi(id);
+            setMyProposals(prev => prev.filter(p => p.id !== id));
+        }
+    };
+
+    const getTimeAgo = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if (seconds < 60) return 'Ahora';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `Hace ${minutes}m`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `Hace ${hours}h`;
+        return `Hace ${Math.floor(hours / 24)}d`;
+    };
+
+    const filteredProposals = myProposals.filter(p => {
+        const status = (p.status || '').toLowerCase().trim();
+        const isActive = status === 'pending';
+        return activeProposalTab === 'active' ? isActive : !isActive;
+    });
+
+    const handleReviewSubmit = async ({ rating, comment }) => {
+        if (!selectedJobForReview) return;
+        
+        try {
+            await ReviewService.createReview({
+                serviceId: selectedJobForReview.serviceId,
+                reviewerId: user.id,
+                targetId: user.id === selectedJobForReview.clientId ? selectedJobForReview.freelancerId : selectedJobForReview.clientId,
+                rating,
+                comment,
+                jobId: selectedJobForReview.id
+            });
+            
+            // If it's a client/buyer approving work, we ALSO complete the job here
+            if (user.role === 'buyer' || user.role === 'client' || user.role === 'company') {
+                if (selectedJobForReview.status !== 'completed') {
+                    await updateJobStatus(selectedJobForReview.id, 'completed');
+                }
+            }
+            
+            setReviewedJobs(prev => ({ ...prev, [selectedJobForReview.id]: true }));
             setSelectedJobForReview(null);
             alert("¡Gracias por tu reseña!");
         } catch (err) {
@@ -908,7 +1669,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
             <LevelUpModal isOpen={showLevelUpModal} onClose={() => setShowLevelUpModal(false)} level={currentLevel} />
 
             {/* V28: Review Modal */}
-                                    <ReviewModal
+                        <ReviewModal
                 isOpen={!!selectedJobForReview}
                 onClose={() => setSelectedJobForReview(null)}
                 onConfirm={handleReviewSubmit}
