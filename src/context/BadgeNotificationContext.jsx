@@ -75,6 +75,13 @@ export const BadgeNotificationProvider = ({ children }) => {
             const mySales = completedJobs.filter(j => j.provider_id === user.id);
             const myOrders = completedJobs.filter(j => j.client_id === user.id);
             const positiveReviewsCount = reviewsRes?.count || 0;
+
+            const onTimeDeliveries = completedJobs.filter(j => 
+                j.provider_id === user.id && 
+                j.completed_at && 
+                j.deadline && 
+                new Date(j.completed_at) <= new Date(j.deadline)
+            ).length;
             
 
             // 2. Calculate Loyalty (Symmetrical)
@@ -98,6 +105,7 @@ export const BadgeNotificationProvider = ({ children }) => {
                     case 'services': return servicesRes.count || 0;
                     case 'talent': return uniquePartners;
                     case 'projects': return projectsRes.count || 0;
+                    case 'speed': return onTimeDeliveries;
                     default: return 0;
                 }
             };
