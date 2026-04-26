@@ -283,8 +283,15 @@ export const JobProvider = ({ children }) => {
             if (error) throw error;
 
             // OPTIMISTIC UPDATE: Update local state immediately for better UX
+            // CRITICAL: Ensure we update BOTH snake_case and camelCase keys for state consistency
             setJobs(prev => prev.map(j => 
-                j.id === jobId ? { ...j, ...updateData } : j
+                j.id === jobId ? { 
+                    ...j, 
+                    ...updateData,
+                    deliveryResult: updateData.delivery_result || j.deliveryResult,
+                    status: updateData.status || j.status,
+                    completedAt: updateData.completed_at || j.completedAt
+                } : j
             ));
 
             // Send Notifications based on status change
