@@ -351,10 +351,10 @@ export const JobProvider = ({ children }) => {
                     });
 
                     // Notify Project Completed (already there, but unified)
-                    NotificationService.createNotification(job.freelancerId, {
+                    await NotificationService.createNotification(job.freelancerId, {
                         type: 'job_completed',
-                        title: '¡Proyecto completado! ✅',
-                        message: `${job.buyerName} aprobó '${job.serviceTitle}'. ¡No te olvides de dejarle una reseña!`,
+                        title: 'Proyecto completado',
+                        message: `¡Proyecto completado! ✅ ${job.buyerName} aprobó '${job.serviceTitle}'.`,
                         link: '/dashboard'
                     });
 
