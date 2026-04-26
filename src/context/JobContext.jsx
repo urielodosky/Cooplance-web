@@ -200,7 +200,7 @@ export const JobProvider = ({ children }) => {
             setJobs(prev => [mapped, ...prev]);
 
             // Notify freelancer: New order received
-            NotificationService.createNotification(mapped.freelancerId, {
+            await NotificationService.createNotification(mapped.freelancerId, {
                 type: 'service_purchased',
                 title: '¡Nueva Venta!',
                 message: `¡Nueva venta! 💸 ${mapped.buyerName} contrató tu servicio '${mapped.serviceTitle}'.`,
@@ -208,7 +208,7 @@ export const JobProvider = ({ children }) => {
             });
 
             // Notify freelancer: Payment secured
-            NotificationService.createNotification(mapped.freelancerId, {
+            await NotificationService.createNotification(mapped.freelancerId, {
                 type: 'payment_secured',
                 title: 'Pago asegurado',
                 message: `Pago asegurado 🔒. Los fondos para '${mapped.serviceTitle}' ya están depositados.`,
@@ -266,7 +266,7 @@ export const JobProvider = ({ children }) => {
             if (job) {
                 if (status === 'delivered') {
                     // Freelancer delivered -> Notify Client
-                    NotificationService.createNotification(job.buyerId, {
+                    await NotificationService.createNotification(job.buyerId, {
                         type: 'job_delivered',
                         title: 'Trabajo entregado',
                         message: `¡Trabajo entregado! 📦 ${job.freelancerName} envió los resultados de '${job.serviceTitle}'.`,
@@ -274,7 +274,7 @@ export const JobProvider = ({ children }) => {
                     });
                 } else if (status === 'completed') {
                     // Client approved -> Notify Freelancer
-                    NotificationService.createNotification(job.freelancerId, {
+                    await NotificationService.createNotification(job.freelancerId, {
                         type: 'job_completed',
                         title: 'Proyecto completado',
                         message: `¡Proyecto completado! ✅ ${job.buyerName} aprobó '${job.serviceTitle}'.`,
@@ -285,7 +285,7 @@ export const JobProvider = ({ children }) => {
                     window.dispatchEvent(new CustomEvent('forceBadgeCheck'));
                 } else if (status === 'active' && job.status === 'delivered') {
                     // Client asked for corrections
-                    NotificationService.createNotification(job.freelancerId, {
+                    await NotificationService.createNotification(job.freelancerId, {
                         type: 'job_revision_requested',
                         title: 'Ajustes solicitados',
                         message: `Ajustes solicitados ⚠️. ${job.buyerName} pidió correcciones en '${job.serviceTitle}'.`,
@@ -293,7 +293,7 @@ export const JobProvider = ({ children }) => {
                     });
                 } else if (status === 'active') {
                     // Client accepted a proposal or a job -> Notify Freelancer (already handled in proposalService, but here's a fallback)
-                    NotificationService.createNotification(job.freelancerId, {
+                    await NotificationService.createNotification(job.freelancerId, {
                         type: 'job_active',
                         title: '¡Trabajo activado! 🚀',
                         message: `${job.buyerName} aceptó el inicio del trabajo: '${job.serviceTitle}'.`,
@@ -343,7 +343,7 @@ export const JobProvider = ({ children }) => {
                     }
 
                     // Notify Payment Released
-                    NotificationService.createNotification(job.freelancerId, {
+                    await NotificationService.createNotification(job.freelancerId, {
                         type: 'payment_released',
                         title: 'Pago liberado',
                         message: `¡Pago liberado! 💰 Se acreditaron ${job.amount} ARS por '${job.serviceTitle}'.`,

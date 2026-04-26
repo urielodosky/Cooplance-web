@@ -61,6 +61,7 @@ export const createNotification = async (userId, notificationData) => {
             return null;
         }
 
+        console.log('[NotificationService] Success! Notification created:', data.id);
         return data ? mapFromDB(data) : null;
     } catch (err) {
         console.error('[NotificationService] Critical error creating notification:', err);
