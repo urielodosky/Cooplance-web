@@ -286,24 +286,27 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '160px' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>${job.amount}</div>
                                 <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                    <button className="btn-secondary" style={{ 
-                                        padding: '0.5rem 1.2rem', 
-                                        fontSize: '0.85rem', 
-                                        borderRadius: '12px',
-                                        background: 'var(--border)',
-                                        border: '1px solid var(--border)',
-                                        color: 'var(--text-primary)',
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s ease',
-                                        boxShadow: 'var(--shadow-sm)'
-                                    }} onClick={async () => {
-                                        setIsCreatingChat(true);
-                                        try {
-                                            const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
-                                            if (chatId) navigate(`/chat/${chatId}`);
-                                            else setIsCreatingChat(false);
-                                        } catch { setIsCreatingChat(false); }
-                                    }}>Chat</button>
+                                    {job.status !== 'pending_approval' && (
+                                        <button className="btn-secondary" style={{ 
+                                            padding: '0.5rem 1.2rem', 
+                                            fontSize: '0.85rem', 
+                                            borderRadius: '12px',
+                                            background: 'var(--border)',
+                                            border: '1px solid var(--border)',
+                                            color: 'var(--text-primary)',
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: 'var(--shadow-sm)'
+                                        }} onClick={async (e) => {
+                                            e.stopPropagation();
+                                            setIsCreatingChat(true);
+                                            try {
+                                                const chatId = await createChat([user.id, job.buyerId], 'order', job.id, job.serviceTitle);
+                                                if (chatId) navigate(`/chat/${chatId}`);
+                                                else setIsCreatingChat(false);
+                                            } catch { setIsCreatingChat(false); }
+                                        }}>Chat</button>
+                                    )}
                                     
                                     <button className="btn-outline" style={{ 
                                         padding: '0.5rem 1.2rem', 
@@ -355,9 +358,15 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                                     await updateJobStatus(job.id, 'rejected');
                                                 }
                                             }}>Rechazar</button>
-                                            <button className="btn-primary" style={{ backgroundColor: '#10b981', border: 'none', borderRadius: '12px' }} onClick={async () => {
-                                                 await updateJobStatus(job.id, 'active');
-                                                alert("¡Trabajo aceptado! Ahora puedes empezar a trabajar.");
+                                            <button className="btn-primary" style={{ backgroundColor: '#10b981', border: 'none', borderRadius: '12px' }} onClick={async (e) => {
+                                                e.stopPropagation();
+                                                try {
+                                                    await updateJobStatus(job.id, 'active');
+                                                    alert("¡Trabajo aceptado! Ahora puedes empezar a trabajar.");
+                                                } catch (err) {
+                                                    console.error("Error al aceptar trabajo:", err);
+                                                    alert("Hubo un problema al aceptar el trabajo. Por favor intenta de nuevo.");
+                                                }
                                             }}>Aceptar Trabajo</button>
                                         </div>
                                     )}
@@ -697,15 +706,39 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             {reviewedJobs[job.id] ? 'Modificar Reseña' : 'Calificar'}
                                         </button>
                                     )}
-                                    <button className="btn-chat-mini" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={async (e) => {
-                                        e.stopPropagation();
-                                        setIsCreatingChat(true);
-                                        try {
-                                            const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
-                                            if (chatId) navigate(`/chat/${chatId}`);
-                                            else setIsCreatingChat(false);
-                                        } catch { setIsCreatingChat(false); }
-                                    }}>Chat</button>
+                                    {job.status === 'delivered' && (
+                                        <button 
+                                            className="btn-primary" 
+                                            style={{ 
+                                                padding: '0.4rem 0.8rem', 
+                                                fontSize: '0.75rem', 
+                                                borderRadius: '8px', 
+                                                background: '#10b981', 
+                                                border: 'none',
+                                                color: 'white',
+                                                fontWeight: '700'
+                                            }} 
+                                            onClick={async (e) => { 
+                                                e.stopPropagation(); 
+                                                if (window.confirm("¿Aprobar esta entrega y finalizar el trabajo?")) {
+                                                    await updateJobStatus(job.id, 'completed');
+                                                }
+                                            }}
+                                        >
+                                            Aprobar Entrega
+                                        </button>
+                                    )}
+                                    {job.status !== 'pending_approval' && (
+                                        <button className="btn-chat-mini" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={async (e) => {
+                                            e.stopPropagation();
+                                            setIsCreatingChat(true);
+                                            try {
+                                                const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
+                                                if (chatId) navigate(`/chat/${chatId}`);
+                                                else setIsCreatingChat(false);
+                                            } catch { setIsCreatingChat(false); }
+                                        }}>Chat</button>
+                                    )}
                                     <button className="btn-detail-mini" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={(e) => {
                                         e.stopPropagation();
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
