@@ -99,7 +99,6 @@ const BadgesSection = ({ company, isOwnProfile, navigate }) => {
                         <div className="badge-content">
                             <span className="family-label">{status.familyTitle}</span>
                             <h4 className="badge-name">{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
-                            {status.badge && <p className="badge-desc">{status.badge.desc}</p>}
                         </div>
                     </div>
                 ))}
@@ -121,6 +120,10 @@ const CompanyDetail = () => {
     const [reviewsGiven, setReviewsGiven] = useState([]);
     const [activeReviewTab, setActiveReviewTab] = useState('received');
     const [loading, setLoading] = useState(true);
+
+    const averageRating = reviewsReceived.length > 0 
+        ? (reviewsReceived.reduce((acc, r) => acc + (r.rating || 0), 0) / reviewsReceived.length).toFixed(1)
+        : null;
 
     // V23: Strict access control for U18 Freelancers
     const isU18Freelancer = currentUser?.role === 'freelancer' && calculateAge(currentUser.dob) < 18;
@@ -313,6 +316,23 @@ const CompanyDetail = () => {
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px'
                                 }}>Empresa Verificada</span>
+                                {averageRating && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        background: 'rgba(251, 191, 36, 0.1)',
+                                        color: '#fbbf24',
+                                        padding: '6px 14px',
+                                        borderRadius: '12px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: '800',
+                                        border: '1px solid rgba(251, 191, 36, 0.2)'
+                                    }}>
+                                        <Star size={16} fill="#fbbf24" />
+                                        {averageRating}
+                                    </div>
+                                )}
                             </div>
                             <p style={{ 
                                 margin: '0.25rem 0 0 0', 
