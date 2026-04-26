@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PackageCheck, Send, MessageSquare, Info, Check, Star } from 'lucide-react';
+import { PackageCheck, Send, MessageSquare, Info, Check, Star, Lock } from 'lucide-react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useServices } from '../features/services/context/ServiceContext';
@@ -281,8 +281,19 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                          (job.status?.toUpperCase() || 'ESTADO')}
                                     </span>
                                     {job.status === 'active' && (
-                                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 8px', borderRadius: '6px', border: '1px solid #10b981' }}>
-                                            🔒 SALDO EN ESCROW
+                                        <span style={{ 
+                                            fontSize: '0.75rem', 
+                                            fontWeight: '700', 
+                                            color: '#10b981', 
+                                            background: 'rgba(16, 185, 129, 0.1)', 
+                                            padding: '4px 10px', 
+                                            borderRadius: '6px', 
+                                            border: '1px solid #10b981',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                        }}>
+                                            <Lock size={12} /> SALDO EN ESCROW
                                         </span>
                                     )}
                                 </div>
@@ -801,21 +812,24 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                 <div className="proposal-actions" style={{ display: 'flex', gap: '0.5rem' }}>
                                     {job.status === 'completed' && (
                                         <button 
-                                            className="btn-outline" 
+                                            className="btn-primary" 
                                             style={{ 
-                                                padding: '0.4rem 1rem', 
-                                                fontSize: '0.75rem', 
-                                                borderRadius: '10px',
-                                                borderColor: '#10b981',
-                                                color: '#10b981',
-                                                fontWeight: '700',
+                                                padding: '0.5rem 1.2rem', 
+                                                fontSize: '0.8rem', 
+                                                borderRadius: '12px',
+                                                background: reviewedJobs[job.id] ? 'rgba(16, 185, 129, 0.1)' : 'linear-gradient(135deg, #10b981, #059669)',
+                                                border: reviewedJobs[job.id] ? '1px solid #10b981' : 'none',
+                                                color: reviewedJobs[job.id] ? '#10b981' : 'white',
+                                                fontWeight: '800',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '6px'
+                                                gap: '6px',
+                                                boxShadow: reviewedJobs[job.id] ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.3)',
+                                                cursor: 'pointer'
                                             }} 
                                             onClick={(e) => { e.stopPropagation(); setSelectedJobForReview(job); }}
                                         >
-                                            <Star size={14} />
+                                            <Star size={14} fill={reviewedJobs[job.id] ? "currentColor" : "none"} />
                                             {reviewedJobs[job.id] ? 'Reseña OK' : 'Calificar'}
                                         </button>
                                     )}
