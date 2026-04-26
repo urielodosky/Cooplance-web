@@ -391,8 +391,8 @@ const ProposalsSection = ({
         <div className="proposal-section-header">
             <h3 className="section-title">Mis Postulaciones</h3>
             <div className="proposal-tabs">
-                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>En Proceso <span className="tab-count">{myProposals.filter(p => ['pending'].includes((p.status || '').toLowerCase())).length}</span></button>
-                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => ['accepted', 'completed', 'canceled', 'rejected'].includes((p.status || '').toLowerCase())).length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'active' ? 'active' : ''}`} onClick={() => setActiveProposalTab('active')}>En Proceso <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase().trim() === 'pending').length}</span></button>
+                <button className={`proposal-tab ${activeProposalTab === 'history' ? 'active' : ''}`} onClick={() => setActiveProposalTab('history')}>Historial <span className="tab-count">{myProposals.filter(p => (p.status || '').toLowerCase().trim() !== 'pending').length}</span></button>
             </div>
         </div>
         <div className="dashboard-list-scroll">
@@ -1438,8 +1438,9 @@ const Dashboard = () => {
     };
 
     const filteredProposals = myProposals.filter(p => {
-        const status = (p.status || '').toLowerCase();
-        return activeProposalTab === 'active' ? ['pending'].includes(status) : ['accepted', 'completed', 'canceled', 'rejected'].includes(status);
+        const status = (p.status || '').toLowerCase().trim();
+        const isActive = status === 'pending';
+        return activeProposalTab === 'active' ? isActive : !isActive;
     });
 
     return (
