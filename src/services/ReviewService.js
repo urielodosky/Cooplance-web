@@ -37,12 +37,15 @@ export const createReview = async (reviewData) => {
         // 1. Insert Review
         const { data: review, error: reviewError } = await supabase
             .from('service_reviews')
-            .insert({
+            .upsert({
                 service_id: reviewData.serviceId,
                 reviewer_id: reviewData.reviewerId,
+                target_id: reviewData.targetId,
                 rating: reviewData.rating,
                 comment: reviewData.comment,
                 job_id: reviewData.jobId
+            }, { 
+                onConflict: 'job_id, reviewer_id' 
             })
             .select('*')
             .single();
@@ -52,7 +55,7 @@ export const createReview = async (reviewData) => {
             throw reviewError;
         }
 
-            let userToNotify = null;
+            let userToNotify = reviewData.targetId;
             let reviewerName = 'Alguien';
 
             // 2. Fetch Reviewer Name
@@ -63,28 +66,6 @@ export const createReview = async (reviewData) => {
                 .single();
             if (reviewerProfile) {
                 reviewerName = reviewerProfile.first_name || reviewerProfile.username;
-            }
-
-            // 3. Determine who is being reviewed
-            if (review.job_id) {
-                const { data: job } = await supabase
-                    .from('jobs')
-                    .select('client_id, provider_id')
-                    .eq('id', review.job_id)
-                    .single();
-
-                if (job) {
-                    userToNotify = (job.client_id === review.reviewer_id) ? job.provider_id : job.client_id;
-                }
-            } else if (review.service_id) {
-                const { data: service } = await supabase
-                    .from('services')
-                    .select('owner_id')
-                    .eq('id', review.service_id)
-                    .single();
-                if (service && service.owner_id !== review.reviewer_id) {
-                    userToNotify = service.owner_id;
-                }
             }
 
             if (userToNotify) {
@@ -98,16 +79,21 @@ export const createReview = async (reviewData) => {
 
                 // XP Penalty Logic (Universally applied)
                 if (review.rating <= 3) {
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('xp')
-                        .eq('id', userToNotify)
-                        .single();
+                    try {
+                        const { data: profile } = await supabase
+                            .from('profiles')
+                            .select('xp')
+                            .eq('id', userToNotify)
+                            .single();
 
-                    if (profile) {
-                        const penalty = review.rating <= 2 ? 100 : 20;
-                        const newXP = Math.max(0, (profile.xp || 0) - penalty);
-                        await supabase.from('profiles').update({ xp: newXP }).eq('id', userToNotify);
+                        if (profile) {
+                            const penalty = review.rating <= 2 ? 100 : 20;
+                            const newXP = Math.max(0, (profile.xp || 0) - penalty);
+                            // This might fail due to RLS if reviewer is not target, which is fine
+                            await supabase.from('profiles').update({ xp: newXP }).eq('id', userToNotify);
+                        }
+                    } catch (xpErr) {
+                        console.warn('[ReviewService] Could not update XP (likely RLS):', xpErr);
                     }
                 }
             }

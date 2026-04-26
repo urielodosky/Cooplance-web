@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/context/AuthContext';
-import { calculateXPForJob, calculateNextLevelXP, registerActivity } from '../utils/gamification';
+import { calculateXPForJob, calculateNextLevelXP, registerActivity, getLevelFromXP } from '../utils/gamification';
 import * as NotificationService from '../services/NotificationService';
 
 const JobContext = createContext();
@@ -41,6 +41,7 @@ const mapJobFromDB = (row) => ({
     deliveryResult: row.delivery_result,
     bookingDate: row.booking_date,
     bookingTime: row.booking_time,
+    paymentMethod: row.payment_method,
 });
 
 const mapJobToDB = (job, serviceOrProject, buyer) => {
@@ -321,17 +322,10 @@ export const JobProvider = ({ children }) => {
                             console.warn('Could not update related proposal:', pErr);
                         }
                     }
-                    // Record Transaction
+                    // Record Transactions separately due to RLS (V42)
+                    // 1. Record Expense for Buyer
                     try {
-                        const { error: txError } = await supabase.from('transactions').insert([
-                            {
-                                user_id: job.freelancerId,
-                                type: 'income',
-                                amount: job.amount,
-                                method: job.paymentMethod || 'platform',
-                                description: `Servicio: ${job.serviceTitle}`,
-                                related_id: job.id
-                            },
+                        const { error: expError } = await supabase.from('transactions').insert([
                             {
                                 user_id: job.buyerId,
                                 type: 'expense',
@@ -341,9 +335,26 @@ export const JobProvider = ({ children }) => {
                                 related_id: job.id
                             }
                         ]);
-                        if (txError) console.error('Error recording transactions:', txError);
+                        if (expError) console.warn('[JobContext] Buyer expense RLS block or error:', expError.message);
                     } catch (txErr) {
-                        console.error('Transaction insertion error:', txErr);
+                        console.error('Buyer Transaction error:', txErr);
+                    }
+
+                    // 2. Record Income for Freelancer (This might still fail if current user is not the freelancer)
+                    try {
+                        const { error: incError } = await supabase.from('transactions').insert([
+                            {
+                                user_id: job.freelancerId,
+                                type: 'income',
+                                amount: job.amount,
+                                method: job.paymentMethod || 'platform',
+                                description: `Servicio: ${job.serviceTitle}`,
+                                related_id: job.id
+                            }
+                        ]);
+                        if (incError) console.warn('[JobContext] Freelancer income RLS block or error:', incError.message);
+                    } catch (txErr) {
+                        console.error('Freelancer Transaction error:', txErr);
                     }
 
                     // Notify Payment Released

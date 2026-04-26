@@ -353,6 +353,8 @@ export const AuthProvider = ({ children }) => {
                               `${registrationData.responsibleFirstName || ''} ${registrationData.responsibleLastName || ''}`.trim() : null),
             location: registrationData.location || null,
             country: registrationData.country || 'Argentina',
+            province: registrationData.province || null,
+            city: registrationData.city || null,
             work_hours: registrationData.workHours || registrationData.work_hours || null,
             payment_methods: registrationData.paymentMethods || registrationData.payment_methods || null,
             vacancies: registrationData.vacancies ? parseInt(registrationData.vacancies) : 0,

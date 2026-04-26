@@ -750,57 +750,54 @@ const Register = () => {
                             ]}
                         />
                     </div>
-                    {role === 'company' && (
-                        <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-                            <p className="field-label-sm">Ubicación física (opcional)</p>
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: formData.country === 'Argentina' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
-                                gap: '1rem'
-                            }}>
-                                {formData.country === 'Argentina' ? (
-                                    <>
-                                        <CustomDropdown
-                                            options={argProvinces.map(prov => ({ label: prov, value: prov }))}
-                                            value={formData.province}
-                                            onChange={(val) => {
-                                                setFormData({ ...formData, province: val, city: '' });
-                                            }}
-                                            placeholder="Provincia"
-                                            searchable={true}
-                                        />
-                                        <CustomDropdown
-                                            options={argCities.map(city => ({ label: city, value: city }))}
-                                            value={formData.city}
-                                            onChange={(val) => {
-                                                setFormData({ ...formData, city: val });
-                                            }}
-                                            placeholder={isLoadingLoc ? "Cargando..." : "Ciudad"}
-                                            searchable={true}
-                                            disabled={!formData.province || isLoadingLoc}
-                                        />
-                                    </>
-                                ) : (
-                                    <>
-                                        <input type="text" name="province" placeholder="Provincia / Estado" onChange={handleChange} />
-                                        <input type="text" name="city" placeholder="Ciudad" onChange={handleChange} />
-                                    </>
-                                )}
-                            </div>
-
-                            {formData.province && formData.city && (
-                                <input
-                                    type="text"
-                                    name="location"
-                                    value={formData.location || ''}
-                                    placeholder="Calle y Numeración"
-                                    onChange={handleChange}
-                                    style={{ marginTop: '0.9rem' }}
-                                    required
-                                />
+                    <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                        <p className="field-label-sm">Ubicación física (opcional)</p>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: formData.country === 'Argentina' ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+                            gap: '1rem'
+                        }}>
+                            {formData.country === 'Argentina' ? (
+                                <>
+                                    <CustomDropdown
+                                        options={argProvinces.map(prov => ({ label: prov, value: prov }))}
+                                        value={formData.province}
+                                        onChange={(val) => {
+                                            setFormData({ ...formData, province: val, city: '' });
+                                        }}
+                                        placeholder="Provincia"
+                                        searchable={true}
+                                    />
+                                    <CustomDropdown
+                                        options={argCities.map(city => ({ label: city, value: city }))}
+                                        value={formData.city}
+                                        onChange={(val) => {
+                                            setFormData({ ...formData, city: val });
+                                        }}
+                                        placeholder={isLoadingLoc ? "Cargando..." : "Ciudad"}
+                                        searchable={true}
+                                        disabled={!formData.province || isLoadingLoc}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <input type="text" name="province" placeholder="Provincia / Estado" onChange={handleChange} value={formData.province || ''} />
+                                    <input type="text" name="city" placeholder="Ciudad" onChange={handleChange} value={formData.city || ''} />
+                                </>
                             )}
                         </div>
-                    )}
+
+                        {formData.province && formData.city && (
+                            <input
+                                type="text"
+                                name="location"
+                                value={formData.location || ''}
+                                placeholder="Calle y Numeración (Opcional)"
+                                onChange={handleChange}
+                                style={{ marginTop: '0.9rem' }}
+                            />
+                        )}
+                    </div>
 
                     {/* 7. Gender */}
                     {role !== 'company' && (

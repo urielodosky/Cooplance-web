@@ -73,7 +73,9 @@ const BadgesSection = ({ freelancer, isOwnProfile, navigate }) => {
     return (
         <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
             <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Insignias del Freelancer</h3>
+                <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>
+                    {isOwnProfile ? 'Mis Insignias' : 'Insignias del Freelancer'}
+                </h3>
                 {isOwnProfile && (
                     <button 
                         className="btn-outline" 
@@ -84,60 +86,20 @@ const BadgesSection = ({ freelancer, isOwnProfile, navigate }) => {
                     </button>
                 )}
             </div>
-            <div className="dashboard-badges-grid" style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
-                gap: '1rem' 
-            }}>
+            <div className="dashboard-badges-grid">
                 {familyStatus.map((status, idx) => (
                     <div 
                         key={idx} 
-                        className={`badge-family-card ${status.badge ? 'unlocked' : 'locked'}`}
+                        className={`badge-family-card ${status.badge ? 'unlocked' : 'locked'} tier-${status.tier?.name || 'none'}`}
                         style={status.tier ? { '--tier-color': status.tier.color } : {}}
                     >
-                        <div className="badge-icon-wrapper" style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginBottom: '1rem',
-                            color: status.tier?.color || 'var(--text-muted)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}>
+                        <div className="badge-icon-wrapper">
                             {status.icon}
                         </div>
                         <div className="badge-content">
-                            <span className="family-label" style={{
-                                fontSize: '0.65rem',
-                                textTransform: 'uppercase',
-                                letterSpacing: '1px',
-                                fontWeight: '800',
-                                color: 'var(--text-muted)',
-                                display: 'block',
-                                marginBottom: '4px'
-                            }}>{status.familyTitle}</span>
-                            <h4 className="badge-name" style={{
-                                fontSize: '0.9rem',
-                                fontWeight: '700',
-                                margin: 0,
-                                color: status.badge ? '#fff' : 'rgba(255,255,255,0.3)',
-                                lineHeight: '1.2'
-                            }}>{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
-                            {status.badge && (
-                                <p className="badge-desc" style={{
-                                    fontSize: '0.7rem',
-                                    color: 'var(--text-secondary)',
-                                    margin: '0.4rem 0 0 0',
-                                    lineHeight: '1.4',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                }}>{status.badge.desc}</p>
-                            )}
+                            <span className="family-label">{status.familyTitle}</span>
+                            <h4 className="badge-name">{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
+                            {status.badge && <p className="badge-desc">{status.badge.desc}</p>}
                         </div>
                     </div>
                 ))}
@@ -367,7 +329,7 @@ const FreelancerDetail = () => {
                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                                <span style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{freelancer.location || 'Planeta Tierra'}</span>
+                                <span style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{[freelancer.city, freelancer.province, freelancer.country].filter(Boolean).join(', ') || 'Planeta Tierra'}</span>
                             </div>
                             {freelancer.cv_url && (
                                 <button 

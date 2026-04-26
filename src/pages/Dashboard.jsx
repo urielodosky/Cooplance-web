@@ -170,7 +170,7 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
     );
 };
 
-const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user, setSelectedJobForReview }) => {
+const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs }) => {
     const [activeTab, setActiveTab] = useState('activos');
 
     const filteredWork = useMemo(() => {
@@ -348,13 +348,13 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
 
                                     {job.status === 'pending_approval' && (
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', borderRadius: '12px' }} onClick={() => {
-                                                if(window.confirm("¿Rechazar este trabajo? Se le devolverá el dinero al cliente.")) {
-                                                    updateJobStatus(job.id, 'rejected');
+                                            <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', borderRadius: '12px' }} onClick={async () => {
+                                                 if(window.confirm("¿Rechazar este trabajo? Se le devolverá el dinero al cliente.")) {
+                                                    await updateJobStatus(job.id, 'rejected');
                                                 }
                                             }}>Rechazar</button>
-                                            <button className="btn-primary" style={{ backgroundColor: '#10b981', border: 'none', borderRadius: '12px' }} onClick={() => {
-                                                updateJobStatus(job.id, 'active');
+                                            <button className="btn-primary" style={{ backgroundColor: '#10b981', border: 'none', borderRadius: '12px' }} onClick={async () => {
+                                                 await updateJobStatus(job.id, 'active');
                                                 alert("¡Trabajo aceptado! Ahora puedes empezar a trabajar.");
                                             }}>Aceptar Trabajo</button>
                                         </div>
@@ -378,7 +378,7 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             onClick={() => setSelectedJobForReview(job)}
                                         >
                                             <Star size={14} />
-                                            Calificar Cliente
+                                            {reviewedJobs[job.id] ? 'Modificar Reseña' : 'Calificar Cliente'}
                                         </button>
                                     )}
                                 </div>
@@ -610,7 +610,7 @@ const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setS
     );
 };
 
-const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user }) => {
+const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs }) => {
     const [activeTab, setActiveTab] = useState('activos');
 
     const filteredOrders = useMemo(() => {
@@ -752,6 +752,27 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexShrink: 0 }}>
                                     <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>${job.amount}</div>
                                     <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                                                                {job.status === 'completed' && (
+                                            <button 
+                                                className="btn-primary" 
+                                                style={{ 
+                                                    padding: '0.4rem 0.8rem', 
+                                                    fontSize: '0.75rem', 
+                                                    borderRadius: '8px',
+                                                    background: 'rgba(16, 185, 129, 0.1)',
+                                                    border: '1px solid #10b981',
+                                                    color: '#10b981',
+                                                    fontWeight: '700',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
+                                                }} 
+                                                onClick={() => setSelectedJobForReview(job)}
+                                            >
+                                                <Star size={12} />
+                                                {reviewedJobs[job.id] ? 'Modificar Reseña' : 'Calificar'}
+                                            </button>
+                                        )}
                                         <button className="btn-chat-mini" style={{ 
                                             padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
                                             background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
@@ -1140,6 +1161,7 @@ const Dashboard = () => {
     const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
     const [expandedProposalId, setExpandedProposalId] = useState(null);
     const [selectedJobForReview, setSelectedJobForReview] = useState(null);
+    const [reviewedJobs, setReviewedJobs] = useState({}); // { jobId: true/false }
     const { refreshBadges } = useBadgeNotification();
 
     // V27: Update Job Status with Read-Only check
@@ -1217,9 +1239,48 @@ const Dashboard = () => {
     }, [user?.id, user?.xp, user?.level, updateUser]);
 
     // Derived Data
+    const myOrders = useMemo(() => user ? (jobs || []).filter(j => j.buyerId === user.id) : [], [jobs, user?.id]);
     const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);
     const myServices = useMemo(() => user ? (services || []).filter(s => s.freelancerId === user.id) : [], [services, user?.id]);
-    const myOrders = useMemo(() => user ? (jobs || []).filter(j => j.buyerId === user.id) : [], [jobs, user?.id]);
+
+        // V42: Automatic Review Prompt for completed jobs + Track reviewed status
+    useEffect(() => {
+        if (!user || loading) return;
+        
+        const checkReviews = async () => {
+            const allJobs = [...myWork, ...myOrders].filter(j => j.status === 'completed');
+            if (allJobs.length === 0) return;
+
+            try {
+                const results = await Promise.all(
+                    allJobs.map(async (job) => {
+                        const reviewed = await ReviewService.hasUserReviewedJob(job.id, user.id);
+                        return { id: job.id, reviewed };
+                    })
+                );
+
+                const newReviewedMap = {};
+                results.forEach(r => newReviewedMap[r.id] = r.reviewed);
+                setReviewedJobs(newReviewedMap);
+
+                // Auto prompt logic (only if not already reviewing)
+                if (!selectedJobForReview) {
+                    const sortedJobs = allJobs.sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt));
+                    for (const job of sortedJobs) {
+                        if (!newReviewedMap[job.id]) {
+                            setSelectedJobForReview(job);
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Error checking reviews:", e);
+            }
+        };
+        
+        const timer = setTimeout(checkReviews, 2000);
+        return () => clearTimeout(timer);
+    }, [myWork.length, myOrders.length, user?.id, loading]);
 
     if (!user) return null;
 
@@ -1480,18 +1541,20 @@ const Dashboard = () => {
             await ReviewService.createReview({
                 serviceId: selectedJobForReview.serviceId,
                 reviewerId: user.id,
+                targetId: user.id === selectedJobForReview.clientId ? selectedJobForReview.freelancerId : selectedJobForReview.clientId,
                 rating,
                 comment,
                 jobId: selectedJobForReview.id
             });
             
-            // If it's a client approving work, we ALSO complete the job here
-            if (user.role === 'client' || user.role === 'company') {
+            // If it's a client/buyer approving work, we ALSO complete the job here
+            if (user.role === 'buyer' || user.role === 'client' || user.role === 'company') {
                 if (selectedJobForReview.status !== 'completed') {
                     await updateJobStatus(selectedJobForReview.id, 'completed');
                 }
             }
             
+            setReviewedJobs(prev => ({ ...prev, [selectedJobForReview.id]: true }));
             setSelectedJobForReview(null);
             alert("¡Gracias por tu reseña!");
         } catch (err) {
@@ -1525,14 +1588,25 @@ const Dashboard = () => {
                     <img src={getProfilePicture(user)} alt="Profile" className="dashboard-avatar" />
                     <div className="dashboard-intro-info">
                         <h2>Hola, {user.first_name || user.company_name || user.username}</h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <p style={{ margin: 0 }}>Bienvenido a tu panel.</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Bienvenido a tu panel.</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                                <span>{[user.city, user.province, user.country].filter(Boolean).join(', ') || 'Planeta Tierra'}</span>
+                            </div>
                             {isPaused && (
                                 <span className="status-badge-active-pause ripple-effect">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10" /><line x1="10" y1="15" x2="10" y2="9" /><line x1="14" y1="15" x2="14" y2="9" /></svg>
                                     MODO PAUSA ACTIVO
                                 </span>
                             )}
+                            <button 
+                                onClick={() => navigate(user.role === 'freelancer' ? `/freelancer/${user.id}` : (user.role === 'company' ? `/company/${user.id}` : `/client/${user.id}`))}
+                                className="btn-text-link"
+                                style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: '700', textDecoration: 'underline', textUnderlineOffset: '4px' }}
+                            >
+                                Ver mi perfil público
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1613,16 +1687,10 @@ const Dashboard = () => {
 
             <XPProgressSection user={user} levelLabel={levelLabel} xpPercentage={xpPercentage} isMaxLevel={isMaxLevel} xpDisplayText={xpDisplayText} nextLevelXP={nextLevelXP} currentXP={currentXP} />
 
-            <BadgesSection
-                user={user}
-                myWork={myWork}
-                myOrders={myOrders}
-                navigate={navigate}
-            />
 
             {(user.role === 'freelancer' || user.role === 'company') && (
                 <>
-                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} />
+                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} />
                     <ProposalsSection
                         loading={loading}
                         activeProposalTab={activeProposalTab}
@@ -1675,7 +1743,7 @@ const Dashboard = () => {
                         expandedProposalId={expandedProposalId}
                         setExpandedProposalId={setExpandedProposalId}
                     />
-                    <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} />
+                    <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} />
                 </>
             )}
 

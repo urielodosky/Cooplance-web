@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import CustomDropdown from '../components/common/CustomDropdown';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { supabase } from '../lib/supabase';
+import { getArgentinaProvinces, getArgentinaCities } from '../utils/locationUtils';
 import '../styles/pages/Settings.scss';
 
 const Settings = () => {
@@ -17,6 +18,11 @@ const Settings = () => {
     const [bio, setBio] = useState(user?.bio || '');
     const [location, setLocation] = useState(user?.location || '');
     const [country, setCountry] = useState(user?.country || 'Argentina');
+    const [province, setProvince] = useState(user?.province || '');
+    const [city, setCity] = useState(user?.city || '');
+    const [argProvinces, setArgProvinces] = useState([]);
+    const [argCities, setArgCities] = useState([]);
+    const [isLoadingLoc, setIsLoadingLoc] = useState(false);
     const [workHours, setWorkHours] = useState(user?.work_hours || '');
     const [paymentMethods, setPaymentMethods] = useState(user?.payment_methods || '');
     const [vacancies, setVacancies] = useState(user?.vacancies || '');
@@ -45,6 +51,8 @@ const Settings = () => {
             setBio(user.bio || '');
             setLocation(user.location || '');
             setCountry(user.country || 'Argentina');
+            setProvince(user.province || '');
+            setCity(user.city || '');
             setWorkHours(user.work_hours || '');
             setPaymentMethods(user.payment_methods || '');
             setVacancies(user.vacancies || '');
@@ -73,6 +81,33 @@ const Settings = () => {
             loadParentalData();
         }
     }, [user]);
+
+    // Location logic for Argentina
+    React.useEffect(() => {
+        if (country === 'Argentina') {
+            const fetchProvinces = async () => {
+                setIsLoadingLoc(true);
+                const provinces = await getArgentinaProvinces();
+                setArgProvinces(provinces);
+                setIsLoadingLoc(false);
+            };
+            fetchProvinces();
+        }
+    }, [country]);
+
+    React.useEffect(() => {
+        if (country === 'Argentina' && province) {
+            const fetchCities = async () => {
+                setIsLoadingLoc(true);
+                const cities = await getArgentinaCities(province);
+                setArgCities(cities);
+                setIsLoadingLoc(false);
+            };
+            fetchCities();
+        } else {
+            setArgCities([]);
+        }
+    }, [province, country]);
 
     const handleUpdateMinorLimit = async (minorId, newLimit) => {
         try {
@@ -260,6 +295,8 @@ const Settings = () => {
                 bio: bio || null,
                 location: location || null,
                 country: country || null,
+                province: province || null,
+                city: city || null,
                 work_hours: workHours || null,
                 payment_methods: paymentMethods || null,
                 vacancies: vacancies !== '' && vacancies !== null ? parseInt(vacancies) || 0 : 0,
@@ -572,16 +609,80 @@ const Settings = () => {
                         </div>
 
 
-                        {/* 5. COUNTRY */}
+                        {/* 5. COUNTRY & LOCATION */}
                         <div className="form-group">
                             <CustomDropdown
                                 label="País"
                                 value={country}
-                                onChange={setCountry}
+                                onChange={(val) => {
+                                    setCountry(val);
+                                    if (val !== 'Argentina') {
+                                        setProvince('');
+                                        setCity('');
+                                    }
+                                }}
                                 options={[
                                     'Argentina', 'Chile', 'Colombia', 'España',
                                     'México', 'Perú', 'Uruguay', 'Otros'
                                 ]}
+                            />
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label className="field-label">Ubicación (Opcional)</label>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: country === 'Argentina' ? 'repeat(2, 1fr)' : '1fr',
+                                gap: '1rem',
+                                marginTop: '0.5rem'
+                            }}>
+                                {country === 'Argentina' ? (
+                                    <>
+                                        <CustomDropdown
+                                            options={argProvinces.map(prov => ({ label: prov, value: prov }))}
+                                            value={province}
+                                            onChange={(val) => {
+                                                setProvince(val);
+                                                setCity('');
+                                            }}
+                                            placeholder="Provincia"
+                                            searchable={true}
+                                        />
+                                        <CustomDropdown
+                                            options={argCities.map(c => ({ label: c, value: c }))}
+                                            value={city}
+                                            onChange={setCity}
+                                            placeholder={isLoadingLoc ? "Cargando..." : "Ciudad"}
+                                            searchable={true}
+                                            disabled={!province || isLoadingLoc}
+                                        />
+                                    </>
+                                ) : (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <input 
+                                            type="text" 
+                                            value={province} 
+                                            onChange={(e) => setProvince(e.target.value)} 
+                                            placeholder="Provincia / Estado" 
+                                            className="settings-input" 
+                                        />
+                                        <input 
+                                            type="text" 
+                                            value={city} 
+                                            onChange={(e) => setCity(e.target.value)} 
+                                            placeholder="Ciudad" 
+                                            className="settings-input" 
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            <input
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="Calle y Numeración (Opcional)"
+                                className="settings-input"
+                                style={{ marginTop: '1rem' }}
                             />
                         </div>
 
