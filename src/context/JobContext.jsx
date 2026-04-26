@@ -280,6 +280,9 @@ export const JobProvider = ({ children }) => {
                         message: `¡Proyecto completado! ✅ ${job.buyerName} aprobó '${job.serviceTitle}'.`,
                         link: '/dashboard'
                     });
+                    
+                    // V41: Trigger badge check immediately
+                    window.dispatchEvent(new CustomEvent('forceBadgeCheck'));
                 } else if (status === 'active' && job.status === 'delivered') {
                     // Client asked for corrections
                     NotificationService.createNotification(job.freelancerId, {

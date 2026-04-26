@@ -25,6 +25,7 @@ export const BadgeNotificationProvider = ({ children }) => {
     const [queue, setQueue] = useState([]);
     const [currentNotification, setCurrentNotification] = useState(null);
     const lastCheckRef = React.useRef(0);
+    const notifiedIds = React.useRef(new Set()); // V41: Track notified badges to prevent loops
     const THROTTLE_MS = 60000; // 1 minute minimum between checks
 
     // Evaluate badges to find new ones
@@ -191,6 +192,16 @@ export const BadgeNotificationProvider = ({ children }) => {
         const interval = setInterval(() => checkBadgeUnlocks(), 300000); 
         return () => clearInterval(interval);
     }, [user?.id]); // Only restart if the user identity actually changes
+    
+    // V41: Listen for external triggers to refresh badges (e.g., from JobContext)
+    useEffect(() => {
+        const handleForceCheck = () => {
+            console.log("[BadgeNotificationContext] Force check triggered by event...");
+            checkBadgeUnlocks(true);
+        };
+        window.addEventListener('forceBadgeCheck', handleForceCheck);
+        return () => window.removeEventListener('forceBadgeCheck', handleForceCheck);
+    }, [checkBadgeUnlocks]);
 
     // Process Queue
     useEffect(() => {
