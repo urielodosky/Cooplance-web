@@ -191,13 +191,18 @@ const FreelancerDetail = () => {
                 
                 if (!recError) setReviewsReceived(recData || []);
 
-                // 5. Fetch Reviews Given
+                // 5. Fetch Reviews Given (as reviewer)
                 const { data: givData, error: givError } = await supabase
                     .from('service_reviews')
-                    .select('*, service:services!service_id(title, owner:profiles!owner_id(username, first_name, last_name, avatar_url))')
+                    .select(`
+                        *, 
+                        target:profiles!target_id(username, first_name, last_name, avatar_url, role),
+                        job:jobs!job_id(service_title)
+                    `)
                     .eq('reviewer_id', id);
                 
-                if (!givError) setReviewsGiven(givData || []);
+                if (givError) throw givError;
+                setReviewsGiven(givData || []);
 
             } catch (err) {
                 console.error("Error loading freelancer data:", err);
@@ -636,26 +641,43 @@ const FreelancerDetail = () => {
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                            <div style={{
-                                                width: '56px',
-                                                height: '56px',
-                                                borderRadius: '50%',
-                                                overflow: 'hidden',
-                                                border: '1px solid var(--border)',
-                                                flexShrink: 0,
-                                                background: 'var(--bg-body)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'var(--text-muted)'
-                                            }}>
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                            <div 
+                                                onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/freelancer/${review.target_id}`)}
+                                                style={{
+                                                    width: '56px',
+                                                    height: '56px',
+                                                    borderRadius: '50%',
+                                                    overflow: 'hidden',
+                                                    border: '1px solid var(--border)',
+                                                    flexShrink: 0,
+                                                    background: 'var(--bg-body)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                {review.target?.avatar_url ? (
+                                                    <img src={review.target.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                )}
                                             </div>
                                             <div>
                                                 <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                                    {review.service?.title || 'Servicio/Proyecto'}
+                                                    {review.job?.service_title || 'Servicio Personalizado'}
                                                 </h4>
-                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Calificado por {freelancer?.first_name || freelancer?.username}</span>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                        {review.target?.first_name ? `${review.target.first_name} ${review.target.last_name || ''}` : review.target?.username}
+                                                    </span>
+                                                    <span 
+                                                        onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/freelancer/${review.target_id}`)}
+                                                        style={{ fontSize: '0.8rem', color: '#3b82f6', cursor: 'pointer', fontWeight: '500' }}
+                                                    >
+                                                        @{review.target?.username}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <div style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
