@@ -708,78 +708,129 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                     <ListSkeleton />
                 ) : filteredOrders.length > 0 ? (
                     filteredOrders.map(job => (
-                        <div key={job.id} className={`proposal-card enhanced status-${job.status}`} onClick={() => {
+                        <div key={job.id} className={`glass job-card order-card premium-job-card status-${job.status}`} style={{
+                            display: 'flex',
+                            gap: '1.2rem',
+                            alignItems: 'center',
+                            padding: '0.8rem 1.2rem',
+                            borderRadius: '20px',
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border)',
+                            position: 'relative',
+                            transition: 'all 0.3s ease',
+                            boxShadow: 'var(--shadow-sm)',
+                            cursor: 'pointer'
+                        }} onClick={() => {
                             if (job.projectId) navigate(`/project/${job.projectId}`);
                             else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                         }}>
-                            <div className="proposal-card-content">
-                                <div className="proposal-client-info" onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(job.freelancerRole === 'company' ? `/company/${job.freelancerId}` : `/freelancer/${job.freelancerId}`);
-                                }}>
-                                    <div className="client-avatar-wrapper">
-                                        <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} />
-                                    </div>
-                                    <div className="client-details">
-                                        <span className="client-username">@{job.freelancerUsername || 'usuario'}</span>
-                                        {job.freelancerName && <span className="client-realname">{job.freelancerName}</span>}
-                                    </div>
+                            {/* Avatar Section */}
+                            <div style={{
+                                width: '60px', 
+                                height: '60px', 
+                                borderRadius: '50%', 
+                                overflow: 'hidden', 
+                                border: '2px solid var(--primary)',
+                                flexShrink: 0,
+                                boxShadow: '0 0 15px rgba(139, 92, 246, 0.2)'
+                            }} onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(job.freelancerRole === 'company' ? `/company/${job.freelancerId}` : `/freelancer/${job.freelancerId}`);
+                            }}>
+                                <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+
+                            {/* Info Section */}
+                            <div className="job-main-info" style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
+                                    <h4 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        @{job.freelancerUsername || 'usuario'}
+                                    </h4>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>• {job.freelancerName || 'Freelancer'}</span>
+                                    
+                                    {/* Inline Deadline Badge */}
+                                    {(() => {
+                                        const preciseTime = job.deadline ? getPreciseTimeRemaining(job.deadline) : null;
+                                        if (!preciseTime || job.status !== 'active') return null;
+                                        return (
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                padding: '2px 8px',
+                                                borderRadius: '6px',
+                                                background: 'rgba(139, 92, 246, 0.1)',
+                                                color: 'var(--primary-soft)',
+                                                fontWeight: '800',
+                                                border: '1px solid currentColor',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                {preciseTime}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
 
-                                <div className="proposal-main-details">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '4px' }}>
-                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>{job.serviceTitle}</h4>
-                                        {(() => {
-                                            const preciseTime = job.deadline ? getPreciseTimeRemaining(job.deadline) : null;
-                                            if (!preciseTime || job.status !== 'active') return null;
-                                            return (
-                                                <span style={{ fontSize: '0.65rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary-soft)', fontWeight: '800', border: '1px solid currentColor' }}>
-                                                    {preciseTime}
-                                                </span>
-                                            );
-                                        })()}
-                                    </div>
-                                    <div className="proposal-meta">
-                                        <span style={{ fontSize: '0.8rem', fontWeight: '800', color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : '#f59e0b') }}>
-                                            • {job.status === 'active' ? 'EN PROGRESO' : job.status === 'delivered' ? 'ENTREGADO' : job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` : 'ESPERANDO'}
-                                        </span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '900', color: 'var(--text-primary)', marginLeft: '1rem' }}>${job.amount}</span>
-                                    </div>
+                                <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    Contratado: <strong style={{ color: 'var(--primary-soft)', fontWeight: '700' }}>{job.serviceTitle}</strong>
                                 </div>
 
-                                <div className="proposal-actions" style={{ gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <span style={{ 
+                                        fontSize: '0.85rem', 
+                                        color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : '#f59e0b'), 
+                                        fontWeight: '800', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '6px',
+                                        padding: '4px 10px',
+                                        borderRadius: '8px',
+                                        background: job.status === 'completed' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'active' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(245, 158, 11, 0.08)'),
+                                        border: '1px solid currentColor'
+                                    }}>
+                                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
+                                        {job.status === 'active' ? 'EN PROGRESO' : 
+                                         job.status === 'delivered' ? 'RECIBIDO (PARA REVISAR)' : 
+                                         job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
+                                         (job.status?.toUpperCase() || 'ESTADO')}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Price & Actions Section */}
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '180px' }}>
+                                <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>${job.amount}</div>
+                                <div className="proposal-actions" style={{ display: 'flex', gap: '0.5rem' }}>
                                     {job.status === 'completed' && (
                                         <button 
-                                            className="btn-primary" 
+                                            className="btn-outline" 
                                             style={{ 
-                                                padding: '0.4rem 0.8rem', 
+                                                padding: '0.4rem 1rem', 
                                                 fontSize: '0.75rem', 
-                                                borderRadius: '8px',
-                                                background: 'rgba(16, 185, 129, 0.1)',
-                                                border: '1px solid #10b981',
+                                                borderRadius: '10px',
+                                                borderColor: '#10b981',
                                                 color: '#10b981',
                                                 fontWeight: '700',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '4px'
+                                                gap: '6px'
                                             }} 
                                             onClick={(e) => { e.stopPropagation(); setSelectedJobForReview(job); }}
                                         >
-                                            <Star size={12} />
-                                            {reviewedJobs[job.id] ? 'Modificar Reseña' : 'Calificar'}
+                                            <Star size={14} />
+                                            {reviewedJobs[job.id] ? 'Reseña OK' : 'Calificar'}
                                         </button>
                                     )}
                                     {job.status === 'delivered' && (
                                         <button 
                                             className="btn-primary" 
                                             style={{ 
-                                                padding: '0.4rem 0.8rem', 
-                                                fontSize: '0.75rem', 
-                                                borderRadius: '8px', 
+                                                padding: '0.5rem 1.2rem', 
+                                                fontSize: '0.8rem', 
+                                                borderRadius: '12px', 
                                                 background: '#10b981', 
                                                 border: 'none',
                                                 color: 'white',
-                                                fontWeight: '700'
+                                                fontWeight: '800',
+                                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                                             }} 
                                             onClick={async (e) => { 
                                                 e.stopPropagation(); 
@@ -794,11 +845,19 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                 });
                                             }}
                                         >
-                                            Aprobar Entrega
+                                            Aprobar
                                         </button>
                                     )}
                                     {job.status !== 'pending_approval' && (
-                                        <button className="btn-chat-mini" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={async (e) => {
+                                        <button className="btn-secondary" style={{ 
+                                            padding: '0.4rem 1rem', 
+                                            fontSize: '0.75rem',
+                                            borderRadius: '10px',
+                                            background: 'var(--bg-body)',
+                                            border: '1px solid var(--border)',
+                                            color: 'var(--text-primary)',
+                                            fontWeight: '600'
+                                        }} onClick={async (e) => {
                                             e.stopPropagation();
                                             setIsCreatingChat(true);
                                             try {
@@ -808,7 +867,15 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             } catch { setIsCreatingChat(false); }
                                         }}>Chat</button>
                                     )}
-                                    <button className="btn-detail-mini" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={(e) => {
+                                    <button className="btn-outline" style={{ 
+                                        padding: '0.4rem 1rem', 
+                                        fontSize: '0.75rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border)',
+                                        background: 'transparent',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: '500'
+                                    }} onClick={(e) => {
                                         e.stopPropagation();
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
