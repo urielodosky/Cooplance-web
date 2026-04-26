@@ -774,7 +774,8 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             position: 'relative',
                             transition: 'all 0.3s ease',
                             boxShadow: 'var(--shadow-sm)',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            marginBottom: '1.2rem'
                         }} onClick={() => {
                             if (job.projectId) navigate(`/project/${job.projectId}`);
                             else if (job.serviceId) navigate(`/service/${job.serviceId}`);
@@ -828,25 +829,43 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     Contratado: <strong style={{ color: 'var(--primary-soft)', fontWeight: '700' }}>{job.serviceTitle}</strong>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <span style={{ 
-                                        fontSize: '0.85rem', 
-                                        color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : '#f59e0b'), 
-                                        fontWeight: '800', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        gap: '6px',
-                                        padding: '4px 10px',
-                                        borderRadius: '8px',
-                                        background: job.status === 'completed' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'active' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(245, 158, 11, 0.08)'),
-                                        border: '1px solid currentColor'
-                                    }}>
-                                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
-                                        {job.status === 'active' ? 'EN PROGRESO' : 
-                                         job.status === 'delivered' ? 'RECIBIDO (PARA REVISAR)' : 
-                                         job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
-                                         (job.status?.toUpperCase() || 'ESTADO')}
-                                    </span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <span style={{ 
+                                            fontSize: '0.85rem', 
+                                            color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : (job.status === 'cancellation_requested' ? '#ef4444' : '#f59e0b')), 
+                                            fontWeight: '800', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '6px',
+                                            padding: '4px 10px',
+                                            borderRadius: '8px',
+                                            background: job.status === 'completed' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'active' ? 'rgba(59, 130, 246, 0.08)' : (job.status === 'cancellation_requested' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
+                                            border: '1px solid currentColor'
+                                        }}>
+                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
+                                            {job.status === 'active' ? 'EN PROGRESO' : 
+                                            job.status === 'delivered' ? 'RECIBIDO (PARA REVISAR)' : 
+                                            job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
+                                            job.status === 'cancellation_requested' ? 'CANCELACIÓN SOLICITADA' :
+                                            (job.status?.toUpperCase() || 'ESTADO')}
+                                        </span>
+                                    </div>
+
+                                    {(job.status === 'cancellation_requested' || job.status === 'canceled') && job.deliveryResult && (
+                                        <div style={{ 
+                                            fontSize: '0.8rem', 
+                                            color: 'var(--text-muted)', 
+                                            background: 'rgba(0,0,0,0.03)', 
+                                            padding: '8px 12px', 
+                                            borderRadius: '10px',
+                                            borderLeft: '3px solid #ef4444',
+                                            maxWidth: '500px',
+                                            marginTop: '4px'
+                                        }}>
+                                            <strong>Motivo:</strong> {job.deliveryResult.replace('Solicitud de cancelación por cliente. Motivo: ', '')}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

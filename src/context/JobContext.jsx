@@ -255,7 +255,7 @@ export const JobProvider = ({ children }) => {
                 }
             }
 
-            if (status === 'completed' || status === 'canceled') {
+            if (status === 'completed' || status === 'canceled' || status === 'cancellation_requested') {
                 updateData.completed_at = new Date().toISOString();
                 if (explicitDeliveryResult) {
                     updateData.delivery_result = explicitDeliveryResult;
