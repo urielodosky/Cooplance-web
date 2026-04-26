@@ -205,7 +205,8 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             border: '1px solid var(--border)',
                             position: 'relative',
                             transition: 'all 0.3s ease',
-                            boxShadow: 'var(--shadow-sm)'
+                            boxShadow: 'var(--shadow-sm)',
+                            marginBottom: '1.2rem'
                         }}>
                             {/* Avatar Section */}
                             <div style={{
@@ -297,6 +298,24 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                         </span>
                                     )}
                                 </div>
+
+                                {(job.status === 'cancellation_requested' || job.status === 'canceled') && job.deliveryResult && (
+                                    <div style={{ 
+                                        fontSize: '0.8rem', 
+                                        color: 'var(--text-muted)', 
+                                        background: 'rgba(0,0,0,0.03)', 
+                                        padding: '8px 12px', 
+                                        borderRadius: '10px',
+                                        borderLeft: '3px solid #ef4444',
+                                        maxWidth: '500px',
+                                        marginTop: '8px'
+                                    }}>
+                                        <strong>Motivo:</strong> {job.deliveryResult
+                                            .replace('Solicitud de cancelación por cliente. Motivo: ', '')
+                                            .replace('Cancelado por freelancer. Motivo: ', '')
+                                        }
+                                    </div>
+                                )}
                             </div>
 
                             {/* Price & Actions Section */}
@@ -994,6 +1013,31 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             } catch { setIsCreatingChat(false); }
                                         }}>Chat</button>
                                     )}
+                                    {job.status === 'completed' && (
+                                        <button 
+                                            className="btn-primary" 
+                                            style={{ 
+                                                padding: '0.5rem 1.2rem', 
+                                                fontSize: '0.85rem', 
+                                                borderRadius: '12px',
+                                                background: 'rgba(245, 158, 11, 0.1)',
+                                                border: '1px solid #f59e0b',
+                                                color: '#f59e0b',
+                                                fontWeight: '700',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }} 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedJobForReview(job);
+                                            }}
+                                        >
+                                            <Star size={14} />
+                                            {reviewedJobs[job.id] ? 'Modificar Reseña' : 'Calificar Freelancer'}
+                                        </button>
+                                    )}
+
                                     <button className="btn-outline" style={{ 
                                         padding: '0.4rem 1rem', 
                                         fontSize: '0.75rem',
