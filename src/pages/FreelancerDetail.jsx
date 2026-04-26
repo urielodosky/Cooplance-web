@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useTeams } from '../context/TeamContext';
@@ -71,7 +72,7 @@ const BadgesSection = ({ freelancer, isOwnProfile, navigate }) => {
     });
 
     return (
-        <div>
+        <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
             <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Insignias del Freelancer</h3>
                 {isOwnProfile && (

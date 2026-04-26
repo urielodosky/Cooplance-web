@@ -70,6 +70,7 @@ const BadgesSection = ({ client, isOwnProfile, navigate }) => {
     });
 
     return (
+        <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
             <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Insignias del Cliente</h3>
                 {isOwnProfile && (

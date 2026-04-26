@@ -71,6 +71,7 @@ const BadgesSection = ({ company, isOwnProfile, navigate }) => {
     });
 
     return (
+        <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
             <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Insignias de la Empresa</h3>
                 {isOwnProfile && (
@@ -157,7 +158,7 @@ const CompanyDetail = () => {
     const [loading, setLoading] = useState(true);
 
     // V23: Strict access control for U18 Freelancers
-    const isU18Freelancer = user?.role === 'freelancer' && calculateAge(user.dob) < 18;
+    const isU18Freelancer = currentUser?.role === 'freelancer' && calculateAge(currentUser.dob) < 18;
 
     useEffect(() => {
         if (isU18Freelancer) {
