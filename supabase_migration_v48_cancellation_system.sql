@@ -54,7 +54,7 @@ CREATE POLICY "Clientes pueden solicitar cancelaciones"
     ON job_cancellations FOR INSERT
     WITH CHECK (
         auth.uid() = cancelled_by AND
-        auth.uid() IN (SELECT buyer_id FROM jobs WHERE id = job_id)
+        auth.uid() IN (SELECT client_id FROM jobs WHERE id = job_id)
     );
 
 -- Index for performance
