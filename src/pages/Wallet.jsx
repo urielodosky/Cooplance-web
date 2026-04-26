@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useNavigate } from 'react-router-dom';
@@ -114,6 +114,27 @@ const Wallet = () => {
     const filteredTransactions = filterMethod === 'all'
         ? stats.transactions
         : stats.transactions.filter(t => t.method === filterMethod);
+
+    // Calculate Escrow (Pending) Balance from active jobs
+    const escrowBalance = useMemo(() => {
+        if (!jobs || jobs.length === 0) return 0;
+        return jobs.reduce((acc, job) => {
+            if (['active', 'delivered'].includes(job.status)) {
+                return acc + (parseFloat(job.amount) || 0);
+            }
+            return acc;
+        }, 0);
+    }, [jobs]);
+
+    // Update stats with escrowBalance if it changes
+    useEffect(() => {
+        if (escrowBalance !== stats.pendingClearance) {
+            setStats(prev => ({
+                ...prev,
+                pendingClearance: escrowBalance
+            }));
+        }
+    }, [escrowBalance, stats.pendingClearance]);
 
     useEffect(() => {
         if (user?.paymentMethods) {
