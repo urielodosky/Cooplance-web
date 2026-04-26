@@ -9,6 +9,12 @@ import { supabase } from '../lib/supabase';
 import ReportModal from '../components/common/ReportModal';
 import { BADGE_FAMILIES } from '../data/badgeDefinitions';
 import {
+    CreditCard as Coin,
+    Zap as Flame,
+    Rocket,
+    Heart,
+    Star,
+    Handshake,
     Eye,
     Users,
     MoreVertical,
