@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PackageCheck, Send, MessageSquare, Info, Check } from 'lucide-react';
+import { PackageCheck, Send, MessageSquare, Info, Check, Star } from 'lucide-react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useServices } from '../features/services/context/ServiceContext';
@@ -10,6 +10,8 @@ import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
+import ReviewModal from '../components/common/ReviewModal';
+import * as ReviewService from '../services/ReviewService';
 import { calculateNextLevelXP, getBaseXPForLevel, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, deactivatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { getBenefitsForRole } from '../data/levelBenefits';
@@ -168,7 +170,7 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
     );
 };
 
-const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user }) => {
+const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user, setSelectedJobForReview }) => {
     const [activeTab, setActiveTab] = useState('activos');
 
     const filteredWork = useMemo(() => {
@@ -356,6 +358,28 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                                 alert("¡Trabajo aceptado! Ahora puedes empezar a trabajar.");
                                             }}>Aceptar Trabajo</button>
                                         </div>
+                                    )}
+                                    
+                                    {job.status === 'completed' && (
+                                        <button 
+                                            className="btn-primary" 
+                                            style={{ 
+                                                padding: '0.5rem 1.2rem', 
+                                                fontSize: '0.85rem', 
+                                                borderRadius: '12px',
+                                                background: 'rgba(245, 158, 11, 0.1)',
+                                                border: '1px solid #f59e0b',
+                                                color: '#f59e0b',
+                                                fontWeight: '700',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            }} 
+                                            onClick={() => setSelectedJobForReview(job)}
+                                        >
+                                            <Star size={14} />
+                                            Calificar Cliente
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -704,10 +728,10 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                     background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
                                                     display: 'flex', alignItems: 'center', gap: '4px'
                                                 }} onClick={() => {
-                                                    if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
+                                                    setSelectedJobForReview(job);
                                                 }}>
                                                     <Check size={12} />
-                                                    Aprobar
+                                                    Aprobar y Calificar
                                                 </button>
                                             </div>
                                         </div>
@@ -1110,6 +1134,7 @@ const Dashboard = () => {
     const [selectedProjectForProposals, setSelectedProjectForProposals] = useState(null);
     const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
     const [expandedProposalId, setExpandedProposalId] = useState(null);
+    const [selectedJobForReview, setSelectedJobForReview] = useState(null);
     const { refreshBadges } = useBadgeNotification();
 
     // V27: Update Job Status with Read-Only check
@@ -1443,6 +1468,33 @@ const Dashboard = () => {
         return activeProposalTab === 'active' ? isActive : !isActive;
     });
 
+    const handleReviewSubmit = async ({ rating, comment }) => {
+        if (!selectedJobForReview) return;
+        
+        try {
+            await ReviewService.createReview({
+                serviceId: selectedJobForReview.serviceId,
+                reviewerId: user.id,
+                rating,
+                comment,
+                jobId: selectedJobForReview.id
+            });
+            
+            // If it's a client approving work, we ALSO complete the job here
+            if (user.role === 'client' || user.role === 'company') {
+                if (selectedJobForReview.status !== 'completed') {
+                    await updateJobStatus(selectedJobForReview.id, 'completed');
+                }
+            }
+            
+            setSelectedJobForReview(null);
+            alert("¡Gracias por tu reseña!");
+        } catch (err) {
+            console.error("Error submitting review:", err);
+            alert("No se pudo guardar la reseña.");
+        }
+    };
+
     return (
         <div className="dashboard-container">
             <ProposalListModal isOpen={!!selectedProjectForProposals} onClose={() => setSelectedProjectForProposals(null)} projectId={selectedProjectForProposals?.id} projectTitle={selectedProjectForProposals?.title} onAccept={handleAcceptProposal} />
@@ -1565,7 +1617,7 @@ const Dashboard = () => {
 
             {(user.role === 'freelancer' || user.role === 'company') && (
                 <>
-                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} />
+                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} />
                     <ProposalsSection
                         loading={loading}
                         activeProposalTab={activeProposalTab}
@@ -1623,6 +1675,15 @@ const Dashboard = () => {
             )}
 
             <LevelUpModal isOpen={showLevelUpModal} onClose={() => setShowLevelUpModal(false)} level={currentLevel} />
+
+            {/* V28: Review Modal */}
+            <ReviewModal
+                isOpen={!!selectedJobForReview}
+                onClose={() => setSelectedJobForReview(null)}
+                onConfirm={handleReviewSubmit}
+                title={user.role === 'freelancer' ? "Califica al Cliente" : "Califica el Trabajo"}
+                subtitle={user.role === 'freelancer' ? "¿Cómo fue tu experiencia trabajando con este cliente?" : "¿Estás satisfecho con el resultado final?"}
+            />
         </div>
     );
 };

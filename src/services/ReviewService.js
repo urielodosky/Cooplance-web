@@ -119,6 +119,27 @@ export const createReview = async (reviewData) => {
     }
 };
 
+export const hasUserReviewedJob = async (jobId, reviewerId) => {
+    try {
+        const { data, error } = await supabase
+            .from('service_reviews')
+            .select('id')
+            .eq('job_id', jobId)
+            .eq('reviewer_id', reviewerId)
+            .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is 'no rows returned'
+            console.error('[ReviewService] Error checking existing review:', error);
+            return false;
+        }
+
+        return !!data;
+    } catch (err) {
+        console.error('[ReviewService] Critical error checking review:', err);
+        return false;
+    }
+};
+
 // ── Helpers ───────────────────────────────────────────────────
 
 function mapFromDB(row) {
