@@ -7,6 +7,7 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { calculateAge } from '../utils/ageUtils';
 import { supabase } from '../lib/supabase';
 import { CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
+import ReportModal from '../components/common/ReportModal';
 import {
     CreditCard as Coin,
     Zap as Flame,
@@ -15,7 +16,9 @@ import {
     Star,
     Handshake,
     Eye,
-    Users
+    Users,
+    MapPin,
+    MoreVertical
 } from 'lucide-react';
 import '../styles/pages/CompanyDetail.scss';
 
@@ -120,6 +123,8 @@ const CompanyDetail = () => {
     const [reviewsGiven, setReviewsGiven] = useState([]);
     const [activeReviewTab, setActiveReviewTab] = useState('received');
     const [loading, setLoading] = useState(true);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     const averageRating = reviewsReceived.length > 0 
         ? (reviewsReceived.reduce((acc, r) => acc + (r.rating || 0), 0) / reviewsReceived.length).toFixed(1)
@@ -258,6 +263,85 @@ const CompanyDetail = () => {
                     opacity: 0.8
                 }}></div>
 
+                {!isOwnProfile && (
+                    <div style={{ position: 'absolute', top: '2rem', right: '2rem', zIndex: 10 }}>
+                        <button 
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            style={{ 
+                                background: 'rgba(255,255,255,0.05)', 
+                                border: '1px solid var(--border)', 
+                                color: 'var(--text-primary)', 
+                                padding: '8px', 
+                                borderRadius: '12px', 
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        >
+                            <MoreVertical size={20} />
+                        </button>
+                        {isMenuOpen && (
+                            <>
+                                <div 
+                                    onClick={() => setIsMenuOpen(false)}
+                                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1 }}
+                                />
+                                <div className="glass" style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: 0,
+                                    marginTop: '0.5rem',
+                                    background: 'var(--bg-card)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '16px',
+                                    padding: '0.5rem',
+                                    minWidth: '160px',
+                                    boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '2px'
+                                }}>
+                                    <button 
+                                        onClick={() => {
+                                            setIsMenuOpen(false);
+                                            alert("Opción de bloqueo disponible próximamente");
+                                        }}
+                                        style={{ 
+                                            padding: '0.75rem 1rem', background: 'none', border: 'none', 
+                                            color: '#ef4444', textAlign: 'left', borderRadius: '10px',
+                                            cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
+                                            display: 'flex', alignItems: 'center', gap: '8px'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                        Bloquear
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setIsMenuOpen(false);
+                                            setIsReportModalOpen(true);
+                                        }}
+                                        style={{ 
+                                            padding: '0.75rem 1rem', background: 'none', border: 'none', 
+                                            color: 'var(--text-primary)', textAlign: 'left', borderRadius: '10px',
+                                            cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
+                                            display: 'flex', alignItems: 'center', gap: '8px'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                                        Reportar
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
                     <div className="company-logo-wrapper" style={{
                         width: '180px', height: '180px',
@@ -334,18 +418,20 @@ const CompanyDetail = () => {
                                     </div>
                                 )}
                             </div>
-                            <p style={{ 
-                                margin: '0.25rem 0 0 0', 
-                                fontSize: '1.2rem', 
-                                color: '#6366f1', 
-                                fontWeight: 700,
-                                opacity: 0.8 
-                            }}>
-                                @{company.username}
-                            </p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                                <span>{[company.city, company.province, company.country].filter(Boolean).join(', ') || 'Planeta Tierra'}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
+                                <p style={{ 
+                                    margin: 0, 
+                                    fontSize: '1.2rem', 
+                                    color: '#6366f1', 
+                                    fontWeight: 700,
+                                    opacity: 0.8 
+                                }}>
+                                    @{company.username}
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                                    <MapPin size={14} />
+                                    <span>{[company.city, company.province, company.country].filter(Boolean).join(', ') || 'Planeta Tierra'}</span>
+                                </div>
                             </div>
                         </div>
                         <div className="bio-container-premium" style={{
@@ -738,6 +824,12 @@ const CompanyDetail = () => {
                     )}
                 </div>
             </div>
+            <ReportModal 
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                targetId={id}
+                targetType="profile"
+            />
         </div>
     );
 };
