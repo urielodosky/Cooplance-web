@@ -57,9 +57,18 @@ export const calculateCommission = (level) => {
     return 12;
 };
 
-export const calculateXPForJob = (amount) => {
+export const calculateXPForJob = (amount, userLevel = 1) => {
+    if (userLevel === 1) {
+        if (amount >= 100000) return 80;
+        return 40;
+    }
+    
+    // Level 2+ graduated rewards
     if (amount >= 100000) return 80;
-    return 40;
+    if (amount >= 45000) return 40;
+    if (amount >= 15000) return 30;
+    if (amount >= 5000) return 10;
+    return 5;
 };
 
 // --- NEW ADVANCED LOGIC ---

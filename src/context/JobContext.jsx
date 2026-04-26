@@ -367,7 +367,7 @@ export const JobProvider = ({ children }) => {
                             const freelancerProfile = profiles.find(p => p.id === job.freelancerId);
 
                             if (buyerProfile) {
-                                const xpEarned = calculateXPForJob(job.amount);
+                                const xpEarned = calculateXPForJob(job.amount, buyerProfile.level || 1);
                                 const newXP = (buyerProfile.xp || 0) + xpEarned;
                                 let newLevel = buyerProfile.level || 1;
                                 if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) {
@@ -387,7 +387,7 @@ export const JobProvider = ({ children }) => {
                             }
 
                             if (freelancerProfile) {
-                                const xpEarned = calculateXPForJob(job.amount);
+                                const xpEarned = calculateXPForJob(job.amount, freelancerProfile.level || 1);
                                 const newXP = (freelancerProfile.xp || 0) + xpEarned;
                                 let newLevel = freelancerProfile.level || 1;
                                 if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) {
