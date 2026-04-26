@@ -36,6 +36,27 @@ CREATE TABLE IF NOT EXISTS job_cancellations (
     resolved_by UUID REFERENCES profiles(id)
 );
 
+-- Habilitar RLS
+ALTER TABLE job_cancellations ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de Seguridad (RLS)
+-- 1. Los clientes pueden ver sus propias solicitudes de cancelación
+-- 2. Los freelancers pueden ver las cancelaciones de sus trabajos recibidos
+CREATE POLICY "Usuarios pueden ver sus propias cancelaciones o de sus trabajos"
+    ON job_cancellations FOR SELECT
+    USING (
+        auth.uid() = cancelled_by OR 
+        auth.uid() IN (SELECT freelancer_id FROM jobs WHERE id = job_id)
+    );
+
+-- 3. Los clientes pueden insertar solicitudes de cancelación
+CREATE POLICY "Clientes pueden solicitar cancelaciones"
+    ON job_cancellations FOR INSERT
+    WITH CHECK (
+        auth.uid() = cancelled_by AND
+        auth.uid() IN (SELECT buyer_id FROM jobs WHERE id = job_id)
+    );
+
 -- Index for performance
 CREATE INDEX IF NOT EXISTS idx_job_cancellations_job_id ON job_cancellations(job_id);
 CREATE INDEX IF NOT EXISTS idx_job_cancellations_status ON job_cancellations(status);
