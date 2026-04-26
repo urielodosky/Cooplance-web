@@ -167,8 +167,8 @@ const FreelancerDetail = () => {
                 // 3. Fetch Jobs (for work history)
                 const { data: jobsData, error: jError } = await supabase
                     .from('jobs')
-                    .select('*, client:profiles!client_id(username, first_name, last_name), service:services!service_id(title)')
-                    .eq('freelancer_id', id)
+                    .select('*, client:profiles!client_id(username, first_name, last_name), freelancer:profiles!provider_id(username, first_name, last_name)')
+                    .eq('provider_id', id)
                     .in('status', ['completed', 'canceled'])
                     .limit(10);
                 
@@ -177,10 +177,11 @@ const FreelancerDetail = () => {
                 // Map jobs to include serviceTitle and clientName
                 const mappedJobs = (jobsData || []).map(j => ({
                     ...j,
-                    serviceTitle: j.service?.title || 'Servicio Personalizado',
+                    serviceTitle: j.service_title || 'Servicio Personalizado',
                     clientName: j.client?.first_name ? `${j.client.first_name} ${j.client.last_name || ''}`.trim() : j.client?.username
                 }));
                 setFreelancerJobs(mappedJobs);
+                console.log("Freelancer jobs loaded:", mappedJobs.length);
 
                 // 4. Fetch Reviews Received (as target)
                 const { data: recData, error: recError } = await supabase
