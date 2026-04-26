@@ -157,7 +157,9 @@ const ClientDetail = () => {
                 // 3. Fetch Completed Jobs (as Buyer)
                 const { data: jobsData, error: jError } = await supabase
                     .from('jobs')
-                    .select('*, freelancer:profiles!provider_id(username, first_name, last_name), client:profiles!client_id(username, first_name, last_name)')
+                const { data: jobsData, error: jError } = await supabase
+                    .from('jobs')
+                    .select('*, provider:profiles!provider_id(username, first_name, last_name, avatar_url)')
                     .eq('client_id', id)
                     .in('status', ['completed', 'canceled']);
                 
@@ -167,7 +169,7 @@ const ClientDetail = () => {
                 const mappedJobs = (jobsData || []).map(j => ({
                     ...j,
                     serviceTitle: j.service_title || 'Servicio Personalizado',
-                    freelancerName: j.freelancer?.first_name ? `${j.freelancer.first_name} ${j.freelancer.last_name || ''}`.trim() : j.freelancer?.username
+                    freelancerName: j.provider?.first_name ? `${j.provider.first_name} ${j.provider.last_name || ''}`.trim() : j.provider?.username
                 }));
                 setClientJobs(mappedJobs);
                 console.log("Client jobs loaded:", mappedJobs.length);
@@ -185,14 +187,34 @@ const ClientDetail = () => {
                     .from('service_reviews')
                     .select(`
                         *, 
-                        target:profiles!target_id(username, first_name, last_name, avatar_url, role),
+                        target_id,
                         job:jobs!job_id(service_title, amount, status, created_at)
                     `)
                     .eq('reviewer_id', id);
                 
                 if (givError) throw givError;
-                console.log("[ClientDetail] Reviews Given Raw Data:", givData);
-                setReviewsGiven(givData || []);
+
+                if (givData && givData.length > 0) {
+                    const targetIds = [...new Set(givData.map(r => r.target_id).filter(Boolean))];
+                    if (targetIds.length > 0) {
+                        const { data: profilesData } = await supabase
+                            .from('profiles')
+                            .select('id, username, first_name, last_name, avatar_url, role')
+                            .in('id', targetIds);
+                        
+                        const profilesMap = (profilesData || []).reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+                        const enrichedGivData = givData.map(r => ({
+                            ...r,
+                            target: profilesMap[r.target_id]
+                        }));
+                        console.log("[ClientDetail] Enriched Reviews Given:", enrichedGivData);
+                        setReviewsGiven(enrichedGivData);
+                    } else {
+                        setReviewsGiven(givData);
+                    }
+                } else {
+                    setReviewsGiven([]);
+                }
 
             } catch (err) {
                 console.error("Error loading client data:", err);
@@ -398,27 +420,62 @@ const ClientDetail = () => {
                 {clientJobs.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {clientJobs.map(job => (
-                            <div key={job.id} className="glass" style={{ padding: '1.2rem 1.5rem', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                                <div>
-                                    <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', color: 'var(--text-primary)' }}>{job.serviceTitle}</h4>
-                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Freelancer: <strong>{job.freelancerName}</strong></p>
-                                </div>
-                                <div>
-                                    <span style={{
-                                        display: 'inline-block',
-                                        padding: '0.4rem 0.8rem',
-                                        borderRadius: '8px',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 'bold',
-                                        background: job.deliveryResult === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)'
-                                            : job.deliveryResult === 'Entregado fuera de plazo' ? 'rgba(245, 158, 11, 0.1)'
-                                                : 'rgba(16, 185, 129, 0.1)',
-                                        color: job.deliveryResult === 'Cancelado' ? '#ef4444'
-                                            : job.deliveryResult === 'Entregado fuera de plazo' ? '#f59e0b'
-                                                : '#10b981',
-                                    }}>
-                                        {job.deliveryResult || 'Entregado a tiempo'}
-                                    </span>
+                            <div key={job.id} className="glass" style={{
+                                padding: '1.75rem',
+                                borderRadius: '16px',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                transition: 'transform 0.2s, border-color 0.2s',
+                                cursor: 'pointer'
+                            }} onClick={() => navigate(`/chat/${job.id}`)}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                                        <div style={{
+                                            width: '50px',
+                                            height: '50px',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            background: '#3b82f6',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0
+                                        }}>
+                                            {job.provider?.avatar_url ? (
+                                                <img src={job.provider.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <span style={{ color: 'white', fontWeight: 'bold' }}>{job.provider?.username?.charAt(0).toUpperCase()}</span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', fontWeight: '600' }}>{job.serviceTitle}</h3>
+                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.3rem' }}>
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Freelancer:</span>
+                                                <span style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: '500' }}>
+                                                    {job.freelancerName}
+                                                </span>
+                                                <span style={{ color: '#3b82f6', fontSize: '0.85rem' }}>@{job.provider?.username}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span style={{
+                                            display: 'inline-block',
+                                            padding: '0.4rem 0.8rem',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 'bold',
+                                            background: job.delivery_result === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                            color: job.delivery_result === 'Cancelado' ? '#ef4444' : '#10b981',
+                                        }}>
+                                            {job.delivery_result || 'Finalizado'}
+                                        </span>
+                                        {job.amount && (
+                                            <div style={{ marginTop: '0.4rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                ${job.amount}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
