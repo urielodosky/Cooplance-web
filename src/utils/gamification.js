@@ -1,21 +1,38 @@
 export const MAX_LEVEL = 10;
+const INCREMENTS = {
+    1: 80,    // To reach Lvl 2
+    2: 300,   // To reach Lvl 3 (+300)
+    3: 500,   // To reach Lvl 4 (+500)
+    4: 1000,  // To reach Lvl 5 (+1000)
+    5: 2000,  // To reach Lvl 6 (+2000)
+    6: 3000,  // To reach Lvl 7 (+3000)
+    7: 5000,  // To reach Lvl 8 (+5000)
+    8: 7000,  // To reach Lvl 9 (+7000)
+    9: 10000, // To reach Lvl 10 (+10000)
+};
+
 export const XP_TABLE = {
-    1: 80,
-    2: 300,
-    3: 500,
-    4: 1000,
-    5: 2000,
-    6: 3000,
-    7: 5000,
-    8: 7000,
-    9: 10000, // To reach level 10
+    1: INCREMENTS[1],
+    2: INCREMENTS[1] + INCREMENTS[2],
+    3: INCREMENTS[1] + INCREMENTS[2] + INCREMENTS[3],
+    4: INCREMENTS[1] + INCREMENTS[2] + INCREMENTS[3] + INCREMENTS[4],
+    5: INCREMENTS[1] + INCREMENTS[2] + INCREMENTS[3] + INCREMENTS[4] + INCREMENTS[5],
+    6: INCREMENTS[1] + INCREMENTS[2] + INCREMENTS[3] + INCREMENTS[4] + INCREMENTS[5] + INCREMENTS[6],
+    7: INCREMENTS[1] + INCREMENTS[2] + INCREMENTS[3] + INCREMENTS[4] + INCREMENTS[5] + INCREMENTS[6] + INCREMENTS[7],
+    8: INCREMENTS[1] + INCREMENTS[2] + INCREMENTS[3] + INCREMENTS[4] + INCREMENTS[5] + INCREMENTS[6] + INCREMENTS[7] + INCREMENTS[8],
+    9: INCREMENTS[1] + INCREMENTS[2] + INCREMENTS[3] + INCREMENTS[4] + INCREMENTS[5] + INCREMENTS[6] + INCREMENTS[7] + INCREMENTS[8] + INCREMENTS[9],
 };
 
 export const MAX_BUFFER_XP = 5000;
 
 export const calculateNextLevelXP = (currentLevel) => {
-    if (currentLevel >= MAX_LEVEL) return XP_TABLE[9]; // Base requirement for lvl 10
-    return XP_TABLE[currentLevel] || 10000;
+    return INCREMENTS[currentLevel] || 10000;
+};
+
+// Helper to get total XP needed to reach the start of current level
+export const getBaseXPForLevel = (level) => {
+    if (level <= 1) return 0;
+    return XP_TABLE[level - 1] || 0;
 };
 
 export const getLevelFromXP = (xp) => {
@@ -40,35 +57,9 @@ export const calculateCommission = (level) => {
     return 12;
 };
 
-export const calculateXPForJob = (amount, userLevel = 1, receiverRole = 'freelancer', freelancerLevel = null) => {
-    let baseXP = 0;
-
-    // Base Calculation (Standard for Freelancers)
-    if (userLevel === 1) {
-        if (amount >= 100000) baseXP = 80;
-        else if (amount > 5000) baseXP = 40;
-        else baseXP = 0;
-    } else {
-        if (amount >= 100000) baseXP = 100;
-        else if (amount >= 45000) baseXP = 60;
-        else if (amount >= 15000) baseXP = 40;
-        else if (amount >= 5000) baseXP = 25;
-        else baseXP = 5;
-    }
-
-    // Client/Company Multipliers
-    if (receiverRole === 'buyer' || receiverRole === 'company') {
-        let multiplier = 2; // "Siempre reciben el doble"
-
-        // "Si contratan gente nueva de nivel 1 o 2 reciben el doble del doble" (4x total)
-        if (freelancerLevel !== null && freelancerLevel <= 2) {
-            multiplier = 4;
-        }
-
-        return baseXP * multiplier;
-    }
-
-    return baseXP;
+export const calculateXPForJob = (amount) => {
+    if (amount >= 100000) return 80;
+    return 40;
 };
 
 // --- NEW ADVANCED LOGIC ---

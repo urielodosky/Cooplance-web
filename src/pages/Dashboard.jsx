@@ -10,7 +10,7 @@ import ServiceCard from '../features/services/components/ServiceCard';
 import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
-import { calculateNextLevelXP, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, deactivatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
+import { calculateNextLevelXP, getBaseXPForLevel, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, deactivatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { getBenefitsForRole } from '../data/levelBenefits';
 import { getProposalsByUser, updateProposalStatus, deleteProposal as deleteProposalApi, getReceivedProposals } from '../lib/proposalService';
@@ -1195,11 +1195,22 @@ const Dashboard = () => {
 
     const currentLevel = user.level || 1;
     const currentXP = user.xp || 0;
-    const nextLevelXP = calculateNextLevelXP(currentLevel);
+    const nextLevelIncrement = calculateNextLevelXP(currentLevel);
+    const baseXPForCurrentLevel = getBaseXPForLevel(currentLevel);
+    const relativeXP = Math.max(0, currentXP - baseXPForCurrentLevel);
+    
     const isMaxLevel = currentLevel >= MAX_LEVEL;
-    const xpPercentage = isMaxLevel ? Math.min(Math.max(0, (currentXP - 10000) / MAX_BUFFER_XP) * 100, 100) : Math.min((currentXP / nextLevelXP) * 100, 100);
-    const xpDisplayText = isMaxLevel ? `${currentXP - 10000} / ${MAX_BUFFER_XP} Buffer XP` : `${currentXP} / ${nextLevelXP} XP`;
-    const levelLabel = isMaxLevel ? `Nivel Máximo (10) - ${getBenefitsForRole(user.role)[10]?.name}` : `Hacia Nivel ${currentLevel + 1}: ${getBenefitsForRole(user.role)[currentLevel + 1]?.name}`;
+    const xpPercentage = isMaxLevel 
+        ? Math.min(Math.max(0, (currentXP - XP_TABLE[9]) / MAX_BUFFER_XP) * 100, 100) 
+        : Math.min((relativeXP / nextLevelIncrement) * 100, 100);
+        
+    const xpDisplayText = isMaxLevel 
+        ? `${currentXP - XP_TABLE[9]} / ${MAX_BUFFER_XP} Buffer XP` 
+        : `${relativeXP} / ${nextLevelIncrement} XP`;
+        
+    const levelLabel = isMaxLevel 
+        ? `Nivel Máximo (10) - ${getBenefitsForRole(user.role)[10]?.name}` 
+        : `Hacia Nivel ${currentLevel + 1}: ${getBenefitsForRole(user.role)[currentLevel + 1]?.name}`;
     const currentLevelName = getBenefitsForRole(user.role)[currentLevel]?.name || '';
 
     const handleDemoLevelUp = () => {
