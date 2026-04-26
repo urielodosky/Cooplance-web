@@ -1251,6 +1251,14 @@ const Dashboard = () => {
     const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);
     const myServices = useMemo(() => user ? (services || []).filter(s => s.freelancerId === user.id) : [], [services, user?.id]);
 
+    const filteredProposals = useMemo(() => {
+        return myProposals.filter(p => {
+            const status = (p.status || '').toLowerCase().trim();
+            if (activeProposalTab === 'active') return status === 'pending';
+            return status !== 'pending';
+        });
+    }, [myProposals, activeProposalTab]);
+
     useEffect(() => {
         if (!user || loading) return;
         
