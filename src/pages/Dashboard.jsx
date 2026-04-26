@@ -11,7 +11,7 @@ import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
 import ReviewModal from '../components/common/ReviewModal';
-import ActionModal from '../components/common/ActionModal';
+import { useActionModal } from '../context/ActionModalContext';
 import * as ReviewService from '../services/ReviewService';
 import { calculateNextLevelXP, getBaseXPForLevel, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, deactivatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
