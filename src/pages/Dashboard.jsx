@@ -898,29 +898,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end', minWidth: '180px' }}>
                                 <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>${job.amount}</div>
                                 <div className="proposal-actions" style={{ display: 'flex', gap: '0.5rem' }}>
-                                    {job.status === 'completed' && (
-                                        <button 
-                                            className="btn-primary" 
-                                            style={{ 
-                                                padding: '0.5rem 1.2rem', 
-                                                fontSize: '0.8rem', 
-                                                borderRadius: '12px',
-                                                background: reviewedJobs[job.id] ? 'rgba(16, 185, 129, 0.1)' : 'linear-gradient(135deg, #10b981, #059669)',
-                                                border: reviewedJobs[job.id] ? '1px solid #10b981' : 'none',
-                                                color: reviewedJobs[job.id] ? '#10b981' : 'white',
-                                                fontWeight: '800',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                boxShadow: reviewedJobs[job.id] ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.3)',
-                                                cursor: 'pointer'
-                                            }} 
-                                            onClick={(e) => { e.stopPropagation(); setSelectedJobForReview(job); }}
-                                        >
-                                            <Star size={14} fill={reviewedJobs[job.id] ? "currentColor" : "none"} />
-                                            {reviewedJobs[job.id] ? 'Reseña OK' : 'Calificar'}
-                                        </button>
-                                    )}
+
                                     {job.status === 'delivered' && (
                                         <button 
                                             className="btn-primary" 
@@ -1023,9 +1001,9 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                 padding: '0.5rem 1.2rem', 
                                                 fontSize: '0.85rem', 
                                                 borderRadius: '12px',
-                                                background: job.status === 'canceled' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.1)',
-                                                border: job.status === 'canceled' ? '1px solid #ef4444' : '1px solid #f59e0b',
-                                                color: job.status === 'canceled' ? '#ef4444' : '#f59e0b',
+                                                background: reviewedJobs[job.id] ? 'rgba(16, 185, 129, 0.1)' : (job.status === 'canceled' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.1)'),
+                                                border: reviewedJobs[job.id] ? '1px solid #10b981' : (job.status === 'canceled' ? '1px solid #ef4444' : '1px solid #f59e0b'),
+                                                color: reviewedJobs[job.id] ? '#10b981' : (job.status === 'canceled' ? '#ef4444' : '#f59e0b'),
                                                 fontWeight: '700',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -1036,8 +1014,8 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                 setSelectedJobForReview(job);
                                             }}
                                         >
-                                            <Star size={14} />
-                                            {reviewedJobs[job.id] ? 'Modificar Reseña' : (job.status === 'canceled' ? 'Calificar (Cancelado)' : 'Calificar Freelancer')}
+                                            <Star size={14} fill={reviewedJobs[job.id] ? "currentColor" : "none"} />
+                                            {reviewedJobs[job.id] ? 'Reseña OK' : (job.status === 'canceled' ? 'Calificar (Cancelado)' : 'Calificar Freelancer')}
                                         </button>
                                     )}
 
