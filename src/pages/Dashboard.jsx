@@ -11,6 +11,7 @@ import ProjectCard from '../components/project/ProjectCard';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import ProposalListModal from '../components/project/ProposalListModal';
 import ReviewModal from '../components/common/ReviewModal';
+import ActionModal from '../components/common/ActionModal';
 import * as ReviewService from '../services/ReviewService';
 import { calculateNextLevelXP, getBaseXPForLevel, MAX_LEVEL, MAX_BUFFER_XP, activatePauseMode, deactivatePauseMode, XP_TABLE, processGamificationRules } from '../utils/gamification';
 import { getProfilePicture } from '../utils/avatarUtils';
@@ -170,7 +171,7 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
     );
 };
 
-const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs, getTimeAgo }) => {
+const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs, getTimeAgo, showActionModal, canForcePayout }) => {
     const [activeTab, setActiveTab] = useState('activos');
 
     const filteredWork = useMemo(() => {
@@ -345,10 +346,12 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                                 cursor: 'pointer'
                                             }} 
                                             onClick={async () => {
-                                                if (window.confirm("¿Estás seguro de que deseas entregar este trabajo? Se notificará al cliente para su revisión.")) {
-                                                    await updateJobStatus(job.id, 'delivered');
-                                                    alert("¡Trabajo entregado con éxito! El cliente ha sido notificado.");
-                                                }
+                                                await updateJobStatus(job.id, 'delivered');
+                                                showActionModal({
+                                                    title: 'Trabajo Entregado',
+                                                    message: '¡Trabajo entregado con éxito! El cliente ha sido notificado para su revisión.',
+                                                    severity: 'success'
+                                                });
                                             }}
                                         >
                                             <PackageCheck size={18} />
@@ -359,21 +362,41 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     {job.status === 'pending_approval' && (
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button className="btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444', borderRadius: '12px' }} onClick={async () => {
-                                                 if(window.confirm("¿Rechazar este trabajo? Se le devolverá el dinero al cliente.")) {
-                                                    await updateJobStatus(job.id, 'rejected');
-                                                }
+                                                 showActionModal({
+                                                     title: 'Rechazar Trabajo',
+                                                     message: '¿Rechazar este trabajo? Se le devolverá el dinero al cliente y el proceso se cancelará.',
+                                                     type: 'confirm',
+                                                     severity: 'error',
+                                                     onConfirm: async () => {
+                                                         await updateJobStatus(job.id, 'rejected');
+                                                     }
+                                                 });
                                             }}>Rechazar</button>
                                             <button className="btn-primary" style={{ backgroundColor: '#10b981', border: 'none', borderRadius: '12px' }} onClick={async (e) => {
                                                 e.stopPropagation();
-                                                if (window.confirm(`¿Aceptar trabajo? Al confirmar, se simulará el cobro de $${job.amount} al cliente y los fondos quedarán retenidos en Escrow de forma segura.`)) {
-                                                    try {
-                                                        await updateJobStatus(job.id, 'active');
-                                                        alert("¡Trabajo aceptado! El pago ha sido retenido en Escrow y ahora puedes empezar a trabajar.");
-                                                    } catch (err) {
-                                                        console.error("Error al aceptar trabajo:", err);
-                                                        alert("Hubo un problema al aceptar el trabajo. Por favor intenta de nuevo.");
+                                                showActionModal({
+                                                    title: 'Aceptar Trabajo',
+                                                    message: `¿Aceptar trabajo? Al confirmar, se simulará el cobro de $${job.amount} al cliente y los fondos quedarán retenidos en Escrow de forma segura.`,
+                                                    type: 'confirm',
+                                                    severity: 'confirm',
+                                                    onConfirm: async () => {
+                                                        try {
+                                                            await updateJobStatus(job.id, 'active');
+                                                            showActionModal({
+                                                                title: '¡Trabajo Aceptado!',
+                                                                message: "¡Trabajo aceptado! El pago ha sido retenido en Escrow y ahora puedes empezar a trabajar.",
+                                                                severity: 'success'
+                                                            });
+                                                        } catch (err) {
+                                                            console.error("Error al aceptar trabajo:", err);
+                                                            showActionModal({
+                                                                title: 'Error',
+                                                                message: "Hubo un problema al aceptar el trabajo. Por favor intenta de nuevo.",
+                                                                severity: 'error'
+                                                            });
+                                                        }
                                                     }
-                                                }
+                                                });
                                             }}>Aceptar Trabajo</button>
                                         </div>
                                     )}
@@ -391,10 +414,20 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             }} 
                                             onClick={async (e) => {
                                                 e.stopPropagation();
-                                                if (window.confirm("Han pasado más de 72 horas desde la entrega sin respuesta del cliente. ¿Deseas forzar la liberación de los fondos retenidos en Escrow?")) {
-                                                    await updateJobStatus(job.id, 'completed');
-                                                    alert("¡Fondos liberados con éxito por falta de respuesta del cliente!");
-                                                }
+                                                showActionModal({
+                                                    title: 'Liberación por Inactividad',
+                                                    message: "Han pasado más de 72 horas desde la entrega sin respuesta del cliente. ¿Deseas forzar la liberación de los fondos retenidos en Escrow?",
+                                                    type: 'confirm',
+                                                    severity: 'confirm',
+                                                    onConfirm: async () => {
+                                                        await updateJobStatus(job.id, 'completed');
+                                                        showActionModal({
+                                                            title: 'Fondos Liberados',
+                                                            message: "¡Fondos liberados con éxito por falta de respuesta del cliente!",
+                                                            severity: 'success'
+                                                        });
+                                                    }
+                                                });
                                             }}
                                         >
                                             Forzar Liberación (Ghosting)
@@ -651,7 +684,7 @@ const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setS
     );
 };
 
-const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs, getTimeAgo }) => {
+const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs, getTimeAgo, showActionModal }) => {
     const [activeTab, setActiveTab] = useState('activos');
 
     const filteredOrders = useMemo(() => {
@@ -750,9 +783,15 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             }} 
                                             onClick={async (e) => { 
                                                 e.stopPropagation(); 
-                                                if (window.confirm("¿Aprobar esta entrega y finalizar el trabajo?")) {
-                                                    await updateJobStatus(job.id, 'completed');
-                                                }
+                                                showActionModal({
+                                                    title: 'Aprobar Entrega',
+                                                    message: '¿Aprobar esta entrega y finalizar el trabajo? El dinero será liberado al freelancer.',
+                                                    type: 'confirm',
+                                                    severity: 'confirm',
+                                                    onConfirm: async () => {
+                                                        await updateJobStatus(job.id, 'completed');
+                                                    }
+                                                });
                                             }}
                                         >
                                             Aprobar Entrega
@@ -877,7 +916,6 @@ const BadgesSection = ({ user, navigate }) => {
         const highestBadgeIndex = unlockedInFamily.length - 1;
         const latestBadge = highestBadgeIndex >= 0 ? unlockedInFamily[highestBadgeIndex] : null;
         
-        // Find the index of the latestBadge in the original family array to determine tier
         const tierIndex = latestBadge ? f.badges.findIndex(b => b.id === latestBadge.id) : -1;
         const tier = tierIndex >= 0 ? badgeTiers[Math.min(tierIndex, badgeTiers.length - 1)] : null;
 
@@ -929,7 +967,8 @@ const ReceivedProposalsSection = ({
     handleAcceptProposal,
     handleRejectProposal,
     expandedProposalId,
-    setExpandedProposalId
+    setExpandedProposalId,
+    showActionModal
 }) => {
     const pendingProposals = receivedProposals.filter(p => (p.status || '').toLowerCase() === 'pending');
 
@@ -1021,7 +1060,6 @@ const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, ti
 
     if (!isOpen) return null;
 
-    // Parse methods - handle string or array
     let availableMethods = [];
     if (Array.isArray(methods)) {
         availableMethods = methods;
@@ -1029,7 +1067,6 @@ const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, ti
         availableMethods = methods.split(',').map(m => m.trim());
     }
 
-    // Default fallback
     if (availableMethods.length === 0) {
         availableMethods = ['Mercado Pago', 'PayPal', 'Transferencia'];
     }
@@ -1087,8 +1124,6 @@ const PaymentSelectionModal = ({ isOpen, onClose, onConfirm, methods, amount, ti
     );
 };
 
-// --- Main Dashboard Component ---
-
 const Dashboard = () => {
     const {
         user: authUser,
@@ -1098,7 +1133,6 @@ const Dashboard = () => {
         enterMirrorMode
     } = useAuth();
 
-    // Determine effective user for this view
     const user = isTutorView ? supervisedUser : authUser;
 
     const { jobs, updateJobStatus: updateJobStatusApi, createJob } = useJobs();
@@ -1114,7 +1148,6 @@ const Dashboard = () => {
     const [showLevelUpModal, setShowLevelUpModal] = useState(false);
     const [pauseLoading, setPauseLoading] = useState(false);
 
-    // V39: Derived Pause Mode state for UI
     const isPaused = useMemo(() => {
         if (!user || user.role !== 'freelancer') return false;
         return user.gamification?.pause_mode?.active || user.gamification?.vacation?.active;
@@ -1131,20 +1164,42 @@ const Dashboard = () => {
     const [selectedProposalForPayment, setSelectedProposalForPayment] = useState(null);
     const [expandedProposalId, setExpandedProposalId] = useState(null);
     const [selectedJobForReview, setSelectedJobForReview] = useState(null);
-    const [reviewedJobs, setReviewedJobs] = useState({}); // { jobId: true/false }
+    const [reviewedJobs, setReviewedJobs] = useState({});
     const { refreshBadges } = useBadgeNotification();
 
-    // V27: Update Job Status with Read-Only check
+    const [actionModal, setActionModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'alert',
+        severity: 'info',
+        onConfirm: null
+    });
+
+    const showActionModal = (config) => {
+        setActionModal({
+            isOpen: true,
+            title: config.title || 'Atención',
+            message: config.message || '',
+            type: config.type || 'alert',
+            severity: config.severity || 'info',
+            onConfirm: config.onConfirm || null
+        });
+    };
+
     const updateJobStatus = async (jobId, status) => {
         if (isTutorView) {
-            alert("No puedes realizar esta acción en modo lectura.");
+            showActionModal({
+                title: 'Modo Lectura',
+                message: 'No puedes realizar esta acción en modo lectura.',
+                severity: 'warning'
+            });
             return;
         }
         const result = await updateJobStatusApi(jobId, status);
         if (status === 'completed' && refreshBadges) {
             refreshBadges();
         }
-        // Always refresh notifications locally too
         if (refreshNotifications) refreshNotifications();
         return result;
     };
@@ -1157,7 +1212,6 @@ const Dashboard = () => {
         return diffHours >= 72;
     };
 
-    // Initial load and sync
     useEffect(() => {
         if (!user) return;
         const loadInitData = async () => {
@@ -1180,7 +1234,6 @@ const Dashboard = () => {
         };
         loadInitData();
 
-        // 2. Fetch tutorados if adult freelancer
         if (authUser?.id && authUser.role === 'freelancer' && !isTutorView) {
             const fetchTutorados = async () => {
                 try {
@@ -1195,38 +1248,31 @@ const Dashboard = () => {
         }
     }, [user?.id, authUser.id, isTutorView]);
 
-    // Gamification Process - Stabilized
     useEffect(() => {
         if (!user || (user.role !== 'freelancer' && user.role !== 'company')) return;
 
-        // Use a stable, non-circular check to avoid infinite loops
         const processedUser = processGamificationRules(user);
 
-        // Only update if there is a meaningful data change
         const hasChanges =
             processedUser.xp !== user.xp ||
             processedUser.level !== user.level ||
             JSON.stringify(processedUser.gamification) !== JSON.stringify(user.gamification);
 
         if (hasChanges) {
-            console.log("[Dashboard] Applying gamification updates...");
             updateUser(processedUser).catch(err => {
                 console.warn("[Dashboard] Silently failed to sync gamification rules:", err);
             });
         }
     }, [user?.id, user?.xp, user?.level, updateUser]);
 
-    // Derived Data
     const myOrders = useMemo(() => user ? (jobs || []).filter(j => j.buyerId === user.id) : [], [jobs, user?.id]);
     const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);
     const myServices = useMemo(() => user ? (services || []).filter(s => s.freelancerId === user.id) : [], [services, user?.id]);
 
-    // V42: Automatic Review Prompt for completed jobs (ONLY for Clients) + Track reviewed status
     useEffect(() => {
         if (!user || loading) return;
         
         const checkReviews = async () => {
-            // Only prompt automatically for jobs where I am the BUYER (myOrders)
             const jobsToPrompt = myOrders.filter(j => j.status === 'completed');
             const allJobsForTracking = [...myWork, ...myOrders].filter(j => j.status === 'completed');
             
@@ -1244,12 +1290,10 @@ const Dashboard = () => {
                 results.forEach(r => newReviewedMap[r.id] = r.reviewed);
                 setReviewedJobs(newReviewedMap);
 
-                // Auto prompt logic: ONLY if I am the buyer and haven't reviewed yet
                 if (!selectedJobForReview) {
                     const sortedPromptJobs = jobsToPrompt.sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt));
                     for (const job of sortedPromptJobs) {
                         if (!newReviewedMap[job.id]) {
-                            console.log(`[Dashboard] Automatic review prompt for client job: ${job.id}`);
                             setSelectedJobForReview(job);
                             break;
                         }
@@ -1291,7 +1335,11 @@ const Dashboard = () => {
             const currentXP = user.xp || 0;
             const newXP = Math.min(currentXP + 1000, 10000 + MAX_BUFFER_XP);
             updateUser({ ...user, xp: newXP });
-            alert(`¡XP sumada al Buffer! Total: ${newXP}`);
+            showActionModal({
+                title: 'XP Añadida',
+                message: `¡XP sumada al Buffer! Total: ${newXP}`,
+                severity: 'success'
+            });
             return;
         }
         const newLevel = (user.level || 1) + 1;
@@ -1314,19 +1362,36 @@ const Dashboard = () => {
 
         try {
             if (isPaused) {
-                if (window.confirm("¿Desactivar el Modo Pausa? Tus servicios volverán a ser visibles normalmente.")) {
-                    setPauseLoading(true);
-                    await updateUser(deactivatePauseMode(user));
-                }
+                showActionModal({
+                    title: 'Desactivar Pausa',
+                    message: '¿Desactivar el Modo Pausa? Tus servicios volverán a ser visibles normalmente.',
+                    type: 'confirm',
+                    severity: 'confirm',
+                    onConfirm: async () => {
+                        setPauseLoading(true);
+                        await updateUser(deactivatePauseMode(user));
+                        setPauseLoading(false);
+                    }
+                });
             } else {
-                if (window.confirm("¿Activar Modo Pausa? Tus servicios se mostrarán al final de las listas para evitar nuevos pedidos. Puedes desactivarlo cuando quieras.")) {
-                    setPauseLoading(true);
-                    await updateUser(activatePauseMode(user));
-                }
+                showActionModal({
+                    title: 'Activar Pausa',
+                    message: '¿Activar Modo Pausa? Tus servicios se mostrarán al final de las listas para evitar nuevos pedidos. Puedes desactivarlo cuando quieras.',
+                    type: 'confirm',
+                    severity: 'confirm',
+                    onConfirm: async () => {
+                        setPauseLoading(true);
+                        await updateUser(activatePauseMode(user));
+                        setPauseLoading(false);
+                    }
+                });
             }
         } catch (err) {
-            console.error("[Dashboard] Error toggling pause mode:", err);
-            alert("No se pudo cambiar el estado de disponibilidad: " + err.message);
+            showActionModal({
+                title: 'Error',
+                message: "No se pudo cambiar el estado de disponibilidad: " + err.message,
+                severity: 'error'
+            });
         } finally {
             setPauseLoading(false);
         }
@@ -1334,21 +1399,33 @@ const Dashboard = () => {
 
     const handleDeleteProject = async (projectId) => {
         if (isTutorView) {
-            alert("No puedes realizar esta acción en modo lectura.");
+            showActionModal({
+                title: 'Modo Lectura',
+                message: 'No puedes realizar esta acción en modo lectura.',
+                severity: 'warning'
+            });
             return;
         }
-        if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto de forma permanente? Esta acción no se puede deshacer.')) {
-            try {
-                await deleteProjectApi(projectId);
-
-                // Update state and localStorage with the NEW filtered list
-                const updatedProjects = myPublishedProjects.filter(p => p.id !== projectId);
-                setMyPublishedProjects(updatedProjects);
-                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(updatedProjects));
-            } catch (err) {
-                alert('No se pudo eliminar el proyecto: ' + err.message);
+        showActionModal({
+            title: 'Eliminar Proyecto',
+            message: '¿Estás seguro de que deseas eliminar este proyecto de forma permanente? Esta acción no se puede deshacer.',
+            type: 'confirm',
+            severity: 'error',
+            onConfirm: async () => {
+                try {
+                    await deleteProjectApi(projectId);
+                    const updatedProjects = myPublishedProjects.filter(p => p.id !== projectId);
+                    setMyPublishedProjects(updatedProjects);
+                    localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(updatedProjects));
+                } catch (err) {
+                    showActionModal({
+                        title: 'Error',
+                        message: 'No se pudo eliminar el proyecto: ' + err.message,
+                        severity: 'error'
+                    });
+                }
             }
-        }
+        });
     };
 
     const handleCreateProjectClick = () => {
@@ -1363,7 +1440,11 @@ const Dashboard = () => {
             } else {
                 msg += `\n\nHas alcanzado el máximo de publicaciones permitidas.`;
             }
-            alert(msg);
+            showActionModal({
+                title: 'Límite alcanzado',
+                message: msg,
+                severity: 'warning'
+            });
             return;
         }
         navigate('/create-project');
@@ -1380,7 +1461,11 @@ const Dashboard = () => {
             } else {
                 msg += `\n\nHas alcanzado el máximo de servicios permitidos. A partir del Nivel 6, tus beneficios mejorarán las comisiones.`;
             }
-            alert(msg);
+            showActionModal({
+                title: 'Límite alcanzado',
+                message: msg,
+                severity: 'warning'
+            });
             return;
         }
 
@@ -1388,14 +1473,8 @@ const Dashboard = () => {
     };
 
     const handleAcceptProposal = async (proposal) => {
-        // Safe comparison for IDs (could be string/number mix)
         const project = myPublishedProjects.find(p => String(p.id) === String(proposal.projectId));
-        if (!project) {
-            console.warn("[Dashboard] Project not found for proposal:", proposal.projectId);
-            return;
-        }
-
-        // Set state to show payment modal instead of window.confirm
+        if (!project) return;
         setSelectedProposalForPayment({ proposal, project });
     };
 
@@ -1409,10 +1488,8 @@ const Dashboard = () => {
             setLoading(true);
             setIsCreatingChat(true);
 
-            // 1. Update proposal status
             await updateProposalStatus(proposal.id, 'accepted');
 
-            // 2. Handle Chat: Convert pre_contract to active OR create new one
             let chatId = null;
             const { data: consultationChats } = await supabase
                 .from('chats')
@@ -1427,11 +1504,9 @@ const Dashboard = () => {
                     .update({ status: 'active' })
                     .eq('id', chatId);
             } else {
-                // Create a new definitive chat if it doesn't exist
                 chatId = await createChat([user.id, proposal.userId], 'proposal', proposal.id, project.title);
             }
 
-            // 3. Create the formal Job/Order entry
             const projectWithPayment = {
                 ...project,
                 freelancerId: proposal.userId,
@@ -1440,7 +1515,6 @@ const Dashboard = () => {
 
             await createJob(projectWithPayment, user);
 
-            // 4. Update the project status in DB and local state
             const { error: pError } = await supabase
                 .from('projects')
                 .update({ status: 'hired' })
@@ -1452,16 +1526,22 @@ const Dashboard = () => {
                 ));
             }
 
-            // 5. Redirect to chat for immediate communication
             if (chatId) {
                 navigate(`/chat/${chatId}`);
             } else {
-                alert('¡Contratación exitosa! Redirigiendo al chat...');
-                navigate('/chat');
+                showActionModal({
+                    title: 'Contratación Exitosa',
+                    message: '¡Contratación exitosa! Redirigiendo al chat...',
+                    severity: 'success',
+                    onConfirm: () => navigate('/chat')
+                });
             }
         } catch (err) {
-            console.error("[Dashboard] Error accepting proposal:", err);
-            alert("No se pudo completar la contratación: " + err.message);
+            showActionModal({
+                title: 'Error',
+                message: "No se pudo completar la contratación: " + err.message,
+                severity: 'error'
+            });
         } finally {
             setLoading(false);
             setIsCreatingChat(false);
@@ -1469,35 +1549,56 @@ const Dashboard = () => {
     };
 
     const handleRejectProposal = async (proposal) => {
-        if (window.confirm('¿Estás seguro de que deseas rechazar esta postulación?')) {
-            try {
-                await updateProposalStatus(proposal.id, 'rejected');
-                setReceivedProposals(prev => prev.filter(p => p.id !== proposal.id));
-            } catch (err) {
-                console.error("[Dashboard] Error rejecting proposal:", err);
-                alert("No se pudo rechazar la postulación.");
+        showActionModal({
+            title: 'Rechazar Postulación',
+            message: '¿Estás seguro de que deseas rechazar esta postulación?',
+            type: 'confirm',
+            severity: 'error',
+            onConfirm: async () => {
+                try {
+                    await updateProposalStatus(proposal.id, 'rejected');
+                    setReceivedProposals(prev => prev.filter(p => p.id !== proposal.id));
+                } catch {
+                    showActionModal({
+                        title: 'Error',
+                        message: "No se pudo rechazar la postulación.",
+                        severity: 'error'
+                    });
+                }
             }
-        }
+        });
     };
 
     const handleCancelProposal = async (e, id) => {
         e.stopPropagation();
-        if (window.confirm('¿Cancelar postulación?')) {
-            await updateProposalStatus(id, 'canceled');
-            setMyProposals(prev => prev.map(p => p.id === id ? { ...p, status: 'canceled' } : p));
-        }
+        showActionModal({
+            title: 'Cancelar',
+            message: '¿Cancelar postulación?',
+            type: 'confirm',
+            severity: 'error',
+            onConfirm: async () => {
+                await updateProposalStatus(id, 'canceled');
+                setMyProposals(prev => prev.map(p => p.id === id ? { ...p, status: 'canceled' } : p));
+            }
+        });
     };
 
     const handleDeleteProposal = async (e, id) => {
         if (isTutorView) {
-            alert("Acción bloqueada en modo lectura.");
+            showActionModal({ title: 'Acción bloqueada', message: 'Acción bloqueada en modo lectura.', severity: 'warning' });
             return;
         }
         e.stopPropagation();
-        if (window.confirm('¿Borrar historial?')) {
-            await deleteProposalApi(id);
-            setMyProposals(prev => prev.filter(p => p.id !== id));
-        }
+        showActionModal({
+            title: 'Borrar Historial',
+            message: '¿Borrar historial?',
+            type: 'confirm',
+            severity: 'error',
+            onConfirm: async () => {
+                await deleteProposalApi(id);
+                setMyProposals(prev => prev.filter(p => p.id !== id));
+            }
+        });
     };
 
     const getTimeAgo = (date) => {
@@ -1509,12 +1610,6 @@ const Dashboard = () => {
         if (hours < 24) return `Hace ${hours}h`;
         return `Hace ${Math.floor(hours / 24)}d`;
     };
-
-    const filteredProposals = myProposals.filter(p => {
-        const status = (p.status || '').toLowerCase().trim();
-        const isActive = status === 'pending';
-        return activeProposalTab === 'active' ? isActive : !isActive;
-    });
 
     const handleReviewSubmit = async ({ rating, comment }) => {
         if (!selectedJobForReview) return;
@@ -1529,7 +1624,6 @@ const Dashboard = () => {
                 jobId: selectedJobForReview.id
             });
             
-            // If it's a client/buyer approving work, we ALSO complete the job here
             if (user.role === 'buyer' || user.role === 'client' || user.role === 'company') {
                 if (selectedJobForReview.status !== 'completed') {
                     await updateJobStatus(selectedJobForReview.id, 'completed');
@@ -1538,10 +1632,17 @@ const Dashboard = () => {
             
             setReviewedJobs(prev => ({ ...prev, [selectedJobForReview.id]: true }));
             setSelectedJobForReview(null);
-            alert("¡Gracias por tu reseña!");
+            showActionModal({
+                title: '¡Muchas gracias!',
+                message: "¡Gracias por tu reseña! Tu opinión ayuda a que la comunidad crezca de forma segura.",
+                severity: 'success'
+            });
         } catch (err) {
-            console.error("Error submitting review:", err);
-            alert("No se pudo guardar la reseña.");
+            showActionModal({
+                title: 'Error',
+                message: "No se pudo guardar la reseña. Por favor intenta de nuevo.",
+                severity: 'error'
+            });
         }
     };
 
@@ -1669,10 +1770,9 @@ const Dashboard = () => {
 
             <XPProgressSection user={user} levelLabel={levelLabel} xpPercentage={xpPercentage} isMaxLevel={isMaxLevel} xpDisplayText={xpDisplayText} nextLevelXP={nextLevelXP} currentXP={currentXP} />
 
-
             {(user.role === 'freelancer' || user.role === 'company') && (
                 <>
-                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} getTimeAgo={getTimeAgo} />
+                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} getTimeAgo={getTimeAgo} showActionModal={showActionModal} canForcePayout={canForcePayout} />
                     <ProposalsSection
                         loading={loading}
                         activeProposalTab={activeProposalTab}
@@ -1690,7 +1790,6 @@ const Dashboard = () => {
                         getRemainingDays={getRemainingDays}
                     />
 
-                    {/* V27: Tutorados Section (Adults only) */}
                     {!isTutorView && authUser.role === 'freelancer' && (
                         <TutoradosSection
                             loading={loading}
@@ -1724,21 +1823,31 @@ const Dashboard = () => {
                         handleRejectProposal={handleRejectProposal}
                         expandedProposalId={expandedProposalId}
                         setExpandedProposalId={setExpandedProposalId}
+                        showActionModal={showActionModal}
                     />
-                    <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} getTimeAgo={getTimeAgo} />
+                    <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} getTimeAgo={getTimeAgo} showActionModal={showActionModal} />
                 </>
             )}
 
             <LevelUpModal isOpen={showLevelUpModal} onClose={() => setShowLevelUpModal(false)} level={currentLevel} />
 
-            {/* V28: Review Modal */}
-                        <ReviewModal
+            <ReviewModal
                 isOpen={!!selectedJobForReview}
                 onClose={() => setSelectedJobForReview(null)}
                 onConfirm={handleReviewSubmit}
                 title={user.role === 'freelancer' ? "Califica al Cliente" : "Califica a"}
                 targetName={user.role === 'freelancer' ? `@${selectedJobForReview?.buyerUsername}` : `@${selectedJobForReview?.freelancerUsername}`}
                 subtitle={user.role === 'freelancer' ? "¿Cómo fue tu experiencia trabajando con este cliente?" : "¿Estás satisfecho con el resultado final?"}
+            />
+
+            <ActionModal 
+                isOpen={actionModal.isOpen}
+                onClose={() => setActionModal(prev => ({ ...prev, isOpen: false }))}
+                title={actionModal.title}
+                message={actionModal.message}
+                type={actionModal.type}
+                severity={actionModal.severity}
+                onConfirm={actionModal.onConfirm}
             />
         </div>
     );
