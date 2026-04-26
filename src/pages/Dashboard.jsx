@@ -931,10 +931,10 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                     severity: 'warning',
                                                     confirmText: 'Confirmar Solicitud',
                                                     onConfirm: (reason) => {
-                                                        if (!reason || reason.trim().length < 10) {
+                                                        if (!reason || reason.trim().length < 20) {
                                                             showActionModal({
                                                                 title: 'Error',
-                                                                message: 'Debes proporcionar un motivo detallado (mínimo 10 caracteres).',
+                                                                message: 'Debes proporcionar un motivo detallado (mínimo 20 caracteres).',
                                                                 severity: 'warning'
                                                             });
                                                             return;
