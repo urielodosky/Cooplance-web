@@ -170,7 +170,7 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
     );
 };
 
-const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs }) => {
+const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, navigate, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs, getTimeAgo }) => {
     const [activeTab, setActiveTab] = useState('activos');
 
     const filteredWork = useMemo(() => {
@@ -275,7 +275,9 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
                                         {job.status === 'active' ? 'EN PROGRESO' : 
                                          job.status === 'delivered' ? 'PENDIENTE DE FINALIZAR' : 
-                                         job.status === 'pending_approval' ? 'POR ACEPTAR' : (job.status?.toUpperCase() || 'ESTADO')}
+                                         job.status === 'pending_approval' ? 'POR ACEPTAR' : 
+                                         job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
+                                         (job.status?.toUpperCase() || 'ESTADO')}
                                     </span>
                                 </div>
                             </div>
@@ -610,7 +612,7 @@ const PublishedProjectsSection = ({ loading, myPublishedProjects, navigate, setS
     );
 };
 
-const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs }) => {
+const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatus, setIsCreatingChat, user, setSelectedJobForReview, reviewedJobs, getTimeAgo }) => {
     const [activeTab, setActiveTab] = useState('activos');
 
     const filteredOrders = useMemo(() => {
@@ -667,7 +669,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     </div>
                                     <div className="proposal-meta">
                                         <span style={{ fontSize: '0.8rem', fontWeight: '800', color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : '#f59e0b') }}>
-                                            • {job.status === 'active' ? 'EN PROGRESO' : job.status === 'delivered' ? 'ENTREGADO' : job.status === 'completed' ? 'FINALIZADO' : 'ESPERANDO'}
+                                            • {job.status === 'active' ? 'EN PROGRESO' : job.status === 'delivered' ? 'ENTREGADO' : job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` : 'ESPERANDO'}
                                         </span>
                                         <span style={{ fontSize: '0.9rem', fontWeight: '900', color: 'var(--text-primary)', marginLeft: '1rem' }}>${job.amount}</span>
                                     </div>
@@ -769,16 +771,6 @@ const TutoradosSection = ({ loading, tutorados, enterMirrorMode }) => (
         </div>
     </div>
 );
-
-import {
-    CreditCard as Coin,
-    Zap as Flame,
-    Rocket,
-    Heart,
-    Handshake,
-    Eye,
-    Users
-} from 'lucide-react';
 
 const BadgesSection = ({ user, navigate }) => {
     const Icons = {
@@ -1609,7 +1601,7 @@ const Dashboard = () => {
 
             {(user.role === 'freelancer' || user.role === 'company') && (
                 <>
-                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} />
+                    <WorkReceivedSection loading={loading} myWork={myWork} updateJobStatus={updateJobStatus} createChat={createChat} navigate={navigate} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} getTimeAgo={getTimeAgo} />
                     <ProposalsSection
                         loading={loading}
                         activeProposalTab={activeProposalTab}
@@ -1662,7 +1654,7 @@ const Dashboard = () => {
                         expandedProposalId={expandedProposalId}
                         setExpandedProposalId={setExpandedProposalId}
                     />
-                    <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} />
+                    <OrdersSection loading={loading} myOrders={myOrders} navigate={navigate} createChat={createChat} updateJobStatus={updateJobStatus} setIsCreatingChat={setIsCreatingChat} user={user} setSelectedJobForReview={setSelectedJobForReview} reviewedJobs={reviewedJobs} getTimeAgo={getTimeAgo} />
                 </>
             )}
 
