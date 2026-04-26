@@ -39,17 +39,17 @@ const ActionModal = ({
                     <X size={20} />
                 </button>
                 
-                <div className="modal-content">
-                    <div className="icon-wrapper">
+                <div className="action-modal-content">
+                    <div className={`action-modal-icon-wrapper severity-${severity}`}>
                         {getIcon()}
                     </div>
                     
-                    <div className="text-wrapper">
+                    <div className="action-modal-text-wrapper">
                         <h3>{title}</h3>
                         <p>{message}</p>
                         {type === 'prompt' && (
                             <textarea 
-                                className="modal-input" 
+                                className="action-modal-input" 
                                 value={inputValue} 
                                 onChange={(e) => onInputChange(e.target.value)}
                                 placeholder="Escribe aquí el motivo..."
@@ -60,14 +60,14 @@ const ActionModal = ({
                     </div>
                 </div>
 
-                <div className="modal-footer">
+                <div className="action-modal-footer">
                     {(type === 'confirm' || type === 'prompt') && (
-                        <button className="btn-ghost" onClick={onClose}>
+                        <button className="action-modal-btn btn-ghost" onClick={onClose}>
                             {cancelText}
                         </button>
                     )}
                     <button 
-                        className={`btn-primary ${severity === 'error' ? 'btn-danger' : (severity === 'warning' ? 'btn-warning' : '')}`} 
+                        className={`action-modal-btn btn-primary ${severity === 'error' ? 'btn-danger' : (severity === 'warning' ? 'btn-warning' : (severity === 'success' ? 'btn-success' : ''))}`} 
                         onClick={handleConfirm}
                     >
                         {confirmText}
@@ -82,8 +82,8 @@ const ActionModal = ({
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    backdrop-filter: blur(4px);
+                    background: rgba(0, 0, 0, 0.6);
+                    backdrop-filter: blur(8px);
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -94,61 +94,39 @@ const ActionModal = ({
 
                 .action-modal-card {
                     width: 100%;
-                    max-width: 420px;
+                    max-width: 440px;
                     background: var(--bg-card);
                     border: 1px solid var(--border);
-                    border-radius: 24px;
+                    border-radius: 28px;
                     padding: 2.5rem 2rem;
                     position: relative;
                     text-align: center;
-                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-                    animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+                    animation: modalPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
                     color: var(--text-primary);
-                    backdrop-filter: blur(12px);
+                    overflow: hidden;
                 }
 
+                /* LIGHT MODE FIXES */
                 :global([data-theme='light']) .action-modal-card {
-                    background: #ffffff;
-                    border: 1px solid #e2e8f0;
-                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-                    color: #0f172a;
+                    background: #ffffff !important;
+                    border-color: #e2e8f0 !important;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
+                    color: #0f172a !important;
                 }
 
-                :global([data-theme='light']) .text-wrapper h3 {
-                    color: #0f172a;
+                :global([data-theme='light']) .action-modal-text-wrapper h3 {
+                    color: #0f172a !important;
                 }
 
-                :global([data-theme='light']) .text-wrapper p {
-                    color: #475569;
-                }
-
-                :global([data-theme='light']) .modal-input {
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    color: #0f172a;
-                }
-
-                :global([data-theme='light']) .modal-input:focus {
-                    background: #ffffff;
-                    border-color: var(--primary);
-                    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
-                }
-
-                :global([data-theme='light']) .btn-ghost {
-                    background: #f1f5f9;
-                    border-color: #e2e8f0;
-                    color: #475569;
-                }
-
-                :global([data-theme='light']) .btn-ghost:hover {
-                    background: #e2e8f0;
-                    color: #0f172a;
+                :global([data-theme='light']) .action-modal-text-wrapper p {
+                    color: #475569 !important;
                 }
 
                 .close-btn {
                     position: absolute;
-                    top: 1.2rem;
-                    right: 1.2rem;
+                    top: 1.25rem;
+                    right: 1.25rem;
                     background: transparent;
                     border: none;
                     color: var(--text-muted);
@@ -159,6 +137,7 @@ const ActionModal = ({
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    z-index: 10;
                 }
 
                 .close-btn:hover {
@@ -166,84 +145,104 @@ const ActionModal = ({
                     color: var(--primary);
                 }
 
-                .modal-content {
+                .action-modal-content {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     gap: 1.5rem;
                     margin-bottom: 2.5rem;
+                    background: transparent !important; /* Force transparent to avoid ugly boxes */
                 }
 
-                .icon-wrapper {
+                .action-modal-icon-wrapper {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    width: 72px;
-                    height: 72px;
-                    background: rgba(139, 92, 246, 0.1);
-                    border-radius: 20px;
-                    color: var(--primary);
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 24px;
                     margin-bottom: 0.5rem;
+                    transition: all 0.3s ease;
                 }
 
-                .text-wrapper h3 {
+                .severity-info { background: rgba(139, 92, 246, 0.1); color: var(--primary); }
+                .severity-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+                .severity-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+                .severity-error { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+                .severity-confirm { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+
+                .action-modal-text-wrapper h3 {
                     margin: 0 0 0.75rem 0;
-                    font-size: 1.6rem;
+                    font-size: 1.75rem;
                     font-weight: 800;
                     color: var(--text-primary);
-                    letter-spacing: -0.02em;
+                    letter-spacing: -0.03em;
+                    line-height: 1.2;
                 }
 
-                .text-wrapper p {
+                .action-modal-text-wrapper p {
                     margin: 0;
-                    font-size: 1rem;
+                    font-size: 1.05rem;
                     line-height: 1.6;
                     color: var(--text-secondary);
-                    max-width: 320px;
+                    max-width: 340px;
                 }
 
-                .modal-input {
+                .action-modal-input {
                     width: 100%;
-                    padding: 1rem;
-                    border-radius: 16px;
+                    padding: 1.2rem;
+                    border-radius: 18px;
                     border: 1px solid var(--border);
                     background: rgba(255, 255, 255, 0.05);
                     color: var(--text-primary);
-                    font-size: 0.95rem;
+                    font-size: 1rem;
                     resize: none;
-                    min-height: 120px;
+                    min-height: 130px;
                     margin-top: 1.5rem;
                     outline: none;
                     transition: all 0.3s ease;
                     font-family: inherit;
                 }
 
-                .modal-input:focus {
+                :global([data-theme='light']) .action-modal-input {
+                    background: #f8fafc;
+                    border-color: #e2e8f0;
+                    color: #0f172a;
+                }
+
+                .action-modal-input:focus {
                     border-color: var(--primary);
                     background: rgba(255, 255, 255, 0.08);
                     box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
                 }
 
-                .modal-footer {
+                .action-modal-footer {
                     display: flex;
-                    gap: 1rem;
+                    gap: 1.25rem;
                     justify-content: stretch;
                 }
 
-                .modal-footer button {
+                .action-modal-btn {
                     flex: 1;
-                    padding: 0.9rem 1.5rem;
-                    border-radius: 14px;
+                    padding: 1rem 1.5rem;
+                    border-radius: 16px;
                     font-weight: 700;
-                    font-size: 0.95rem;
+                    font-size: 1rem;
                     cursor: pointer;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                    border: none;
                 }
 
                 .btn-ghost {
                     background: rgba(255, 255, 255, 0.05);
                     border: 1px solid var(--border);
                     color: var(--text-secondary);
+                }
+
+                :global([data-theme='light']) .btn-ghost {
+                    background: #f1f5f9;
+                    border-color: #e2e8f0;
+                    color: #475569;
                 }
 
                 .btn-ghost:hover {
@@ -254,32 +253,32 @@ const ActionModal = ({
 
                 .btn-primary {
                     background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-                    border: none;
                     color: white;
                     box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
                 }
 
-                .btn-primary:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+                .btn-success {
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    color: white;
+                    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
                 }
 
                 .btn-danger {
                     background: linear-gradient(135deg, #ef4444, #dc2626);
+                    color: white;
                     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-                }
-
-                .btn-danger:hover {
-                    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
                 }
 
                 .btn-warning {
                     background: linear-gradient(135deg, #f59e0b, #d97706);
+                    color: white;
                     box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
                 }
 
-                .btn-warning:hover {
-                    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+                .action-modal-btn:hover {
+                    transform: translateY(-2px);
+                    filter: brightness(1.1);
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
                 }
 
                 .text-success { color: #10b981; }
@@ -293,8 +292,8 @@ const ActionModal = ({
                 }
 
                 @keyframes modalPop {
-                    from { transform: scale(0.95); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
+                    from { transform: scale(0.92) translateY(10px); opacity: 0; }
+                    to { transform: scale(1) translateY(0); opacity: 1; }
                 }
             `}</style>
         </div>
