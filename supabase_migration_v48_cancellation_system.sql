@@ -46,7 +46,7 @@ CREATE POLICY "Usuarios pueden ver sus propias cancelaciones o de sus trabajos"
     ON job_cancellations FOR SELECT
     USING (
         auth.uid() = cancelled_by OR 
-        auth.uid() IN (SELECT freelancer_id FROM jobs WHERE id = job_id)
+        auth.uid() IN (SELECT provider_id FROM jobs WHERE id = job_id)
     );
 
 -- 3. Los clientes pueden insertar solicitudes de cancelación
@@ -87,7 +87,7 @@ BEGIN
     END IF;
 
     -- Get job details for accounting/payout
-    SELECT freelancer_id, amount INTO v_freelancer_id, v_amount
+    SELECT provider_id, amount INTO v_freelancer_id, v_amount
     FROM jobs
     WHERE id = v_job_id;
 
