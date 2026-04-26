@@ -667,7 +667,6 @@ const FreelancerDetail = () => {
                     )}
                 </div>
             </div>
-            </div>
 
             <ReportModal 
                 isOpen={isReportModalOpen}
