@@ -667,60 +667,6 @@ const FreelancerDetail = () => {
                     )}
                 </div>
             </div>
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}>
-                                            {review.service?.owner?.avatar_url ? (
-                                                <img
-                                                    src={review.service.owner.avatar_url}
-                                                    alt="Avatar"
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                />
-                                            ) : (
-                                                <span style={{ fontWeight: 'bold' }}>{review.service?.owner?.username?.charAt(0).toUpperCase()}</span>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                                En: {review.service?.title}
-                                            </h4>
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                                Para: {review.service?.owner?.first_name ? `${review.service.owner.first_name} ${review.service.owner.last_name || ''}` : review.service?.owner?.username}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        background: 'rgba(251, 191, 36, 0.15)',
-                                        color: '#fbbf24',
-                                        padding: '6px 10px',
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px',
-                                        fontWeight: 'bold'
-                                    }}>
-                                        <span>{review.rating}</span>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                    </div>
-                                </div>
-                                <p style={{
-                                    fontStyle: 'italic',
-                                    lineHeight: '1.6',
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '0.95rem',
-                                    margin: 0
-                                }}>
-                                    "{review.comment}"
-                                </p>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="glass" style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border)' }}>
-                            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Este usuario aún no dio reseñas.</p>
-                        </div>
-                    )}
-                </div>
             </div>
 
             <ReportModal 
