@@ -132,6 +132,38 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
+    // ─── REALTIME PROFILE SYNC (V41) ──────────────────────────────────────────
+    useEffect(() => {
+        if (!user?.id || isTutorView) return;
+
+        console.log(`[AuthContext] Subscribing to realtime profile updates for ${user.id}...`);
+        const profileSubscription = supabase
+            .channel(`profile_sync_${user.id}`)
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'profiles',
+                filter: `id=eq.${user.id}`
+            }, (payload) => {
+                console.log("[AuthContext] Profile update received via Realtime:", payload.new);
+                // We only update if it's a relevant change (XP, Level, or gamification)
+                setUser(prev => {
+                    if (!prev) return prev;
+                    // Prevent loops: only update if data is actually different
+                    if (prev.xp === payload.new.xp && prev.level === payload.new.level && JSON.stringify(prev.gamification) === JSON.stringify(payload.new.gamification)) {
+                        return prev;
+                    }
+                    return { ...prev, ...payload.new };
+                });
+            })
+            .subscribe();
+
+        return () => {
+            console.log(`[AuthContext] Unsubscribing from profile updates for ${user.id}`);
+            supabase.removeChannel(profileSubscription);
+        };
+    }, [user?.id, isTutorView]);
+
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = async (userId, authUser = null) => {
         if (!userId) return;
