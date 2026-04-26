@@ -422,14 +422,25 @@ const ClientDetail = () => {
                                 flexWrap: 'wrap'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                                    <div style={{
-                                        width: '40px', height: '40px',
-                                        background: 'rgba(59, 130, 246, 0.1)',
-                                        borderRadius: '10px',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '1.2rem', border: '1px solid rgba(59, 130, 246, 0.2)'
-                                    }}>
-                                        {job.serviceId ? '🛠️' : '🚀'}
+                                    <div 
+                                        onClick={() => navigate(`/profile/${job.provider_id}`)}
+                                        style={{
+                                            width: '40px', height: '40px',
+                                            borderRadius: '50%',
+                                            overflow: 'hidden',
+                                            background: 'var(--bg-card-hover)',
+                                            cursor: 'pointer',
+                                            border: '1px solid var(--border)',
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        {job.provider?.avatar_url ? (
+                                            <img src={job.provider.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                                {job.provider?.username?.charAt(0)?.toUpperCase() || 'F'}
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{ minWidth: 0 }}>
                                         <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h3>
@@ -438,7 +449,7 @@ const ClientDetail = () => {
                                                 Freelancer: <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{job.freelancerName}</span>
                                             </span>
                                             <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--border)' }}></span>
-                                            <span onClick={() => navigate(`/profile/${job.freelancerId}`)} style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>@{job.freelancerUsername}</span>
+                                            <span onClick={() => navigate(`/profile/${job.provider_id}`)} style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>@{job.provider?.username}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -468,9 +479,8 @@ const ClientDetail = () => {
                                     
                                     <button 
                                         onClick={() => {
-                                            if (job.serviceId) navigate(`/service/${job.serviceId}`);
-                                            else if (job.projectId) navigate(`/project/${job.projectId}`);
-                                            else navigate(`/chat/${job.id}`);
+                                            if (job.service_id) navigate(`/service/${job.service_id}`);
+                                            else if (job.project_id) navigate(`/project/${job.project_id}`);
                                         }}
                                         className="btn-primary"
                                         style={{ 

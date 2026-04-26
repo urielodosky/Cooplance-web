@@ -1452,7 +1452,7 @@ const Dashboard = () => {
             await ReviewService.createReview({
                 serviceId: selectedJobForReview.serviceId,
                 reviewerId: user.id,
-                targetId: user.id === selectedJobForReview.clientId ? selectedJobForReview.freelancerId : selectedJobForReview.clientId,
+                targetId: user.id === selectedJobForReview.buyerId ? selectedJobForReview.freelancerId : selectedJobForReview.buyerId,
                 rating,
                 comment,
                 jobId: selectedJobForReview.id
