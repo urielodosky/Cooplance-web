@@ -364,15 +364,15 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                                         severity: 'error',
                                                         confirmText: 'Confirmar Cancelación',
                                                         onConfirm: (reason) => {
-                                                            if (!reason || reason.trim().length < 5) {
+                                                            if (!reason || reason.trim().length < 20) {
                                                                 showActionModal({
                                                                     title: 'Error',
-                                                                    message: 'Debes proporcionar un motivo válido (mínimo 5 caracteres).',
+                                                                    message: 'Debes proporcionar un motivo detallado (mínimo 20 caracteres).',
                                                                     severity: 'warning'
                                                                 });
                                                                 return;
                                                             }
-                                                            updateJobStatus(job.id, 'canceled', reason);
+                                                            updateJobStatus(job.id, 'canceled', `Cancelado por freelancer. Motivo: ${reason}`);
                                                         }
                                                     });
                                                 }}
@@ -863,7 +863,10 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             maxWidth: '500px',
                                             marginTop: '4px'
                                         }}>
-                                            <strong>Motivo:</strong> {job.deliveryResult.replace('Solicitud de cancelación por cliente. Motivo: ', '')}
+                                            <strong>Motivo:</strong> {job.deliveryResult
+                                                .replace('Solicitud de cancelación por cliente. Motivo: ', '')
+                                                .replace('Cancelado por freelancer. Motivo: ', '')
+                                            }
                                         </div>
                                     )}
                                 </div>

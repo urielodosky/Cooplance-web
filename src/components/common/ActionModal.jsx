@@ -12,7 +12,8 @@ const ActionModal = ({
     confirmText = 'Aceptar',
     cancelText = 'Cancelar',
     inputValue = '',
-    onInputChange = () => {}
+    onInputChange = () => {},
+    maxLength = 300
 }) => {
     if (!isOpen) return null;
 
@@ -53,6 +54,7 @@ const ActionModal = ({
                                 onChange={(e) => onInputChange(e.target.value)}
                                 placeholder="Escribe aquí el motivo..."
                                 autoFocus
+                                maxLength={maxLength}
                             />
                         )}
                     </div>
