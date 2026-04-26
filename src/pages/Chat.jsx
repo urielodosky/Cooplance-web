@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useTeams } from '../context/TeamContext'; // Import TeamContext
 import ReportModal from '../components/common/ReportModal';
 import { getProfilePicture } from '../utils/avatarUtils';
+import { useActionModal } from '../context/ActionModalContext';
 import '../styles/pages/Chat.scss';
 import { createThrottler } from '../utils/security';
 
@@ -19,6 +20,7 @@ const Chat = () => {
     const { getUserChats, getChatById, sendMessage, toggleChatBlock, deleteChat, fetchMessages, purgeDuplicateChats, isCleaning } = useChat();
     const { jobs, extendJobDeadline, updateJobStatus } = useJobs();
     const navigate = useNavigate();
+    const { showActionModal } = useActionModal();
 
     const [activeChat, setActiveChat] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -186,7 +188,11 @@ const Chat = () => {
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (isTutorView) {
-            alert("Acción bloqueada en modo lectura.");
+            showActionModal({
+                title: 'Seguridad',
+                message: "Acción bloqueada en modo lectura.",
+                severity: 'warning'
+            });
             return;
         }
         if (!activeChat || !messageInput.trim()) return;
@@ -217,7 +223,11 @@ const Chat = () => {
         } catch (error) {
             console.error("Error al enviar mensaje:", error);
             setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
-            alert("No se pudo enviar el mensaje. Inténtalo de nuevo.");
+            showActionModal({
+                title: 'Error de envío',
+                message: "No se pudo enviar el mensaje. Revisa tu conexión e inténtalo de nuevo.",
+                severity: 'error'
+            });
         }
     };
 
@@ -301,13 +311,21 @@ const Chat = () => {
     const handleFileSelect = async (e) => {
         const file = e.target.files[0];
         if (isTutorView) {
-            alert("No puedes enviar archivos en modo lectura.");
+            showActionModal({
+                title: 'Seguridad',
+                message: "No puedes enviar archivos en modo lectura.",
+                severity: 'warning'
+            });
             return;
         }
         if (!file || !activeChat || activeChat.status === 'blocked') return;
 
         if (file.type.startsWith('video')) {
-            alert("Los videos son muy pesados para guardarlos en esta demo. Se enviará, pero podría no persistir si es muy grande.");
+            showActionModal({
+                title: 'Advertencia de Tamaño',
+                message: "Los videos son muy pesados para guardarlos en esta demo. Se enviará, pero podría no persistir si es muy grande.",
+                severity: 'warning'
+            });
             // Videos are risky in localStorage. Keep original logic but warn.
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -331,7 +349,11 @@ const Chat = () => {
                 }
             } catch (error) {
                 console.error("Error compressing image:", error);
-                alert("Error al procesar la imagen");
+                showActionModal({
+                    title: 'Error de Imagen',
+                    message: "Hubo un error al procesar la imagen. Inténtalo con otro archivo.",
+                    severity: 'error'
+                });
             }
         }
 
@@ -358,15 +380,26 @@ const Chat = () => {
 
     // Handle delete action
     const handleDelete = async (chatId) => {
-        if (window.confirm("¿Estás seguro de que quieres borrar esta conversación? Se eliminarán todos los mensajes de forma permanente.")) {
-            const success = await deleteChat(chatId);
-            if (success) {
-                setActiveMenuId(null);
-                if (chatId === activeChat?.id) {
-                    navigate('/chat');
+        showActionModal({
+            title: 'Borrar Conversación',
+            message: "¿Estás seguro de que quieres borrar esta conversación? Se eliminarán todos los mensajes de forma permanente.",
+            type: 'confirm',
+            severity: 'error',
+            onConfirm: async () => {
+                const success = await deleteChat(chatId);
+                if (success) {
+                    setActiveMenuId(null);
+                    if (chatId === activeChat?.id) {
+                        navigate('/chat');
+                    }
+                    showActionModal({
+                        title: 'Conversación Borrada',
+                        message: 'El chat ha sido eliminado correctamente.',
+                        severity: 'success'
+                    });
                 }
             }
-        }
+        });
     };
 
     const handlePurge = async () => {
@@ -399,13 +432,28 @@ const Chat = () => {
     const handleCancelJob = () => {
         if (!activeJob) return;
         if (isTutorView) {
-            alert("Operación denegada en modo lectura.");
+            showActionModal({
+                title: 'Seguridad',
+                message: "Operación denegada en modo lectura.",
+                severity: 'warning'
+            });
             return;
         }
-        if (window.confirm("¿Estás seguro de cancelar este servicio? Esta acción no se puede deshacer y el pago será devuelto al monedero.")) {
-            updateJobStatus(activeJob.id, 'canceled');
-            sendMessage(activeChat.id, '❌ El servicio ha sido cancelado por expiración del plazo.', [], { isSystem: true });
-        }
+        showActionModal({
+            title: 'Cancelar Servicio',
+            message: "¿Estás seguro de cancelar este servicio? Esta acción no se puede deshacer y el pago será devuelto al monedero.",
+            type: 'confirm',
+            severity: 'error',
+            onConfirm: () => {
+                updateJobStatus(activeJob.id, 'canceled');
+                sendMessage(activeChat.id, '❌ El servicio ha sido cancelado por expiración del plazo.', [], { isSystem: true });
+                showActionModal({
+                    title: 'Servicio Cancelado',
+                    message: 'El servicio ha sido cancelado y los fondos devueltos.',
+                    severity: 'info'
+                });
+            }
+        });
     };
 
     return (
@@ -564,7 +612,11 @@ const Chat = () => {
                                     {/* Context Menu Dropdown */}
                                     {activeMenuId === chat.id && (
                                         <div className="chat-context-menu" onClick={(e) => e.stopPropagation()}>
-                                            <button onClick={() => alert("Chat Anclado (Simulado)")}>
+                                            <button onClick={() => showActionModal({
+                                                title: 'Anclar Chat',
+                                                message: 'La función de anclar chats estará disponible próximamente para ayudarte a organizar tus conversaciones.',
+                                                severity: 'info'
+                                            })}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                                                 Anclar
                                             </button>
@@ -852,7 +904,11 @@ const Chat = () => {
                                                         handleExtendDeadline(days);
                                                         setShowExtensionModal(false);
                                                     } else {
-                                                        alert('Por favor ingresa un número válido de días entre 1 y 7.');
+                                                        showActionModal({
+                                                            title: 'Plazo Inválido',
+                                                            message: 'Por favor ingresa un número válido de días entre 1 y 7.',
+                                                            severity: 'warning'
+                                                        });
                                                     }
                                                 }}
                                                 style={{ padding: '0.6rem 2rem', borderRadius: '12px' }}

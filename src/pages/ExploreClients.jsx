@@ -8,10 +8,12 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { registerActivity } from '../utils/gamification';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
 import { getProjects } from '../lib/projectService';
+import { useActionModal } from '../context/ActionModalContext';
 import '../styles/pages/Explore.scss';
 
 const ExploreClients = () => {
     const navigate = useNavigate();
+    const { showActionModal } = useActionModal();
     const [projects, setProjects] = useState([]);
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [selectedProjectForApply, setSelectedProjectForApply] = useState(null);
@@ -93,7 +95,11 @@ const ExploreClients = () => {
         }
 
         if (user.role !== 'freelancer') {
-            alert('Solo los freelancers pueden postularse a proyectos.');
+            showActionModal({
+                title: 'Acción No Permitida',
+                message: 'Solo los freelancers pueden postularse a proyectos.',
+                severity: 'warning'
+            });
             return;
         }
 
@@ -102,7 +108,11 @@ const ExploreClients = () => {
             const { hasUserApplied } = await import('../lib/proposalService');
             const alreadyApplied = await hasUserApplied(projectId, user.id);
             if (alreadyApplied) {
-                alert('Ya te has postulado a esta oferta.');
+                showActionModal({
+                    title: 'Ya te has postulado',
+                    message: 'Ya te has postulado a esta oferta. ¡Mucha suerte!',
+                    severity: 'info'
+                });
                 return;
             }
         } catch (err) {
@@ -117,7 +127,11 @@ const ExploreClients = () => {
 
     const handleApplySuccess = () => {
         setSelectedProjectForApply(null);
-        alert('¡Postulación enviada con éxito!');
+        showActionModal({
+            title: '¡Éxito!',
+            message: '¡Postulación enviada con éxito!',
+            severity: 'success'
+        });
     };
 
     return (

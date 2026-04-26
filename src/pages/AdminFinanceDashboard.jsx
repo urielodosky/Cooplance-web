@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useActionModal } from '../context/ActionModalContext';
 import '../styles/pages/AdminFinanceDashboard.scss';
 
 const formatCurrency = (value) => {
@@ -19,6 +20,7 @@ const AdminFinanceDashboard = () => {
     const [passcode, setPasscode] = useState('');
     const [authError, setAuthError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const { showActionModal } = useActionModal();
 
     // Security States
     const [loginAttempts, setLoginAttempts] = useState(() => {
@@ -75,7 +77,11 @@ const AdminFinanceDashboard = () => {
             setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: newStatus } : r));
         } catch (err) {
             console.error("Error updating report status:", err);
-            alert("Error al actualizar el estado del reporte.");
+            showActionModal({
+                title: 'Error de Sistema',
+                message: "Hubo un error al actualizar el estado del reporte. Inténtalo de nuevo.",
+                severity: 'error'
+            });
         }
     };
 
@@ -453,9 +459,20 @@ const AdminFinanceDashboard = () => {
                                                     )}
                                                     <button 
                                                         onClick={() => {
-                                                            if (window.confirm("¿Dar de baja este contenido? (Acción simulada en esta demo)")) {
-                                                                handleUpdateReportStatus(r.id, 'resolved');
-                                                            }
+                                                            showActionModal({
+                                                                title: 'Acción de Moderación',
+                                                                message: '¿Estás seguro de que deseas dar de baja este contenido? Esta acción es definitiva.',
+                                                                type: 'confirm',
+                                                                severity: 'error',
+                                                                onConfirm: () => {
+                                                                    handleUpdateReportStatus(r.id, 'resolved');
+                                                                    showActionModal({
+                                                                        title: 'Contenido Removido',
+                                                                        message: 'El contenido ha sido dado de baja exitosamente.',
+                                                                        severity: 'success'
+                                                                    });
+                                                                }
+                                                            });
                                                         }}
                                                         className="btn-danger"
                                                         style={{ padding: '4px 8px', fontSize: '0.8rem', borderRadius: '6px', background: '#ef4444', border: 'none', color: 'white' }}

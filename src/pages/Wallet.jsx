@@ -3,10 +3,12 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useActionModal } from '../context/ActionModalContext';
 import '../styles/pages/Wallet.scss';
 
 const Wallet = () => {
     const { user: authUser, updateBalance, isTutorView, supervisedUser } = useAuth();
+    const { showActionModal } = useActionModal();
     const user = isTutorView ? supervisedUser : authUser;
     
     const { jobs } = useJobs();
@@ -121,17 +123,30 @@ const Wallet = () => {
 
     const handleConnect = (provider) => {
         if (isTutorView) {
-            alert("Acción de seguridad: No puedes modificar métodos de pago en modo lectura.");
+            showActionModal({
+                title: 'Seguridad',
+                message: "Acción de seguridad: No puedes modificar métodos de pago en modo lectura.",
+                severity: 'warning'
+            });
             return;
         }
         const isConnected = connectedAccounts[provider];
-        if (!isConnected) {
-            if (!confirm(`¿Conectar cuenta de ${provider.toUpperCase()}?`)) return;
-        } else {
-            if (!confirm(`¿Desconectar cuenta de ${provider.toUpperCase()}?`)) return;
-        }
-        const updatedAccounts = { ...connectedAccounts, [provider]: !isConnected };
-        setConnectedAccounts(updatedAccounts);
+        
+        showActionModal({
+            title: isConnected ? 'Desconectar' : 'Conectar',
+            message: `¿Estás seguro de que quieres ${isConnected ? 'desconectar' : 'conectar'} tu cuenta de ${provider.toUpperCase()}?`,
+            type: 'confirm',
+            severity: isConnected ? 'error' : 'info',
+            onConfirm: () => {
+                const updatedAccounts = { ...connectedAccounts, [provider]: !isConnected };
+                setConnectedAccounts(updatedAccounts);
+                showActionModal({
+                    title: '¡Éxito!',
+                    message: `Cuenta de ${provider.toUpperCase()} ${isConnected ? 'desconectada' : 'conectada'} correctamente.`,
+                    severity: 'success'
+                });
+            }
+        });
     };
 
     if (!user) return <div className="container">Cargando...</div>;

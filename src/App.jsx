@@ -38,6 +38,7 @@ import MirrorModeBanner from './components/common/MirrorModeBanner'
 import NotFound from './pages/NotFound'
 import { ThemeProvider } from './context/ThemeContext'
 import { TeamProvider } from './context/TeamContext'
+import { ActionModalProvider } from './context/ActionModalContext'
 import { ChatProvider } from './context/ChatContext'
 import React, { useEffect } from 'react'
 import { SpeedInsights } from "@vercel/speed-insights/react"
@@ -52,54 +53,56 @@ function App() {
 
   return (
     <ThemeProvider>
-      <TeamProvider>
-        <div className="app-container">
-          <LegalModal />
-          <MirrorModeBanner />
-          <Navbar />
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/info/:roleId" element={<RoleInfo />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/create-service" element={<ProtectedRoute><CreateService /></ProtectedRoute>} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/companies" element={<Companies />} />
-              <Route path="/company/:id" element={<CompanyDetail />} />
-              <Route path="/client/:id" element={<ClientDetail />} />
-              <Route path="/freelancer/:id" element={<FreelancerDetail />} />
-              <Route path="/help" element={<HelpCenter />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/service/:id" element={<ServiceDetail />} />
-              <Route path="/explore-clients" element={<ExploreClients />} />
-              <Route path="/project/:id" element={<ProjectDetail />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/create-project" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
-              <Route path="/create-team" element={<ProtectedRoute><CreateTeam /></ProtectedRoute>} />
-              <Route path="/explore-teams" element={<ExploreTeams />} />
-              <Route path="/my-coops" element={<ProtectedRoute><TeamList /></ProtectedRoute>} />
-              <Route path="/team/:teamId" element={<ProtectedRoute><TeamDashboard /></ProtectedRoute>} />
-              <Route path="/team/:teamId/public" element={<TeamPublicProfile />} />
-              <Route path="/profile/:id" element={<FreelancerDetail />} />
-              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-              <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-              <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-              <Route path="/events" element={<Events />} />
-              <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminFinanceDashboard /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <SupportChatbot />
-          <SpeedInsights />
-        </div>
-      </TeamProvider>
+      <ActionModalProvider>
+        <TeamProvider>
+          <div className="app-container">
+            <LegalModal />
+            <MirrorModeBanner />
+            <Navbar />
+            <main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/info/:roleId" element={<RoleInfo />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/create-service" element={<ProtectedRoute><CreateService /></ProtectedRoute>} />
+                <Route path="/explore" element={<Explore />} />
+                <Route path="/companies" element={<Companies />} />
+                <Route path="/company/:id" element={<CompanyDetail />} />
+                <Route path="/client/:id" element={<ClientDetail />} />
+                <Route path="/freelancer/:id" element={<FreelancerDetail />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/service/:id" element={<ServiceDetail />} />
+                <Route path="/explore-clients" element={<ExploreClients />} />
+                <Route path="/project/:id" element={<ProjectDetail />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/create-project" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
+                <Route path="/create-team" element={<ProtectedRoute><CreateTeam /></ProtectedRoute>} />
+                <Route path="/explore-teams" element={<ExploreTeams />} />
+                <Route path="/my-coops" element={<ProtectedRoute><TeamList /></ProtectedRoute>} />
+                <Route path="/team/:teamId" element={<ProtectedRoute><TeamDashboard /></ProtectedRoute>} />
+                <Route path="/team/:teamId/public" element={<TeamPublicProfile />} />
+                <Route path="/profile/:id" element={<FreelancerDetail />} />
+                <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+                <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminFinanceDashboard /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <SupportChatbot />
+            <SpeedInsights />
+          </div>
+        </TeamProvider>
+      </ActionModalProvider>
     </ThemeProvider>
   )
 }

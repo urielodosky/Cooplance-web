@@ -601,7 +601,7 @@ const ServicesSection = ({ loading, myServices, user, handleCreateServiceClick }
                             background: 'var(--bg-card)', 
                             padding: '1.5rem', 
                             boxShadow: 'var(--shadow-sm)',
-                            minHeight: '360px',
+                            minHeight: '440px',
                             height: '100%',
                             transition: 'all 0.3s ease'
                         }}>
@@ -1167,25 +1167,7 @@ const Dashboard = () => {
     const [reviewedJobs, setReviewedJobs] = useState({});
     const { refreshBadges } = useBadgeNotification();
 
-    const [actionModal, setActionModal] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        type: 'alert',
-        severity: 'info',
-        onConfirm: null
-    });
-
-    const showActionModal = (config) => {
-        setActionModal({
-            isOpen: true,
-            title: config.title || 'Atención',
-            message: config.message || '',
-            type: config.type || 'alert',
-            severity: config.severity || 'info',
-            onConfirm: config.onConfirm || null
-        });
-    };
+    const { showActionModal } = useActionModal();
 
     const updateJobStatus = async (jobId, status) => {
         if (isTutorView) {
@@ -1840,15 +1822,7 @@ const Dashboard = () => {
                 subtitle={user.role === 'freelancer' ? "¿Cómo fue tu experiencia trabajando con este cliente?" : "¿Estás satisfecho con el resultado final?"}
             />
 
-            <ActionModal 
-                isOpen={actionModal.isOpen}
-                onClose={() => setActionModal(prev => ({ ...prev, isOpen: false }))}
-                title={actionModal.title}
-                message={actionModal.message}
-                type={actionModal.type}
-                severity={actionModal.severity}
-                onConfirm={actionModal.onConfirm}
-            />
+
         </div>
     );
 };

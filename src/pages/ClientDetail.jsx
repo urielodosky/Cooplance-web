@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { CLIENT_BADGE_FAMILIES } from '../data/badgeDefinitions';
 import ReportModal from '../components/common/ReportModal';
+import { useActionModal } from '../context/ActionModalContext';
 import {
     CreditCard as Coin,
     Zap as Flame,
@@ -112,6 +113,7 @@ const BadgesSection = ({ client, isOwnProfile, navigate }) => {
 const ClientDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showActionModal } = useActionModal();
     const { user: currentUser } = useAuth();
     const isOwnProfile = currentUser?.id === id;
     const [client, setClient] = useState(null);
@@ -293,7 +295,11 @@ const ClientDetail = () => {
                                     <button 
                                         onClick={() => {
                                             setIsMenuOpen(false);
-                                            alert("Opción de bloqueo disponible próximamente");
+                                            showActionModal({
+                                                title: 'Próximamente',
+                                                message: "La opción de bloqueo estará disponible próximamente para mejorar tu seguridad.",
+                                                severity: 'info'
+                                            });
                                         }}
                                         style={{ 
                                             padding: '0.75rem 1rem', background: 'none', border: 'none', 

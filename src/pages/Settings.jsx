@@ -5,11 +5,13 @@ import CustomDropdown from '../components/common/CustomDropdown';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { supabase } from '../lib/supabase';
 import { getArgentinaProvinces, getArgentinaCities } from '../utils/locationUtils';
+import { useActionModal } from '../context/ActionModalContext';
 import '../styles/pages/Settings.scss';
 
 const Settings = () => {
     const { user, updateUser, checkUserExists, deleteAccount, loading: authLoading } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { showActionModal } = useActionModal();
     const [username, setUsername] = useState(user?.username || '');
     const [firstName, setFirstName] = useState(user?.first_name || '');
     const [lastName, setLastName] = useState(user?.last_name || '');
@@ -758,25 +760,35 @@ const Settings = () => {
                     </p>
                     <button
                         type="button"
-                        onClick={async () => {
-                            if (window.confirm('¡CUIDADO! ¿Estás seguro de que quieres eliminar tu cuenta?')) {
-                                const confirmText = window.prompt('Para confirmar, escribe "ELIMINAR" en la caja de abajo:');
-                                if (confirmText === 'ELIMINAR') {
-                                    try {
-                                        setIsUpdating(true);
-                                        await deleteAccount();
-                                    } catch (err) {
-                                        setIsUpdating(false);
-                                        setMessage({
-                                            text: 'Error al eliminar cuenta: ' + (err.message || 'Error de base de datos'),
-                                            type: 'error'
+                        onClick={() => {
+                            showActionModal({
+                                title: '¡CUIDADO!',
+                                message: '¿Estás seguro de que quieres eliminar tu cuenta? Esta acción es irreversible.',
+                                type: 'confirm',
+                                severity: 'error',
+                                onConfirm: async () => {
+                                    const confirmText = window.prompt('Para confirmar, escribe "ELIMINAR" en la caja de abajo:');
+                                    if (confirmText === 'ELIMINAR') {
+                                        try {
+                                            setIsUpdating(true);
+                                            await deleteAccount();
+                                        } catch (err) {
+                                            setIsUpdating(false);
+                                            setMessage({
+                                                text: 'Error al eliminar cuenta: ' + (err.message || 'Error de base de datos'),
+                                                type: 'error'
+                                            });
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }
+                                    } else {
+                                        showActionModal({
+                                            title: 'Cancelado',
+                                            message: 'La palabra ingresada no coincide o cancelaste la acción.',
+                                            severity: 'warning'
                                         });
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }
-                                } else {
-                                    alert('La palabra ingresada no coincide. Cancelando acción.');
                                 }
-                            }
+                            });
                         }}
                         style={{
                             background: 'rgba(239, 68, 68, 0.1)',

@@ -8,6 +8,7 @@ import ServiceCard from '../features/services/components/ServiceCard';
 import { supabase } from '../lib/supabase';
 import ReportModal from '../components/common/ReportModal';
 import { BADGE_FAMILIES } from '../data/badgeDefinitions';
+import { useActionModal } from '../context/ActionModalContext';
 import {
     CreditCard as Coin,
     Zap as Flame,
@@ -113,6 +114,7 @@ const BadgesSection = ({ freelancer, isOwnProfile, navigate }) => {
 const FreelancerDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showActionModal } = useActionModal();
     const { user: currentUser } = useAuth();
     const { teams } = useTeams();
     const [freelancer, setFreelancer] = useState(null);
@@ -331,7 +333,11 @@ const FreelancerDetail = () => {
                                         onClick={() => {
                                             setIsMenuOpen(false);
                                             // TODO: Implement block logic
-                                            alert("Opción de bloqueo disponible próximamente");
+                                            showActionModal({
+                                                title: 'Próximamente',
+                                                message: "La opción de bloqueo estará disponible próximamente para mejorar tu seguridad.",
+                                                severity: 'info'
+                                            });
                                         }}
                                         style={{ 
                                             padding: '0.75rem 1rem', background: 'none', border: 'none', 

@@ -10,6 +10,7 @@ import { getProjectById, deleteProject } from '../lib/projectService';
 import { getActiveJobsCount } from '../lib/jobService';
 import '../styles/pages/ServiceDetail.scss';
 import '../styles/pages/ProjectDetail.scss';
+import { useActionModal } from '../context/ActionModalContext';
 
 
 import ProjectDetailSkeleton from '../components/project/ProjectDetailSkeleton';
@@ -18,6 +19,7 @@ const ProjectDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user, updateUser } = useAuth();
+    const { showActionModal } = useActionModal();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showApplyModal, setShowApplyModal] = useState(false);
@@ -147,15 +149,30 @@ const ProjectDetail = () => {
 
     const handleDelete = async (e) => {
         e.stopPropagation();
-        if (!window.confirm('¿Estás seguro de que deseas eliminar este proyecto de forma permanente?')) return;
         
-        try {
-            await deleteProject(id);
-            alert('Proyecto eliminado con éxito.');
-            navigate('/dashboard');
-        } catch (err) {
-            alert('Error al eliminar proyecto: ' + err.message);
-        }
+        showActionModal({
+            title: 'Eliminar Proyecto',
+            message: '¿Estás seguro de que deseas eliminar este proyecto de forma permanente?',
+            type: 'confirm',
+            severity: 'error',
+            onConfirm: async () => {
+                try {
+                    await deleteProject(id);
+                    showActionModal({
+                        title: '¡Éxito!',
+                        message: 'Proyecto eliminado con éxito.',
+                        severity: 'success'
+                    });
+                    navigate('/dashboard');
+                } catch (err) {
+                    showActionModal({
+                        title: 'Error',
+                        message: 'Error al eliminar proyecto: ' + err.message,
+                        severity: 'error'
+                    });
+                }
+            }
+        });
     };
 
     if (loading) return <ProjectDetailSkeleton />;
