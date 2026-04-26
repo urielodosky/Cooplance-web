@@ -434,27 +434,49 @@ const CompanyDetail = () => {
                                                 <span style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: '500' }}>
                                                     {job.clientName}
                                                 </span>
-                                                <span style={{ color: '#3b82f6', fontSize: '0.85rem' }}>@{job.client?.username}</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{
-                                            display: 'inline-block',
-                                            padding: '0.4rem 0.8rem',
-                                            borderRadius: '8px',
-                                            fontSize: '0.85rem',
-                                            fontWeight: 'bold',
-                                            background: job.deliveryResult === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                                            color: job.deliveryResult === 'Cancelado' ? '#ef4444' : '#10b981',
-                                        }}>
-                                            {job.deliveryResult || 'Finalizado'}
-                                        </span>
-                                        {job.amount && (
-                                            <div style={{ marginTop: '0.4rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                                ${job.amount}
-                                            </div>
-                                        )}
+                                    
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginLeft: 'auto' }}>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{
+                                                display: 'inline-block',
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '10px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '700',
+                                                background: job.deliveryResult === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                                color: job.deliveryResult === 'Cancelado' ? '#ef4444' : '#10b981',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px',
+                                                marginBottom: '0.4rem'
+                                            }}>
+                                                {job.deliveryResult || 'Finalizado'}
+                                            </span>
+                                            {job.amount && (
+                                                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)' }}>
+                                                    ${job.amount}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <button 
+                                            onClick={() => navigate(`/chat/${job.id}`)}
+                                            className="btn-primary"
+                                            style={{ 
+                                                padding: '10px 20px', 
+                                                borderRadius: '12px', 
+                                                fontSize: '0.9rem', 
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}
+                                        >
+                                            Ver Detalle
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -583,16 +605,18 @@ const CompanyDetail = () => {
                                                 )}
                                             </div>
                                             <div>
-                                                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
                                                     {review.job?.service_title || 'Servicio Personalizado'}
                                                 </h4>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                                        {review.target?.first_name ? `${review.target.first_name} ${review.target.last_name || ''}` : review.target?.username}
+                                                    <span 
+                                                        style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)', display: 'block' }}
+                                                    >
+                                                        {review.target?.first_name ? `${review.target.first_name} ${review.target.last_name || ''}` : (review.target?.username || 'Usuario')}
                                                     </span>
                                                     <span 
                                                         onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/freelancer/${review.target_id}`)}
-                                                        style={{ fontSize: '0.8rem', color: '#3b82f6', cursor: 'pointer', fontWeight: '500' }}
+                                                        style={{ fontSize: '0.85rem', color: '#3b82f6', cursor: 'pointer', fontWeight: '600' }}
                                                     >
                                                         @{review.target?.username || 'usuario_desconocido'}
                                                     </span>
