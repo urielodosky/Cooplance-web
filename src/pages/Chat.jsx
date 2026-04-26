@@ -88,17 +88,10 @@ const Chat = () => {
         // Context-based detection (Coops priority)
         const isCoopChat = chat.type === 'service' && chat.context_title?.toLowerCase().includes('coop');
         
-        if (filterTab === 'coops') return isCoopChat || otherRole === 'coop';
-        
-        // If it's already identified as a coop chat, don't show it in other tabs
-        if (isCoopChat) return false;
-
+        if (filterTab === 'general') return true;
         if (filterTab === 'companies') return otherRole === 'company';
         if (filterTab === 'clients') return otherRole === 'buyer';
-        
-        if (filterTab === 'general') {
-            return !['company', 'buyer', 'coop'].includes(otherRole) && !isCoopChat;
-        }
+        if (filterTab === 'coops') return isCoopChat || otherRole === 'coop';
         return true;
     });
 
