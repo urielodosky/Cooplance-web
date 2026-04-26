@@ -274,11 +274,16 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     }}>
                                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
                                         {job.status === 'active' ? 'EN PROGRESO' : 
-                                         job.status === 'delivered' ? 'PENDIENTE DE FINALIZAR' : 
+                                         job.status === 'delivered' ? 'ENTREGADO (REVISIÓN)' : 
                                          job.status === 'pending_approval' ? 'POR ACEPTAR' : 
                                          job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
                                          (job.status?.toUpperCase() || 'ESTADO')}
                                     </span>
+                                    {job.status === 'active' && (
+                                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 8px', borderRadius: '6px', border: '1px solid #10b981' }}>
+                                            🔒 SALDO EN ESCROW
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
@@ -360,15 +365,40 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             }}>Rechazar</button>
                                             <button className="btn-primary" style={{ backgroundColor: '#10b981', border: 'none', borderRadius: '12px' }} onClick={async (e) => {
                                                 e.stopPropagation();
-                                                try {
-                                                    await updateJobStatus(job.id, 'active');
-                                                    alert("¡Trabajo aceptado! Ahora puedes empezar a trabajar.");
-                                                } catch (err) {
-                                                    console.error("Error al aceptar trabajo:", err);
-                                                    alert("Hubo un problema al aceptar el trabajo. Por favor intenta de nuevo.");
+                                                if (window.confirm(`¿Aceptar trabajo? Al confirmar, se simulará el cobro de $${job.amount} al cliente y los fondos quedarán retenidos en Escrow de forma segura.`)) {
+                                                    try {
+                                                        await updateJobStatus(job.id, 'active');
+                                                        alert("¡Trabajo aceptado! El pago ha sido retenido en Escrow y ahora puedes empezar a trabajar.");
+                                                    } catch (err) {
+                                                        console.error("Error al aceptar trabajo:", err);
+                                                        alert("Hubo un problema al aceptar el trabajo. Por favor intenta de nuevo.");
+                                                    }
                                                 }
                                             }}>Aceptar Trabajo</button>
                                         </div>
+                                    )}
+
+                                    {job.status === 'delivered' && canForcePayout(job.deliveredAt) && (
+                                        <button 
+                                            className="btn-primary" 
+                                            style={{ 
+                                                backgroundColor: '#3b82f6', 
+                                                border: 'none', 
+                                                borderRadius: '12px',
+                                                padding: '0.5rem 1rem',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '700'
+                                            }} 
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                if (window.confirm("Han pasado más de 72 horas desde la entrega sin respuesta del cliente. ¿Deseas forzar la liberación de los fondos retenidos en Escrow?")) {
+                                                    await updateJobStatus(job.id, 'completed');
+                                                    alert("¡Fondos liberados con éxito por falta de respuesta del cliente!");
+                                                }
+                                            }}
+                                        >
+                                            Forzar Liberación (Ghosting)
+                                        </button>
                                     )}
                                     
                                     {job.status === 'completed' && (
@@ -1117,6 +1147,14 @@ const Dashboard = () => {
         // Always refresh notifications locally too
         if (refreshNotifications) refreshNotifications();
         return result;
+    };
+
+    const canForcePayout = (deliveredAt) => {
+        if (!deliveredAt) return false;
+        const deliveredDate = new Date(deliveredAt);
+        const now = new Date();
+        const diffHours = (now - deliveredDate) / (1000 * 60 * 60);
+        return diffHours >= 72;
     };
 
     // Initial load and sync

@@ -42,6 +42,8 @@ const mapJobFromDB = (row) => ({
     bookingDate: row.booking_date,
     bookingTime: row.booking_time,
     paymentMethod: row.payment_method,
+    deliveredAt: row.delivered_at,
+    escrowAmount: row.escrow_amount || 0,
 });
 
 const mapJobToDB = (job, serviceOrProject, buyer) => {
@@ -60,6 +62,7 @@ const mapJobToDB = (job, serviceOrProject, buyer) => {
         booking_date: serviceOrProject?.bookingConfig?.requiresBooking ? job.bookingDate : null,
         booking_time: serviceOrProject?.bookingConfig?.requiresBooking ? job.bookingTime : null,
         payment_method: serviceOrProject?.selectedPaymentMethod || job.paymentMethod || 'platform',
+        escrow_amount: (isProject || job.status === 'active') ? (parseFloat(serviceOrProject?.price || serviceOrProject?.budget || job.amount) || 0) : 0,
     };
 };
 
@@ -233,6 +236,18 @@ export const JobProvider = ({ children }) => {
     const updateJobStatus = async (jobId, status, explicitDeliveryResult = null) => {
         try {
             const updateData = { status };
+
+            if (status === 'delivered') {
+                updateData.delivered_at = new Date().toISOString();
+            }
+
+            if (status === 'active') {
+                // When becoming active, we lock the amount in escrow
+                const job = jobs.find(j => j.id === jobId);
+                if (job) {
+                    updateData.escrow_amount = job.amount;
+                }
+            }
 
             if (status === 'completed' || status === 'canceled') {
                 updateData.completed_at = new Date().toISOString();
