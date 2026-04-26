@@ -467,13 +467,42 @@ export const JobProvider = ({ children }) => {
                             }
                         }
                     } catch (xpErr) {
-                        console.error('XP Awarding error:', xpErr);
+                        console.warn('[JobContext] Award XP error:', xpErr);
                     }
                 }
-            } else if (status === 'canceled') {
+            }
+
+            // PENALTY for Canceled Jobs & REFUND (V48)
+            if (status === 'canceled') {
                 const job = jobs.find(j => j.id === jobId);
                 if (job) {
-                    // 1. REFUND TO CLIENT
+                    // 1. XP PENALTY FOR FREELANCER
+                    if (job.freelancerId) {
+                        try {
+                            const { data: profile } = await supabase
+                                .from('profiles')
+                                .select('xp')
+                                .eq('id', job.freelancerId)
+                                .single();
+                            
+                            if (profile) {
+                                const newXP = Math.max(0, (profile.xp || 0) - 20); // Penalty of 20 XP
+                                await supabase.from('profiles').update({ xp: newXP }).eq('id', profile.id);
+                                
+                                // Send notification about penalty
+                                await NotificationService.createNotification(job.freelancerId, {
+                                    type: 'xp_penalty',
+                                    title: 'Penalización de XP',
+                                    message: `Se te han descontado 20 XP por la cancelación del trabajo: '${job.serviceTitle}'.`,
+                                    link: '/settings'
+                                });
+                            }
+                        } catch (pErr) {
+                            console.warn('[JobContext] Penalty XP error:', pErr);
+                        }
+                    }
+
+                    // 2. REFUND TO CLIENT
                     try {
                         const { data: clientProfile } = await supabase
                             .from('profiles')
@@ -492,16 +521,16 @@ export const JobProvider = ({ children }) => {
                                 user_id: job.buyerId,
                                 type: 'income',
                                 amount: job.amount,
-                                method: 'platform',
-                                description: `Reembolso por cancelación: ${job.serviceTitle}. Motivo: ${explicitDeliveryResult || 'No especificado'}`,
+                                method: 'escrow_refund',
+                                description: `Reembolso por cancelación: ${job.serviceTitle}`,
                                 related_id: job.id
                             }]);
 
                             // Notify Client
                             await NotificationService.createNotification(job.buyerId, {
-                                type: 'payment_released',
+                                type: 'payment_refund',
                                 title: 'Reembolso procesado',
-                                message: `Recibiste un reembolso de ${job.amount} ARS por la cancelación de '${job.serviceTitle}'.`,
+                                message: `Se han reembolsado ${job.amount} ARS a tu billetera por la cancelación de '${job.serviceTitle}'.`,
                                 link: '/wallet'
                             });
                         }
