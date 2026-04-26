@@ -1894,6 +1894,7 @@ const Dashboard = () => {
                 onConfirm={handleReviewSubmit}
                 title={user.role === 'freelancer' ? "Califica al Cliente" : "Califica a"}
                 targetName={user.role === 'freelancer' ? `@${selectedJobForReview?.buyerUsername}` : `@${selectedJobForReview?.freelancerUsername}`}
+                serviceTitle={selectedJobForReview?.serviceTitle}
                 subtitle={user.role === 'freelancer' ? "¿Cómo fue tu experiencia trabajando con este cliente?" : "¿Estás satisfecho con el resultado final?"}
             />
 

@@ -16,7 +16,8 @@ const ReviewModal = ({
     onConfirm, 
     title = "Califica la experiencia", 
     subtitle = "Tu opinión ayuda a mejorar la comunidad",
-    targetName = ""
+    targetName = "",
+    serviceTitle = ""
 }) => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
@@ -94,7 +95,17 @@ const ReviewModal = ({
                         <Star className="fill-current" size={24} />
                     </div>
                     <h2>{targetName ? `${title} ${targetName}` : title}</h2>
-                    <p>{subtitle}</p>
+                    {serviceTitle && (
+                        <p style={{ 
+                            fontWeight: '700', 
+                            color: 'var(--primary)', 
+                            marginTop: '0.25rem',
+                            fontSize: '0.9rem' 
+                        }}>
+                            por "{serviceTitle}"
+                        </p>
+                    )}
+                    <p style={{ marginTop: '0.5rem' }}>{subtitle}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-body">
