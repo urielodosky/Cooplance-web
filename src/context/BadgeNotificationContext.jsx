@@ -6,7 +6,6 @@ import {
     Zap as Flame,
     Rocket,
     Heart,
-    Zap as Lightning,
     Star,
     Diamond,
     Users as Handshake,
@@ -18,7 +17,7 @@ const BadgeNotificationContext = createContext();
 
 export const useBadgeNotification = () => useContext(BadgeNotificationContext);
 
-const Icons = { Coin, Flame, Rocket, Heart, Lightning, Star, Diamond, Handshake, Eye };
+const Icons = { Coin, Flame, Rocket, Heart, Star, Diamond, Handshake, Eye };
 
 export const BadgeNotificationProvider = ({ children }) => {
     const { user, updateUser } = useAuth();
@@ -97,7 +96,7 @@ export const BadgeNotificationProvider = ({ children }) => {
             };
 
             const getIconForFamily = (familyId) => {
-                const map = { sales: Icons.Coin, purchases: Icons.Coin, levels: Icons.Flame, services: Icons.Rocket, loyalty: Icons.Heart, speed: Icons.Lightning, reviews: Icons.Star, talent: Icons.Handshake, projects: Icons.Eye };
+                const map = { sales: Icons.Coin, purchases: Icons.Coin, levels: Icons.Flame, services: Icons.Rocket, loyalty: Icons.Heart, speed: Icons.Flame, reviews: Icons.Star, talent: Icons.Handshake, projects: Icons.Eye };
                 return map[familyId] || Icons.Star;
             };
 

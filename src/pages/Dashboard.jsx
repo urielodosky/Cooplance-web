@@ -839,8 +839,6 @@ import {
     Zap as Flame,
     Rocket,
     Heart,
-    Zap as Lightning,
-    Star,
     Handshake,
     Eye,
     Users
@@ -852,7 +850,7 @@ const BadgesSection = ({ user, navigate }) => {
         Level: <Flame size={20} />,
         Service: <Rocket size={20} />,
         Loyalty: <Heart size={20} />,
-        Speed: <Lightning size={20} />,
+        Speed: <Flame size={20} />,
         Review: <Star size={20} />,
         Handshake: <Handshake size={20} />,
         Eye: <Eye size={20} />,

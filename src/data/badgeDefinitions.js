@@ -3,7 +3,6 @@ import {
     Zap as Flame, 
     Rocket, 
     Heart, 
-    Zap as Lightning, 
     Star, 
     Diamond, 
     Users as Handshake, 
