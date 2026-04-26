@@ -246,6 +246,12 @@ export const JobProvider = ({ children }) => {
                 const job = jobs.find(j => j.id === jobId);
                 if (job) {
                     updateData.escrow_amount = job.amount;
+                    
+                    // CRITICAL: Reset deadline to start from NOW (acceptance time)
+                    // This ensures the 3 days (or whatever duration) start counting only when work begins
+                    if (job.status === 'pending_approval' && job.duration) {
+                        updateData.deadline = new Date(Date.now() + job.duration * 24 * 60 * 60 * 1000).toISOString();
+                    }
                 }
             }
 
