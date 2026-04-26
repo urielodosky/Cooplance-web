@@ -52,7 +52,6 @@ const ReviewModal = ({
         
         return (
             <div key={index} className="star-wrapper">
-                {/* Hit Zones */}
                 <div 
                     className="hit-zone left" 
                     onMouseEnter={() => setHover(index - 0.5)}
@@ -66,21 +65,17 @@ const ReviewModal = ({
                     onClick={() => setRating(index)}
                 />
                 
-                {/* Visual Star */}
-                <div className={`star-icon ${isFull || isHalf ? 'active' : ''}`}>
-                    {isHalf ? (
-                        <div className="half-star-visual">
-                             <Star size={32} className="star-base" />
-                             <div className="star-overlay">
-                                 <Star size={32} fill="currentColor" />
-                             </div>
+                <div className={`star-icon ${isFull ? 'full' : (isHalf ? 'half' : '')}`}>
+                    <Star 
+                        size={32} 
+                        fill={isFull ? "currentColor" : "none"} 
+                        stroke="currentColor" 
+                        strokeWidth={isFull || isHalf ? 2 : 1.5}
+                    />
+                    {isHalf && (
+                        <div className="star-half-overlay">
+                            <Star size={32} fill="currentColor" stroke="none" />
                         </div>
-                    ) : (
-                        <Star 
-                            size={32} 
-                            fill={isFull ? "currentColor" : "none"} 
-                            stroke="currentColor" 
-                        />
                     )}
                 </div>
             </div>
@@ -90,13 +85,13 @@ const ReviewModal = ({
     return (
         <div className="review-modal-overlay">
             <div className="review-modal-card glass-morphism">
-                <button className="close-btn" onClick={onClose}>
-                    <X size={18} />
+                <button className="close-btn" onClick={onClose} title="Cerrar">
+                    <X size={20} />
                 </button>
 
                 <div className="modal-header">
                     <div className="icon-badge">
-                        <Star className="fill-current text-yellow-500" size={20} />
+                        <Star className="fill-current" size={24} />
                     </div>
                     <h2>{targetName ? `${title} ${targetName}` : title}</h2>
                     <p>{subtitle}</p>
@@ -108,20 +103,25 @@ const ReviewModal = ({
                     </div>
 
                     <div className="rating-label">
-                        {displayRating > 0 && (
-                            <span className="rating-number">{displayRating.toFixed(1)}</span>
+                        {displayRating > 0 ? (
+                            <div className="rating-badge">
+                                <span className="number">{displayRating.toFixed(1)}</span>
+                                <span className="text">
+                                    {displayRating <= 1.5 && "Insatisfecho"}
+                                    {displayRating > 1.5 && displayRating <= 2.5 && "Regular"}
+                                    {displayRating > 2.5 && displayRating <= 3.5 && "Bueno"}
+                                    {displayRating > 3.5 && displayRating <= 4.5 && "Excelente"}
+                                    {displayRating === 5 && "¡Perfecto!"}
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="placeholder">Selecciona una calificación</span>
                         )}
-                        {displayRating === 0 && "Selecciona una calificación"}
-                        {displayRating > 0 && displayRating <= 1.5 && "Insatisfecho"}
-                        {displayRating > 1.5 && displayRating <= 2.5 && "Regular"}
-                        {displayRating > 2.5 && displayRating <= 3.5 && "Bueno"}
-                        {displayRating > 3.5 && displayRating <= 4.5 && "Excelente"}
-                        {displayRating === 5 && "¡Perfecto!"}
                     </div>
 
                     <div className="comment-area">
                         <div className="textarea-wrapper">
-                            <MessageSquare className="textarea-icon" size={16} />
+                            <MessageSquare className="textarea-icon" size={18} />
                             <textarea
                                 placeholder="Escribe tu reseña (opcional)..."
                                 value={comment}
@@ -138,7 +138,7 @@ const ReviewModal = ({
                     <div className="modal-footer">
                         <button 
                             type="button" 
-                            className="btn-secondary" 
+                            className="btn-cancel" 
                             onClick={onClose}
                             disabled={isSubmitting}
                         >
@@ -146,7 +146,7 @@ const ReviewModal = ({
                         </button>
                         <button 
                             type="submit" 
-                            className="btn-primary" 
+                            className="btn-confirm" 
                             disabled={rating === 0 || isSubmitting}
                         >
                             {isSubmitting ? (

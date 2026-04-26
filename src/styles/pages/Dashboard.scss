@@ -560,7 +560,7 @@
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.status-badge.completed {
+.status-badge.completed, .status-badge.accepted {
     background: rgba(16, 185, 129, 0.2);
     color: #10b981;
     border: 1px solid rgba(16, 185, 129, 0.3);
