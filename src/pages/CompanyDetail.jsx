@@ -116,6 +116,9 @@ const CompanyDetail = () => {
     const [company, setCompany] = useState(null);
     const [companyProjects, setCompanyProjects] = useState([]);
     const [companyJobs, setCompanyJobs] = useState([]);
+    const [reviewsReceived, setReviewsReceived] = useState([]);
+    const [reviewsGiven, setReviewsGiven] = useState([]);
+    const [activeReviewTab, setActiveReviewTab] = useState('received');
     const [loading, setLoading] = useState(true);
 
     // V23: Strict access control for U18 Freelancers
@@ -171,6 +174,22 @@ const CompanyDetail = () => {
                 
                 if (jError) throw jError;
                 setCompanyJobs(jobsData || []);
+
+                // 4. Fetch Reviews Received (as target)
+                const { data: recData, error: recError } = await supabase
+                    .from('service_reviews')
+                    .select('*, reviewer:profiles!reviewer_id(username, first_name, last_name, avatar_url)')
+                    .eq('target_id', id);
+                
+                if (!recError) setReviewsReceived(recData || []);
+
+                // 5. Fetch Reviews Given (as reviewer)
+                const { data: givData, error: givError } = await supabase
+                    .from('service_reviews')
+                    .select('*, service:services!service_id(title, owner:profiles!owner_id(username, first_name, last_name, avatar_url))')
+                    .eq('reviewer_id', id);
+                
+                if (!givError) setReviewsGiven(givData || []);
 
             } catch (err) {
                 console.error("Error loading company data:", err);
@@ -380,31 +399,134 @@ const CompanyDetail = () => {
                 )}
             </div>
 
-            {/* REVIEWS SECTION */}
+            {/* Reviews Section - Tabs-like structure */}
             <div style={{ marginTop: '4rem' }}>
-                <div className="section-header">
-                    <h2 className="section-title-lg">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                        Reseñas Recibidas
+                <div style={{ display: 'flex', gap: '2rem', borderBottom: '2px solid var(--border)', marginBottom: '2.5rem' }}>
+                    <h2 
+                        onClick={() => setActiveReviewTab('received')}
+                        style={{ 
+                            fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
+                            borderBottom: activeReviewTab === 'received' ? '3px solid var(--primary)' : '3px solid transparent',
+                            color: activeReviewTab === 'received' ? 'var(--text-primary)' : 'var(--text-muted)',
+                            transition: 'all 0.2s',
+                            margin: 0
+                        }}
+                    >
+                        Reseñas Recibidas ({reviewsReceived.length})
+                    </h2>
+                    <h2 
+                        onClick={() => setActiveReviewTab('given')}
+                        style={{ 
+                            fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
+                            borderBottom: activeReviewTab === 'given' ? '3px solid var(--primary)' : '3px solid transparent',
+                            color: activeReviewTab === 'given' ? 'var(--text-primary)' : 'var(--text-muted)',
+                            transition: 'all 0.2s',
+                            margin: 0
+                        }}
+                    >
+                        Reseñas Dadas ({reviewsGiven.length})
                     </h2>
                 </div>
 
-                <div className="empty-state-box" style={{ padding: '3rem', border: '1px dashed var(--border)', textAlign: 'center' }}>
-                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Este usuario aún no tiene reseñas.</p>
-                </div>
-            </div>
-
-            {/* GIVEN REVIEWS SECTION */}
-            <div style={{ marginTop: '4rem' }}>
-                <div className="section-header">
-                    <h2 className="section-title-lg">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
-                        Reseñas Dadas
-                    </h2>
-                </div>
-
-                <div className="empty-state-box" style={{ padding: '3rem', border: '1px dashed var(--border)', textAlign: 'center' }}>
-                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Este usuario aún no dio reseñas.</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
+                    {activeReviewTab === 'received' ? (
+                        reviewsReceived.length > 0 ? (
+                            reviewsReceived.map(review => (
+                                <div key={review.id} className="glass" style={{
+                                    borderRadius: '16px',
+                                    padding: '1.75rem',
+                                    background: 'var(--bg-card)',
+                                    border: '1px solid var(--border)',
+                                    boxShadow: 'var(--shadow-md)'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                            <div style={{
+                                                width: '56px',
+                                                height: '56px',
+                                                borderRadius: '50%',
+                                                overflow: 'hidden',
+                                                border: '1px solid var(--border)',
+                                                flexShrink: 0,
+                                                background: 'var(--primary)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                {review.reviewer?.avatar_url ? (
+                                                    <img src={review.reviewer.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <span style={{ fontWeight: 'bold' }}>{review.reviewer?.username?.charAt(0).toUpperCase()}</span>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                    {review.reviewer?.first_name ? `${review.reviewer.first_name} ${review.reviewer.last_name || ''}` : review.reviewer?.username}
+                                                </h4>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Freelancer</span>
+                                            </div>
+                                        </div>
+                                        <div style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                                            <span>{review.rating}</span>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                        </div>
+                                    </div>
+                                    <p style={{ fontStyle: 'italic', lineHeight: '1.6', color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>"{review.comment}"</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-state-box" style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+                                <p style={{ color: 'var(--text-muted)', margin: 0 }}>Esta empresa aún no ha recibido reseñas.</p>
+                            </div>
+                        )
+                    ) : (
+                        reviewsGiven.length > 0 ? (
+                            reviewsGiven.map(review => (
+                                <div key={review.id} className="glass" style={{
+                                    borderRadius: '16px',
+                                    padding: '1.75rem',
+                                    background: 'var(--bg-card)',
+                                    border: '1px solid var(--border)',
+                                    boxShadow: 'var(--shadow-md)'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                            <div style={{
+                                                width: '56px',
+                                                height: '56px',
+                                                borderRadius: '50%',
+                                                overflow: 'hidden',
+                                                border: '1px solid var(--border)',
+                                                flexShrink: 0,
+                                                background: 'var(--bg-body)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'var(--text-muted)'
+                                            }}>
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                            </div>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                                                    {review.service?.title || 'Servicio/Proyecto'}
+                                                </h4>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Calificado por {company?.company_name || company?.username}</span>
+                                            </div>
+                                        </div>
+                                        <div style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                                            <span>{review.rating}</span>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                        </div>
+                                    </div>
+                                    <p style={{ fontStyle: 'italic', lineHeight: '1.6', color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>"{review.comment}"</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-state-box" style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border)' }}>
+                                <p style={{ color: 'var(--text-muted)', margin: 0 }}>Esta empresa aún no ha dado reseñas.</p>
+                            </div>
+                        )
+                    )}
                 </div>
             </div>
         </div>
