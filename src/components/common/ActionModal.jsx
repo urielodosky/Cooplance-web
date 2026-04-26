@@ -92,35 +92,67 @@ const ActionModal = ({
 
                 .action-modal-card {
                     width: 100%;
-                    max-width: 400px;
+                    max-width: 420px;
                     background: var(--bg-card);
                     border: 1px solid var(--border);
-                    border-radius: 20px;
-                    padding: 2rem;
+                    border-radius: 24px;
+                    padding: 2.5rem 2rem;
                     position: relative;
                     text-align: center;
-                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
                     animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                     color: var(--text-primary);
+                    backdrop-filter: blur(12px);
                 }
 
-                /* Ensure variables are used correctly and override for light mode explicitly if needed */
                 :global([data-theme='light']) .action-modal-card {
                     background: #ffffff;
                     border: 1px solid #e2e8f0;
-                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                    color: #0f172a;
+                }
+
+                :global([data-theme='light']) .text-wrapper h3 {
+                    color: #0f172a;
+                }
+
+                :global([data-theme='light']) .text-wrapper p {
+                    color: #475569;
+                }
+
+                :global([data-theme='light']) .modal-input {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    color: #0f172a;
+                }
+
+                :global([data-theme='light']) .modal-input:focus {
+                    background: #ffffff;
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+                }
+
+                :global([data-theme='light']) .btn-ghost {
+                    background: #f1f5f9;
+                    border-color: #e2e8f0;
+                    color: #475569;
+                }
+
+                :global([data-theme='light']) .btn-ghost:hover {
+                    background: #e2e8f0;
+                    color: #0f172a;
                 }
 
                 .close-btn {
                     position: absolute;
-                    top: 1rem;
-                    right: 1rem;
+                    top: 1.2rem;
+                    right: 1.2rem;
                     background: transparent;
                     border: none;
                     color: var(--text-muted);
                     cursor: pointer;
-                    padding: 5px;
-                    border-radius: 50%;
+                    padding: 8px;
+                    border-radius: 12px;
                     transition: all 0.2s;
                     display: flex;
                     align-items: center;
@@ -128,118 +160,124 @@ const ActionModal = ({
                 }
 
                 .close-btn:hover {
-                    background: var(--bg-body);
-                    color: var(--text-primary);
+                    background: rgba(139, 92, 246, 0.1);
+                    color: var(--primary);
                 }
 
                 .modal-content {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 1.2rem;
-                    margin-bottom: 2rem;
+                    gap: 1.5rem;
+                    margin-bottom: 2.5rem;
                 }
 
                 .icon-wrapper {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    width: 64px;
-                    height: 64px;
-                    background: rgba(139, 92, 246, 0.08);
-                    border-radius: 16px;
+                    width: 72px;
+                    height: 72px;
+                    background: rgba(139, 92, 246, 0.1);
+                    border-radius: 20px;
                     color: var(--primary);
+                    margin-bottom: 0.5rem;
                 }
 
                 .text-wrapper h3 {
-                    margin: 0 0 0.5rem 0;
-                    font-size: 1.4rem;
-                    font-weight: 700;
+                    margin: 0 0 0.75rem 0;
+                    font-size: 1.6rem;
+                    font-weight: 800;
                     color: var(--text-primary);
+                    letter-spacing: -0.02em;
                 }
 
                 .text-wrapper p {
-                    margin: 0 0 1rem 0;
-                    font-size: 0.95rem;
-                    line-height: 1.5;
+                    margin: 0;
+                    font-size: 1rem;
+                    line-height: 1.6;
                     color: var(--text-secondary);
+                    max-width: 320px;
                 }
 
                 .modal-input {
                     width: 100%;
-                    padding: 0.8rem;
-                    border-radius: 12px;
+                    padding: 1rem;
+                    border-radius: 16px;
                     border: 1px solid var(--border);
-                    background: var(--bg-body);
+                    background: rgba(255, 255, 255, 0.05);
                     color: var(--text-primary);
-                    font-size: 0.9rem;
+                    font-size: 0.95rem;
                     resize: none;
-                    min-height: 100px;
-                    margin-top: 1rem;
+                    min-height: 120px;
+                    margin-top: 1.5rem;
                     outline: none;
-                    transition: border-color 0.2s;
+                    transition: all 0.3s ease;
+                    font-family: inherit;
                 }
 
                 .modal-input:focus {
                     border-color: var(--primary);
+                    background: rgba(255, 255, 255, 0.08);
+                    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
                 }
 
                 .modal-footer {
                     display: flex;
-                    gap: 0.75rem;
+                    gap: 1rem;
                     justify-content: stretch;
                 }
 
                 .modal-footer button {
                     flex: 1;
-                    padding: 0.75rem 1rem;
-                    border-radius: 10px;
-                    font-weight: 600;
-                    font-size: 0.9rem;
+                    padding: 0.9rem 1.5rem;
+                    border-radius: 14px;
+                    font-weight: 700;
+                    font-size: 0.95rem;
                     cursor: pointer;
-                    transition: all 0.2s;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                 }
 
                 .btn-ghost {
-                    background: transparent;
+                    background: rgba(255, 255, 255, 0.05);
                     border: 1px solid var(--border);
                     color: var(--text-secondary);
                 }
 
                 .btn-ghost:hover {
-                    background: var(--bg-body);
+                    background: rgba(255, 255, 255, 0.1);
                     border-color: var(--text-muted);
                     color: var(--text-primary);
                 }
 
                 .btn-primary {
-                    background: var(--primary);
-                    border: 1px solid var(--primary);
+                    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+                    border: none;
                     color: white;
+                    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
                 }
 
                 .btn-primary:hover {
-                    background: var(--primary-hover);
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
                 }
 
                 .btn-danger {
-                    background: #ef4444;
-                    border-color: #ef4444;
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
+                    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
                 }
 
                 .btn-danger:hover {
-                    background: #dc2626;
+                    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
                 }
 
                 .btn-warning {
-                    background: #f59e0b;
-                    border-color: #f59e0b;
+                    background: linear-gradient(135deg, #f59e0b, #d97706);
+                    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
                 }
 
                 .btn-warning:hover {
-                    background: #d97706;
+                    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
                 }
 
                 .text-success { color: #10b981; }
