@@ -15,7 +15,8 @@ const ReviewModal = ({
     onClose, 
     onConfirm, 
     title = "Califica la experiencia", 
-    subtitle = "Tu opinión ayuda a mejorar la comunidad" 
+    subtitle = "Tu opinión ayuda a mejorar la comunidad",
+    targetName = ""
 }) => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
@@ -23,6 +24,8 @@ const ReviewModal = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
+
+    const displayRating = hover || rating;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -43,54 +46,82 @@ const ReviewModal = ({
         }
     };
 
+    const renderStar = (index) => {
+        const isFull = displayRating >= index;
+        const isHalf = displayRating >= index - 0.5 && displayRating < index;
+        
+        return (
+            <div key={index} className="star-wrapper">
+                {/* Hit Zones */}
+                <div 
+                    className="hit-zone left" 
+                    onMouseEnter={() => setHover(index - 0.5)}
+                    onMouseLeave={() => setHover(0)}
+                    onClick={() => setRating(index - 0.5)}
+                />
+                <div 
+                    className="hit-zone right" 
+                    onMouseEnter={() => setHover(index)}
+                    onMouseLeave={() => setHover(0)}
+                    onClick={() => setRating(index)}
+                />
+                
+                {/* Visual Star */}
+                <div className={`star-icon ${isFull || isHalf ? 'active' : ''}`}>
+                    {isHalf ? (
+                        <div className="half-star-visual">
+                             <Star size={32} className="star-base" />
+                             <div className="star-overlay">
+                                 <Star size={32} fill="currentColor" />
+                             </div>
+                        </div>
+                    ) : (
+                        <Star 
+                            size={32} 
+                            fill={isFull ? "currentColor" : "none"} 
+                            stroke="currentColor" 
+                        />
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="review-modal-overlay">
             <div className="review-modal-card glass-morphism">
                 <button className="close-btn" onClick={onClose}>
-                    <X size={20} />
+                    <X size={18} />
                 </button>
 
                 <div className="modal-header">
                     <div className="icon-badge">
-                        <Star className="fill-current text-yellow-500" size={24} />
+                        <Star className="fill-current text-yellow-500" size={20} />
                     </div>
-                    <h2>{title}</h2>
+                    <h2>{targetName ? `${title} ${targetName}` : title}</h2>
                     <p>{subtitle}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-body">
-                    {/* Stars Selection */}
                     <div className="stars-container">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                                key={star}
-                                type="button"
-                                className={`star-btn ${star <= (hover || rating) ? 'active' : ''}`}
-                                onClick={() => setRating(star)}
-                                onMouseEnter={() => setHover(star)}
-                                onMouseLeave={() => setHover(0)}
-                            >
-                                <Star 
-                                    size={36} 
-                                    fill={star <= (hover || rating) ? "currentColor" : "none"} 
-                                    stroke="currentColor" 
-                                />
-                            </button>
-                        ))}
+                        {[1, 2, 3, 4, 5].map(renderStar)}
                     </div>
 
                     <div className="rating-label">
-                        {rating === 1 && "Muy Insatisfecho"}
-                        {rating === 2 && "Insatisfecho"}
-                        {rating === 3 && "Neutral"}
-                        {rating === 4 && "Satisfecho"}
-                        {rating === 5 && "Excelente"}
+                        {displayRating > 0 && (
+                            <span className="rating-number">{displayRating.toFixed(1)}</span>
+                        )}
+                        {displayRating === 0 && "Selecciona una calificación"}
+                        {displayRating > 0 && displayRating <= 1.5 && "Insatisfecho"}
+                        {displayRating > 1.5 && displayRating <= 2.5 && "Regular"}
+                        {displayRating > 2.5 && displayRating <= 3.5 && "Bueno"}
+                        {displayRating > 3.5 && displayRating <= 4.5 && "Excelente"}
+                        {displayRating === 5 && "¡Perfecto!"}
                     </div>
 
-                    {/* Comment Area */}
                     <div className="comment-area">
                         <div className="textarea-wrapper">
-                            <MessageSquare className="textarea-icon" size={18} />
+                            <MessageSquare className="textarea-icon" size={16} />
                             <textarea
                                 placeholder="Escribe tu reseña (opcional)..."
                                 value={comment}
@@ -121,7 +152,7 @@ const ReviewModal = ({
                             {isSubmitting ? (
                                 <div className="loader-mini"></div>
                             ) : (
-                                "Finalizar y Calificar"
+                                "Calificar Ahora"
                             )}
                         </button>
                     </div>

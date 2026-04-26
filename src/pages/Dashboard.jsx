@@ -1750,11 +1750,12 @@ const Dashboard = () => {
             <LevelUpModal isOpen={showLevelUpModal} onClose={() => setShowLevelUpModal(false)} level={currentLevel} />
 
             {/* V28: Review Modal */}
-            <ReviewModal
+                        <ReviewModal
                 isOpen={!!selectedJobForReview}
                 onClose={() => setSelectedJobForReview(null)}
                 onConfirm={handleReviewSubmit}
-                title={user.role === 'freelancer' ? "Califica al Cliente" : "Califica el Trabajo"}
+                title={user.role === 'freelancer' ? "Califica al Cliente" : "Califica a"}
+                targetName={user.role === 'freelancer' ? selectedJobForReview?.buyerName : selectedJobForReview?.freelancerName}
                 subtitle={user.role === 'freelancer' ? "¿Cómo fue tu experiencia trabajando con este cliente?" : "¿Estás satisfecho con el resultado final?"}
             />
         </div>
