@@ -560,83 +560,67 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                         <div key={job.id} className="glass job-card order-card premium-job-card" style={{ 
                             display: 'flex', 
                             flexDirection: 'column',
-                            gap: '1rem', 
-                            padding: '1.2rem', 
-                            borderRadius: '24px', 
+                            gap: '0.8rem', 
+                            padding: '1rem', 
+                            borderRadius: '20px', 
                             background: 'var(--bg-card)', 
                             border: '1px solid var(--border)', 
                             position: 'relative', 
                             transition: 'all 0.3s ease', 
                             boxShadow: 'var(--shadow-sm)' 
                         }}>
-                            {/* Main Row: Info and Price/Actions */}
-                            <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', width: '100%' }}>
-                                <div style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary-soft)', flexShrink: 0 }}>
+                            {/* Main Content Area */}
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', width: '100%' }}>
+                                {/* Avatar */}
+                                <div style={{ 
+                                    width: '52px', 
+                                    height: '52px', 
+                                    borderRadius: '50%', 
+                                    overflow: 'hidden', 
+                                    border: '2px solid var(--primary-soft)', 
+                                    flexShrink: 0,
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}>
                                     <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
+
+                                {/* Info Column */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
-                                        <h4 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h4>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '2px' }}>
+                                        <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h4>
                                         {(() => {
                                             const preciseTime = job.deadline ? getPreciseTimeRemaining(job.deadline) : null;
                                             if (!preciseTime || job.status !== 'active') return null;
-                                            
                                             const isUrgent = preciseTime.includes('h') && !preciseTime.includes('d');
                                             const isVencido = preciseTime === 'Vencido';
-
                                             return (
                                                 <span style={{ 
-                                                    fontSize: '0.7rem', 
-                                                    padding: '2px 8px', 
-                                                    borderRadius: '6px', 
+                                                    fontSize: '0.65rem', padding: '1px 6px', borderRadius: '4px', 
                                                     background: (isUrgent || isVencido) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)', 
                                                     color: (isUrgent || isVencido) ? '#ef4444' : 'var(--primary-soft)', 
-                                                    fontWeight: '800', 
-                                                    border: '1px solid currentColor',
-                                                    textTransform: 'uppercase'
+                                                    fontWeight: '800', border: '1px solid currentColor'
                                                 }}>
                                                     {preciseTime === 'Vencido' ? 'VENCIDO' : preciseTime}
                                                 </span>
                                             );
                                         })()}
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '6px' }}>
-                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por: </span>
-                                        <strong style={{ color: 'var(--primary-soft)', fontSize: '0.9rem' }}>@{job.freelancerUsername || 'usuario'}</strong>
-                                        {job.freelancerName && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({job.freelancerName})</span>}
-                                    </div>
-                                    <div>
-                                        <span style={{ 
-                                            fontSize: '0.85rem', 
-                                            color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), 
-                                            fontWeight: '800', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            gap: '6px',
-                                            padding: '4px 10px',
-                                            borderRadius: '8px',
-                                            background: job.status === 'active' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'delivered' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(245, 158, 11, 0.08)'),
-                                            border: '1px solid currentColor',
-                                            width: 'fit-content'
-                                        }}>
-                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
-                                            {job.status === 'active' ? 'EN PROGRESO' : 
-                                             job.status === 'delivered' ? 'PENDIENTE DE TU APROBACIÓN' : 
-                                             job.status === 'pending_approval' ? 'ESPERANDO ACEPTACIÓN' : (job.status?.toUpperCase() || 'ESTADO')}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '4px' }}>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>@{job.freelancerUsername}</strong></span>
+                                        <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            • {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Revisión Pendiente' : 'Esperando'}
                                         </span>
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'flex-end' }}>
-                                    <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>${job.amount}</div>
-                                    <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                                        <button className="btn-secondary" style={{ 
-                                            padding: '0.5rem 1rem', 
-                                            fontSize: '0.8rem', 
-                                            borderRadius: '10px',
-                                            background: 'var(--border)',
-                                            border: '1px solid var(--border)',
-                                            color: 'var(--text-primary)',
-                                            fontWeight: '600'
+
+                                {/* Actions & Price Group */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>${job.amount}</div>
+                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                        <button className="btn-chat-mini" style={{ 
+                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
+                                            background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)',
+                                            color: 'var(--primary-soft)', fontWeight: '700'
                                         }} onClick={async () => {
                                             setIsCreatingChat(true);
                                             try {
@@ -645,14 +629,10 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                 else setIsCreatingChat(false);
                                             } catch { setIsCreatingChat(false); }
                                         }}>Chat</button>
-                                        <button className="btn-outline" style={{ 
-                                            padding: '0.5rem 1rem', 
-                                            fontSize: '0.8rem', 
-                                            borderRadius: '10px', 
-                                            borderColor: 'var(--border)',
-                                            background: 'transparent',
-                                            color: 'var(--text-secondary)',
-                                            fontWeight: '500'
+                                        <button className="btn-detail-mini" style={{ 
+                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
+                                            background: 'transparent', border: '1px solid var(--border)',
+                                            color: 'var(--text-secondary)', fontWeight: '600'
                                         }} onClick={() => {
                                             if (job.projectId) navigate(`/project/${job.projectId}`);
                                             else if (job.serviceId) navigate(`/service/${job.serviceId}`);
@@ -661,93 +641,52 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                 </div>
                             </div>
 
-                            {/* Revision Action Card - Now at the bottom */}
+                            {/* Revision Banner - Horizontal & Minimalist */}
                             {job.status === 'delivered' && (
-                                <div className="glass-strong buyer-action-card" style={{ 
+                                <div style={{ 
                                     display: 'flex', 
-                                    flexDirection: 'column', 
-                                    gap: '0.8rem', 
-                                    width: '100%',
-                                    padding: '1rem 1.2rem',
-                                    borderRadius: '18px',
-                                    background: 'rgba(99, 102, 241, 0.05)',
-                                    border: '1px solid rgba(99, 102, 241, 0.2)',
-                                    marginTop: '0.2rem',
-                                    boxShadow: 'inset 0 0 20px rgba(99, 102, 241, 0.03)'
+                                    alignItems: 'center', 
+                                    justifyContent: 'space-between',
+                                    padding: '0.6rem 1rem',
+                                    background: 'rgba(99, 102, 241, 0.04)',
+                                    border: '1px solid rgba(99, 102, 241, 0.15)',
+                                    borderRadius: '12px',
+                                    marginTop: '2px'
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ background: '#f59e0b', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center' }}>
                                             <Info size={16} />
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <h5 style={{ margin: 0, fontSize: '0.85rem', fontWeight: '800', color: 'var(--text-primary)', textTransform: 'uppercase' }}>Revisión Requerida</h5>
-                                                <span style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: '700' }}>⚠️ 24hs restantes</span>
-                                            </div>
-                                            <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                                                Revisa el trabajo entregado. Si todo está bien, aprueba para liberar el pago.
-                                            </p>
+                                        <div>
+                                            <span style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-primary)', marginRight: '6px' }}>REVISIÓN REQUERIDA</span>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tienes 24hs para confirmar el pedido.</span>
                                         </div>
                                     </div>
                                     
-                                    <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-end' }}>
-                                        <button className="btn-ghost" style={{ 
-                                            padding: '0.5rem 1.2rem', 
-                                            fontSize: '0.8rem', 
-                                            borderRadius: '10px',
-                                            color: '#f59e0b',
-                                            fontWeight: '700',
-                                            background: 'rgba(245, 158, 11, 0.08)',
-                                            border: '1px solid rgba(245, 158, 11, 0.2)'
+                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                        <button style={{ 
+                                            padding: '4px 12px', fontSize: '0.75rem', borderRadius: '8px',
+                                            color: '#f59e0b', fontWeight: '700', background: 'transparent', border: '1px solid rgba(245, 158, 11, 0.3)'
                                         }} onClick={async () => {
-                                            const note = window.prompt("¿Qué ajustes necesitas? Escribe el motivo para que el freelancer sepa qué corregir:");
-                                            if (note === null) return; // Cancelled
-                                            if (!note.trim()) {
-                                                alert("Debes indicar qué ajustes necesitas.");
-                                                return;
-                                            }
-                                            
+                                            const note = window.prompt("¿Qué ajustes necesitas?");
+                                            if (!note?.trim()) return;
                                             try {
-                                                // 1. Update job status back to active
                                                 await updateJobStatus(job.id, 'active');
-                                                
-                                                // 2. Send a system message to the chat with the adjustment notes
                                                 const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
-                                                if (chatId) {
-                                                    await supabase.from('messages').insert({
-                                                        chat_id: chatId,
-                                                        sender_id: user.id,
-                                                        content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`,
-                                                        type: 'system'
-                                                    });
-                                                }
-                                                
-                                                alert("Solicitud de ajustes enviada correctamente.");
-                                            } catch (err) {
-                                                console.error("Error al pedir ajustes:", err);
-                                                alert("Hubo un error al enviar la solicitud.");
-                                            }
+                                                if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
+                                                alert("Solicitud enviada.");
+                                            } catch (err) { console.error(err); }
                                         }}>Pedir Ajustes</button>
                                         
-                                        <button className="btn-primary" style={{ 
-                                            padding: '0.5rem 1.4rem', 
-                                            fontSize: '0.8rem', 
-                                            borderRadius: '10px',
-                                            background: 'linear-gradient(135deg, #10b981, #059669)',
-                                            border: 'none',
-                                            color: 'white',
-                                            fontWeight: '800',
-                                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px'
+                                        <button style={{ 
+                                            padding: '4px 14px', fontSize: '0.75rem', borderRadius: '8px',
+                                            background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
+                                            boxShadow: '0 4px 10px rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', gap: '4px'
                                         }} onClick={() => {
-                                            if(window.confirm("¿Confirmas que el trabajo ha sido recibido satisfactoriamente? Se liberará el pago inmediatamente.")) {
-                                                updateJobStatus(job.id, 'completed');
-                                            }
+                                            if(window.confirm("¿Liberar pago?")) updateJobStatus(job.id, 'completed');
                                         }}>
-                                            <Check size={16} />
-                                            Aprobar y Liberar Pago
+                                            <Check size={14} />
+                                            Aprobar y Liberar
                                         </button>
                                     </div>
                                 </div>
