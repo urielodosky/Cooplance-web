@@ -906,6 +906,53 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             Aprobar
                                         </button>
                                     )}
+                                    {job.status === 'active' && (
+                                        <button 
+                                            className="btn-danger" 
+                                            style={{ 
+                                                padding: '0.4rem 1rem', 
+                                                fontSize: '0.75rem', 
+                                                borderRadius: '10px', 
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: '1px solid #ef4444',
+                                                color: '#ef4444',
+                                                fontWeight: '700',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                cursor: 'pointer'
+                                            }} 
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                showActionModal({
+                                                    title: 'Solicitar Cancelación',
+                                                    message: '⚠️ AVISO: El dinero será devuelto en aproximadamente 15 días hábiles. Se analizará el motivo; en caso de intento de estafa o motivo falso, la cuenta será bloqueada y el dinero se liberará al freelancer.',
+                                                    type: 'prompt',
+                                                    severity: 'warning',
+                                                    confirmText: 'Confirmar Solicitud',
+                                                    onConfirm: (reason) => {
+                                                        if (!reason || reason.trim().length < 10) {
+                                                            showActionModal({
+                                                                title: 'Error',
+                                                                message: 'Debes proporcionar un motivo detallado (mínimo 10 caracteres).',
+                                                                severity: 'warning'
+                                                            });
+                                                            return;
+                                                        }
+                                                        updateJobStatus(job.id, 'disputed', `Solicitud de cancelación por cliente. Motivo: ${reason}`);
+                                                        showActionModal({
+                                                            title: 'Solicitud Enviada',
+                                                            message: 'Tu solicitud de cancelación ha sido registrada y está siendo analizada por el equipo de soporte.',
+                                                            severity: 'info'
+                                                        });
+                                                    }
+                                                });
+                                            }}
+                                        >
+                                            <X size={14} />
+                                            Cancelar
+                                        </button>
+                                    )}
                                     {job.status !== 'pending_approval' && (
                                         <button className="btn-secondary" style={{ 
                                             padding: '0.4rem 1rem', 
