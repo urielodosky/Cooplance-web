@@ -4,6 +4,7 @@ import { useJobs } from '../context/JobContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useActionModal } from '../context/ActionModalContext';
+import { Info, Wallet as WalletIcon, CreditCard, ExternalLink } from 'lucide-react';
 import '../styles/pages/Wallet.scss';
 
 const Wallet = () => {
@@ -204,7 +205,7 @@ const Wallet = () => {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                                 Saldo Disponible
                                 <div className="info-tooltip-wrapper">
-                                    <span className="info-icon">i</span>
+                                    <Info className="info-icon-svg" size={16} />
                                     <div className="tooltip-box">
                                         <strong>REGISTRO VISUAL</strong>
                                         Este saldo es un reflejo visual de tus operaciones para control personal. Los pagos reales se procesan externamente según los Términos y Condiciones.
