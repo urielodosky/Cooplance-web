@@ -939,7 +939,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                             });
                                                             return;
                                                         }
-                                                        updateJobStatus(job.id, 'disputed', `Solicitud de cancelación por cliente. Motivo: ${reason}`);
+                                                        updateJobStatus(job.id, 'cancellation_requested', `Solicitud de cancelación por cliente. Motivo: ${reason}`);
                                                         showActionModal({
                                                             title: 'Solicitud Enviada',
                                                             message: 'Tu solicitud de cancelación ha sido registrada y está siendo analizada por el equipo de soporte.',
