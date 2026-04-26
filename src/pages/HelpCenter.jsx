@@ -331,13 +331,18 @@ const HelpCenter = () => {
 
                 <h3>7. Entregas, Cancelaciones y Retención de Fondos (Escrow)</h3>
                 <p><strong>Seguridad Financiera:</strong> Cooplance actúa exclusivamente como intermediario tecnológico. La retención temporal de fondos (Escrow) para la seguridad de los proyectos es gestionada en su totalidad por pasarelas de pago externas. Cooplance no almacena ni administra fondos reales; la Billetera interna cumple una función estrictamente visual.</p>
+                
+                <div className="legal-note" style={{ borderLeftColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.05)', marginBottom: '1.5rem' }}>
+                    <p><strong>Cancelación Iniciada por el Cliente:</strong> El Cliente podrá solicitar la cancelación de un trabajo activo bajo revisión. En dicho caso, el reembolso de los fondos se procesará en un plazo aproximado de <strong>quince (15) días hábiles</strong>. El motivo de cancelación será auditado por el equipo de soporte. Si se determina que la solicitud se basa en un <strong>motivo falso o constituye un intento de estafa</strong>, Cooplance procederá al bloqueo permanente de la cuenta del Cliente y liberará la totalidad de los fondos en favor del Freelancer como compensación por el tiempo y trabajo invertido.</p>
+                </div>
+
                 <div className="legal-note">
                     <p><strong>Excepción de Arrepentimiento:</strong> En concordancia con la Ley de Defensa del Consumidor de la República Argentina, al tratarse de servicios digitales confeccionados a medida, el Usuario reconoce y acepta que no resulta aplicable el derecho de revocación o arrepentimiento de 10 días una vez iniciada la ejecución del servicio.</p>
                 </div>
                 <div className="legal-note">
                     <p><strong>Protección al Freelancer (Política de No Reembolso):</strong> Una vez que el trabajo ha comenzado o se ha realizado la entrega, no se aceptarán cancelaciones unilaterales ni devoluciones por motivos de insatisfacción personal del Cliente. En caso de inconformidad, el Cliente deberá agotar las instancias de "Revisiones" ofrecidas por el Freelancer.</p>
                 </div>
-                <p><strong>Cancelación por Incumplimiento:</strong> Si el Freelancer no realiza ninguna entrega una vez vencido el plazo estipulado, el Cliente tendrá el derecho de solicitar la cancelación del proyecto. En este caso, el Cliente podrá optar por:</p>
+                <p><strong>Cancelación por Incumplimiento del Freelancer:</strong> Si el Freelancer no realiza ninguna entrega una vez vencido el plazo estipulado, el Cliente tendrá el derecho de solicitar la cancelación del proyecto. En este caso, el Cliente podrá optar por:</p>
                 <ol style={{ paddingLeft: '1.5rem' }}>
                     <li>Recibir el reembolso del 100% de los fondos a su medio de pago original (sujeto a los tiempos de procesamiento de la entidad financiera), o</li>
                     <li>Elegir que dicho monto se acredite íntegramente como "Saldo a favor" en su cuenta de Cooplance para ser utilizado en futuras contrataciones.</li>
