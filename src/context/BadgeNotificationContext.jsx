@@ -45,7 +45,7 @@ export const BadgeNotificationProvider = ({ children }) => {
             const isClient = user.role === 'buyer' || user.role === 'company';
             
             // 1. Fetch relevant data for precise metric calculation
-            const [jobsRes, servicesRes, projectsRes] = await Promise.all([
+            const [jobsRes, servicesRes, projectsRes, reviewsRes] = await Promise.all([
                 supabase
                     .from('jobs')
                     .select('client_id, provider_id, status')
@@ -57,7 +57,12 @@ export const BadgeNotificationProvider = ({ children }) => {
                 supabase
                     .from('projects')
                     .select('id', { count: 'exact', head: true })
-                    .eq('client_id', user.id)
+                    .eq('client_id', user.id),
+                supabase
+                    .from('service_reviews')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('target_id', user.id)
+                    .gte('rating', 4)
             ]);
 
             if (jobsRes.error) {
@@ -69,6 +74,8 @@ export const BadgeNotificationProvider = ({ children }) => {
             const completedJobs = jobs.filter(j => j.status === 'completed');
             const mySales = completedJobs.filter(j => j.provider_id === user.id);
             const myOrders = completedJobs.filter(j => j.client_id === user.id);
+            const positiveReviewsCount = reviewsRes?.count || 0;
+            
 
             // 2. Calculate Loyalty (Symmetrical)
             const interactions = {};
@@ -86,7 +93,7 @@ export const BadgeNotificationProvider = ({ children }) => {
                     case 'sales': return mySales.length;
                     case 'purchases': return myOrders.length;
                     case 'levels': return user.level || 1;
-                    case 'reviews': return user.reviewsCount || 0;
+                    case 'reviews': return positiveReviewsCount;
                     case 'loyalty': return maxLoyalty;
                     case 'services': return servicesRes.count || 0;
                     case 'talent': return uniquePartners;

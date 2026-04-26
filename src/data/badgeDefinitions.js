@@ -70,10 +70,10 @@ export const BADGE_FAMILIES = [
         title: 'Satisfacción del Cliente',
         description: 'Garantía de calidad y valoraciones positivas.',
         badges: [
-            { id: 'f_rev_1', title: 'Calidad Inicial', required: 1, desc: 'Primera reseña con máxima calificación.' },
+            { id: 'f_rev_1', title: 'Calidad Inicial', required: 1, desc: 'Primera reseña positiva (4 estrellas o más).' },
             { id: 'f_rev_5', title: 'Consistencia de Calidad', required: 5, desc: '5 reseñas consecutivas de excelencia profesional.' },
-            { id: 'f_rev_10', title: 'Prestigio Profesional', required: 10, desc: '10 valoraciones de 5 estrellas documentadas.' },
-            { id: 'f_rev_100', title: 'Trayectoria de Excelencia', required: 100, desc: 'Logro de 100 reseñas de calificación máxima verificadas.' },
+            { id: 'f_rev_10', title: 'Prestigio Profesional', required: 10, desc: '10 valoraciones positivas documentadas.' },
+            { id: 'f_rev_100', title: 'Trayectoria de Excelencia', required: 100, desc: 'Logro de 100 reseñas positivas verificadas.' },
         ]
     }
 ];
@@ -115,8 +115,8 @@ export const CLIENT_BADGE_FAMILIES = [
         title: 'Reputación como Comprador',
         description: 'Calidad de la interacción con los profesionales contratados.',
         badges: [
-            { id: 'c_rev_1', title: 'Buen Empleador', required: 1, desc: 'Primera valoración positiva recibida.' },
-            { id: 'c_rev_5', title: 'Trato Profesional', required: 5, desc: '5 reseñas de excelencia por parte de freelancers.' },
+            { id: 'c_rev_1', title: 'Buen Empleador', required: 1, desc: 'Primera valoración positiva recibida (4 estrellas o más).' },
+            { id: 'c_rev_5', title: 'Trato Profesional', required: 5, desc: '5 reseñas positivas por parte de freelancers.' },
             { id: 'c_rev_10', title: 'Líder de Proyectos', required: 10, desc: 'Historial de 10 valoraciones impecables.' },
         ]
     },
