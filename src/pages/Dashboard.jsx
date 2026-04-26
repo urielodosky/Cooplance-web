@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PackageCheck, Send, MessageSquare, Info, Check, Star, Lock } from 'lucide-react';
+import { PackageCheck, Send, MessageSquare, Info, Check, Star, Lock, X } from 'lucide-react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useServices } from '../features/services/context/ServiceContext';
@@ -339,35 +339,79 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     }}>Detalle</button>
 
                                     {job.status === 'active' && (
-                                        <button 
-                                            className="btn-primary premium-deliver-btn" 
-                                            style={{ 
-                                                padding: '0.6rem 1.6rem', 
-                                                fontSize: '0.85rem', 
-                                                borderRadius: '14px', 
-                                                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                                                border: 'none',
-                                                boxShadow: '0 4px 15px rgba(79, 70, 229, 0.4)',
-                                                fontWeight: '800',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                color: 'white',
-                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                cursor: 'pointer'
-                                            }} 
-                                            onClick={async () => {
-                                                await updateJobStatus(job.id, 'delivered');
-                                                showActionModal({
-                                                    title: 'Trabajo Entregado',
-                                                    message: '¡Trabajo entregado con éxito! El cliente ha sido notificado para su revisión.',
-                                                    severity: 'success'
-                                                });
-                                            }}
-                                        >
-                                            <PackageCheck size={18} />
-                                            Entregar Trabajo
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                            <button 
+                                                className="btn-danger" 
+                                                style={{ 
+                                                    padding: '0.6rem 1.2rem', 
+                                                    fontSize: '0.85rem', 
+                                                    borderRadius: '14px', 
+                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                    border: '1px solid #ef4444',
+                                                    color: '#ef4444',
+                                                    fontWeight: '700',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    cursor: 'pointer'
+                                                }} 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    showActionModal({
+                                                        title: 'Cancelar Trabajo',
+                                                        message: '¿Estás seguro de que deseas cancelar este trabajo? El dinero será devuelto íntegramente al cliente. Por favor, indica el motivo:',
+                                                        type: 'prompt',
+                                                        severity: 'error',
+                                                        confirmText: 'Confirmar Cancelación',
+                                                        onConfirm: (reason) => {
+                                                            if (!reason || reason.trim().length < 5) {
+                                                                showActionModal({
+                                                                    title: 'Error',
+                                                                    message: 'Debes proporcionar un motivo válido (mínimo 5 caracteres).',
+                                                                    severity: 'warning'
+                                                                });
+                                                                return;
+                                                            }
+                                                            updateJobStatus(job.id, 'canceled', reason);
+                                                        }
+                                                    });
+                                                }}
+                                            >
+                                                <X size={16} />
+                                                Cancelar
+                                            </button>
+
+                                            <button 
+                                                className="btn-primary premium-deliver-btn" 
+                                                style={{ 
+                                                    padding: '0.6rem 1.6rem', 
+                                                    fontSize: '0.85rem', 
+                                                    borderRadius: '14px', 
+                                                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                                    border: 'none',
+                                                    boxShadow: '0 4px 15px rgba(79, 70, 229, 0.4)',
+                                                    fontWeight: '800',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    color: 'white',
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    cursor: 'pointer'
+                                                }} 
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    await updateJobStatus(job.id, 'delivered');
+                                                    showActionModal({
+                                                        title: 'Trabajo Entregado',
+                                                        message: '¡Trabajo entregado con éxito! El cliente ha sido notificado para su revisión.',
+                                                        severity: 'success'
+                                                    });
+                                                }}
+                                            >
+                                                <PackageCheck size={18} />
+                                                Entregar
+                                            </button>
+                                        </div>
                                     )}
 
                                     {job.status === 'pending_approval' && (

@@ -10,7 +10,9 @@ const ActionModal = ({
     type = 'alert', // 'alert' or 'confirm'
     severity = 'info', // 'info', 'success', 'warning', 'error'
     confirmText = 'Aceptar',
-    cancelText = 'Cancelar'
+    cancelText = 'Cancelar',
+    inputValue = '',
+    onInputChange = () => {}
 }) => {
     if (!isOpen) return null;
 
@@ -44,11 +46,20 @@ const ActionModal = ({
                     <div className="text-wrapper">
                         <h3>{title}</h3>
                         <p>{message}</p>
+                        {type === 'prompt' && (
+                            <textarea 
+                                className="modal-input" 
+                                value={inputValue} 
+                                onChange={(e) => onInputChange(e.target.value)}
+                                placeholder="Escribe aquí el motivo..."
+                                autoFocus
+                            />
+                        )}
                     </div>
                 </div>
 
                 <div className="modal-footer">
-                    {type === 'confirm' && (
+                    {(type === 'confirm' || type === 'prompt') && (
                         <button className="btn-ghost" onClick={onClose}>
                             {cancelText}
                         </button>
@@ -148,10 +159,29 @@ const ActionModal = ({
                 }
 
                 .text-wrapper p {
-                    margin: 0;
+                    margin: 0 0 1rem 0;
                     font-size: 0.95rem;
                     line-height: 1.5;
                     color: var(--text-secondary);
+                }
+
+                .modal-input {
+                    width: 100%;
+                    padding: 0.8rem;
+                    border-radius: 12px;
+                    border: 1px solid var(--border);
+                    background: var(--bg-body);
+                    color: var(--text-primary);
+                    font-size: 0.9rem;
+                    resize: none;
+                    min-height: 100px;
+                    margin-top: 1rem;
+                    outline: none;
+                    transition: border-color 0.2s;
+                }
+
+                .modal-input:focus {
+                    border-color: var(--primary);
                 }
 
                 .modal-footer {

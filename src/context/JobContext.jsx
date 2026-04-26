@@ -466,7 +466,43 @@ export const JobProvider = ({ children }) => {
             } else if (status === 'canceled') {
                 const job = jobs.find(j => j.id === jobId);
                 if (job) {
-                    // APPLY V34 COMPLIANCE: Commercial penalty only for level 6+
+                    // 1. REFUND TO CLIENT
+                    try {
+                        const { data: clientProfile } = await supabase
+                            .from('profiles')
+                            .select('balance')
+                            .eq('id', job.buyerId)
+                            .single();
+                        
+                        if (clientProfile) {
+                            const newBalance = (clientProfile.balance || 0) + job.amount;
+                            await supabase.from('profiles')
+                                .update({ balance: newBalance })
+                                .eq('id', job.buyerId);
+                            
+                            // Create refund transaction
+                            await supabase.from('transactions').insert([{
+                                user_id: job.buyerId,
+                                type: 'income',
+                                amount: job.amount,
+                                method: 'platform',
+                                description: `Reembolso por cancelación: ${job.serviceTitle}. Motivo: ${explicitDeliveryResult || 'No especificado'}`,
+                                related_id: job.id
+                            }]);
+
+                            // Notify Client
+                            await NotificationService.createNotification(job.buyerId, {
+                                type: 'payment_released',
+                                title: 'Reembolso procesado',
+                                message: `Recibiste un reembolso de ${job.amount} ARS por la cancelación de '${job.serviceTitle}'.`,
+                                link: '/wallet'
+                            });
+                        }
+                    } catch (refundErr) {
+                        console.error('[JobContext] Refund error:', refundErr);
+                    }
+
+                    // 2. APPLY V34 COMPLIANCE: Commercial penalty only for level 6+
                     try {
                         const { data: freelancerProfile } = await supabase
                             .from('profiles')
@@ -491,8 +527,6 @@ export const JobProvider = ({ children }) => {
                             }
                             
                             console.log(`[Gamification V34] Commercial penalty applied to @${job.freelancerUsername}: -${penaltyXP} XP`);
-                        } else {
-                            console.log(`[Gamification V34] Freelancer @${job.freelancerUsername} is level ${freelancerProfile?.level || 1}. Penalty waived.`);
                         }
                     } catch (err) {
                         console.error('[JobContext] Cancellation penalty error:', err);

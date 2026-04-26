@@ -21,7 +21,9 @@ export const ActionModalProvider = ({ children }) => {
         onConfirm: null,
         onCancel: null,
         confirmText: 'Aceptar',
-        cancelText: 'Cancelar'
+        cancelText: 'Cancelar',
+        inputValue: '',
+        onInputChange: null
     });
 
     const showActionModal = useCallback((config) => {
@@ -34,7 +36,9 @@ export const ActionModalProvider = ({ children }) => {
             onConfirm: config.onConfirm || null,
             onCancel: config.onCancel || null,
             confirmText: config.confirmText || 'Aceptar',
-            cancelText: config.cancelText || 'Cancelar'
+            cancelText: config.cancelText || 'Cancelar',
+            inputValue: config.inputValue || '',
+            onInputChange: config.onInputChange || null
         });
     }, []);
 
@@ -43,7 +47,7 @@ export const ActionModalProvider = ({ children }) => {
     }, []);
 
     const handleConfirm = () => {
-        if (modal.onConfirm) modal.onConfirm();
+        if (modal.onConfirm) modal.onConfirm(modal.inputValue);
         hideModal();
     };
 
@@ -65,6 +69,11 @@ export const ActionModalProvider = ({ children }) => {
                 severity={modal.severity}
                 confirmText={modal.confirmText}
                 cancelText={modal.cancelText}
+                inputValue={modal.inputValue}
+                onInputChange={(val) => {
+                    setModal(prev => ({ ...prev, inputValue: val }));
+                    if (modal.onInputChange) modal.onInputChange(val);
+                }}
             />
         </ActionModalContext.Provider>
     );
