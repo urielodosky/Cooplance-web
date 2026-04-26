@@ -37,6 +37,7 @@ const mapJobFromDB = (row) => ({
     duration: row.duration,
     deadline: row.deadline,
     completedAt: row.completed_at,
+    updatedAt: row.updated_at,
     deliveryResult: row.delivery_result,
     bookingDate: row.booking_date,
     bookingTime: row.booking_time,
@@ -169,6 +170,7 @@ export const JobProvider = ({ children }) => {
                             amount: payload.new.amount,
                             duration: payload.new.duration,
                             completedAt: payload.new.completed_at,
+                            updatedAt: payload.new.updated_at,
                             deliveryResult: payload.new.delivery_result
                         } : job
                     ));

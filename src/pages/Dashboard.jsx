@@ -46,6 +46,59 @@ const getPreciseTimeRemaining = (deadline) => {
     }
 };
 
+const RevisionCountdown = ({ updatedAt }) => {
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+        const calculateTime = () => {
+            const deliveryDate = new Date(updatedAt);
+            const limitDate = new Date(deliveryDate.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days
+            const now = new Date();
+            const diffMs = limitDate - now;
+
+            if (diffMs <= 0) {
+                setTimeLeft('Expirado');
+                return;
+            }
+
+            const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const days = Math.floor(totalHours / 24);
+            const hours = totalHours % 24;
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+            if (days > 0) {
+                setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+            } else if (hours > 0) {
+                setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+            } else {
+                setTimeLeft(`${minutes}m ${seconds}s`);
+            }
+        };
+
+        calculateTime();
+        const interval = setInterval(calculateTime, 1000);
+        return () => clearInterval(interval);
+    }, [updatedAt]);
+
+    return (
+        <span style={{ 
+            fontSize: '0.75rem', 
+            color: '#f59e0b', 
+            fontWeight: '700', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '4px',
+            background: 'rgba(245, 158, 11, 0.08)',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            border: '1px solid rgba(245, 158, 11, 0.2)'
+        }}>
+            ⏳ {timeLeft}
+        </span>
+    );
+};
+
 const getRemainingDays = (deadline) => {
     if (!deadline) return null;
     const diff = new Date(deadline) - new Date();
@@ -608,8 +661,11 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '4px' }}>
                                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>@{job.freelancerUsername}</strong></span>
                                         <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            • {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Revisión Pendiente' : 'Esperando'}
+                                            • {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : 'Esperando'}
                                         </span>
+                                        {job.status === 'delivered' && job.updatedAt && (
+                                            <RevisionCountdown updatedAt={job.updatedAt} />
+                                        )}
                                     </div>
                                 </div>
 
@@ -617,10 +673,38 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>${job.amount}</div>
                                     <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                        {job.status === 'delivered' && (
+                                            <>
+                                                <button style={{ 
+                                                    padding: '0.5rem 1rem', fontSize: '0.75rem', borderRadius: '10px',
+                                                    color: '#f59e0b', fontWeight: '700', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)'
+                                                }} onClick={async () => {
+                                                    const note = window.prompt("¿Qué ajustes necesitas?");
+                                                    if (!note?.trim()) return;
+                                                    try {
+                                                        await updateJobStatus(job.id, 'active');
+                                                        const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
+                                                        if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
+                                                        alert("Solicitud enviada.");
+                                                    } catch (err) { console.error(err); }
+                                                }}>Pedir Ajustes</button>
+                                                
+                                                <button style={{ 
+                                                    padding: '0.5rem 1rem', fontSize: '0.75rem', borderRadius: '10px',
+                                                    background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
+                                                    boxShadow: '0 4px 10px rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', gap: '4px'
+                                                }} onClick={() => {
+                                                    if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
+                                                }}>
+                                                    <Check size={14} />
+                                                    Aprobar
+                                                </button>
+                                            </>
+                                        )}
                                         <button className="btn-chat-mini" style={{ 
-                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
-                                            background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.2)',
-                                            color: 'var(--primary-soft)', fontWeight: '700'
+                                            padding: '0.5rem 1rem', fontSize: '0.75rem', borderRadius: '10px',
+                                            background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
+                                            color: 'var(--text-primary)', fontWeight: '700'
                                         }} onClick={async () => {
                                             setIsCreatingChat(true);
                                             try {
@@ -629,68 +713,9 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                 else setIsCreatingChat(false);
                                             } catch { setIsCreatingChat(false); }
                                         }}>Chat</button>
-                                        <button className="btn-detail-mini" style={{ 
-                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
-                                            background: 'transparent', border: '1px solid var(--border)',
-                                            color: 'var(--text-secondary)', fontWeight: '600'
-                                        }} onClick={() => {
-                                            if (job.projectId) navigate(`/project/${job.projectId}`);
-                                            else if (job.serviceId) navigate(`/service/${job.serviceId}`);
-                                        }}>Detalle</button>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Revision Banner - Horizontal & Minimalist */}
-                            {job.status === 'delivered' && (
-                                <div style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'space-between',
-                                    padding: '0.6rem 1rem',
-                                    background: 'rgba(99, 102, 241, 0.04)',
-                                    border: '1px solid rgba(99, 102, 241, 0.15)',
-                                    borderRadius: '12px',
-                                    marginTop: '2px'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center' }}>
-                                            <Info size={16} />
-                                        </div>
-                                        <div>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-primary)', marginRight: '6px' }}>REVISIÓN REQUERIDA</span>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tienes 24hs para confirmar el pedido.</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                        <button style={{ 
-                                            padding: '4px 12px', fontSize: '0.75rem', borderRadius: '8px',
-                                            color: '#f59e0b', fontWeight: '700', background: 'transparent', border: '1px solid rgba(245, 158, 11, 0.3)'
-                                        }} onClick={async () => {
-                                            const note = window.prompt("¿Qué ajustes necesitas?");
-                                            if (!note?.trim()) return;
-                                            try {
-                                                await updateJobStatus(job.id, 'active');
-                                                const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
-                                                if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
-                                                alert("Solicitud enviada.");
-                                            } catch (err) { console.error(err); }
-                                        }}>Pedir Ajustes</button>
-                                        
-                                        <button style={{ 
-                                            padding: '4px 14px', fontSize: '0.75rem', borderRadius: '8px',
-                                            background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
-                                            boxShadow: '0 4px 10px rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', gap: '4px'
-                                        }} onClick={() => {
-                                            if(window.confirm("¿Liberar pago?")) updateJobStatus(job.id, 'completed');
-                                        }}>
-                                            <Check size={14} />
-                                            Aprobar y Liberar
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     ))
                 ) : (
