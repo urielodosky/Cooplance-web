@@ -658,51 +658,20 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             );
                                         })()}
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '4px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>@{job.freelancerUsername}</strong></span>
-                                        <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), fontWeight: '800' }}>
                                             • {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : 'Esperando'}
                                         </span>
-                                        {job.status === 'delivered' && job.updatedAt && (
-                                            <RevisionCountdown updatedAt={job.updatedAt} />
-                                        )}
                                     </div>
                                 </div>
 
                                 {/* Actions & Price Group */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>${job.amount}</div>
-                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                        {job.status === 'delivered' && (
-                                            <>
-                                                <button style={{ 
-                                                    padding: '0.5rem 1rem', fontSize: '0.75rem', borderRadius: '10px',
-                                                    color: '#f59e0b', fontWeight: '700', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.3)'
-                                                }} onClick={async () => {
-                                                    const note = window.prompt("¿Qué ajustes necesitas?");
-                                                    if (!note?.trim()) return;
-                                                    try {
-                                                        await updateJobStatus(job.id, 'active');
-                                                        const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
-                                                        if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
-                                                        alert("Solicitud enviada.");
-                                                    } catch (err) { console.error(err); }
-                                                }}>Pedir Ajustes</button>
-                                                
-                                                <button style={{ 
-                                                    padding: '0.5rem 1rem', fontSize: '0.75rem', borderRadius: '10px',
-                                                    background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
-                                                    boxShadow: '0 4px 10px rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', gap: '4px'
-                                                }} onClick={() => {
-                                                    if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
-                                                }}>
-                                                    <Check size={14} />
-                                                    Aprobar
-                                                </button>
-                                            </>
-                                        )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>${job.amount}</div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
                                         <button className="btn-chat-mini" style={{ 
-                                            padding: '0.5rem 1rem', fontSize: '0.75rem', borderRadius: '10px',
+                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
                                             background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
                                             color: 'var(--text-primary)', fontWeight: '700'
                                         }} onClick={async () => {
@@ -713,9 +682,64 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                                 else setIsCreatingChat(false);
                                             } catch { setIsCreatingChat(false); }
                                         }}>Chat</button>
+                                        <button className="btn-detail-mini" style={{ 
+                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
+                                            background: 'transparent', border: '1px solid var(--border)',
+                                            color: 'var(--text-secondary)', fontWeight: '600'
+                                        }} onClick={() => {
+                                            if (job.projectId) navigate(`/project/${job.projectId}`);
+                                            else if (job.serviceId) navigate(`/service/${job.serviceId}`);
+                                        }}>Detalle</button>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Second Row: Revision Actions (Linear, no box) */}
+                            {job.status === 'delivered' && (
+                                <div style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'space-between',
+                                    paddingTop: '0.5rem',
+                                    borderTop: '1px solid rgba(255,255,255,0.03)',
+                                    marginTop: '0.2rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <Info size={14} color="#f59e0b" />
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-primary)' }}>REVISIÓN REQUERIDA</span>
+                                        </div>
+                                        <RevisionCountdown updatedAt={job.updatedAt || job.createdAt} />
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                        <button style={{ 
+                                            padding: '4px 12px', fontSize: '0.7rem', borderRadius: '6px',
+                                            color: '#f59e0b', fontWeight: '700', background: 'transparent', border: '1px solid rgba(245, 158, 11, 0.3)'
+                                        }} onClick={async () => {
+                                            const note = window.prompt("¿Qué ajustes necesitas?");
+                                            if (!note?.trim()) return;
+                                            try {
+                                                await updateJobStatus(job.id, 'active');
+                                                const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
+                                                if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
+                                                alert("Solicitud enviada.");
+                                            } catch (err) { console.error(err); }
+                                        }}>Pedir Ajustes</button>
+                                        
+                                        <button style={{ 
+                                            padding: '4px 14px', fontSize: '0.7rem', borderRadius: '6px',
+                                            background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
+                                            display: 'flex', alignItems: 'center', gap: '4px'
+                                        }} onClick={() => {
+                                            if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
+                                        }}>
+                                            <Check size={12} />
+                                            Aprobar
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))
                 ) : (
