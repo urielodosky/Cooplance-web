@@ -675,11 +675,26 @@ const ServiceDetail = () => {
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
-                                            {[...Array(5)].map((_, i) => (
-                                                <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={i < Math.floor(review.rating) ? '#fbbf24' : 'rgba(255,255,255,0.1)'}>
-                                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                                </svg>
-                                            ))}
+                                            {[...Array(5)].map((_, i) => {
+                                                const starRating = review.rating;
+                                                const isFull = i + 1 <= starRating;
+                                                const isHalf = i < starRating && i + 1 > starRating;
+                                                
+                                                return (
+                                                    <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                        <defs>
+                                                            <linearGradient id={`starGrad-service-${review.id}-${i}`}>
+                                                                <stop offset="50%" stopColor="#fbbf24" />
+                                                                <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <polygon 
+                                                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                                                            fill={isFull ? '#fbbf24' : (isHalf ? `url(#starGrad-service-${review.id}-${i})` : 'rgba(255,255,255,0.1)')}
+                                                        />
+                                                    </svg>
+                                                );
+                                            })}
                                         </div>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formatRelativeDate(review.createdAt)}</span>
                                     </div>
