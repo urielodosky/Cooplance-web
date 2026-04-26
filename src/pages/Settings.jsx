@@ -418,11 +418,11 @@ const Settings = () => {
                                 <textarea
                                     className="settings-input inline-bio-textarea"
                                     value={bio}
-                                    onChange={(e) => setBio(e.target.value.slice(0, 150))}
+                                    onChange={(e) => setBio(e.target.value.slice(0, 250))}
                                     placeholder="Cuéntanos sobre ti..."
                                     autoFocus
                                     onBlur={() => setIsEditingBioInline(false)}
-                                    maxLength={150}
+                                    maxLength={250}
                                     style={{
                                         width: '100%',
                                         minHeight: '120px',
@@ -444,8 +444,8 @@ const Settings = () => {
                                     fontSize: '0.7rem',
                                     fontWeight: '600'
                                 }}>
-                                    <span style={{ color: bio.length >= 150 ? '#ef4444' : 'var(--text-muted)' }}>
-                                        {bio.length}/150 caracteres
+                                    <span style={{ color: bio.length >= 250 ? '#ef4444' : 'var(--text-muted)' }}>
+                                        {bio.length}/250 caracteres
                                     </span>
                                     <span style={{ color: 'var(--primary)' }}>Presiona fuera para confirmar</span>
                                 </div>
