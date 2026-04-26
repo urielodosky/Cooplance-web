@@ -614,7 +614,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             display: 'flex', 
                             flexDirection: 'column',
                             gap: '0.4rem', 
-                            padding: '0.8rem 1rem', 
+                            padding: '1rem', 
                             borderRadius: '20px', 
                             background: 'var(--bg-card)', 
                             border: '1px solid var(--border)', 
@@ -622,101 +622,105 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             transition: 'all 0.3s ease', 
                             boxShadow: 'var(--shadow-sm)' 
                         }}>
-                            {/* Top Row: Revision Actions (Linear, no box) */}
-                            {job.status === 'delivered' && (
-                                <div style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'space-between',
-                                    paddingBottom: '0.6rem',
-                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                    marginBottom: '0.2rem'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Info size={14} color="#f59e0b" />
-                                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-primary)' }}>REVISIÓN REQUERIDA</span>
+                            {/* Single Line Content Area */}
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                                {/* Left side: Avatar + Title */}
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: '0 1 auto', minWidth: 0 }}>
+                                    <div style={{ 
+                                        width: '48px', 
+                                        height: '48px', 
+                                        borderRadius: '50%', 
+                                        overflow: 'hidden', 
+                                        border: '2px solid var(--primary-soft)', 
+                                        flexShrink: 0,
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    }}>
+                                        <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+
+                                    <div style={{ minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '2px' }}>
+                                            <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h4>
+                                            {(() => {
+                                                const preciseTime = job.deadline ? getPreciseTimeRemaining(job.deadline) : null;
+                                                if (!preciseTime || job.status !== 'active') return null;
+                                                const isUrgent = preciseTime.includes('h') && !preciseTime.includes('d');
+                                                const isVencido = preciseTime === 'Vencido';
+                                                return (
+                                                    <span style={{ 
+                                                        fontSize: '0.65rem', padding: '1px 6px', borderRadius: '4px', 
+                                                        background: (isUrgent || isVencido) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)', 
+                                                        color: (isUrgent || isVencido) ? '#ef4444' : 'var(--primary-soft)', 
+                                                        fontWeight: '800', border: '1px solid currentColor'
+                                                    }}>
+                                                        {preciseTime === 'Vencido' ? 'VENCIDO' : preciseTime}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
-                                        <RevisionCountdown updatedAt={job.updatedAt || job.createdAt} />
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                        <button style={{ 
-                                            padding: '4px 12px', fontSize: '0.7rem', borderRadius: '6px',
-                                            color: '#f59e0b', fontWeight: '700', background: 'transparent', border: '1px solid rgba(245, 158, 11, 0.3)'
-                                        }} onClick={async () => {
-                                            const note = window.prompt("¿Qué ajustes necesitas?");
-                                            if (!note?.trim()) return;
-                                            try {
-                                                await updateJobStatus(job.id, 'active');
-                                                const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
-                                                if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
-                                                alert("Solicitud enviada.");
-                                            } catch (err) { console.error(err); }
-                                        }}>Pedir Ajustes</button>
-                                        
-                                        <button style={{ 
-                                            padding: '4px 14px', fontSize: '0.7rem', borderRadius: '6px',
-                                            background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
-                                            display: 'flex', alignItems: 'center', gap: '4px'
-                                        }} onClick={() => {
-                                            if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
-                                        }}>
-                                            <Check size={12} />
-                                            Aprobar
-                                        </button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>@{job.freelancerUsername}</strong></span>
+                                            <span style={{ fontSize: '0.75rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), fontWeight: '800' }}>
+                                                • {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : 'Esperando'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Main Content Area */}
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', width: '100%' }}>
-                                {/* Avatar */}
-                                <div style={{ 
-                                    width: '52px', 
-                                    height: '52px', 
-                                    borderRadius: '50%', 
-                                    overflow: 'hidden', 
-                                    border: '2px solid var(--primary-soft)', 
-                                    flexShrink: 0,
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                                }}>
-                                    <img src={getProfilePicture({ role: job.freelancerRole, avatar: job.freelancerAvatar })} alt={job.freelancerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </div>
-
-                                {/* Info Column */}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '2px' }}>
-                                        <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h4>
-                                        {(() => {
-                                            const preciseTime = job.deadline ? getPreciseTimeRemaining(job.deadline) : null;
-                                            if (!preciseTime || job.status !== 'active') return null;
-                                            const isUrgent = preciseTime.includes('h') && !preciseTime.includes('d');
-                                            const isVencido = preciseTime === 'Vencido';
-                                            return (
-                                                <span style={{ 
-                                                    fontSize: '0.65rem', padding: '1px 6px', borderRadius: '4px', 
-                                                    background: (isUrgent || isVencido) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(139, 92, 246, 0.1)', 
-                                                    color: (isUrgent || isVencido) ? '#ef4444' : 'var(--primary-soft)', 
-                                                    fontWeight: '800', border: '1px solid currentColor'
+                                {/* CENTER: Revision Actions (Only if delivered) */}
+                                {job.status === 'delivered' && (
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column',
+                                        alignItems: 'center', 
+                                        gap: '4px',
+                                        flex: '1 1 auto',
+                                        padding: '0 1rem'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <Info size={14} color="#f59e0b" />
+                                                <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>REVISIÓN REQUERIDA</span>
+                                            </div>
+                                            <RevisionCountdown updatedAt={job.updatedAt || job.createdAt} />
+                                            
+                                            <div style={{ display: 'flex', gap: '0.4rem', marginLeft: '0.5rem' }}>
+                                                <button style={{ 
+                                                    padding: '4px 10px', fontSize: '0.7rem', borderRadius: '6px',
+                                                    color: '#f59e0b', fontWeight: '700', background: 'transparent', border: '1px solid rgba(245, 158, 11, 0.3)'
+                                                }} onClick={async () => {
+                                                    const note = window.prompt("¿Qué ajustes necesitas?");
+                                                    if (!note?.trim()) return;
+                                                    try {
+                                                        await updateJobStatus(job.id, 'active');
+                                                        const chatId = await createChat([user.id, job.freelancerId], 'order', job.id, job.serviceTitle);
+                                                        if (chatId) await supabase.from('messages').insert({ chat_id: chatId, sender_id: user.id, content: `🔄 **SOLICITUD DE AJUSTES:**\n${note}`, type: 'system' });
+                                                        alert("Solicitud enviada.");
+                                                    } catch (err) { console.error(err); }
+                                                }}>Pedir Ajustes</button>
+                                                
+                                                <button style={{ 
+                                                    padding: '4px 12px', fontSize: '0.7rem', borderRadius: '6px',
+                                                    background: 'var(--primary)', border: 'none', color: 'white', fontWeight: '800',
+                                                    display: 'flex', alignItems: 'center', gap: '4px'
+                                                }} onClick={() => {
+                                                    if(window.confirm("¿Confirmas la recepción satisfactoria?")) updateJobStatus(job.id, 'completed');
                                                 }}>
-                                                    {preciseTime === 'Vencido' ? 'VENCIDO' : preciseTime}
-                                                </span>
-                                            );
-                                        })()}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Por: <strong style={{ color: 'var(--primary-soft)' }}>@{job.freelancerUsername}</strong></span>
-                                        <span style={{ fontSize: '0.8rem', color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), fontWeight: '800' }}>
-                                            • {job.status === 'active' ? 'En Progreso' : job.status === 'delivered' ? 'Entregado' : 'Esperando'}
+                                                    <Check size={12} />
+                                                    Aprobar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                                            Pasadas 72 horas se aceptará la entrega automáticamente
                                         </span>
                                     </div>
-                                </div>
+                                )}
 
-                                {/* Actions & Price Group */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                                {/* Right Side: Price + Main Buttons */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexShrink: 0 }}>
                                     <div style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>${job.amount}</div>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
                                         <button className="btn-chat-mini" style={{ 
                                             padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '8px',
                                             background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
