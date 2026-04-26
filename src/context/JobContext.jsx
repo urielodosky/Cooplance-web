@@ -258,8 +258,12 @@ export const JobProvider = ({ children }) => {
                 .from('jobs')
                 .update(updateData)
                 .eq('id', jobId);
-
             if (error) throw error;
+
+            // OPTIMISTIC UPDATE: Update local state immediately for better UX
+            setJobs(prev => prev.map(j => 
+                j.id === jobId ? { ...j, ...updateData } : j
+            ));
 
             // Send Notifications based on status change
             const job = jobs.find(j => j.id === jobId);
@@ -372,11 +376,11 @@ export const JobProvider = ({ children }) => {
                             if (buyerProfile) {
                                 const xpEarned = calculateXPForJob(job.amount, buyerProfile.level || 1);
                                 const newXP = (buyerProfile.xp || 0) + xpEarned;
-                                let newLevel = buyerProfile.level || 1;
-                                if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) {
-                                    newLevel++;
+                                const newLevel = getLevelFromXP(newXP);
+                                
+                                if (newLevel > (buyerProfile.level || 1)) {
                                     // Notify Level Up for Buyer
-                                    NotificationService.createNotification(buyerProfile.id, {
+                                    await NotificationService.createNotification(buyerProfile.id, {
                                         type: 'level_up',
                                         title: '¡Subiste de Nivel!',
                                         message: `¡Subiste de Nivel! 🚀 Alcanzaste el Nivel ${newLevel}.`,
@@ -392,11 +396,11 @@ export const JobProvider = ({ children }) => {
                             if (freelancerProfile) {
                                 const xpEarned = calculateXPForJob(job.amount, freelancerProfile.level || 1);
                                 const newXP = (freelancerProfile.xp || 0) + xpEarned;
-                                let newLevel = freelancerProfile.level || 1;
-                                if (newXP >= calculateNextLevelXP(newLevel) && newLevel < 10) {
-                                    newLevel++;
+                                const newLevel = getLevelFromXP(newXP);
+                                
+                                if (newLevel > (freelancerProfile.level || 1)) {
                                     // Notify Level Up for Freelancer
-                                    NotificationService.createNotification(freelancerProfile.id, {
+                                    await NotificationService.createNotification(freelancerProfile.id, {
                                         type: 'level_up',
                                         title: '¡Subiste de Nivel!',
                                         message: `¡Subiste de Nivel! 🚀 Alcanzaste el Nivel ${newLevel}.`,

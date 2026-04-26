@@ -162,7 +162,7 @@ const XPProgressSection = ({ user, levelLabel, xpPercentage, isMaxLevel, xpDispl
             {isMaxLevel ? (
                 <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#FFD700', textAlign: 'right' }}>★ Eres una Leyenda de Cooplance</p>
             ) : (
-                <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Faltan {nextLevelXP - currentXP} XP para subir de nivel</p>
+                <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Faltan {nextLevelXP - (currentXP - getBaseXPForLevel(user.level || 1))} XP para subir de nivel</p>
             )}
         </div>
     );
@@ -1195,18 +1195,18 @@ const Dashboard = () => {
 
     const currentLevel = user.level || 1;
     const currentXP = user.xp || 0;
-    const nextLevelIncrement = calculateNextLevelXP(currentLevel);
+    const nextLevelXP = calculateNextLevelXP(currentLevel);
     const baseXPForCurrentLevel = getBaseXPForLevel(currentLevel);
     const relativeXP = Math.max(0, currentXP - baseXPForCurrentLevel);
     
     const isMaxLevel = currentLevel >= MAX_LEVEL;
     const xpPercentage = isMaxLevel 
         ? Math.min(Math.max(0, (currentXP - XP_TABLE[9]) / MAX_BUFFER_XP) * 100, 100) 
-        : Math.min((relativeXP / nextLevelIncrement) * 100, 100);
+        : Math.min((relativeXP / nextLevelXP) * 100, 100);
         
     const xpDisplayText = isMaxLevel 
         ? `${currentXP - XP_TABLE[9]} / ${MAX_BUFFER_XP} Buffer XP` 
-        : `${relativeXP} / ${nextLevelIncrement} XP`;
+        : `${relativeXP} / ${nextLevelXP} XP`;
         
     const levelLabel = isMaxLevel 
         ? `Nivel Máximo (10) - ${getBenefitsForRole(user.role)[10]?.name}` 
