@@ -197,11 +197,12 @@ const FreelancerDetail = () => {
                     .select(`
                         *, 
                         target:profiles!target_id(username, first_name, last_name, avatar_url, role),
-                        job:jobs!job_id(service_title)
+                        job:jobs!job_id(service_title, amount, status, created_at)
                     `)
                     .eq('reviewer_id', id);
                 
                 if (givError) throw givError;
+                console.log("[FreelancerDetail] Reviews Given Raw Data:", givData);
                 setReviewsGiven(givData || []);
 
             } catch (err) {
@@ -675,17 +676,36 @@ const FreelancerDetail = () => {
                                                         onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/freelancer/${review.target_id}`)}
                                                         style={{ fontSize: '0.8rem', color: '#3b82f6', cursor: 'pointer', fontWeight: '500' }}
                                                     >
-                                                        @{review.target?.username}
+                                                        @{review.target?.username || 'usuario_desconocido'}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
-                                            <span>{review.rating}</span>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                            <div style={{ background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}>
+                                                <span>{review.rating}</span>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                            </div>
+                                            {review.job?.amount && (
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pedido: ${review.job.amount}</span>
+                                            )}
                                         </div>
                                     </div>
-                                    <p style={{ fontStyle: 'italic', lineHeight: '1.6', color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>"{review.comment}"</p>
+                                    <p style={{ fontStyle: 'italic', lineHeight: '1.6', color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: review.multimedia?.length > 0 ? '1.5rem' : 0 }}>"{review.comment}"</p>
+                                    
+                                    {review.multimedia && review.multimedia.length > 0 && (
+                                        <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', marginTop: '1rem' }}>
+                                            {review.multimedia.map((url, idx) => (
+                                                <img 
+                                                    key={idx} 
+                                                    src={url} 
+                                                    alt={`Trabajo ${idx + 1}`} 
+                                                    style={{ width: '120px', height: '120px', borderRadius: '12px', objectFit: 'cover', border: '1px solid var(--border)', cursor: 'pointer' }}
+                                                    onClick={() => window.open(url, '_blank')}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         ) : (
