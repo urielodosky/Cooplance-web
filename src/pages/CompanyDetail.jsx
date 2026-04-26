@@ -232,7 +232,7 @@ const CompanyDetail = () => {
             }}>
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
-                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                     opacity: 0.8
                 }}></div>
 
@@ -240,7 +240,7 @@ const CompanyDetail = () => {
                     <div className="company-logo-wrapper" style={{
                         width: '180px', height: '180px',
                         padding: '8px',
-                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                         borderRadius: '50%',
                         position: 'relative',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
@@ -261,7 +261,7 @@ const CompanyDetail = () => {
                         </div>
                         <div style={{
                             position: 'absolute', bottom: '10px', right: '10px',
-                            background: '#6366f1', color: 'white',
+                            background: '#3b82f6', color: 'white',
                             width: '32px', height: '32px', borderRadius: '50%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             border: '3px solid var(--bg-card)',
@@ -414,7 +414,7 @@ const CompanyDetail = () => {
                         onClick={() => setActiveReviewTab('received')}
                         style={{ 
                             fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
-                            borderBottom: activeReviewTab === 'received' ? '3px solid var(--primary)' : '3px solid transparent',
+                            borderBottom: activeReviewTab === 'received' ? '3px solid #3b82f6' : '3px solid transparent',
                             color: activeReviewTab === 'received' ? 'var(--text-primary)' : 'var(--text-muted)',
                             transition: 'all 0.2s',
                             margin: 0
@@ -426,7 +426,7 @@ const CompanyDetail = () => {
                         onClick={() => setActiveReviewTab('given')}
                         style={{ 
                             fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
-                            borderBottom: activeReviewTab === 'given' ? '3px solid var(--primary)' : '3px solid transparent',
+                            borderBottom: activeReviewTab === 'given' ? '3px solid #3b82f6' : '3px solid transparent',
                             color: activeReviewTab === 'given' ? 'var(--text-primary)' : 'var(--text-muted)',
                             transition: 'all 0.2s',
                             margin: 0
@@ -456,7 +456,7 @@ const CompanyDetail = () => {
                                                 overflow: 'hidden',
                                                 border: '1px solid var(--border)',
                                                 flexShrink: 0,
-                                                background: 'var(--primary)',
+                                                background: '#3b82f6',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center'
