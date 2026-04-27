@@ -11,7 +11,7 @@ import { getActiveJobsCount } from '../lib/jobService';
 import '../styles/pages/ServiceDetail.scss';
 import '../styles/pages/ProjectDetail.scss';
 import { useActionModal } from '../context/ActionModalContext';
-
+import ProjectDetailSkeleton from '../components/project/ProjectDetailSkeleton';
 import { isUserBlocked } from '../services/safetyService';
 import ReportModal from '../components/common/ReportModal';
 
