@@ -3,6 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/context/AuthContext';
 
+// Helper for Role Translation
+const translateRole = (role) => {
+    const roles = {
+        'freelancer': 'Freelancer',
+        'client': 'Cliente',
+        'buyer': 'Cliente',
+        'company': 'Empresa',
+        'coop': 'Cooperativa'
+    };
+    return roles[role.toLowerCase()] || role.toUpperCase();
+};
+
 // Reusable User Card
 const UserCard = ({ profile, teams = [], navigate }) => {
     const isOnline = Math.random() > 0.5; // Mock for now
@@ -73,7 +85,7 @@ const UserCard = ({ profile, teams = [], navigate }) => {
                     background: 'rgba(59, 130, 246, 0.1)',
                     color: '#3b82f6',
                     textTransform: 'uppercase'
-                }}>{profile.role || 'Freelancer'}</span>
+                }}>{translateRole(profile.role || 'freelancer')}</span>
                 
                 {profile.level && (
                     <span style={{
@@ -104,7 +116,7 @@ const UserCard = ({ profile, teams = [], navigate }) => {
 
             <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: '#fbbf24', fontWeight: '800' }}>★ {profile.rating?.toFixed(1) || '0.0'}</span>
+                    <span style={{ color: '#fbbf24', fontWeight: '800' }}>★ {Number(profile.rating || 0).toFixed(1)}</span>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>({profile.reviews_count || 0})</span>
                 </div>
                 <button 
@@ -403,14 +415,46 @@ const Community = () => {
                 {/* Level Filter */}
                 <div>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '700', fontSize: '0.9rem' }}>Nivel (1-10)</label>
-                    <input 
-                        type="range"
-                        min="0"
-                        max="10"
-                        value={levelFilter}
-                        onChange={(e) => setLevelFilter(parseInt(e.target.value))}
-                        style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
-                    />
+                    <div style={{ position: 'relative', width: '100%' }}>
+                        <input 
+                            type="range"
+                            min="0"
+                            max="10"
+                            value={levelFilter}
+                            onChange={(e) => setLevelFilter(parseInt(e.target.value))}
+                            style={{ 
+                                width: '100%', 
+                                cursor: 'pointer', 
+                                appearance: 'none',
+                                height: '8px',
+                                borderRadius: '10px',
+                                background: `linear-gradient(to right, var(--primary) ${(levelFilter / 10) * 100}%, var(--border) ${(levelFilter / 10) * 100}%)`,
+                                outline: 'none',
+                                marginBottom: '1rem'
+                            }}
+                        />
+                        <style>{`
+                            input[type=range]::-webkit-slider-thumb {
+                                appearance: none;
+                                height: 20px;
+                                width: 20px;
+                                border-radius: 50%;
+                                background: #fff;
+                                border: 3px solid var(--primary);
+                                cursor: pointer;
+                                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                                transition: all 0.2s;
+                            }
+                            input[type=range]::-webkit-slider-thumb:hover {
+                                transform: scale(1.1);
+                                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+                            }
+                            input[type=range]:focus {
+                                outline: none;
+                                box-shadow: none;
+                            }
+                        `}</style>
+                    </div>
                     <div style={{ textAlign: 'center', fontSize: '0.8rem', fontWeight: '800', marginTop: '0.5rem' }}>
                         {levelFilter === 0 ? 'Cualquiera' : `Nivel ${levelFilter}`}
                     </div>
