@@ -4,16 +4,18 @@ import { useAuth } from '../../features/auth/context/AuthContext';
 import { submitReport } from '../../services/safetyService';
 
 const REPORT_OPTIONS = [
-    { id: 'fraud', label: 'Estafa', description: 'Cobros por fuera, links maliciosos o fraude.' },
-    { id: 'harassment', label: 'Acoso', description: 'Insultos, amenazas o comportamiento abusivo.' },
-    { id: 'fake_profile', label: 'Perfil Falso', description: 'Identidad suplantada o portfolio robado.' },
-    { id: 'spam', label: 'Spam', description: 'Publicidad no deseada o mensajes repetitivos.' },
-    { id: 'other', label: 'Otro motivo', description: 'Cualquier otra razón no listada.' },
+    { id: 'physical_safety', label: 'Seguridad Física o Acoso en persona', description: 'Amenazas físicas, acoso fuera de la app o peligro inmediato. (Prioridad Alta)' },
+    { id: 'fraud', label: 'Estafa o cobros por fuera', description: 'Cobros por fuera de la plataforma o intentos de fraude.' },
+    { id: 'no_show', label: 'Ausencia / No se presentó', description: 'El usuario no asistió al lugar o cita acordada.' },
+    { id: 'harassment', label: 'Acoso verbal o insultos', description: 'Insultos, amenazas o comportamiento abusivo por chat.' },
+    { id: 'fake_profile', label: 'Perfil falso / Suplantación', description: 'Identidad suplantada o información de perfil engañosa.' },
+    { id: 'spam', label: 'Spam o publicidad', description: 'Publicidad no deseada o mensajes repetitivos.' },
+    { id: 'other', label: 'Otro motivo', description: 'Cualquier otra razón (Vuelve obligatorio el campo de descripción).' },
 ];
 
 const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, itemName }) => {
     const { user } = useAuth();
-    const [reason, setReason] = useState('fraud');
+    const [reason, setReason] = useState('physical_safety');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -53,7 +55,7 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                 onClose();
                 setSuccess(false);
                 setDescription('');
-                setReason('fraud');
+                setReason('physical_safety');
             }, 3000);
         } catch (err) {
             console.error('Error enviando reporte:', err);
@@ -85,8 +87,9 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                     onClick={onClose}
                     style={{ 
                         position: 'absolute', top: '1.5rem', right: '1.5rem',
-                        background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-secondary)',
-                        cursor: 'pointer', padding: '0.6rem', borderRadius: '12px'
+                        background: 'rgba(120, 120, 120, 0.1)', border: 'none', color: 'var(--text-secondary)',
+                        cursor: 'pointer', padding: '0.6rem', borderRadius: '12px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}
                 >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -135,7 +138,7 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                                     onChange={(e) => setReason(e.target.value)}
                                     style={{ 
                                         width: '100%', padding: '1.1rem', borderRadius: '16px',
-                                        background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)',
+                                        background: 'var(--bg-body)', border: '1px solid var(--border)',
                                         color: 'var(--text-primary)', fontSize: '1rem',
                                         outline: 'none', appearance: 'none', cursor: 'pointer',
                                         backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23a0aec0\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
@@ -145,13 +148,13 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                                     }}
                                 >
                                     {REPORT_OPTIONS.map((opt) => (
-                                        <option key={opt.id} value={opt.id} style={{ background: 'var(--bg-card)' }}>
+                                        <option key={opt.id} value={opt.id} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                                             {opt.label}
                                         </option>
                                     ))}
                                 </select>
                                 {reason && (
-                                    <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', paddingLeft: '0.5rem' }}>
+                                    <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', paddingLeft: '0.5rem', lineHeight: '1.4' }}>
                                         {REPORT_OPTIONS.find(o => o.id === reason)?.description}
                                     </p>
                                 )}
@@ -168,7 +171,7 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                                     required={isDescriptionRequired}
                                     style={{ 
                                         width: '100%', padding: '1rem', borderRadius: '16px',
-                                        background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)',
+                                        background: 'var(--bg-body)', border: '1px solid var(--border)',
                                         color: 'var(--text-primary)', fontSize: '1rem', minHeight: '120px',
                                         resize: 'vertical', transition: 'all 0.2s',
                                         outline: 'none'
@@ -206,7 +209,10 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                                     type="button" 
                                     onClick={onClose}
                                     className="btn-outline"
-                                    style={{ flex: 1, padding: '1.1rem', borderRadius: '16px', fontWeight: '700' }}
+                                    style={{ 
+                                        flex: 1, padding: '1.1rem', borderRadius: '16px', fontWeight: '700',
+                                        background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)'
+                                    }}
                                 >
                                     Cancelar
                                 </button>
