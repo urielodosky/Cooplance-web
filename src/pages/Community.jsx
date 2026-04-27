@@ -41,7 +41,21 @@ const UserCard = ({ profile, teams = [], navigate }) => {
         checkBlock();
     }, [currentUser, profile.id]);
 
-    const isOnline = Math.random() > 0.5; // Mock for now
+    const checkOnlineStatus = () => {
+        if (currentUser?.id === profile.id) return true;
+        if (!profile.last_seen) return false;
+        
+        try {
+            const lastSeen = new Date(profile.last_seen);
+            const now = new Date();
+            const diffInMinutes = (now - lastSeen) / (1000 * 60);
+            return diffInMinutes < 5; // En línea si estuvo activo hace menos de 5 min
+        } catch (e) {
+            return false;
+        }
+    };
+
+    const isOnline = checkOnlineStatus();
     const isOwnProfile = currentUser?.id === profile.id;
 
     return (

@@ -164,6 +164,30 @@ export const AuthProvider = ({ children }) => {
         };
     }, [user?.id, isTutorView]);
 
+    // ─── ONLINE STATUS HEARTBEAT (V50) ──────────────────────────────────────
+    useEffect(() => {
+        if (!user?.id || user.is_cached) return;
+
+        const updateOnlineStatus = async () => {
+            try {
+                await supabase
+                    .from('profiles')
+                    .update({ last_seen: new Date().toISOString() })
+                    .eq('id', user.id);
+            } catch (err) {
+                console.error("[AuthContext] Failed to update last_seen:", err);
+            }
+        };
+
+        // Update now
+        updateOnlineStatus();
+
+        // Update every 4 minutes (keep it under the 5 min threshold)
+        const interval = setInterval(updateOnlineStatus, 4 * 60 * 1000);
+
+        return () => clearInterval(interval);
+    }, [user?.id, user?.is_cached]);
+
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = async (userId, authUser = null) => {
         if (!userId) return;
