@@ -337,14 +337,26 @@ const FreelancerDetail = () => {
                                     gap: '2px'
                                 }}>
                                     <button 
-                                        onClick={() => {
+                                        onClick={async () => {
                                             setIsMenuOpen(false);
-                                            // TODO: Implement block logic
-                                            showActionModal({
-                                                title: 'Próximamente',
-                                                message: "La opción de bloqueo estará disponible próximamente para mejorar tu seguridad.",
-                                                severity: 'info'
-                                            });
+                                            if (!currentUser) return;
+                                            try {
+                                                const { blockUser } = await import('../services/safetyService');
+                                                await blockUser(currentUser.id, id);
+                                                showActionModal({
+                                                    title: 'Usuario Bloqueado',
+                                                    message: "Has bloqueado a este usuario. Ya no podrá contactarte ni ver tu contenido.",
+                                                    severity: 'success'
+                                                });
+                                                setTimeout(() => navigate('/dashboard'), 1500);
+                                            } catch (err) {
+                                                console.error("Error al bloquear:", err);
+                                                showActionModal({
+                                                    title: 'Error',
+                                                    message: "No se pudo completar el bloqueo. Inténtalo de nuevo.",
+                                                    severity: 'error'
+                                                });
+                                            }
                                         }}
                                         style={{ 
                                             padding: '0.75rem 1rem', background: 'none', border: 'none', 
@@ -791,7 +803,7 @@ const FreelancerDetail = () => {
                                                 {review.reviewer?.avatar_url ? (
                                                     <img src={review.reviewer.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold' }}>
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold' }}>
                                                         {review.reviewer?.username?.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
@@ -806,21 +818,7 @@ const FreelancerDetail = () => {
                                                 <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.reviewer?.username}</span>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                            {(review.job?.status === 'canceled' || (review.job?.delivery_result && (review.job.delivery_result.toLowerCase().includes('cancelado') || review.job.delivery_result.toLowerCase().includes('cancelación')))) && (
-                                                <span style={{ 
-                                                    fontSize: '0.65rem', 
-                                                    background: 'rgba(239, 68, 68, 0.1)', 
-                                                    color: '#ef4444', 
-                                                    padding: '2px 8px', 
-                                                    borderRadius: '6px', 
-                                                    fontWeight: '800', 
-                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                                                    marginBottom: '2px'
-                                                }}>
-                                                    CANCELADO
-                                                </span>
-                                            )}
+                                        <div style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
                                                 {[...Array(5)].map((_, i) => {
                                                     const starRating = review.rating;
@@ -853,7 +851,7 @@ const FreelancerDetail = () => {
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Trabajo realizado:</span>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Por el trabajo:</span>
                                             <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' }}>{review.project_title_snapshot || review.service_title_snapshot || review.job?.service_title || 'Trabajo Finalizado'}</span>
                                         </div>
                                         <button 
@@ -883,7 +881,8 @@ const FreelancerDetail = () => {
                                     border: '1px solid var(--border)',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: '1.5rem'
+                                    gap: '1.5rem',
+                                    transition: 'transform 0.2s'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -917,21 +916,7 @@ const FreelancerDetail = () => {
                                                 <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.target?.username}</span>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                            {(review.job?.status === 'canceled' || (review.job?.delivery_result && (review.job.delivery_result.toLowerCase().includes('cancelado') || review.job.delivery_result.toLowerCase().includes('cancelación')))) && (
-                                                <span style={{ 
-                                                    fontSize: '0.65rem', 
-                                                    background: 'rgba(239, 68, 68, 0.1)', 
-                                                    color: '#ef4444', 
-                                                    padding: '2px 8px', 
-                                                    borderRadius: '6px', 
-                                                    fontWeight: '800', 
-                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                                                    marginBottom: '2px'
-                                                }}>
-                                                    CANCELADO
-                                                </span>
-                                            )}
+                                        <div style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
                                                 {[...Array(5)].map((_, i) => {
                                                     const starRating = review.rating;
@@ -957,7 +942,7 @@ const FreelancerDetail = () => {
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatRelativeDate(review.created_at)}</span>
                                         </div>
                                     </div>
-
+                                    
                                     <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: '3px solid #3b82f6' }}>
                                         <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>"{review.comment}"</p>
                                     </div>

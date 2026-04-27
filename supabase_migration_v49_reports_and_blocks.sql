@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS reports (
     reported_id UUID NOT NULL REFERENCES profiles(id),
     reference_type TEXT NOT NULL CHECK (reference_type IN ('job', 'chat', 'profile', 'service', 'project')),
     reference_id UUID,
-    reason TEXT NOT NULL,
+    reason TEXT NOT NULL CHECK (reason IN ('physical_safety', 'fraud', 'no_show', 'harassment', 'fake_profile', 'spam', 'other')),
     description TEXT,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'resolved', 'rejected')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -46,6 +46,6 @@ CREATE POLICY "Users can delete their own blocks"
     ON user_blocks FOR DELETE
     USING (auth.uid() = blocker_id);
 
--- 3. Trigger or logic for automatic blocking? 
--- The user asked to do it once the report is made. I can do it in the frontend or a trigger.
--- Frontend is easier to manage feedback for now.
+-- Extra: Fix check constraints if they already exist with old values
+-- ALTER TABLE reports DROP CONSTRAINT IF EXISTS reports_reason_check;
+-- ALTER TABLE reports ADD CONSTRAINT reports_reason_check CHECK (reason IN ('physical_safety', 'fraud', 'no_show', 'harassment', 'fake_profile', 'spam', 'other'));

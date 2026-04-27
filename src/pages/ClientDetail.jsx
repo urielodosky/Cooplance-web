@@ -293,13 +293,26 @@ const ClientDetail = () => {
                                     gap: '2px'
                                 }}>
                                     <button 
-                                        onClick={() => {
+                                        onClick={async () => {
                                             setIsMenuOpen(false);
-                                            showActionModal({
-                                                title: 'Próximamente',
-                                                message: "La opción de bloqueo estará disponible próximamente para mejorar tu seguridad.",
-                                                severity: 'info'
-                                            });
+                                            if (!currentUser) return;
+                                            try {
+                                                const { blockUser } = await import('../services/safetyService');
+                                                await blockUser(currentUser.id, id);
+                                                showActionModal({
+                                                    title: 'Usuario Bloqueado',
+                                                    message: "Has bloqueado a este usuario. Ya no podrá contactarte ni ver tu contenido.",
+                                                    severity: 'success'
+                                                });
+                                                setTimeout(() => navigate('/dashboard'), 1500);
+                                            } catch (err) {
+                                                console.error("Error al bloquear:", err);
+                                                showActionModal({
+                                                    title: 'Error',
+                                                    message: "No se pudo completar el bloqueo. Inténtalo de nuevo.",
+                                                    severity: 'error'
+                                                });
+                                            }
                                         }}
                                         style={{ 
                                             padding: '0.75rem 1rem', background: 'none', border: 'none', 
@@ -816,7 +829,7 @@ const ClientDetail = () => {
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatRelativeDate(review.created_at)}</span>
                                         </div>
                                     </div>
-
+                                    
                                     <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: '3px solid #3b82f6' }}>
                                         <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>"{review.comment}"</p>
                                     </div>
