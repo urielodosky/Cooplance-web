@@ -31,34 +31,73 @@ const ProjectDetail = () => {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
+        
+        // Failsafe: ensure loading ends eventually
+        const failsafe = setTimeout(() => {
+            if (isMounted) {
+                console.warn('[ProjectDetail] Failsafe: Loading timeout reached.');
+                setLoading(false);
+            }
+        }, 8000);
+
         const fetchProjectData = async () => {
             if (!id) return;
-            setLoading(true);
+            
+            console.log('[ProjectDetail] Starting fetch for ID:', id);
+            if (!project) setLoading(true);
+            
             try {
+                console.log('[ProjectDetail] Calling getProjectById...');
                 const data = await getProjectById(id);
+                console.log('[ProjectDetail] getProjectById finished, data found:', !!data);
+                
+                if (!isMounted) return;
+
                 if (data) {
-                    // 0. Check for blocks
-                    if (user && data.clientId && user.id !== data.clientId) {
-                        const blocked = await isUserBlocked(user.id, data.clientId);
-                        if (blocked) {
-                            setIsBlocked(true);
-                            setLoading(false);
-                            return;
+                    setIsBlocked(false);
+
+                    if (user?.id && data.clientId && user.id !== data.clientId) {
+                        try {
+                            console.log('[ProjectDetail] Checking block status for user:', user.id, 'against client:', data.clientId);
+                            const blocked = await isUserBlocked(user.id, data.clientId);
+                            console.log('[ProjectDetail] Block check finished, isBlocked:', blocked);
+                            
+                            if (!isMounted) return;
+                            
+                            if (blocked) {
+                                setIsBlocked(true);
+                                setProject(data);
+                                setLoading(false);
+                                return;
+                            }
+                        } catch (blockErr) {
+                            console.error('[ProjectDetail] Error checking block status:', blockErr);
                         }
                     }
                     setProject(data);
                 } else {
-                    console.error('Project not found for ID:', id);
+                    console.error('[ProjectDetail] Project not found for ID:', id);
+                    setProject(null);
                 }
             } catch (err) {
-                console.error('Error fetching project:', err);
+                console.error('[ProjectDetail] Critical error in fetchProjectData:', err);
             } finally {
-                setLoading(false);
+                console.log('[ProjectDetail] Finally block reached, setting loading false');
+                if (isMounted) {
+                    setLoading(false);
+                    clearTimeout(failsafe);
+                }
             }
         };
 
         fetchProjectData();
-    }, [id, user]);
+        
+        return () => {
+            isMounted = false;
+            clearTimeout(failsafe);
+        };
+    }, [id, user?.id]);
 
     // Check if user already applied (via Supabase)
     useEffect(() => {
