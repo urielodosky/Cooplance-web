@@ -15,8 +15,9 @@ export const getServiceReviews = async (serviceId) => {
                 rating,
                 comment,
                 created_at,
+                reviewer_id,
                 reviewer:reviewer_id(username, first_name, last_name, avatar_url),
-                job:job_id(status)
+                job:job_id(status, delivery_result)
             `)
             .eq('service_id', serviceId)
             .order('created_at', { ascending: false });
@@ -130,16 +131,24 @@ export const hasUserReviewedJob = async (jobId, reviewerId) => {
 // ── Helpers ───────────────────────────────────────────────────
 
 function mapFromDB(row) {
+    // Detect canceled: either status is 'canceled' OR delivery_result contains cancellation text
+    const isCanceled = row.job?.status === 'canceled' || 
+        (row.job?.delivery_result && (
+            row.job.delivery_result.toLowerCase().includes('cancelado') || 
+            row.job.delivery_result.toLowerCase().includes('cancelación')
+        ));
+    
     return {
         id: row.id,
         rating: row.rating,
         comment: row.comment,
         createdAt: row.created_at,
+        reviewer_id: row.reviewer_id,
         reviewerName: row.reviewer?.first_name 
             ? `${row.reviewer.first_name} ${row.reviewer.last_name || ''}`.trim()
             : (row.reviewer?.username || 'Usuario'),
         reviewerAvatar: row.reviewer?.avatar_url,
         reviewerUsername: row.reviewer?.username,
-        jobStatus: row.job?.status
+        jobStatus: isCanceled ? 'canceled' : (row.job?.status || 'completed')
     };
 }

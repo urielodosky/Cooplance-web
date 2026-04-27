@@ -184,12 +184,19 @@ const FreelancerDetail = () => {
                 if (jError) throw jError;
 
                 // Map jobs to include serviceTitle and clientName
-                const mappedJobs = (jobsData || []).map(j => ({
-                    ...j,
-                    serviceTitle: j.service_title || 'Servicio Personalizado',
-                    clientName: j.client?.first_name ? `${j.client.first_name} ${j.client.last_name || ''}`.trim() : j.client?.username,
-                    deliveryResult: j.status === 'canceled' ? 'Cancelado' : (j.delivery_result || 'Finalizado')
-                }));
+                const mappedJobs = (jobsData || []).map(j => {
+                    const wasCanceled = j.status === 'canceled' || (j.delivery_result && (
+                        j.delivery_result.toLowerCase().includes('cancelado') || 
+                        j.delivery_result.toLowerCase().includes('cancelación')
+                    ));
+                    return {
+                        ...j,
+                        serviceTitle: j.service_title || 'Servicio Personalizado',
+                        clientName: j.client?.first_name ? `${j.client.first_name} ${j.client.last_name || ''}`.trim() : j.client?.username,
+                        deliveryResult: wasCanceled ? 'Cancelado' : (j.delivery_result || 'Finalizado'),
+                        _isCanceled: wasCanceled
+                    };
+                });
                 setFreelancerJobs(mappedJobs);
                 console.log("Freelancer jobs loaded:", mappedJobs.length);
 
@@ -199,7 +206,7 @@ const FreelancerDetail = () => {
                     .select(`
                         *, 
                         reviewer:reviewer_id(username, first_name, last_name, avatar_url, role),
-                        job:job_id(service_title, service_id, project_id, status)
+                        job:job_id(service_title, service_id, project_id, status, delivery_result)
                     `)
                     .eq('target_id', id)
                     .order('created_at', { ascending: false });
@@ -216,7 +223,7 @@ const FreelancerDetail = () => {
                     .select(`
                         *, 
                         target:target_id(username, first_name, last_name, avatar_url, role),
-                        job:job_id(service_title, service_id, project_id, status)
+                        job:job_id(service_title, service_id, project_id, status, delivery_result)
                     `)
                     .eq('reviewer_id', id)
                     .order('created_at', { ascending: false });
@@ -576,7 +583,7 @@ const FreelancerDetail = () => {
                         borderRadius: '20px',
                         color: 'var(--text-primary)',
                         fontWeight: '600'
-                    }}>{freelancerJobs.length} Finalizados</span>
+                    }}>{freelancerJobs.filter(j => !j._isCanceled).length} Finalizados{freelancerJobs.filter(j => j._isCanceled).length > 0 ? ` · ${freelancerJobs.filter(j => j._isCanceled).length} Cancelados` : ''}</span>
                 </div>
 
                 {freelancerJobs.length > 0 ? (
@@ -633,13 +640,13 @@ const FreelancerDetail = () => {
                                             borderRadius: '6px',
                                             fontSize: '0.6rem',
                                             fontWeight: '800',
-                                            background: job.deliveryResult === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                                            color: job.deliveryResult === 'Cancelado' ? '#ef4444' : '#10b981',
+                                            background: job._isCanceled ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                            color: job._isCanceled ? '#ef4444' : '#10b981',
                                             textTransform: 'uppercase',
                                             letterSpacing: '0.5px',
                                             marginBottom: '0.15rem'
                                         }}>
-                                            {job.deliveryResult || 'Finalizado'}
+                                            {job._isCanceled ? 'CANCELADO' : (job.deliveryResult || 'Finalizado')}
                                         </span>
                                         {job.amount && (
                                             <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)' }}>
@@ -800,7 +807,7 @@ const FreelancerDetail = () => {
                                             </div>
                                         </div>
                                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                            {review.job?.status === 'canceled' && (
+                                            {(review.job?.status === 'canceled' || (review.job?.delivery_result && (review.job.delivery_result.toLowerCase().includes('cancelado') || review.job.delivery_result.toLowerCase().includes('cancelación')))) && (
                                                 <span style={{ 
                                                     fontSize: '0.65rem', 
                                                     background: 'rgba(239, 68, 68, 0.1)', 
@@ -911,7 +918,7 @@ const FreelancerDetail = () => {
                                             </div>
                                         </div>
                                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                            {review.job?.status === 'canceled' && (
+                                            {(review.job?.status === 'canceled' || (review.job?.delivery_result && (review.job.delivery_result.toLowerCase().includes('cancelado') || review.job.delivery_result.toLowerCase().includes('cancelación')))) && (
                                                 <span style={{ 
                                                     fontSize: '0.65rem', 
                                                     background: 'rgba(239, 68, 68, 0.1)', 

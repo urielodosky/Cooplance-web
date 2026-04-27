@@ -25,6 +25,17 @@ import '../styles/pages/Dashboard.scss';
 
 // --- Utilities ---
 
+// Robust cancellation detection: checks both status AND delivery_result text
+// Needed because a bug previously changed canceled jobs to completed on review submit
+const isJobCanceled = (job) => {
+    if (job.status === 'canceled' || job.status === 'cancellation_requested') return true;
+    if (job.deliveryResult && (
+        job.deliveryResult.toLowerCase().includes('cancelado') || 
+        job.deliveryResult.toLowerCase().includes('cancelación')
+    )) return true;
+    return false;
+};
+
 const getPreciseTimeRemaining = (deadline) => {
     if (!deadline) return null;
     const deadlineDate = new Date(deadline);
@@ -264,22 +275,22 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     </span>
                                     <span style={{ 
                                         fontSize: '0.85rem', 
-                                        color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : (job.status === 'canceled' ? '#ef4444' : '#f59e0b')), 
+                                        color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : (isJobCanceled(job) ? '#ef4444' : '#f59e0b')), 
                                         fontWeight: '800', 
                                         display: 'flex', 
                                         alignItems: 'center', 
                                         gap: '6px',
                                         padding: '4px 10px',
                                         borderRadius: '8px',
-                                        background: job.status === 'active' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'delivered' ? 'rgba(99, 102, 241, 0.08)' : (job.status === 'canceled' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
+                                        background: job.status === 'active' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'delivered' ? 'rgba(99, 102, 241, 0.08)' : (isJobCanceled(job) ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
                                         border: '1px solid currentColor'
                                     }}>
                                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
                                         {job.status === 'active' ? 'EN PROGRESO' : 
                                          job.status === 'delivered' ? 'ENTREGADO (REVISIÓN)' : 
                                          job.status === 'pending_approval' ? 'POR ACEPTAR' : 
+                                         isJobCanceled(job) ? `CANCELADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
                                          job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
-                                         job.status === 'canceled' ? `CANCELADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
                                          (job.status?.toUpperCase() || 'ESTADO')}
                                     </span>
                                     {job.status === 'active' && (
@@ -300,7 +311,7 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     )}
                                 </div>
 
-                                {(job.status === 'cancellation_requested' || job.status === 'canceled') && job.deliveryResult && (
+                                {isJobCanceled(job) && job.deliveryResult && (
                                     <div style={{ 
                                         fontSize: '0.8rem', 
                                         color: 'var(--text-muted)', 
@@ -509,16 +520,16 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                         </button>
                                     )}
                                     
-                                    {(job.status === 'completed' || job.status === 'canceled') && (
+                                    {(job.status === 'completed' || isJobCanceled(job)) && (
                                         <button 
                                             className="btn-primary" 
                                             style={{ 
                                                 padding: '0.5rem 1.2rem', 
                                                 fontSize: '0.85rem', 
                                                 borderRadius: '12px',
-                                                background: job.status === 'canceled' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.1)',
-                                                border: job.status === 'canceled' ? '1px solid #ef4444' : '1px solid #f59e0b',
-                                                color: job.status === 'canceled' ? '#ef4444' : '#f59e0b',
+                                                background: isJobCanceled(job) ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.1)',
+                                                border: isJobCanceled(job) ? '1px solid #ef4444' : '1px solid #f59e0b',
+                                                color: isJobCanceled(job) ? '#ef4444' : '#f59e0b',
                                                 fontWeight: '700',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -530,7 +541,7 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             }}
                                         >
                                             <Star size={14} />
-                                            {reviewedJobs[job.id] ? 'Modificar Reseña' : (job.status === 'canceled' ? 'Calificar (Cancelado)' : 'Calificar Freelancer')}
+                                            {reviewedJobs[job.id] ? 'Modificar Reseña' : (isJobCanceled(job) ? 'Calificar (Cancelado)' : 'Calificar Freelancer')}
                                         </button>
                                     )}
                                 </div>
@@ -856,27 +867,26 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <span style={{ 
                                             fontSize: '0.85rem', 
-                                            color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : (job.status === 'cancellation_requested' || job.status === 'canceled' ? '#ef4444' : '#f59e0b')), 
+                                            color: isJobCanceled(job) ? '#ef4444' : (job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : '#f59e0b')), 
                                             fontWeight: '800', 
                                             display: 'flex', 
                                             alignItems: 'center', 
                                             gap: '6px',
                                             padding: '4px 10px',
                                             borderRadius: '8px',
-                                            background: job.status === 'completed' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'active' ? 'rgba(59, 130, 246, 0.08)' : (job.status === 'cancellation_requested' || job.status === 'canceled' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
+                                            background: isJobCanceled(job) ? 'rgba(239, 68, 68, 0.08)' : (job.status === 'completed' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'active' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
                                             border: '1px solid currentColor'
                                         }}>
                                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
                                             {job.status === 'active' ? 'EN PROGRESO' : 
                                             job.status === 'delivered' ? 'RECIBIDO (PARA REVISAR)' : 
+                                            isJobCanceled(job) ? `CANCELADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
                                             job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
-                                            job.status === 'canceled' ? `CANCELADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
-                                            job.status === 'cancellation_requested' ? 'CANCELACIÓN SOLICITADA' :
                                             (job.status?.toUpperCase() || 'ESTADO')}
                                         </span>
                                     </div>
 
-                                    {(job.status === 'cancellation_requested' || job.status === 'canceled') && job.deliveryResult && (
+                                    {isJobCanceled(job) && job.deliveryResult && (
                                         <div style={{ 
                                             fontSize: '0.8rem', 
                                             color: 'var(--text-muted)', 
@@ -996,16 +1006,16 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             } catch { setIsCreatingChat(false); }
                                         }}>Chat</button>
                                     )}
-                                    {(job.status === 'completed' || job.status === 'canceled') && (
+                                    {(job.status === 'completed' || isJobCanceled(job)) && (
                                         <button 
                                             className="btn-primary" 
                                             style={{ 
                                                 padding: '0.5rem 1.2rem', 
                                                 fontSize: '0.85rem', 
                                                 borderRadius: '12px',
-                                                background: reviewedJobs[job.id] ? 'rgba(16, 185, 129, 0.1)' : (job.status === 'canceled' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.1)'),
-                                                border: reviewedJobs[job.id] ? '1px solid #10b981' : (job.status === 'canceled' ? '1px solid #ef4444' : '1px solid #f59e0b'),
-                                                color: reviewedJobs[job.id] ? '#10b981' : (job.status === 'canceled' ? '#ef4444' : '#f59e0b'),
+                                                background: reviewedJobs[job.id] ? 'rgba(16, 185, 129, 0.1)' : (isJobCanceled(job) ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.1)'),
+                                                border: reviewedJobs[job.id] ? '1px solid #10b981' : (isJobCanceled(job) ? '1px solid #ef4444' : '1px solid #f59e0b'),
+                                                color: reviewedJobs[job.id] ? '#10b981' : (isJobCanceled(job) ? '#ef4444' : '#f59e0b'),
                                                 fontWeight: '700',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -1017,7 +1027,7 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             }}
                                         >
                                             <Star size={14} fill={reviewedJobs[job.id] ? "currentColor" : "none"} />
-                                            {reviewedJobs[job.id] ? 'Reseña OK' : (job.status === 'canceled' ? 'Calificar (Cancelado)' : 'Calificar Freelancer')}
+                                            {reviewedJobs[job.id] ? 'Reseña OK' : (isJobCanceled(job) ? 'Calificar (Cancelado)' : 'Calificar Freelancer')}
                                         </button>
                                     )}
 
@@ -1836,7 +1846,8 @@ const Dashboard = () => {
             });
             
             if (user.role === 'buyer' || user.role === 'client' || user.role === 'company') {
-                if (selectedJobForReview.status !== 'completed') {
+                // Only mark as completed if the job is in delivered state — NEVER overwrite canceled status
+                if (selectedJobForReview.status === 'delivered') {
                     await updateJobStatus(selectedJobForReview.id, 'completed');
                 }
             }
