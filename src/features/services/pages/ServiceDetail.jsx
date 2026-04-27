@@ -604,21 +604,24 @@ const ServiceDetail = () => {
                         <h2 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Reseñas del servicio</h2>
                         <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>Lo que otros clientes dicen sobre este servicio</p>
                     </div>
-                    {reviews.length > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(251, 191, 36, 0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#fbbf24' }}>{service.rating}</div>
-                            <div>
-                                <div style={{ display: 'flex', gap: '2px' }}>
-                                    {[...Array(5)].map((_, i) => (
-                                        <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={i < Math.floor(service.rating) ? '#fbbf24' : 'rgba(255,255,255,0.1)'}>
-                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                        </svg>
-                                    ))}
+                    {reviews.length > 0 && (() => {
+                        const avg = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
+                        return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(251, 191, 36, 0.1)', padding: '0.75rem 1.5rem', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: '#fbbf24' }}>{avg}</div>
+                                <div>
+                                    <div style={{ display: 'flex', gap: '2px' }}>
+                                        {[...Array(5)].map((_, i) => (
+                                            <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={i < Math.round(parseFloat(avg)) ? '#fbbf24' : 'rgba(255,255,255,0.1)'}>
+                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                            </svg>
+                                        ))}
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>{reviews.length} {reviews.length === 1 ? 'OPINIÓN' : 'OPINIONES'}</div>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>{reviews.length} OPINIONES</div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
                 </div>
 
                 {reviewsLoading ? (
