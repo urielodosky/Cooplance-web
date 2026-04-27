@@ -188,7 +188,7 @@ const FreelancerDetail = () => {
                     ...j,
                     serviceTitle: j.service_title || 'Servicio Personalizado',
                     clientName: j.client?.first_name ? `${j.client.first_name} ${j.client.last_name || ''}`.trim() : j.client?.username,
-                    deliveryResult: j.delivery_result || 'Finalizado'
+                    deliveryResult: j.status === 'canceled' ? 'Cancelado' : (j.delivery_result || 'Finalizado')
                 }));
                 setFreelancerJobs(mappedJobs);
                 console.log("Freelancer jobs loaded:", mappedJobs.length);
@@ -199,7 +199,7 @@ const FreelancerDetail = () => {
                     .select(`
                         *, 
                         reviewer:reviewer_id(username, first_name, last_name, avatar_url, role),
-                        job:job_id(service_title, service_id, project_id)
+                        job:job_id(service_title, service_id, project_id, status)
                     `)
                     .eq('target_id', id)
                     .order('created_at', { ascending: false });
@@ -216,7 +216,7 @@ const FreelancerDetail = () => {
                     .select(`
                         *, 
                         target:target_id(username, first_name, last_name, avatar_url, role),
-                        job:job_id(service_title, service_id, project_id)
+                        job:job_id(service_title, service_id, project_id, status)
                     `)
                     .eq('reviewer_id', id)
                     .order('created_at', { ascending: false });
@@ -737,7 +737,7 @@ const FreelancerDetail = () => {
                             margin: 0
                         }}
                     >
-                        Reseñas Recibidas ({reviewsReceived.length})
+                        Reseñas Recibidas ({reviewsReceived.length}) {averageRating && <span style={{ color: '#fbbf24', marginLeft: '6px' }}>★{averageRating}</span>}
                     </h2>
                     <h2 
                         onClick={() => setActiveReviewTab('given')}
@@ -799,7 +799,21 @@ const FreelancerDetail = () => {
                                                 <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.reviewer?.username}</span>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
+                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                            {review.job?.status === 'canceled' && (
+                                                <span style={{ 
+                                                    fontSize: '0.65rem', 
+                                                    background: 'rgba(239, 68, 68, 0.1)', 
+                                                    color: '#ef4444', 
+                                                    padding: '2px 8px', 
+                                                    borderRadius: '6px', 
+                                                    fontWeight: '800', 
+                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                    marginBottom: '2px'
+                                                }}>
+                                                    CANCELADO
+                                                </span>
+                                            )}
                                             <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
                                                 {[...Array(5)].map((_, i) => {
                                                     const starRating = review.rating;
@@ -896,7 +910,21 @@ const FreelancerDetail = () => {
                                                 <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.target?.username}</span>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
+                                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                            {review.job?.status === 'canceled' && (
+                                                <span style={{ 
+                                                    fontSize: '0.65rem', 
+                                                    background: 'rgba(239, 68, 68, 0.1)', 
+                                                    color: '#ef4444', 
+                                                    padding: '2px 8px', 
+                                                    borderRadius: '6px', 
+                                                    fontWeight: '800', 
+                                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                    marginBottom: '2px'
+                                                }}>
+                                                    CANCELADO
+                                                </span>
+                                            )}
                                             <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
                                                 {[...Array(5)].map((_, i) => {
                                                     const starRating = review.rating;

@@ -48,14 +48,26 @@ const ActionModal = ({
                         <h3>{title}</h3>
                         <p>{message}</p>
                         {type === 'prompt' && (
-                            <textarea 
-                                className="action-modal-input" 
-                                value={inputValue} 
-                                onChange={(e) => onInputChange(e.target.value)}
-                                placeholder="Escribe aquí el motivo..."
-                                autoFocus
-                                maxLength={maxLength}
-                            />
+                            <div style={{ width: '100%', position: 'relative' }}>
+                                <textarea 
+                                    className="action-modal-input" 
+                                    value={inputValue} 
+                                    onChange={(e) => onInputChange(e.target.value)}
+                                    placeholder="Escribe aquí el motivo..."
+                                    autoFocus
+                                    maxLength={maxLength}
+                                />
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    bottom: '10px', 
+                                    right: '15px', 
+                                    fontSize: '0.75rem', 
+                                    color: inputValue.length >= maxLength ? '#ef4444' : 'var(--text-muted)',
+                                    fontWeight: '600'
+                                }}>
+                                    {inputValue.length}/{maxLength}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

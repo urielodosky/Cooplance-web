@@ -580,7 +580,10 @@ const ServiceDetail = () => {
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
                                 <div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)' }}>{reviews.length}</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                        {reviews.length}
+                                        {service.rating > 0 && <span style={{ fontSize: '0.8rem', color: '#fbbf24' }}>★{service.rating}</span>}
+                                    </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Reseñas</div>
                                 </div>
                                 <div style={{ width: '1px', background: 'var(--border)' }}></div>
@@ -673,7 +676,21 @@ const ServiceDetail = () => {
                                             <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600' }}>@{review.reviewerUsername}</span>
                                         </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
+                                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                        {review.jobStatus === 'canceled' && (
+                                            <span style={{ 
+                                                fontSize: '0.65rem', 
+                                                background: 'rgba(239, 68, 68, 0.1)', 
+                                                color: '#ef4444', 
+                                                padding: '2px 8px', 
+                                                borderRadius: '6px', 
+                                                fontWeight: '800', 
+                                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                marginBottom: '2px'
+                                            }}>
+                                                CANCELADO
+                                            </span>
+                                        )}
                                         <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
                                             {[...Array(5)].map((_, i) => {
                                                 const starRating = review.rating;

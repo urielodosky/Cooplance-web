@@ -15,7 +15,8 @@ export const getServiceReviews = async (serviceId) => {
                 rating,
                 comment,
                 created_at,
-                reviewer:reviewer_id(username, first_name, last_name, avatar_url)
+                reviewer:reviewer_id(username, first_name, last_name, avatar_url),
+                job:job_id(status)
             `)
             .eq('service_id', serviceId)
             .order('created_at', { ascending: false });
@@ -138,6 +139,7 @@ function mapFromDB(row) {
             ? `${row.reviewer.first_name} ${row.reviewer.last_name || ''}`.trim()
             : (row.reviewer?.username || 'Usuario'),
         reviewerAvatar: row.reviewer?.avatar_url,
-        reviewerUsername: row.reviewer?.username
+        reviewerUsername: row.reviewer?.username,
+        jobStatus: row.job?.status
     };
 }

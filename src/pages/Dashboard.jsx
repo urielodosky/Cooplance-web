@@ -264,14 +264,14 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                     </span>
                                     <span style={{ 
                                         fontSize: '0.85rem', 
-                                        color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : '#f59e0b'), 
+                                        color: job.status === 'active' ? '#10b981' : (job.status === 'delivered' ? '#6366f1' : (job.status === 'canceled' ? '#ef4444' : '#f59e0b')), 
                                         fontWeight: '800', 
                                         display: 'flex', 
                                         alignItems: 'center', 
                                         gap: '6px',
                                         padding: '4px 10px',
                                         borderRadius: '8px',
-                                        background: job.status === 'active' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'delivered' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(245, 158, 11, 0.08)'),
+                                        background: job.status === 'active' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'delivered' ? 'rgba(99, 102, 241, 0.08)' : (job.status === 'canceled' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
                                         border: '1px solid currentColor'
                                     }}>
                                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
@@ -279,6 +279,7 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                          job.status === 'delivered' ? 'ENTREGADO (REVISIÓN)' : 
                                          job.status === 'pending_approval' ? 'POR ACEPTAR' : 
                                          job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
+                                         job.status === 'canceled' ? `CANCELADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
                                          (job.status?.toUpperCase() || 'ESTADO')}
                                     </span>
                                     {job.status === 'active' && (
@@ -855,20 +856,21 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <span style={{ 
                                             fontSize: '0.85rem', 
-                                            color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : (job.status === 'cancellation_requested' ? '#ef4444' : '#f59e0b')), 
+                                            color: job.status === 'completed' ? '#10b981' : (job.status === 'active' ? '#3b82f6' : (job.status === 'cancellation_requested' || job.status === 'canceled' ? '#ef4444' : '#f59e0b')), 
                                             fontWeight: '800', 
                                             display: 'flex', 
                                             alignItems: 'center', 
                                             gap: '6px',
                                             padding: '4px 10px',
                                             borderRadius: '8px',
-                                            background: job.status === 'completed' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'active' ? 'rgba(59, 130, 246, 0.08)' : (job.status === 'cancellation_requested' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
+                                            background: job.status === 'completed' ? 'rgba(16, 185, 129, 0.08)' : (job.status === 'active' ? 'rgba(59, 130, 246, 0.08)' : (job.status === 'cancellation_requested' || job.status === 'canceled' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)')),
                                             border: '1px solid currentColor'
                                         }}>
                                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }}></span>
                                             {job.status === 'active' ? 'EN PROGRESO' : 
                                             job.status === 'delivered' ? 'RECIBIDO (PARA REVISAR)' : 
                                             job.status === 'completed' ? `FINALIZADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
+                                            job.status === 'canceled' ? `CANCELADO (${getTimeAgo(job.completedAt || job.updatedAt)})` :
                                             job.status === 'cancellation_requested' ? 'CANCELACIÓN SOLICITADA' :
                                             (job.status?.toUpperCase() || 'ESTADO')}
                                         </span>
