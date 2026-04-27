@@ -519,55 +519,6 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             Forzar Liberación (Ghosting)
                                         </button>
                                     )}
-
-                                    {isJobCanceled(job) && job.status !== 'refunded' && (
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button 
-                                                className="btn-outline"
-                                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '10px', borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    showActionModal({
-                                                        title: 'Liberar Fondos al Freelancer',
-                                                        message: "¿Estás seguro de liberar el pago al Freelancer? Esto registrará la ganancia para él y el gasto para el cliente.",
-                                                        type: 'confirm',
-                                                        onConfirm: async () => {
-                                                            try {
-                                                                await resolveEscrow(job.id, 'release');
-                                                                showActionModal({ title: 'Éxito', message: 'Fondos liberados al freelancer.', severity: 'success' });
-                                                            } catch (err) {
-                                                                showActionModal({ title: 'Error', message: err.message, severity: 'error' });
-                                                            }
-                                                        }
-                                                    });
-                                                }}
-                                            >
-                                                Liberar al Freelancer
-                                            </button>
-                                            <button 
-                                                className="btn-outline"
-                                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '10px', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    showActionModal({
-                                                        title: 'Reembolsar al Cliente',
-                                                        message: "¿Deseas devolver los fondos al Cliente? El saldo saldrá de garantía y volverá a su cuenta.",
-                                                        type: 'confirm',
-                                                        onConfirm: async () => {
-                                                            try {
-                                                                await resolveEscrow(job.id, 'refund');
-                                                                showActionModal({ title: 'Éxito', message: 'Fondos reembolsados al cliente.', severity: 'success' });
-                                                            } catch (err) {
-                                                                showActionModal({ title: 'Error', message: err.message, severity: 'error' });
-                                                            }
-                                                        }
-                                                    });
-                                                }}
-                                            >
-                                                Reembolsar al Cliente
-                                            </button>
-                                        </div>
-                                    )}
                                     
                                     {(job.status === 'completed' || isJobCanceled(job)) && (
                                         <button 
@@ -1132,55 +1083,6 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
-
-                                    {isJobCanceled(job) && job.status !== 'refunded' && (
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button 
-                                                className="btn-outline"
-                                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '10px', borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    showActionModal({
-                                                        title: 'Liberar Fondos al Freelancer',
-                                                        message: "¿Confirmas la liberación del pago al Freelancer? Esto cerrará el proceso de garantía.",
-                                                        type: 'confirm',
-                                                        onConfirm: async () => {
-                                                            try {
-                                                                await resolveEscrow(job.id, 'release');
-                                                                showActionModal({ title: 'Éxito', message: 'Pago liberado.', severity: 'success' });
-                                                            } catch (err) {
-                                                                showActionModal({ title: 'Error', message: err.message, severity: 'error' });
-                                                            }
-                                                        }
-                                                    });
-                                                }}
-                                            >
-                                                Liberar al Freelancer
-                                            </button>
-                                            <button 
-                                                className="btn-outline"
-                                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', borderRadius: '10px', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    showActionModal({
-                                                        title: 'Reembolsar Fondos',
-                                                        message: "¿Deseas que los fondos vuelvan a tu billetera? Esto cancelará definitivamente el flujo de pago.",
-                                                        type: 'confirm',
-                                                        onConfirm: async () => {
-                                                            try {
-                                                                await resolveEscrow(job.id, 'refund');
-                                                                showActionModal({ title: 'Éxito', message: 'Reembolso procesado.', severity: 'success' });
-                                                            } catch (err) {
-                                                                showActionModal({ title: 'Error', message: err.message, severity: 'error' });
-                                                            }
-                                                        }
-                                                    });
-                                                }}
-                                            >
-                                                Reembolsarme
-                                            </button>
-                                        </div>
-                                    )}
 
                                     {(job.status === 'completed' || isJobCanceled(job)) && (
                                         <button 
