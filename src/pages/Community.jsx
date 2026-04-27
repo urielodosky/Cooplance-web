@@ -236,15 +236,27 @@ const Community = () => {
     const [ratingFilter, setRatingFilter] = useState(0);
     const [levelFilter, setLevelFilter] = useState(0);
 
+    // Custom Select State
+    const [showRoleMenu, setShowRoleMenu] = useState(false);
+    const roles = [
+        { value: 'all', label: 'Todos los Roles' },
+        { value: 'freelancer', label: 'Freelancer' },
+        { value: 'client', label: 'Cliente' },
+        { value: 'company', label: 'Empresa' },
+        { value: 'coop', label: 'Cooperativa (Coop)' }
+    ];
+
     useEffect(() => {
         const fetchCommunityData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch Profiles - simplified to ensure results appear
-                let query = supabase.from('profiles').select('*');
+                // 1. Fetch Profiles with ratings and counts
+                let query = supabase.from('profiles').select(`
+                    *,
+                    reviews:service_reviews!target_id(rating)
+                `);
 
                 if (searchTerm) {
-                    // Safety check: only use username if first_name/last_name fail in some environments
                     query = query.ilike('username', `%${searchTerm}%`);
                 }
 
@@ -252,16 +264,29 @@ const Community = () => {
                     query = query.eq('role', roleFilter);
                 }
 
-                if (ratingFilter > 0) {
-                    query = query.gte('rating', ratingFilter);
-                }
-
                 if (levelFilter > 0) {
                     query = query.eq('level', levelFilter);
                 }
 
-                const { data: profilesData, error: profilesError } = await query.limit(50);
+                const { data: rawProfiles, error: profilesError } = await query.limit(50);
                 if (profilesError) throw profilesError;
+
+                // Process ratings and counts in JS to ensure accuracy
+                let profilesData = (rawProfiles || []).map(p => {
+                    const ratings = p.reviews?.map(r => r.rating) || [];
+                    const count = ratings.length;
+                    const avg = count > 0 ? (ratings.reduce((a, b) => a + b, 0) / count).toFixed(1) : "0.0";
+                    return {
+                        ...p,
+                        reviews_count: count,
+                        rating: parseFloat(avg)
+                    };
+                });
+
+                // Apply Rating Filter client-side for precision
+                if (ratingFilter > 0) {
+                    profilesData = profilesData.filter(p => p.rating >= ratingFilter);
+                }
 
                 // 2. Fetch Teams
                 let teamsQuery = supabase.from('teams').select('*');
@@ -272,7 +297,7 @@ const Community = () => {
                 if (teamsError) throw teamsError;
 
                 // 3. Fetch Team Memberships
-                const profileIds = (profilesData || []).map(p => p.id);
+                const profileIds = profilesData.map(p => p.id);
                 if (profileIds.length > 0) {
                     const { data: membershipData } = await supabase
                         .from('team_members')
@@ -388,31 +413,69 @@ const Community = () => {
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                         gap: '2rem',
-                        animation: 'slideDown 0.3s ease-out'
+                        animation: 'slideDown 0.3s ease-out',
+                        position: 'relative',
+                        zIndex: 10
                     }}>
-                        <div>
+                        {/* Custom Role Dropdown */}
+                        <div style={{ position: 'relative' }}>
                             <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '800', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Rol</label>
-                            <select 
-                                value={roleFilter}
-                                onChange={(e) => setRoleFilter(e.target.value)}
+                            <div 
+                                onClick={() => setShowRoleMenu(!showRoleMenu)}
                                 style={{
-                                    width: '100%',
-                                    padding: '0.85rem',
+                                    padding: '0.85rem 1rem',
                                     borderRadius: '12px',
                                     border: '1px solid var(--border)',
                                     background: 'var(--bg-card-hover)',
                                     color: 'var(--text-primary)',
-                                    outline: 'none',
                                     cursor: 'pointer',
-                                    fontWeight: '600'
+                                    fontWeight: '600',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
                                 }}
                             >
-                                <option value="all">Todos los Roles</option>
-                                <option value="freelancer">Freelancer</option>
-                                <option value="client">Cliente</option>
-                                <option value="company">Empresa</option>
-                                <option value="coop">Cooperativa (Coop)</option>
-                            </select>
+                                {roles.find(r => r.value === roleFilter)?.label}
+                                <svg style={{ transform: showRoleMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                            
+                            {showRoleMenu && (
+                                <div className="glass" style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: 0,
+                                    right: 0,
+                                    marginTop: '0.5rem',
+                                    borderRadius: '16px',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--bg-card)',
+                                    boxShadow: 'var(--shadow-lg)',
+                                    overflow: 'hidden',
+                                    zIndex: 20
+                                }}>
+                                    {roles.map(r => (
+                                        <div 
+                                            key={r.value}
+                                            onClick={() => {
+                                                setRoleFilter(r.value);
+                                                setShowRoleMenu(false);
+                                            }}
+                                            style={{
+                                                padding: '0.75rem 1rem',
+                                                cursor: 'pointer',
+                                                background: roleFilter === r.value ? 'var(--primary)' : 'transparent',
+                                                color: roleFilter === r.value ? 'white' : 'var(--text-primary)',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => { if(roleFilter !== r.value) e.currentTarget.style.background = 'var(--bg-card-hover)' }}
+                                            onMouseLeave={(e) => { if(roleFilter !== r.value) e.currentTarget.style.background = 'transparent' }}
+                                        >
+                                            {r.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div>
