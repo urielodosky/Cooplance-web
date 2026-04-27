@@ -12,8 +12,8 @@ import '../styles/pages/ServiceDetail.scss';
 import '../styles/pages/ProjectDetail.scss';
 import { useActionModal } from '../context/ActionModalContext';
 
-
-import ProjectDetailSkeleton from '../components/project/ProjectDetailSkeleton';
+import { isUserBlocked } from '../services/safetyService';
+import ReportModal from '../components/common/ReportModal';
 
 const ProjectDetail = () => {
     const { id } = useParams();
@@ -27,6 +27,8 @@ const ProjectDetail = () => {
     const [applyMessage, setApplyMessage] = useState({ text: '', type: '' });
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
     const [isGalleryHovered, setIsGalleryHovered] = useState(false);
+    const [isBlocked, setIsBlocked] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchProjectData = async () => {
@@ -35,6 +37,15 @@ const ProjectDetail = () => {
             try {
                 const data = await getProjectById(id);
                 if (data) {
+                    // 0. Check for blocks
+                    if (user && data.clientId && user.id !== data.clientId) {
+                        const blocked = await isUserBlocked(user.id, data.clientId);
+                        if (blocked) {
+                            setIsBlocked(true);
+                            setLoading(false);
+                            return;
+                        }
+                    }
                     setProject(data);
                 } else {
                     console.error('Project not found for ID:', id);
@@ -47,7 +58,7 @@ const ProjectDetail = () => {
         };
 
         fetchProjectData();
-    }, [id]);
+    }, [id, user]);
 
     // Check if user already applied (via Supabase)
     useEffect(() => {
@@ -176,6 +187,32 @@ const ProjectDetail = () => {
     };
 
     if (loading) return <ProjectDetailSkeleton />;
+    if (isBlocked) {
+        return (
+            <div className="container" style={{ 
+                height: '70vh', 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center',
+                textAlign: 'center'
+            }}>
+                <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🔒</div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>Pedido No Disponible</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '400px' }}>
+                    Este usuario te ha bloqueado. No puedes ver sus pedidos ni interactuar con él por seguridad.
+                </p>
+                <button 
+                    onClick={() => navigate('/explore')} 
+                    className="btn-primary" 
+                    style={{ marginTop: '2rem', padding: '1rem 2rem', borderRadius: '16px' }}
+                >
+                    Explorar otros pedidos
+                </button>
+            </div>
+        );
+    }
+
     if (!project) return <div className="container" style={{ paddingTop: '6rem', color: 'var(--text-primary)', textAlign: 'center' }}><h3>Proyecto no encontrado.</h3></div>;
 
     // Formatting date
@@ -234,15 +271,34 @@ const ProjectDetail = () => {
                     alignItems: 'center'
                 }}>
                     <span><strong>Es tu publicación.</strong> Así es como la ven los demás.</span>
-                    {(project.status === 'open' || !project.status) && (
+                    <div style={{ display: 'flex', gap: '0.8rem' }}>
                         <button 
-                            className="btn-secondary danger" 
-                            onClick={handleDelete} 
-                            style={{ fontSize: '0.9rem', padding: '0.4rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}
+                            className="btn-secondary" 
+                            onClick={() => setIsReportModalOpen(true)}
+                            style={{ 
+                                fontSize: '0.9rem', 
+                                padding: '0.4rem 1rem', 
+                                background: 'rgba(239, 68, 68, 0.05)', 
+                                border: '1px solid rgba(239, 68, 68, 0.2)', 
+                                color: '#ef4444',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
                         >
-                            Eliminar Publicación
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                            Reportar
                         </button>
-                    )}
+                        {(project.status === 'open' || !project.status) && (
+                            <button 
+                                className="btn-secondary danger" 
+                                onClick={handleDelete} 
+                                style={{ fontSize: '0.9rem', padding: '0.4rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444' }}
+                            >
+                                Eliminar Publicación
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -598,6 +654,15 @@ const ProjectDetail = () => {
                     onSuccess={handleApplySuccess}
                 />
             )}
+
+            <ReportModal 
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                reportedId={project.clientId}
+                referenceId={project.id}
+                referenceType="project"
+                itemName={project.title}
+            />
         </div>
     );
 };

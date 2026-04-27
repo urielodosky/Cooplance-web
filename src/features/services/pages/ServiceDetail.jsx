@@ -15,6 +15,8 @@ import { supabase } from '../../../lib/supabase';
 import ReportModal from '../../../components/common/ReportModal';
 import '../../../styles/pages/ServiceDetail.scss';
 
+import { isUserBlocked } from '../../../services/safetyService';
+
 
 const ServiceDetail = () => {
     const { id } = useParams();
@@ -31,6 +33,7 @@ const ServiceDetail = () => {
     const [reviewsLoading, setReviewsLoading] = useState(true);
     const [freelancerInternal, setFreelancerInternal] = useState(null);
     const [profileLoading, setProfileLoading] = useState(true);
+    const [isBlocked, setIsBlocked] = useState(false);
     
     // UI states
     const [showEditForm, setShowEditForm] = useState(false);
@@ -70,6 +73,15 @@ const ServiceDetail = () => {
             setReviewsLoading(true);
             setProfileLoading(true);
             try {
+                // 0. Check for blocks
+                if (user && service.freelancerId && user.id !== service.freelancerId) {
+                    const blocked = await isUserBlocked(user.id, service.freelancerId);
+                    if (blocked) {
+                        setIsBlocked(true);
+                        return;
+                    }
+                }
+
                 // 1. Fetch Reviews
                 const data = await getServiceReviews(service.id);
                 setReviews(data);
@@ -91,7 +103,33 @@ const ServiceDetail = () => {
         };
 
         loadContent();
-    }, [service?.id, service?.freelancerId]);
+    }, [service?.id, service?.freelancerId, user]);
+
+    if (isBlocked) {
+        return (
+            <div className="container" style={{ 
+                height: '70vh', 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                justifyContent: 'center',
+                textAlign: 'center'
+            }}>
+                <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🔒</div>
+                <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>Servicio No Disponible</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '400px' }}>
+                    Este profesional te ha bloqueado. No puedes ver sus servicios ni interactuar con él por seguridad.
+                </p>
+                <button 
+                    onClick={() => navigate('/explore')} 
+                    className="btn-primary" 
+                    style={{ marginTop: '2rem', padding: '1rem 2rem', borderRadius: '16px' }}
+                >
+                    Explorar otros servicios
+                </button>
+            </div>
+        );
+    }
 
     if (!service) {
         return (
@@ -438,6 +476,33 @@ const ServiceDetail = () => {
                             </div>
                         </div>
 
+                        {!isOwner && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.5rem', marginBottom: '1.5rem' }}>
+                                <button 
+                                    onClick={() => setIsReportModalOpen(true)}
+                                    style={{ 
+                                        background: 'none', 
+                                        border: 'none', 
+                                        color: '#ef4444', 
+                                        fontSize: '0.85rem', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '6px', 
+                                        cursor: 'pointer',
+                                        padding: '0.4rem 0.8rem',
+                                        borderRadius: '8px',
+                                        transition: 'background 0.2s',
+                                        fontWeight: '600'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+                                    Reportar Usuario
+                                </button>
+                            </div>
+                        )}
+
                         <div style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>
                             <span className="modality-badge" style={{
                                 display: 'inline-flex',
@@ -747,8 +812,9 @@ const ServiceDetail = () => {
             <ReportModal 
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}
-                itemId={service.id}
-                itemType="service"
+                reportedId={service.freelancerId}
+                referenceId={service.id}
+                referenceType="service"
                 itemName={service.title}
             />
             </div>

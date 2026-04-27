@@ -34,7 +34,25 @@ const Chat = () => {
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [purgeResult, setPurgeResult] = useState(null);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isBlockedByOther, setIsBlockedByOther] = useState(false);
     const messagesEndRef = useRef(null);
+
+    // SAFETY CHECK: BLOCKING
+    useEffect(() => {
+        if (!activeChat || !user) {
+            setIsBlockedByOther(false);
+            return;
+        }
+
+        const other = activeChat.participants?.find(p => String(p.id) !== String(user.id));
+        if (!other) return;
+
+        const checkBlock = async () => {
+            const blocked = await import('../services/safetyService').then(m => m.isUserBlocked(user.id, other.id));
+            setIsBlockedByOther(blocked);
+        };
+        checkBlock();
+    }, [activeChat, user]);
 
     // FETCH CONTEXT DEADLINE (Project or Job)
     useEffect(() => {
@@ -938,6 +956,13 @@ const Chat = () => {
                                 <div className="message-input-area" style={{ justifyContent: 'center', background: 'rgba(239, 68, 68, 0.1)' }}>
                                     <p style={{ color: '#ef4444', fontWeight: 'bold' }}>Has bloqueado esta conversación.</p>
                                 </div>
+                            ) : isBlockedByOther ? (
+                                <div className="message-input-area" style={{ justifyContent: 'center', background: 'rgba(239, 68, 68, 0.1)', borderTop: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <p style={{ color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                        Este usuario te ha bloqueado. No puedes enviar mensajes.
+                                    </p>
+                                </div>
                             ) : activeChat.status === 'pre_contract' && (25 - messages.length) <= 0 ? (
                                 <div className="message-input-area" style={{ flexDirection: 'column', gap: '0.5rem', background: 'rgba(245, 158, 11, 0.1)', borderTop: '1px solid var(--border)' }}>
                                     <p style={{ color: '#d97706', fontWeight: 'bold', margin: '0 0 5px 0', textAlign: 'center' }}>
@@ -1056,13 +1081,14 @@ const Chat = () => {
             </div>
 
             {activeChat && (
-                <ReportModal
-                    isOpen={isReportModalOpen}
-                    onClose={() => setIsReportModalOpen(false)}
-                    itemId={activeChat.id}
-                    itemType="chat"
-                    itemName={getChatName(activeChat)}
-                />
+            <ReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                reportedId={activeChat?.participants?.find(p => String(p.id) !== String(user.id))?.id}
+                referenceId={activeChat?.id}
+                referenceType="chat"
+                itemName={getChatName(activeChat)}
+            />
             )}
         </div >
     );

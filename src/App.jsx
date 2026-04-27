@@ -43,6 +43,8 @@ import { ChatProvider } from './context/ChatContext'
 import React, { useEffect } from 'react'
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import LegalModal from './components/common/LegalModal'
+import ProfileSwitcher from './pages/ProfileSwitcher'
+
 
 function App() {
   useEffect(() => {
@@ -88,7 +90,7 @@ function App() {
                 <Route path="/my-coops" element={<ProtectedRoute><TeamList /></ProtectedRoute>} />
                 <Route path="/team/:teamId" element={<ProtectedRoute><TeamDashboard /></ProtectedRoute>} />
                 <Route path="/team/:teamId/public" element={<TeamPublicProfile />} />
-                <Route path="/profile/:id" element={<FreelancerDetail />} />
+                <Route path="/profile/:id" element={<ProfileSwitcher />} />
                 <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                 <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />

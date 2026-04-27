@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../features/auth/context/AuthContext';
+import { submitReport } from '../../services/safetyService';
 
-const ReportModal = ({ isOpen, onClose, itemId, itemType, itemName }) => {
+const REPORT_OPTIONS = [
+    { id: 'fraud', label: 'Estafa', description: 'Cobros por fuera, links maliciosos o fraude.' },
+    { id: 'harassment', label: 'Acoso', description: 'Insultos, amenazas o comportamiento abusivo.' },
+    { id: 'fake_profile', label: 'Perfil Falso', description: 'Identidad suplantada o portfolio robado.' },
+    { id: 'spam', label: 'Spam', description: 'Publicidad no deseada o mensajes repetitivos.' },
+    { id: 'other', label: 'Otro motivo', description: 'Cualquier otra razón no listada.' },
+];
+
+const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, itemName }) => {
     const { user } = useAuth();
-    const [reason, setReason] = useState('Contenido inapropiado');
-    const [details, setDetails] = useState('');
+    const [reason, setReason] = useState('fraud');
+    const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
 
     if (!isOpen) return null;
+
+    const isDescriptionRequired = reason === 'other';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -20,29 +30,31 @@ const ReportModal = ({ isOpen, onClose, itemId, itemType, itemName }) => {
             return;
         }
 
+        if (isDescriptionRequired && !description.trim()) {
+            setError('Por favor, describe el motivo del reporte.');
+            return;
+        }
+
         setIsSubmitting(true);
         setError(null);
 
         try {
-            const { error: submitError } = await supabase
-                .from('reports')
-                .insert({
-                    reporter_id: user.id,
-                    reported_item_id: itemId,
-                    reported_item_type: itemType,
-                    reason: reason,
-                    details: details,
-                    status: 'pending'
-                });
-
-            if (submitError) throw submitError;
+            await submitReport({
+                reporter_id: user.id,
+                reported_id: reportedId,
+                reason: reason,
+                description: description,
+                reference_type: referenceType || 'profile',
+                reference_id: referenceId
+            });
 
             setSuccess(true);
             setTimeout(() => {
                 onClose();
                 setSuccess(false);
-                setDetails('');
-            }, 2000);
+                setDescription('');
+                setReason('fraud');
+            }, 3000);
         } catch (err) {
             console.error('Error enviando reporte:', err);
             setError('No se pudo enviar el reporte. Inténtalo de nuevo.');
@@ -56,97 +68,144 @@ const ReportModal = ({ isOpen, onClose, itemId, itemType, itemName }) => {
             <div 
                 className="glass" 
                 style={{ 
-                    width: '90%', 
-                    maxWidth: '500px', 
+                    width: '95%', 
+                    maxWidth: '550px', 
+                    maxHeight: '90vh',
+                    overflowY: 'auto',
                     padding: '2.5rem', 
-                    borderRadius: '24px', 
+                    borderRadius: '28px', 
                     border: '1px solid var(--border)',
                     background: 'var(--bg-card)',
-                    position: 'relative'
+                    position: 'relative',
+                    boxShadow: 'var(--shadow-lg)'
                 }} 
                 onClick={e => e.stopPropagation()}
             >
                 <button 
                     onClick={onClose}
                     style={{ 
-                        position: 'absolute', top: '1.25rem', right: '1.25rem',
-                        background: 'none', border: 'none', color: 'var(--text-secondary)',
-                        cursor: 'pointer', padding: '0.5rem'
+                        position: 'absolute', top: '1.5rem', right: '1.5rem',
+                        background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-secondary)',
+                        cursor: 'pointer', padding: '0.6rem', borderRadius: '12px'
                     }}
                 >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
 
                 {success ? (
-                    <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                    <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
                         <div style={{ 
-                            width: '64px', height: '64px', background: 'rgba(34, 197, 94, 0.1)', 
+                            width: '80px', height: '80px', background: 'rgba(34, 197, 94, 0.1)', 
                             borderRadius: '50%', display: 'flex', alignItems: 'center', 
                             justifyContent: 'center', margin: '0 auto 1.5rem', color: '#22c55e'
                         }}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </div>
-                        <h2 style={{ marginBottom: '0.5rem' }}>Reporte Enviado</h2>
-                        <p style={{ color: 'var(--text-secondary)' }}>Gracias por ayudarnos a mantener la comunidad segura. Lo revisaremos pronto.</p>
+                        <h2 style={{ marginBottom: '1rem', fontSize: '2rem' }}>Reporte y Bloqueo Exitoso</h2>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.6' }}>
+                            Hemos recibido tu reporte y el usuario ha sido bloqueado automáticamente. Ya no podrá contactarte ni ver tu perfil.
+                        </p>
                     </div>
                 ) : (
                     <>
-                        <h2 style={{ marginBottom: '0.5rem', fontSize: '1.75rem' }}>Reportar Contenido</h2>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                            Estás reportando: <strong style={{ color: 'var(--text-primary)' }}>{itemName || itemType}</strong>
+                        <h2 style={{ marginBottom: '0.75rem', fontSize: '2rem', fontWeight: '800' }}>Reportar Usuario</h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1rem' }}>
+                            Ayúdanos a proteger la comunidad. Este reporte será revisado por nuestro equipo de seguridad.
                         </p>
 
                         {error && (
                             <div style={{ 
-                                padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', 
-                                color: '#ef4444', borderRadius: '12px', marginBottom: '1.5rem',
-                                border: '1px solid rgba(239, 68, 68, 0.2)', fontSize: '0.9rem'
+                                padding: '1rem 1.25rem', background: 'rgba(239, 68, 68, 0.1)', 
+                                color: '#ef4444', borderRadius: '14px', marginBottom: '1.5rem',
+                                border: '1px solid rgba(239, 68, 68, 0.2)', fontSize: '0.95rem',
+                                display: 'flex', alignItems: 'center', gap: '0.75rem'
                             }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                 {error}
                             </div>
                         )}
 
                         <form onSubmit={handleSubmit}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600', fontSize: '0.9rem' }}>Motivo del reporte</label>
-                                <select 
-                                    value={reason} 
-                                    onChange={(e) => setReason(e.target.value)}
-                                    style={{ 
-                                        width: '100%', padding: '0.875rem', borderRadius: '12px',
-                                        background: 'var(--bg-body)', border: '1px solid var(--border)',
-                                        color: 'var(--text-primary)', fontSize: '1rem', cursor: 'pointer'
-                                    }}
-                                >
-                                    <option value="Contenido inapropiado">Contenido inapropiado</option>
-                                    <option value="Estafa/Fraude">Estafa/Fraude</option>
-                                    <option value="Spam">Spam</option>
-                                    <option value="Menor en riesgo">Menor en riesgo</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', marginBottom: '1.25rem', fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                                    ¿Cuál es el motivo?
+                                </label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {REPORT_OPTIONS.map((opt) => (
+                                        <label 
+                                            key={opt.id}
+                                            style={{ 
+                                                display: 'flex', 
+                                                alignItems: 'flex-start', 
+                                                gap: '1rem',
+                                                padding: '1rem',
+                                                borderRadius: '16px',
+                                                border: reason === opt.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                                                background: reason === opt.id ? 'rgba(139, 92, 246, 0.05)' : 'transparent',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <input 
+                                                type="radio" 
+                                                name="reportReason" 
+                                                value={opt.id}
+                                                checked={reason === opt.id}
+                                                onChange={(e) => setReason(e.target.value)}
+                                                style={{ marginTop: '0.25rem', width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+                                            />
+                                            <div>
+                                                <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{opt.label}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{opt.description}</div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
 
-                            <div style={{ marginBottom: '2rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600', fontSize: '0.9rem' }}>Detalles adicionales (opcional)</label>
+                            <div style={{ marginBottom: '2.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                                    Detalles adicionales {isDescriptionRequired ? <span style={{ color: '#ef4444' }}>*</span> : '(Opcional)'}
+                                </label>
                                 <textarea 
-                                    value={details}
-                                    onChange={(e) => setDetails(e.target.value)}
-                                    placeholder="Describe brevemente el problema..."
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder={isDescriptionRequired ? "Por favor explica el motivo detalladamente..." : "Añade cualquier información extra que nos ayude a investigar..."}
+                                    required={isDescriptionRequired}
                                     style={{ 
-                                        width: '100%', padding: '0.875rem', borderRadius: '12px',
-                                        background: 'var(--bg-body)', border: '1px solid var(--border)',
+                                        width: '100%', padding: '1rem', borderRadius: '16px',
+                                        background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)',
                                         color: 'var(--text-primary)', fontSize: '1rem', minHeight: '120px',
-                                        resize: 'vertical'
+                                        resize: 'vertical', transition: 'all 0.2s',
+                                        outline: 'none'
                                     }}
+                                    onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+                                    onBlur={e => e.target.style.borderColor = 'var(--border)'}
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ 
+                                background: 'rgba(239, 68, 68, 0.05)', 
+                                padding: '1rem', 
+                                borderRadius: '16px', 
+                                marginBottom: '2.5rem',
+                                border: '1px solid rgba(239, 68, 68, 0.1)',
+                                display: 'flex',
+                                gap: '0.75rem',
+                                alignItems: 'center'
+                            }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                <span style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '600' }}>
+                                    Al reportar, este usuario será bloqueado automáticamente.
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1.25rem' }}>
                                 <button 
                                     type="button" 
                                     onClick={onClose}
-                                    className="btn-secondary"
-                                    style={{ flex: 1, padding: '1rem', borderRadius: '14px', border: 'none' }}
+                                    className="btn-outline"
+                                    style={{ flex: 1, padding: '1.1rem', borderRadius: '16px', fontWeight: '700' }}
                                 >
                                     Cancelar
                                 </button>
@@ -154,9 +213,9 @@ const ReportModal = ({ isOpen, onClose, itemId, itemType, itemName }) => {
                                     type="submit" 
                                     className="btn-primary"
                                     disabled={isSubmitting}
-                                    style={{ flex: 2, padding: '1rem', borderRadius: '14px', position: 'relative' }}
+                                    style={{ flex: 2, padding: '1.1rem', borderRadius: '16px', fontWeight: '700', fontSize: '1rem' }}
                                 >
-                                    {isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
+                                    {isSubmitting ? 'Procesando...' : 'Reportar y Bloquear'}
                                 </button>
                             </div>
                         </form>
