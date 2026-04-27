@@ -877,7 +877,7 @@ const ClientDetail = ({ isBlocked = false }) => {
                         </div>
                     </div>
                 </>
-            )} </div>
+            )}
             <ReportModal 
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}

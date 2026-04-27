@@ -522,7 +522,8 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                             {freelancer.bio || `¡Hola! Soy ${freelancer.first_name || freelancer.username}. Me apasiona crear soluciones excepcionales y ayudar a mis clientes a alcanzar sus objetivos con profesionalismo y creatividad.`}
                         </div>
                     </div>
-                </di                {/* Badges Section - Premium Grid */}
+                </div>
+                {/* Badges Section - Premium Grid */}
                 <BadgesSection freelancer={freelancer} isOwnProfile={isOwnProfile} navigate={navigate} />
             </div>
 
@@ -990,8 +991,7 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                         </div>
                     </div>
                 </>
-            )}iv>
-            </div>
+            )}
 
             <ReportModal 
                 isOpen={isReportModalOpen}
