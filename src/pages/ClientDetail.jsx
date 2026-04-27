@@ -174,6 +174,7 @@ const ClientDetail = ({ isBlocked = false }) => {
     const [loading, setLoading] = useState(true);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [hasBlocked, setHasBlocked] = useState(false);
 
     const averageRating = reviewsReceived.length > 0 
         ? (reviewsReceived.reduce((acc, r) => acc + (r.rating || 0), 0) / reviewsReceived.length).toFixed(1)
@@ -230,7 +231,17 @@ const ClientDetail = ({ isBlocked = false }) => {
                     freelancerName: j.provider?.first_name ? `${j.provider.first_name} ${j.provider.last_name || ''}`.trim() : j.provider?.username
                 }));
                 setClientJobs(mappedJobs);
-                console.log("Client jobs loaded:", mappedJobs.length);
+
+                // Check if we have blocked this user
+                if (currentUser && currentUser.id !== id) {
+                    const { data: blockData } = await supabase
+                        .from('user_blocks')
+                        .select('id')
+                        .eq('blocker_id', currentUser.id)
+                        .eq('blocked_id', id)
+                        .single();
+                    setHasBlocked(!!blockData);
+                }
 
                 // 4. Fetch Reviews Received (as target)
                 const { data: recData, error: recError } = await supabase
@@ -302,101 +313,146 @@ const ClientDetail = ({ isBlocked = false }) => {
                     opacity: 0.8
                 }}></div>
 
-                {!isOwnProfile && (
-                    <div style={{ position: 'absolute', top: '2rem', right: '2rem', zIndex: 10 }}>
-                        <button 
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            style={{ 
-                                background: 'rgba(255,255,255,0.05)', 
-                                border: '1px solid var(--border)', 
-                                color: 'var(--text-primary)', 
-                                padding: '8px', 
-                                borderRadius: '12px', 
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                        >
-                            <MoreVertical size={20} />
-                        </button>
-                        {isMenuOpen && (
-                            <>
-                                <div 
-                                    onClick={() => setIsMenuOpen(false)}
-                                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1 }}
-                                />
-                                <div className="glass" style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    right: 0,
-                                    marginTop: '0.5rem',
-                                    background: 'var(--bg-card)',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '16px',
-                                    padding: '0.5rem',
-                                    minWidth: '160px',
-                                    boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '2px'
-                                }}>
-                                    <button 
-                                        onClick={async () => {
-                                            setIsMenuOpen(false);
-                                            if (!currentUser) return;
-                                            try {
-                                                const { blockUser } = await import('../services/safetyService');
-                                                await blockUser(currentUser.id, id);
-                                                showActionModal({
-                                                    title: 'Usuario Bloqueado',
-                                                    message: "Has bloqueado a este usuario. Ya no podrá contactarte ni ver tu contenido.",
-                                                    severity: 'success'
-                                                });
-                                                setTimeout(() => navigate('/dashboard'), 1500);
-                                            } catch (err) {
-                                                console.error("Error al bloquear:", err);
-                                                showActionModal({
-                                                    title: 'Error',
-                                                    message: "No se pudo completar el bloqueo. Inténtalo de nuevo.",
-                                                    severity: 'error'
-                                                });
-                                            }
-                                        }}
-                                        style={{ 
-                                            padding: '0.75rem 1rem', background: 'none', border: 'none', 
-                                            color: '#ef4444', textAlign: 'left', borderRadius: '10px',
-                                            cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
-                                            display: 'flex', alignItems: 'center', gap: '8px'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-                                        Bloquear
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            setIsMenuOpen(false);
-                                            setIsReportModalOpen(true);
-                                        }}
-                                        style={{ 
-                                            padding: '0.75rem 1rem', background: 'none', border: 'none', 
-                                            color: 'var(--text-primary)', textAlign: 'left', borderRadius: '10px',
-                                            cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
-                                            display: 'flex', alignItems: 'center', gap: '8px'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                                        Reportar
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                )}
+                <div style={{ position: 'absolute', top: '2rem', right: '2rem', zIndex: 100 }}>
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsMenuOpen(!isMenuOpen);
+                        }}
+                        style={{ 
+                            background: 'rgba(255,255,255,0.1)', 
+                            border: '1px solid rgba(255,255,255,0.2)', 
+                            color: 'white', 
+                            padding: '10px', 
+                            borderRadius: '14px', 
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                    >
+                        <MoreVertical size={22} />
+                    </button>
+                    {isMenuOpen && (
+                        <>
+                            <div 
+                                onClick={() => setIsMenuOpen(false)}
+                                style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 90 }}
+                            />
+                            <div className="glass" style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '0.75rem',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '20px',
+                                padding: '0.6rem',
+                                minWidth: '180px',
+                                boxShadow: '0 15px 35px rgba(0,0,0,0.4)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                                zIndex: 101,
+                                animation: 'slideDown 0.2s ease-out'
+                            }}>
+                                {isOwnProfile ? (
+                                    <>
+                                        <button 
+                                            onClick={() => navigate('/settings')}
+                                            style={{ 
+                                                padding: '0.8rem 1rem', background: 'none', border: 'none', 
+                                                color: 'var(--text-primary)', textAlign: 'left', borderRadius: '12px',
+                                                cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
+                                                display: 'flex', alignItems: 'center', gap: '10px'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                            Configuración
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button 
+                                            onClick={async () => {
+                                                setIsMenuOpen(false);
+                                                if (!currentUser) return;
+                                                try {
+                                                    const { blockUser, unblockUser } = await import('../services/safetyService');
+                                                    if (hasBlocked) {
+                                                        await unblockUser(currentUser.id, id);
+                                                        setHasBlocked(false);
+                                                        showActionModal({
+                                                            title: 'Usuario Desbloqueado',
+                                                            message: "Has desbloqueado a este usuario.",
+                                                            severity: 'success'
+                                                        });
+                                                    } else {
+                                                        await blockUser(currentUser.id, id);
+                                                        setHasBlocked(true);
+                                                        showActionModal({
+                                                            title: 'Usuario Bloqueado',
+                                                            message: "Has bloqueado a este usuario.",
+                                                            severity: 'success'
+                                                        });
+                                                        setTimeout(() => navigate('/dashboard'), 1500);
+                                                    }
+                                                } catch (err) {
+                                                    console.error("Error al gestionar bloqueo:", err);
+                                                    showActionModal({
+                                                        title: 'Error',
+                                                        message: "No se pudo completar la acción.",
+                                                        severity: 'error'
+                                                    });
+                                                }
+                                            }}
+                                            style={{ 
+                                                padding: '0.8rem 1rem', background: 'none', border: 'none', 
+                                                color: hasBlocked ? 'var(--primary)' : '#ef4444', textAlign: 'left', borderRadius: '12px',
+                                                cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem',
+                                                display: 'flex', alignItems: 'center', gap: '10px'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = hasBlocked ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                            {hasBlocked ? 'Desbloquear' : 'Bloquear'}
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setIsMenuOpen(false);
+                                                setIsReportModalOpen(true);
+                                            }}
+                                            style={{ 
+                                                padding: '0.8rem 1rem', background: 'none', border: 'none', 
+                                                color: 'var(--text-primary)', textAlign: 'left', borderRadius: '12px',
+                                                cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem',
+                                                display: 'flex', alignItems: 'center', gap: '10px'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                                            Reportar
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
                     <div className="profile-avatar-wrapper" style={{

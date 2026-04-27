@@ -82,3 +82,24 @@ export const isUserBlocked = async (userId, targetId) => {
         return false;
     }
 };
+
+/**
+ * Unblocks a user.
+ * @param {string} blockerId 
+ * @param {string} blockedId 
+ */
+export const unblockUser = async (blockerId, blockedId) => {
+    try {
+        const { error } = await supabase
+            .from('user_blocks')
+            .delete()
+            .eq('blocker_id', blockerId)
+            .eq('blocked_id', blockedId);
+
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('[SafetyService] Error in unblockUser:', error);
+        throw error;
+    }
+};

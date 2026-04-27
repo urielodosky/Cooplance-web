@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/context/AuthContext';
+import { Star, MoreVertical } from 'lucide-react';
+import { useActionModal } from '../features/auth/context/ActionModalContext';
+import ReportModal from '../components/ReportModal';
 
 // Helper for Role Translation
 const translateRole = (role) => {
@@ -17,7 +20,29 @@ const translateRole = (role) => {
 
 // Reusable User Card
 const UserCard = ({ profile, teams = [], navigate }) => {
+    const { user: currentUser } = useAuth();
+    const { showActionModal } = useActionModal();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [hasBlocked, setHasBlocked] = useState(false);
+
+    useEffect(() => {
+        const checkBlock = async () => {
+            if (currentUser && currentUser.id !== profile.id) {
+                const { data } = await supabase
+                    .from('user_blocks')
+                    .select('id')
+                    .eq('blocker_id', currentUser.id)
+                    .eq('blocked_id', profile.id)
+                    .single();
+                setHasBlocked(!!data);
+            }
+        };
+        checkBlock();
+    }, [currentUser, profile.id]);
+
     const isOnline = Math.random() > 0.5; // Mock for now
+    const isOwnProfile = currentUser?.id === profile.id;
 
     return (
         <div className="glass card-hover" style={{
@@ -68,13 +93,77 @@ const UserCard = ({ profile, teams = [], navigate }) => {
                         }}></div>
                     )}
                 </div>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                     <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {profile.first_name ? `${profile.first_name} ${profile.last_name || ''}` : profile.username}
                     </h3>
                     <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: '600' }}>@{profile.username}</span>
                 </div>
+                
+                <div style={{ position: 'relative' }}>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '5px' }}
+                    >
+                        <MoreVertical size={20} />
+                    </button>
+                    {isMenuOpen && (
+                        <>
+                            <div onClick={() => setIsMenuOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 10 }} />
+                            <div className="glass" style={{
+                                position: 'absolute', top: '100%', right: 0, zIndex: 11,
+                                background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px',
+                                minWidth: '150px', padding: '5px', boxShadow: 'var(--shadow-lg)'
+                            }}>
+                                {!isOwnProfile ? (
+                                    <>
+                                        <button 
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                setIsMenuOpen(false);
+                                                if (!currentUser) return;
+                                                const { blockUser, unblockUser } = await import('../services/safetyService');
+                                                if (hasBlocked) {
+                                                    await unblockUser(currentUser.id, profile.id);
+                                                    setHasBlocked(false);
+                                                    showActionModal({ title: 'Desbloqueado', message: 'Usuario desbloqueado.', severity: 'success' });
+                                                } else {
+                                                    await blockUser(currentUser.id, profile.id);
+                                                    setHasBlocked(true);
+                                                    showActionModal({ title: 'Bloqueado', message: 'Usuario bloqueado.', severity: 'success' });
+                                                }
+                                            }}
+                                            style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', color: hasBlocked ? 'var(--primary)' : '#ef4444', fontWeight: '600', cursor: 'pointer', borderRadius: '8px' }}
+                                        >
+                                            {hasBlocked ? 'Desbloquear' : 'Bloquear'}
+                                        </button>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setIsMenuOpen(false); setIsReportModalOpen(true); }}
+                                            style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', fontWeight: '600', cursor: 'pointer', borderRadius: '8px' }}
+                                        >
+                                            Reportar
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button 
+                                        onClick={() => navigate('/settings')}
+                                        style={{ width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', fontWeight: '600', cursor: 'pointer', borderRadius: '8px' }}
+                                    >
+                                        Configuración
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
+
+            <ReportModal 
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                reportedId={profile.id}
+                reportedName={profile.username}
+            />
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <span style={{
