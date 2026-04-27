@@ -117,12 +117,11 @@ const Wallet = () => {
         ? stats.transactions
         : stats.transactions.filter(t => t.method === filterMethod);
 
-    // Calculate Escrow (Pending) Balance from active/delivered/canceled jobs
+    // Calculate Escrow (Pending) Balance from active/delivered jobs
     const escrowBalance = useMemo(() => {
         if (!jobs || jobs.length === 0) return 0;
         return jobs.reduce((acc, job) => {
-            // Canceled jobs still have funds in escrow until manually released
-            if (['active', 'delivered', 'canceled', 'cancellation_requested'].includes(job.status)) {
+            if (['active', 'delivered'].includes(job.status)) {
                 return acc + (parseFloat(job.amount) || 0);
             }
             return acc;

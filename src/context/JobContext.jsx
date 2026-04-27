@@ -502,9 +502,41 @@ export const JobProvider = ({ children }) => {
                         }
                     }
 
-                    // NOTE: No automatic refund on cancel. Funds stay in escrow (PENDIENTE)
-                    // until explicitly released to freelancer or refunded to client.
-                    // The release is triggered by the "Forzar Liberación" button or admin action.
+                    // 2. REFUND TO CLIENT (Automatic on cancel as per user request)
+                    try {
+                        const { data: clientProfile } = await supabase
+                            .from('profiles')
+                            .select('balance')
+                            .eq('id', job.buyerId)
+                            .single();
+                        
+                        if (clientProfile) {
+                            const newBalance = (clientProfile.balance || 0) + (parseFloat(job.amount) || 0);
+                            await supabase.from('profiles')
+                                .update({ balance: newBalance })
+                                .eq('id', job.buyerId);
+                            
+                            // Create reversal transaction (type 'refund' to not count as 'gain' in summary)
+                            await supabase.from('transactions').insert([{
+                                user_id: job.buyerId,
+                                type: 'refund',
+                                amount: job.amount,
+                                method: 'escrow_refund',
+                                description: `Reembolso por cancelación: ${job.serviceTitle}`,
+                                related_id: job.id
+                            }]);
+
+                            // Notify Client
+                            await NotificationService.createNotification(job.buyerId, {
+                                type: 'payment_refund',
+                                title: 'Reembolso automático',
+                                message: `Se han reembolsado ${job.amount} ARS a tu billetera por la cancelación de '${job.serviceTitle}'.`,
+                                link: '/wallet'
+                            });
+                        }
+                    } catch (refundErr) {
+                        console.error('[JobContext] Auto-refund error:', refundErr);
+                    }
 
                     // 2. APPLY V34 COMPLIANCE: Commercial penalty only for level 6+
                     try {
