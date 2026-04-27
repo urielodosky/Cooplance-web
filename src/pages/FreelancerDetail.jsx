@@ -77,36 +77,85 @@ const BadgesSection = ({ freelancer, isOwnProfile, navigate }) => {
     return (
         <div className="dashboard-badges-section" style={{ marginTop: '2.5rem' }}>
             <div className="section-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 className="section-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>
+                <h3 className="section-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800' }}>
                     {isOwnProfile ? 'Mis Insignias' : 'Insignias del Freelancer'}
                 </h3>
                 {isOwnProfile && (
                     <button 
                         className="btn-outline" 
-                        style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', borderRadius: '10px', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: '700', cursor: 'pointer' }}
+                        style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem', borderRadius: '10px', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: '700', cursor: 'pointer' }}
                         onClick={() => navigate('/badges')}
                     >
-                        Ver mis insignias
+                        Ver todas
                     </button>
                 )}
             </div>
-            <div className="dashboard-badges-grid">
+            <div className="badges-scroll-wrapper" style={{ 
+                display: 'flex', 
+                gap: '1.25rem', 
+                overflowX: 'auto', 
+                paddingBottom: '1.25rem',
+                paddingRight: '1rem',
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none',
+                WebkitOverflowScrolling: 'touch',
+                margin: '0 -1rem',
+                paddingLeft: '1rem'
+            }}>
                 {familyStatus.map((status, idx) => (
                     <div 
                         key={idx} 
                         className={`badge-family-card ${status.badge ? 'unlocked' : 'locked'} tier-${status.tier?.name || 'none'}`}
-                        style={status.tier ? { '--tier-color': status.tier.color } : {}}
+                        style={{
+                            flex: '0 0 160px',
+                            minWidth: '160px',
+                            margin: 0,
+                            '--tier-color': status.tier?.color || 'rgba(128, 128, 128, 0.2)'
+                        }}
                     >
                         <div className="badge-icon-wrapper">
                             {status.icon}
                         </div>
                         <div className="badge-content">
-                            <span className="family-label">{status.familyTitle}</span>
-                            <h4 className="badge-name">{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
+                            <span className="family-label" style={{ fontSize: '0.65rem', opacity: 0.7 }}>{status.familyTitle}</span>
+                            <h4 className="badge-name" style={{ fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>{status.badge ? status.badge.title : 'No desbloqueado'}</h4>
                         </div>
                     </div>
                 ))}
             </div>
+
+            <style>{`
+                .badges-scroll-wrapper::-webkit-scrollbar {
+                    display: none;
+                }
+                @media (max-width: 768px) {
+                    .profile-hero-premium {
+                        padding: 2rem 1.5rem !important;
+                    }
+                    .profile-hero-content {
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        text-align: center !important;
+                        gap: 2rem !important;
+                    }
+                    .hero-details-column {
+                        align-items: center !important;
+                    }
+                    .hero-meta-row {
+                        justify-content: center !important;
+                        flex-wrap: wrap !important;
+                    }
+                    .hero-action-buttons {
+                        width: 100% !important;
+                        flex-direction: column !important;
+                    }
+                    .hero-action-buttons .btn-primary,
+                    .hero-action-buttons .btn-secondary {
+                        width: 100% !important;
+                        justify-content: center !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 };
