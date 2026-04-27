@@ -110,7 +110,7 @@ const BadgesSection = ({ client, isOwnProfile, navigate }) => {
     );
 };
 
-const ClientDetail = () => {
+const ClientDetail = ({ isBlocked = false }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showActionModal } = useActionModal();
@@ -463,403 +463,421 @@ const ClientDetail = () => {
                             {client.bio || "Este cliente busca excelencia y profesionalismo en cada proyecto. Comprometido con el crecimiento mutuo y la calidad."}
                         </div>
                     </div>
-                </div>
-
-                {/* Badges Section - Premium Grid */}
+                </div>                {/* Badges Section - Premium Grid */}
                 <BadgesSection client={client} isOwnProfile={isOwnProfile} navigate={navigate} />
             </div>
 
-            <div style={{ marginTop: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-                        Proyectos Publicados
-                    </h2>
-                    <span style={{
-                        background: 'var(--bg-card-hover)',
-                        padding: '0.4rem 1rem',
-                        borderRadius: '20px',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text-primary)',
-                        fontWeight: '600'
-                    }}>{clientProjects.length} Activos</span>
+            {isBlocked ? (
+                <div className="glass" style={{
+                    padding: '4rem',
+                    textAlign: 'center',
+                    borderRadius: '32px',
+                    border: '1px solid var(--border)',
+                    background: 'rgba(239, 68, 68, 0.05)',
+                    marginTop: '2rem'
+                }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🔒</div>
+                    <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>Contenido Bloqueado</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto' }}>
+                        No puedes ver la actividad de este usuario porque existe un bloqueo activo. 
+                        Aun así, puedes usar el menú superior para reportar o gestionar el bloqueo.
+                    </p>
                 </div>
-
-                {clientProjects.length > 0 ? (
-                    <div className="services-grid-explore">
-                        {clientProjects.map(project => (
-                            <ProjectCard
-                                key={project.id}
-                                project={{
-                                    ...project,
-                                    clientName: client.company_name || client.first_name || client.username,
-                                    clientAvatar: client.avatar_url,
-                                    clientRating: client.rating,
-                                    clientReviews: client.reviews_count,
-                                }}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="glass" style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        padding: '4rem',
-                        borderRadius: '16px',
-                        border: '1px dashed var(--border)'
-                    }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.3 }}>📁</div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Este cliente no tiene proyectos activos en este momento.</p>
-                    </div>
-                )}
-            </div>
-
-            {/* Job History Section */}
-            <div style={{ marginTop: '4rem' }}>
-                <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        Historial de Trabajos Contratados
-                    </h2>
-                    <span style={{
-                        background: 'var(--bg-card-hover)',
-                        padding: '0.4rem 1rem',
-                        borderRadius: '20px',
-                        color: 'var(--text-primary)',
-                        fontWeight: '600',
-                        marginTop: '0.5rem',
-                        display: 'inline-block'
-                    }}>{clientJobs.length} Finalizados</span>
-                </div>
-
-                {clientJobs.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {clientJobs.map(job => (
-                            <div key={job.id} className="glass" style={{
-                                padding: '1rem',
-                                background: 'var(--bg-card)',
+            ) : (
+                <>
+                    <div style={{ marginTop: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                                Proyectos Publicados
+                            </h2>
+                            <span style={{
+                                background: 'var(--bg-card-hover)',
+                                padding: '0.4rem 1rem',
+                                borderRadius: '20px',
                                 border: '1px solid var(--border)',
+                                color: 'var(--text-primary)',
+                                fontWeight: '600'
+                            }}>{clientProjects.length} Activos</span>
+                        </div>
+
+                        {clientProjects.length > 0 ? (
+                            <div className="services-grid-explore">
+                                {clientProjects.map(project => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={{
+                                            ...project,
+                                            clientName: client.company_name || client.first_name || client.username,
+                                            clientAvatar: client.avatar_url,
+                                            clientRating: client.rating,
+                                            clientReviews: client.reviews_count,
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="glass" style={{
                                 display: 'flex',
+                                flexDirection: 'column',
                                 alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: '0.75rem',
-                                flexWrap: 'wrap'
+                                padding: '4rem',
+                                borderRadius: '16px',
+                                border: '1px dashed var(--border)'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                                    <div 
-                                        onClick={() => navigate(`/profile/${job.provider_id}`)}
-                                        style={{
-                                            width: '40px', height: '40px',
-                                            borderRadius: '50%',
-                                            overflow: 'hidden',
-                                            background: 'var(--bg-card-hover)',
-                                            cursor: 'pointer',
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.3 }}>📁</div>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Este cliente no tiene proyectos activos en este momento.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Job History Section */}
+                    <div style={{ marginTop: '4rem' }}>
+                        <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                            <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                Historial de Trabajos Contratados
+                            </h2>
+                            <span style={{
+                                background: 'var(--bg-card-hover)',
+                                padding: '0.4rem 1rem',
+                                borderRadius: '20px',
+                                color: 'var(--text-primary)',
+                                fontWeight: '600',
+                                marginTop: '0.5rem',
+                                display: 'inline-block'
+                            }}>{clientJobs.length} Finalizados</span>
+                        </div>
+
+                        {clientJobs.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {clientJobs.map(job => (
+                                    <div key={job.id} className="glass" style={{
+                                        padding: '1rem',
+                                        background: 'var(--bg-card)',
+                                        border: '1px solid var(--border)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: '0.75rem',
+                                        flexWrap: 'wrap'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                            <div 
+                                                onClick={() => navigate(`/profile/${job.provider_id}`)}
+                                                style={{
+                                                    width: '40px', height: '40px',
+                                                    borderRadius: '50%',
+                                                    overflow: 'hidden',
+                                                    background: 'var(--bg-card-hover)',
+                                                    cursor: 'pointer',
+                                                    border: '1px solid var(--border)',
+                                                    flexShrink: 0
+                                                }}
+                                            >
+                                                {job.provider?.avatar_url ? (
+                                                    <img src={job.provider.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                                        {job.provider?.username?.charAt(0)?.toUpperCase() || 'F'}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h3>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                                        Freelancer: <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{job.freelancerName}</span>
+                                                    </span>
+                                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--border)' }}></span>
+                                                    <span onClick={() => navigate(`/profile/${job.provider_id}`)} style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>@{job.provider?.username}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    padding: '3px 8px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.6rem',
+                                                    fontWeight: '800',
+                                                    background: job.deliveryResult === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                                    color: job.deliveryResult === 'Cancelado' ? '#ef4444' : '#10b981',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.5px',
+                                                    marginBottom: '0.15rem'
+                                                }}>
+                                                    {job.deliveryResult || 'Finalizado'}
+                                                </span>
+                                                {job.amount && (
+                                                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)' }}>
+                                                        ${job.amount}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            <button 
+                                                onClick={() => {
+                                                    if (job.service_id) navigate(`/service/${job.service_id}`);
+                                                    else if (job.project_id) navigate(`/project/${job.project_id}`);
+                                                }}
+                                                className="btn-primary"
+                                                style={{ 
+                                                    padding: '7px 14px', 
+                                                    borderRadius: '10px', 
+                                                    fontSize: '0.8rem', 
+                                                    fontWeight: '600',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px'
+                                                }}
+                                            >
+                                                Ver Detalle
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="glass" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+                                Aún no hay trabajos finalizados en el historial.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Reviews Section - Tabs-like structure */}
+                    <div style={{ marginTop: '4rem' }}>
+                        <div style={{ display: 'flex', gap: '2rem', borderBottom: '2px solid var(--border)', marginBottom: '2.5rem' }}>
+                            <h2 
+                                onClick={() => setActiveReviewTab('received')}
+                                style={{ 
+                                    fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
+                                    borderBottom: activeReviewTab === 'received' ? '3px solid var(--primary)' : '3px solid transparent',
+                                    color: activeReviewTab === 'received' ? 'var(--text-primary)' : 'var(--text-muted)',
+                                    transition: 'all 0.2s',
+                                    margin: 0
+                                }}
+                            >
+                                Reseñas Recibidas ({reviewsReceived.length})
+                            </h2>
+                            <h2 
+                                onClick={() => setActiveReviewTab('given')}
+                                style={{ 
+                                    fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
+                                    borderBottom: activeReviewTab === 'given' ? '3px solid var(--primary)' : '3px solid transparent',
+                                    color: activeReviewTab === 'given' ? 'var(--text-primary)' : 'var(--text-muted)',
+                                    transition: 'all 0.2s',
+                                    margin: 0
+                                }}
+                            >
+                                Reseñas Dadas ({reviewsGiven.length})
+                            </h2>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
+                            {activeReviewTab === 'received' ? (
+                                reviewsReceived.length > 0 ? (
+                                    reviewsReceived.map(review => (
+                                        <div key={review.id} className="glass" style={{
+                                            borderRadius: '20px',
+                                            padding: '2rem',
+                                            background: 'var(--bg-card)',
                                             border: '1px solid var(--border)',
-                                            flexShrink: 0
-                                        }}
-                                    >
-                                        {job.provider?.avatar_url ? (
-                                            <img src={job.provider.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                                                {job.provider?.username?.charAt(0)?.toUpperCase() || 'F'}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ minWidth: 0 }}>
-                                        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.serviceTitle}</h3>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                                Freelancer: <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{job.freelancerName}</span>
-                                            </span>
-                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--border)' }}></span>
-                                            <span onClick={() => navigate(`/profile/${job.provider_id}`)} style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}>@{job.provider?.username}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{
-                                            display: 'inline-block',
-                                            padding: '3px 8px',
-                                            borderRadius: '6px',
-                                            fontSize: '0.6rem',
-                                            fontWeight: '800',
-                                            background: job.deliveryResult === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                                            color: job.deliveryResult === 'Cancelado' ? '#ef4444' : '#10b981',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px',
-                                            marginBottom: '0.15rem'
-                                        }}>
-                                            {job.deliveryResult || 'Finalizado'}
-                                        </span>
-                                        {job.amount && (
-                                            <div style={{ fontSize: '0.95rem', fontWeight: '800', color: 'var(--text-primary)' }}>
-                                                ${job.amount}
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    <button 
-                                        onClick={() => {
-                                            if (job.service_id) navigate(`/service/${job.service_id}`);
-                                            else if (job.project_id) navigate(`/project/${job.project_id}`);
-                                        }}
-                                        className="btn-primary"
-                                        style={{ 
-                                            padding: '7px 14px', 
-                                            borderRadius: '10px', 
-                                            fontSize: '0.8rem', 
-                                            fontWeight: '600',
                                             display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px'
-                                        }}
-                                    >
-                                        Ver Detalle
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="glass" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
-                        Aún no hay trabajos finalizados en el historial.
-                    </div>
-                )}
-            </div>
-
-            {/* Reviews Section - Tabs-like structure */}
-            <div style={{ marginTop: '4rem' }}>
-                <div style={{ display: 'flex', gap: '2rem', borderBottom: '2px solid var(--border)', marginBottom: '2.5rem' }}>
-                    <h2 
-                        onClick={() => setActiveReviewTab('received')}
-                        style={{ 
-                            fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
-                            borderBottom: activeReviewTab === 'received' ? '3px solid var(--primary)' : '3px solid transparent',
-                            color: activeReviewTab === 'received' ? 'var(--text-primary)' : 'var(--text-muted)',
-                            transition: 'all 0.2s',
-                            margin: 0
-                        }}
-                    >
-                        Reseñas Recibidas ({reviewsReceived.length})
-                    </h2>
-                    <h2 
-                        onClick={() => setActiveReviewTab('given')}
-                        style={{ 
-                            fontSize: '1.4rem', cursor: 'pointer', paddingBottom: '1rem', 
-                            borderBottom: activeReviewTab === 'given' ? '3px solid var(--primary)' : '3px solid transparent',
-                            color: activeReviewTab === 'given' ? 'var(--text-primary)' : 'var(--text-muted)',
-                            transition: 'all 0.2s',
-                            margin: 0
-                        }}
-                    >
-                        Reseñas Dadas ({reviewsGiven.length})
-                    </h2>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                    {activeReviewTab === 'received' ? (
-                        reviewsReceived.length > 0 ? (
-                            reviewsReceived.map(review => (
-                                <div key={review.id} className="glass" style={{
-                                    borderRadius: '20px',
-                                    padding: '2rem',
-                                    background: 'var(--bg-card)',
-                                    border: '1px solid var(--border)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '1.5rem'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                            <div 
-                                                onClick={() => navigate(`/profile/${review.reviewer_id}`)}
-                                                style={{
-                                                    width: '52px',
-                                                    height: '52px',
-                                                    borderRadius: '50%',
-                                                    overflow: 'hidden',
-                                                    background: 'var(--bg-card-hover)',
-                                                    cursor: 'pointer',
-                                                    border: '1px solid var(--border)'
-                                                }}
-                                            >
-                                                {review.reviewer?.avatar_url ? (
-                                                    <img src={review.reviewer.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                ) : (
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold' }}>
-                                                        {review.reviewer?.username?.charAt(0).toUpperCase()}
+                                            flexDirection: 'column',
+                                            gap: '1.5rem'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                    <div 
+                                                        onClick={() => navigate(`/profile/${review.reviewer_id}`)}
+                                                        style={{
+                                                            width: '52px',
+                                                            height: '52px',
+                                                            borderRadius: '50%',
+                                                            overflow: 'hidden',
+                                                            background: 'var(--bg-card-hover)',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid var(--border)'
+                                                        }}
+                                                    >
+                                                        {review.reviewer?.avatar_url ? (
+                                                            <img src={review.reviewer.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        ) : (
+                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold' }}>
+                                                                {review.reviewer?.username?.charAt(0).toUpperCase()}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <h4 
-                                                    onClick={() => navigate(`/profile/${review.reviewer_id}`)}
-                                                    style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}
-                                                >
-                                                    {review.reviewer?.first_name ? `${review.reviewer.first_name} ${review.reviewer.last_name || ''}` : (review.reviewer?.username || 'Usuario')}
-                                                </h4>
-                                                <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.reviewer?.username}</span>
-                                            </div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
-                                                {[...Array(5)].map((_, i) => {
-                                                    const starRating = review.rating;
-                                                    const isFull = i + 1 <= starRating;
-                                                    const isHalf = i < starRating && i + 1 > starRating;
-                                                    
-                                                    return (
-                                                        <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                                            <defs>
-                                                                <linearGradient id={`starGrad-${review.id}-${i}`}>
-                                                                    <stop offset="50%" stopColor="#fbbf24" />
-                                                                    <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
-                                                                </linearGradient>
-                                                            </defs>
-                                                            <polygon 
-                                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                                                                fill={isFull ? '#fbbf24' : (isHalf ? `url(#starGrad-${review.id}-${i})` : 'rgba(255,255,255,0.1)')}
-                                                            />
-                                                        </svg>
-                                                    );
-                                                })}
-                                            </div>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatRelativeDate(review.created_at)}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: '3px solid #3b82f6' }}>
-                                        <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>"{review.comment}"</p>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Por el trabajo:</span>
-                                            <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' }}>{review.project_title_snapshot || review.service_title_snapshot || review.job?.service_title || 'Trabajo Finalizado'}</span>
-                                        </div>
-                                        <button 
-                                            onClick={() => {
-                                                if (review.job?.service_id) navigate(`/service/${review.job.service_id}`);
-                                                else if (review.job?.project_id) navigate(`/project/${review.job.project_id}`);
-                                            }}
-                                            style={{ padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', fontWeight: '600', cursor: 'pointer' }}
-                                        >
-                                            Ver Detalle
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="glass" style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Aún no hay reseñas recibidas.</p>
-                            </div>
-                        )
-                    ) : (
-                        reviewsGiven.length > 0 ? (
-                            reviewsGiven.map(review => (
-                                <div key={review.id} className="glass" style={{
-                                    borderRadius: '20px',
-                                    padding: '2rem',
-                                    background: 'var(--bg-card)',
-                                    border: '1px solid var(--border)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '1.5rem'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                            <div 
-                                                onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/profile/${review.target_id}`)}
-                                                style={{
-                                                    width: '52px',
-                                                    height: '52px',
-                                                    borderRadius: '50%',
-                                                    overflow: 'hidden',
-                                                    background: 'var(--bg-card-hover)',
-                                                    cursor: 'pointer',
-                                                    border: '1px solid var(--border)'
-                                                }}
-                                            >
-                                                {review.target?.avatar_url ? (
-                                                    <img src={review.target.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                ) : (
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold' }}>
-                                                        {review.target?.username?.charAt(0).toUpperCase()}
+                                                    <div>
+                                                        <h4 
+                                                            onClick={() => navigate(`/profile/${review.reviewer_id}`)}
+                                                            style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}
+                                                        >
+                                                            {review.reviewer?.first_name ? `${review.reviewer.first_name} ${review.reviewer.last_name || ''}` : (review.reviewer?.username || 'Usuario')}
+                                                        </h4>
+                                                        <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.reviewer?.username}</span>
                                                     </div>
-                                                )}
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
+                                                        {[...Array(5)].map((_, i) => {
+                                                            const starRating = review.rating;
+                                                            const isFull = i + 1 <= starRating;
+                                                            const isHalf = i < starRating && i + 1 > starRating;
+                                                            
+                                                            return (
+                                                                <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                                    <defs>
+                                                                        <linearGradient id={`starGrad-${review.id}-${i}`}>
+                                                                            <stop offset="50%" stopColor="#fbbf24" />
+                                                                            <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
+                                                                        </linearGradient>
+                                                                    </defs>
+                                                                    <polygon 
+                                                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                                                                        fill={isFull ? '#fbbf24' : (isHalf ? `url(#starGrad-${review.id}-${i})` : 'rgba(255,255,255,0.1)')}
+                                                                    />
+                                                                </svg>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatRelativeDate(review.created_at)}</span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h4 
-                                                    onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/profile/${review.target_id}`)}
-                                                    style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}
-                                                >
-                                                    {review.target?.first_name ? `${review.target.first_name} ${review.target.last_name || ''}` : (review.target?.username || 'Usuario')}
-                                                </h4>
-                                                <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.target?.username}</span>
+                                            
+                                            <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: '3px solid #3b82f6' }}>
+                                                <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>"{review.comment}"</p>
                                             </div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
-                                                {[...Array(5)].map((_, i) => {
-                                                    const starRating = review.rating;
-                                                    const isFull = i + 1 <= starRating;
-                                                    const isHalf = i < starRating && i + 1 > starRating;
-                                                    
-                                                    return (
-                                                        <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                                            <defs>
-                                                                <linearGradient id={`starGrad-${review.id}-${i}`}>
-                                                                    <stop offset="50%" stopColor="#fbbf24" />
-                                                                    <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
-                                                                </linearGradient>
-                                                            </defs>
-                                                            <polygon 
-                                                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                                                                fill={isFull ? '#fbbf24' : (isHalf ? `url(#starGrad-${review.id}-${i})` : 'rgba(255,255,255,0.1)')}
-                                                            />
-                                                        </svg>
-                                                    );
-                                                })}
-                                            </div>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatRelativeDate(review.created_at)}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: '3px solid #3b82f6' }}>
-                                        <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>"{review.comment}"</p>
-                                    </div>
 
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Por el trabajo:</span>
-                                            <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' }}>{review.project_title_snapshot || review.service_title_snapshot || review.job?.service_title || 'Trabajo Finalizado'}</span>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Por el trabajo:</span>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' }}>{review.project_title_snapshot || review.service_title_snapshot || review.job?.service_title || 'Trabajo Finalizado'}</span>
+                                                </div>
+                                                <button 
+                                                    onClick={() => {
+                                                        if (review.job?.service_id) navigate(`/service/${review.job.service_id}`);
+                                                        else if (review.job?.project_id) navigate(`/project/${review.job.project_id}`);
+                                                    }}
+                                                    style={{ padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', fontWeight: '600', cursor: 'pointer' }}
+                                                >
+                                                    Ver Detalle
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button 
-                                            onClick={() => {
-                                                if (review.job?.service_id) navigate(`/service/${review.job.service_id}`);
-                                                else if (review.job?.project_id) navigate(`/project/${review.job.project_id}`);
-                                            }}
-                                            style={{ padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', fontWeight: '600', cursor: 'pointer' }}
-                                        >
-                                            Ver Detalle
-                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="glass" style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Aún no hay reseñas recibidas.</p>
                                     </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="glass" style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.2 }}>✍️</div>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Aún no has dado reseñas.</p>
-                            </div>
-                        )
-                    )}
-                </div>
-            </div>
+                                )
+                            ) : (
+                                reviewsGiven.length > 0 ? (
+                                    reviewsGiven.map(review => (
+                                        <div key={review.id} className="glass" style={{
+                                            borderRadius: '20px',
+                                            padding: '2rem',
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '1.5rem'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                    <div 
+                                                        onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/profile/${review.target_id}`)}
+                                                        style={{
+                                                            width: '52px',
+                                                            height: '52px',
+                                                            borderRadius: '50%',
+                                                            overflow: 'hidden',
+                                                            background: 'var(--bg-card-hover)',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid var(--border)'
+                                                        }}
+                                                    >
+                                                        {review.target?.avatar_url ? (
+                                                            <img src={review.target.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        ) : (
+                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#3b82f6', color: 'white', fontWeight: 'bold' }}>
+                                                                {review.target?.username?.charAt(0).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h4 
+                                                            onClick={() => navigate(review.target?.role === 'client' ? `/client/${review.target_id}` : review.target?.role === 'company' ? `/company/${review.target_id}` : `/profile/${review.target_id}`)}
+                                                            style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', cursor: 'pointer' }}
+                                                        >
+                                                            {review.target?.first_name ? `${review.target.first_name} ${review.target.last_name || ''}` : (review.target?.username || 'Usuario')}
+                                                        </h4>
+                                                        <span style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '600' }}>@{review.target?.username}</span>
+                                                    </div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
+                                                        {[...Array(5)].map((_, i) => {
+                                                            const starRating = review.rating;
+                                                            const isFull = i + 1 <= starRating;
+                                                            const isHalf = i < starRating && i + 1 > starRating;
+                                                            
+                                                            return (
+                                                                <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                                    <defs>
+                                                                        <linearGradient id={`starGrad-${review.id}-${i}`}>
+                                                                            <stop offset="50%" stopColor="#fbbf24" />
+                                                                            <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
+                                                                        </linearGradient>
+                                                                    </defs>
+                                                                    <polygon 
+                                                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                                                                        fill={isFull ? '#fbbf24' : (isHalf ? `url(#starGrad-${review.id}-${i})` : 'rgba(255,255,255,0.1)')}
+                                                                    />
+                                                                </svg>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formatRelativeDate(review.created_at)}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: '3px solid #3b82f6' }}>
+                                                <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>"{review.comment}"</p>
+                                            </div>
+
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Por el trabajo:</span>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: '600' }}>{review.project_title_snapshot || review.service_title_snapshot || review.job?.service_title || 'Trabajo Finalizado'}</span>
+                                                </div>
+                                                <button 
+                                                    onClick={() => {
+                                                        if (review.job?.service_id) navigate(`/service/${review.job.service_id}`);
+                                                        else if (review.job?.project_id) navigate(`/project/${review.job.project_id}`);
+                                                    }}
+                                                    style={{ padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.85rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)', fontWeight: '600', cursor: 'pointer' }}
+                                                >
+                                                    Ver Detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="glass" style={{ gridColumn: '1 / -1', padding: '4rem', textAlign: 'center', borderRadius: '20px', border: '1px dashed var(--border)' }}>
+                                        <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.2 }}>✍️</div>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Aún no has dado reseñas.</p>
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    </div>
+                </>
+            )} </div>
             <ReportModal 
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}

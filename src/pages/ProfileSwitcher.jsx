@@ -1,5 +1,11 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { isUserBlocked } from '../services/safetyService';
+import FreelancerDetail from './FreelancerDetail';
+import ClientDetail from './ClientDetail';
+import CompanyDetail from './CompanyDetail';
 
 const ProfileSwitcher = () => {
     const { id } = useParams();
@@ -17,8 +23,7 @@ const ProfileSwitcher = () => {
                     const blocked = await isUserBlocked(currentUser.id, id);
                     if (blocked) {
                         setIsBlocked(true);
-                        setLoading(false);
-                        return;
+                        // We continue because we want to show the partial profile
                     }
                 }
 
@@ -61,40 +66,14 @@ const ProfileSwitcher = () => {
         );
     }
 
-    if (isBlocked) {
-        return (
-            <div className="container" style={{ 
-                height: '70vh', 
-                display: 'flex', 
-                flexDirection: 'column',
-                alignItems: 'center', 
-                justifyContent: 'center',
-                textAlign: 'center'
-            }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🔒</div>
-                <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem' }}>Acceso Restringido</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '400px' }}>
-                    Este usuario te ha bloqueado y no puedes ver su perfil ni interactuar con él por seguridad.
-                </p>
-                <button 
-                    onClick={() => window.history.back()} 
-                    className="btn-primary" 
-                    style={{ marginTop: '2rem', padding: '1rem 2rem', borderRadius: '16px' }}
-                >
-                    Volver atrás
-                </button>
-            </div>
-        );
-    }
-
-    // Dynamic routing based on role
+    // Dynamic routing based on role, passing isBlocked prop
     if (role === 'company') {
-        return <CompanyDetail />;
+        return <CompanyDetail isBlocked={isBlocked} />;
     } else if (role === 'buyer' || role === 'client') {
-        return <ClientDetail />;
+        return <ClientDetail isBlocked={isBlocked} />;
     } else {
         // Defaults to freelancer if role is freelancer or anything else
-        return <FreelancerDetail />;
+        return <FreelancerDetail isBlocked={isBlocked} />;
     }
 };
 
