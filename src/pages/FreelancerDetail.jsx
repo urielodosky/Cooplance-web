@@ -992,9 +992,9 @@ const FreelancerDetail = () => {
             <ReportModal 
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}
-                itemId={id}
-                itemType="profile"
-                itemName={`${freelancer.first_name} ${freelancer.last_name}`}
+                reportedId={id}
+                referenceType="profile"
+                itemName={freelancer ? `${freelancer.first_name} ${freelancer.last_name || ''}` : ''}
             />
         </div>
     );

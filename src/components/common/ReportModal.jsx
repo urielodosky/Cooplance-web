@@ -32,6 +32,11 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
             return;
         }
 
+        if (!reportedId) {
+            setError('No se pudo identificar al usuario reportado. Inténtalo de nuevo.');
+            return;
+        }
+
         if (isDescriptionRequired && !description.trim()) {
             setError('Por favor, describe el motivo del reporte.');
             return;

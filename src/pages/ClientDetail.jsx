@@ -850,8 +850,9 @@ const ClientDetail = () => {
             <ReportModal 
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}
-                targetId={id}
-                targetType="profile"
+                reportedId={id}
+                referenceType="profile"
+                itemName={client?.first_name ? `${client.first_name} ${client.last_name || ''}` : client?.username}
             />
         </div>
     );
