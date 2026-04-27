@@ -565,25 +565,17 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 showActionModal({
-                                                    title: 'Eliminar del Historial',
-                                                    message: `¿Estás seguro de que deseas eliminar "${job.serviceTitle}" del historial? Esta acción eliminará también las reseñas asociadas y no se puede deshacer.`,
+                                                    title: 'Ocultar del Historial',
+                                                    message: `¿Deseas ocultar "${job.serviceTitle}" de tu historial? Las reseñas no se eliminan.`,
                                                     type: 'confirm',
-                                                    severity: 'error',
-                                                    onConfirm: async () => {
-                                                        try {
-                                                            await deleteJob(job.id);
-                                                            showActionModal({
-                                                                title: 'Eliminado',
-                                                                message: 'El trabajo fue eliminado del historial correctamente.',
-                                                                severity: 'success'
-                                                            });
-                                                        } catch (err) {
-                                                            showActionModal({
-                                                                title: 'Error',
-                                                                message: 'No se pudo eliminar. ' + (err.message || ''),
-                                                                severity: 'error'
-                                                            });
-                                                        }
+                                                    severity: 'confirm',
+                                                    onConfirm: () => {
+                                                        hideJob(job.id);
+                                                        showActionModal({
+                                                            title: 'Ocultado',
+                                                            message: 'El trabajo fue ocultado del historial.',
+                                                            severity: 'success'
+                                                        });
                                                     }
                                                 });
                                             }}
@@ -1112,25 +1104,17 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 showActionModal({
-                                                    title: 'Eliminar del Historial',
-                                                    message: `¿Estás seguro de que deseas eliminar "${job.serviceTitle}" del historial? Esta acción eliminará también las reseñas asociadas y no se puede deshacer.`,
+                                                    title: 'Ocultar del Historial',
+                                                    message: `¿Deseas ocultar "${job.serviceTitle}" de tu historial? Las reseñas no se eliminan.`,
                                                     type: 'confirm',
-                                                    severity: 'error',
-                                                    onConfirm: async () => {
-                                                        try {
-                                                            await deleteJob(job.id);
-                                                            showActionModal({
-                                                                title: 'Eliminado',
-                                                                message: 'El trabajo fue eliminado del historial correctamente.',
-                                                                severity: 'success'
-                                                            });
-                                                        } catch (err) {
-                                                            showActionModal({
-                                                                title: 'Error',
-                                                                message: 'No se pudo eliminar. ' + (err.message || ''),
-                                                                severity: 'error'
-                                                            });
-                                                        }
+                                                    severity: 'confirm',
+                                                    onConfirm: () => {
+                                                        hideJob(job.id);
+                                                        showActionModal({
+                                                            title: 'Ocultado',
+                                                            message: 'El trabajo fue ocultado del historial.',
+                                                            severity: 'success'
+                                                        });
                                                     }
                                                 });
                                             }}
@@ -1460,7 +1444,7 @@ const Dashboard = () => {
 
     const user = isTutorView ? supervisedUser : authUser;
 
-    const { jobs, updateJobStatus: updateJobStatusApi, createJob, deleteJob } = useJobs();
+    const { jobs, updateJobStatus: updateJobStatusApi, createJob, hideJob } = useJobs();
     const { services } = useServices();
     const { createChat } = useChat();
     const { refresh: refreshNotifications } = useNotifications();

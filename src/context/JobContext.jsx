@@ -599,36 +599,26 @@ export const JobProvider = ({ children }) => {
         }
     };
 
-    const deleteJob = async (jobId) => {
-        try {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) throw new Error('Job not found');
-            
-            // Only allow deleting completed or canceled jobs
-            if (!['completed', 'canceled'].includes(job.status)) {
-                throw new Error('Solo se pueden eliminar trabajos finalizados o cancelados');
-            }
-
-            // Delete associated reviews first
-            try {
-                await supabase.from('service_reviews').delete().eq('job_id', jobId);
-            } catch (revErr) {
-                console.warn('[JobContext] Could not delete related reviews (RLS):', revErr);
-            }
-
-            const { error } = await supabase.from('jobs').delete().eq('id', jobId);
-            if (error) throw error;
-
-            setJobs(prev => prev.filter(j => j.id !== jobId));
-            return true;
-        } catch (err) {
-            console.error('[JobContext] Error deleting job:', err);
-            throw err;
+    const hideJob = (jobId) => {
+        // Hide from dashboard without deleting from DB or touching reviews
+        const hiddenKey = `hidden_jobs_${user?.id || 'anon'}`;
+        const hidden = JSON.parse(localStorage.getItem(hiddenKey) || '[]');
+        if (!hidden.includes(jobId)) {
+            hidden.push(jobId);
+            localStorage.setItem(hiddenKey, JSON.stringify(hidden));
         }
+        // Remove from local state so it disappears immediately
+        setJobs(prev => prev.filter(j => j.id !== jobId));
     };
 
+    const getVisibleJobs = useCallback(() => {
+        const hiddenKey = `hidden_jobs_${user?.id || 'anon'}`;
+        const hidden = JSON.parse(localStorage.getItem(hiddenKey) || '[]');
+        return jobs.filter(j => !hidden.includes(j.id));
+    }, [jobs, user]);
+
     return (
-        <JobContext.Provider value={{ jobs, loading, createJob, updateJobStatus, extendJobDeadline, deleteJob, fetchJobs }}>
+        <JobContext.Provider value={{ jobs: getVisibleJobs(), loading, createJob, updateJobStatus, extendJobDeadline, hideJob, fetchJobs }}>
             {children}
         </JobContext.Provider>
     );
