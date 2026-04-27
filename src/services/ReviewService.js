@@ -90,7 +90,7 @@ export const createReview = async (reviewData) => {
 
                         if (profile) {
                             const penalty = review.rating <= 2 ? 100 : 20;
-                            const newXP = Math.max(0, (profile.xp || 0) - penalty);
+                            const newXP = (profile.xp || 0) - penalty; // Can go negative
                             // This might fail due to RLS if reviewer is not target, which is fine
                             await supabase.from('profiles').update({ xp: newXP }).eq('id', userToNotify);
                         }

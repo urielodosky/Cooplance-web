@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PackageCheck, Send, MessageSquare, Info, Check, Star, Lock, X } from 'lucide-react';
+import { PackageCheck, Send, MessageSquare, Info, Check, Star, Lock, X, Trash2 } from 'lucide-react';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useJobs } from '../context/JobContext';
 import { useServices } from '../features/services/context/ServiceContext';
@@ -544,6 +544,53 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                                             {reviewedJobs[job.id] ? 'Modificar Reseña' : (isJobCanceled(job) ? 'Calificar (Cancelado)' : 'Calificar Freelancer')}
                                         </button>
                                     )}
+
+                                    {(job.status === 'completed' || isJobCanceled(job)) && (
+                                        <button 
+                                            style={{ 
+                                                padding: '0.4rem',
+                                                borderRadius: '10px',
+                                                background: 'rgba(239, 68, 68, 0.05)',
+                                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                color: '#ef4444',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                opacity: 0.6,
+                                                transition: 'opacity 0.2s'
+                                            }}
+                                            onMouseEnter={e => e.target.style.opacity = 1}
+                                            onMouseLeave={e => e.target.style.opacity = 0.6}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                showActionModal({
+                                                    title: 'Eliminar del Historial',
+                                                    message: `¿Estás seguro de que deseas eliminar "${job.serviceTitle}" del historial? Esta acción eliminará también las reseñas asociadas y no se puede deshacer.`,
+                                                    type: 'confirm',
+                                                    severity: 'error',
+                                                    onConfirm: async () => {
+                                                        try {
+                                                            await deleteJob(job.id);
+                                                            showActionModal({
+                                                                title: 'Eliminado',
+                                                                message: 'El trabajo fue eliminado del historial correctamente.',
+                                                                severity: 'success'
+                                                            });
+                                                        } catch (err) {
+                                                            showActionModal({
+                                                                title: 'Error',
+                                                                message: 'No se pudo eliminar. ' + (err.message || ''),
+                                                                severity: 'error'
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1044,6 +1091,53 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                                         if (job.projectId) navigate(`/project/${job.projectId}`);
                                         else if (job.serviceId) navigate(`/service/${job.serviceId}`);
                                     }}>Detalle</button>
+
+                                    {(job.status === 'completed' || isJobCanceled(job)) && (
+                                        <button 
+                                            style={{ 
+                                                padding: '0.4rem',
+                                                borderRadius: '10px',
+                                                background: 'rgba(239, 68, 68, 0.05)',
+                                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                color: '#ef4444',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                opacity: 0.6,
+                                                transition: 'opacity 0.2s'
+                                            }}
+                                            onMouseEnter={e => e.target.style.opacity = 1}
+                                            onMouseLeave={e => e.target.style.opacity = 0.6}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                showActionModal({
+                                                    title: 'Eliminar del Historial',
+                                                    message: `¿Estás seguro de que deseas eliminar "${job.serviceTitle}" del historial? Esta acción eliminará también las reseñas asociadas y no se puede deshacer.`,
+                                                    type: 'confirm',
+                                                    severity: 'error',
+                                                    onConfirm: async () => {
+                                                        try {
+                                                            await deleteJob(job.id);
+                                                            showActionModal({
+                                                                title: 'Eliminado',
+                                                                message: 'El trabajo fue eliminado del historial correctamente.',
+                                                                severity: 'success'
+                                                            });
+                                                        } catch (err) {
+                                                            showActionModal({
+                                                                title: 'Error',
+                                                                message: 'No se pudo eliminar. ' + (err.message || ''),
+                                                                severity: 'error'
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1366,7 +1460,7 @@ const Dashboard = () => {
 
     const user = isTutorView ? supervisedUser : authUser;
 
-    const { jobs, updateJobStatus: updateJobStatusApi, createJob } = useJobs();
+    const { jobs, updateJobStatus: updateJobStatusApi, createJob, deleteJob } = useJobs();
     const { services } = useServices();
     const { createChat } = useChat();
     const { refresh: refreshNotifications } = useNotifications();

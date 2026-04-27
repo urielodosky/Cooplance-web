@@ -486,7 +486,7 @@ export const JobProvider = ({ children }) => {
                                 .single();
                             
                             if (profile) {
-                                const newXP = Math.max(0, (profile.xp || 0) - 20); // Penalty of 20 XP
+                                const newXP = (profile.xp || 0) - 20; // Penalty of 20 XP, can go negative
                                 await supabase.from('profiles').update({ xp: newXP }).eq('id', profile.id);
                                 
                                 // Send notification about penalty
@@ -548,7 +548,7 @@ export const JobProvider = ({ children }) => {
 
                         if (freelancerProfile && (freelancerProfile.level || 1) >= 6) {
                             const penaltyXP = 150; // Fixed commercial penalty
-                            const newXP = Math.max(0, (freelancerProfile.xp || 0) - penaltyXP);
+                            const newXP = (freelancerProfile.xp || 0) - penaltyXP; // Can go negative
                             
                             // Check for level down
                             const newLevel = getLevelFromXP(newXP);
@@ -599,8 +599,36 @@ export const JobProvider = ({ children }) => {
         }
     };
 
+    const deleteJob = async (jobId) => {
+        try {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) throw new Error('Job not found');
+            
+            // Only allow deleting completed or canceled jobs
+            if (!['completed', 'canceled'].includes(job.status)) {
+                throw new Error('Solo se pueden eliminar trabajos finalizados o cancelados');
+            }
+
+            // Delete associated reviews first
+            try {
+                await supabase.from('service_reviews').delete().eq('job_id', jobId);
+            } catch (revErr) {
+                console.warn('[JobContext] Could not delete related reviews (RLS):', revErr);
+            }
+
+            const { error } = await supabase.from('jobs').delete().eq('id', jobId);
+            if (error) throw error;
+
+            setJobs(prev => prev.filter(j => j.id !== jobId));
+            return true;
+        } catch (err) {
+            console.error('[JobContext] Error deleting job:', err);
+            throw err;
+        }
+    };
+
     return (
-        <JobContext.Provider value={{ jobs, loading, createJob, updateJobStatus, extendJobDeadline, fetchJobs }}>
+        <JobContext.Provider value={{ jobs, loading, createJob, updateJobStatus, extendJobDeadline, deleteJob, fetchJobs }}>
             {children}
         </JobContext.Provider>
     );
