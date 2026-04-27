@@ -200,6 +200,18 @@
     transform: scale(1.05);
 }
 
+/* Rating Badge Styling */
+.service-card-rating {
+    transition: all 0.3s ease;
+    cursor: default;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+        background: rgba(251, 191, 36, 0.2) !important;
+        transform: scale(1.05);
+    }
+}
+
 /* Light Mode Support */
 [data-theme='light'] {
     .service-card { 

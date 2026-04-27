@@ -135,7 +135,8 @@ export const ServiceProvider = ({ children }) => {
         }, 45000);
 
         try {
-            console.log('[ServiceContext v1.6] fetchServices START');
+            console.log('[ServiceContext v1.7] fetchServices START');
+            // 1. Fetch Services
             const { data, error } = await supabase
                 .from('services')
                 .select('*, profiles!owner_id(username, first_name, last_name, level, avatar_url, gender, gamification)')
@@ -143,16 +144,42 @@ export const ServiceProvider = ({ children }) => {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('[ServiceContext v1.6] DATABASE ERROR:', error);
+                console.error('[ServiceContext v1.7] DATABASE ERROR:', error);
                 throw error;
             }
+
+            // 2. Fetch all reviews to calculate aggregates (Optimization: should be a view)
+            const { data: reviewsData, error: rError } = await supabase
+                .from('service_reviews')
+                .select('service_id, rating');
             
-            console.info(`[ServiceContext v1.6] SUCCESS. Rows: ${data?.length || 0}`);
+            const ratingsMap = {};
+            if (reviewsData) {
+                reviewsData.forEach(r => {
+                    if (!ratingsMap[r.service_id]) ratingsMap[r.service_id] = { sum: 0, count: 0 };
+                    ratingsMap[r.service_id].sum += r.rating;
+                    ratingsMap[r.service_id].count += 1;
+                });
+            }
+            
+            console.info(`[ServiceContext v1.7] SUCCESS. Rows: ${data?.length || 0}`);
             if (isMounted.current) {
-                setServices((data || []).map(mapFromDB));
+                const mapped = (data || []).map(row => {
+                    const service = mapFromDB(row);
+                    const stats = ratingsMap[service.id] || { sum: 0, count: 0 };
+                    
+                    return {
+                        ...service,
+                        rating: stats.count > 0 ? stats.sum / stats.count : 0,
+                        reviewCount: stats.count,
+                        // Proxy for sales: XP / 40 (approx 2 jobs for Level 1)
+                        sales: row.profiles?.gamification?.xp ? Math.floor(row.profiles.gamification.xp / 40) : 0
+                    };
+                });
+                setServices(mapped);
             }
         } catch (err) {
-            console.error('[ServiceContext v1.6] FETCH EXCEPTION:', err);
+            console.error('[ServiceContext v1.7] FETCH EXCEPTION:', err);
         } finally {
             isComplete = true;
             clearTimeout(watchdog);

@@ -236,16 +236,21 @@ const Chat = () => {
         const cid = chat?.context_id || chat?.contextId;
         if (!chat || !cid) return null;
 
+        // Find the job to check its status
+        const job = jobs.find(j => String(j.id) === String(cid) || String(j.projectId) === String(cid));
+        
+        if (job) {
+            if (job.status === 'completed') return 'Completado';
+            if (job.status === 'canceled') return 'Cancelado';
+            if (job.status === 'delivered') return 'Entregado';
+        }
+
         // Prioritize the reactive contextDeadline state
         let deadline = contextDeadline;
 
-        // If contextDeadline is not set, try a quick look in jobs for fallback
-        if (!deadline) {
-            const job = jobs.find(j => String(j.id) === String(chat.contextId) || String(j.projectId) === String(chat.contextId));
-            if (job) {
-                if (job.status === 'completed') return 'Completado';
-                deadline = job.deadline;
-            }
+        // Fallback to job deadline if contextDeadline is not set
+        if (!deadline && job) {
+            deadline = job.deadline;
         }
 
         if (!deadline) return 'Sin plazo';
@@ -742,10 +747,13 @@ const Chat = () => {
                                 <div style={{ textAlign: 'right' }}>
                                     {(activeChat.type === 'order' || activeChat.type === 'project' || activeChat.context_id || activeChat.contextId) && (
                                         <div
-                                            className={`badge-order ${getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : ''}`}
+                                            className={`badge-order ${
+                                                getJobTimeRemaining(activeChat) === 'Vencido' ? 'expired' : 
+                                                getJobTimeRemaining(activeChat) === 'Completado' ? 'completed' : 
+                                                getJobTimeRemaining(activeChat) === 'Cancelado' ? 'canceled' : 
+                                                getJobTimeRemaining(activeChat) === 'Entregado' ? 'delivered' : ''
+                                            }`}
                                             style={{
-                                                background: getJobTimeRemaining(activeChat) === 'Vencido' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(139, 92, 246, 0.15)',
-                                                color: getJobTimeRemaining(activeChat) === 'Vencido' ? '#ef4444' : 'var(--primary)',
                                                 padding: '0.6rem 1rem',
                                                 borderRadius: '12px',
                                                 fontSize: '0.9rem',

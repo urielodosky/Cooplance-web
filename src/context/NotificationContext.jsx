@@ -134,7 +134,8 @@ export const NotificationProvider = ({ children }) => {
             markAsRead,
             markAllAsRead,
             deleteNotification,
-            refresh: loadNotifications
+            refresh: loadNotifications,
+            unreadMessagesCount: notifications.filter(n => n.type === 'new_message' && !n.read).length
         }}>
             {children}
 

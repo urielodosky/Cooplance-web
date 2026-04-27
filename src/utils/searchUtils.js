@@ -244,12 +244,39 @@ export const searchAndFilterItems = (items, filters = {}) => {
             _score: getMatchScore(item, query) + ((item._filterScore || 0) * 10) // Boost score by filter matches
         }))
             .filter(item => item._score > 0) // Remove non-matches
-            .sort((a, b) => b._score - a._score);
+            .sort((a, b) => {
+                // Primary: Match Score
+                if (b._score !== a._score) return b._score - a._score;
+                
+                // Secondary: Support New Talent (Less sales first for equal matches)
+                const aSales = a.sales || a.jobsCount || (a.gamification?.xp ? Math.floor(a.gamification.xp / 40) : 0);
+                const bSales = b.sales || b.jobsCount || (b.gamification?.xp ? Math.floor(b.gamification.xp / 40) : 0);
+                if (aSales !== bSales) return aSales - bSales;
+
+                return b.id - a.id;
+            });
     } else {
-        // If no query, sort by Filter Score first (Best Match), then Newest
+        // If no query, sort by Filter Score first (Best Match), then Default Sort
         result.sort((a, b) => {
+            // 1. Filter Score (Specific specialties matches)
             const scoreDiff = (b._filterScore || 0) - (a._filterScore || 0);
             if (scoreDiff !== 0) return scoreDiff;
+
+            // 2. Rating Sort (Requirement: "si se elige 3, salen 3 o mas apareciendo primero los que tienen 3")
+            // This only applies if a rating filter is active (> 0)
+            if (rating > 0) {
+                const aRating = a.rating || 0;
+                const bRating = b.rating || 0;
+                if (aRating !== bRating) return aRating - bRating;
+            }
+
+            // 3. Default Sort: Support New Talent (Less sales first)
+            // Use sales, jobsCount or XP as proxy for activity
+            const aSales = a.sales || a.jobsCount || (a.gamification?.xp ? Math.floor(a.gamification.xp / 40) : 0);
+            const bSales = b.sales || b.jobsCount || (b.gamification?.xp ? Math.floor(b.gamification.xp / 40) : 0);
+            if (aSales !== bSales) return aSales - bSales;
+
+            // 4. Newest
             return b.id - a.id;
         });
     }

@@ -6,6 +6,7 @@ import { getProfilePicture } from '../../utils/avatarUtils';
 import { calculateAge } from '../../utils/ageUtils';
 import { useTheme } from '../../context/ThemeContext';
 import NotificationDropdown from '../notifications/NotificationDropdown';
+import { useNotifications } from '../../context/NotificationContext';
 import '../../styles/components/Navbar.scss';
 
 const Navbar = () => {
@@ -13,6 +14,7 @@ const Navbar = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { unreadMessagesCount } = useNotifications();
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [showExploreMenu, setShowExploreMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -199,6 +201,25 @@ const Navbar = () => {
                                     <button onClick={() => handleOptionClick('/chat')} className="dropdown-item">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="item-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                         Mensajes
+                                        {unreadMessagesCount > 0 && (
+                                            <span style={{ 
+                                                background: '#ef4444', 
+                                                color: 'white', 
+                                                borderRadius: '50%', 
+                                                padding: '2px 6px', 
+                                                fontSize: '0.7rem', 
+                                                marginLeft: 'auto',
+                                                fontWeight: '900',
+                                                minWidth: '18px',
+                                                height: '18px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)'
+                                            }}>
+                                                {unreadMessagesCount}
+                                            </span>
+                                        )}
                                     </button>
                                     <button onClick={() => handleOptionClick(user.role === 'freelancer' ? `/freelancer/${user.id}` : (user.role === 'company' ? `/company/${user.id}` : `/client/${user.id}`))} className="dropdown-item">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="item-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -330,8 +351,27 @@ const Navbar = () => {
                                         Billetera
                                     </button>
                                     <button onClick={() => handleOptionClick('/chat')} className="mobile-action-btn">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="item-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                        Mensajes
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                        <span>Mensajes</span>
+                                        {unreadMessagesCount > 0 && (
+                                            <span style={{ 
+                                                background: '#ef4444', 
+                                                color: 'white', 
+                                                borderRadius: '50%', 
+                                                padding: '2px 6px', 
+                                                fontSize: '0.65rem', 
+                                                marginLeft: '4px',
+                                                fontWeight: '900',
+                                                minWidth: '16px',
+                                                height: '16px',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                verticalAlign: 'top'
+                                            }}>
+                                                {unreadMessagesCount}
+                                            </span>
+                                        )}
                                     </button>
                                     <button onClick={() => handleOptionClick(user.role === 'freelancer' ? `/freelancer/${user.id}` : (user.role === 'company' ? `/company/${user.id}` : `/client/${user.id}`))} className="mobile-action-btn">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="item-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>

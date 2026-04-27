@@ -87,7 +87,7 @@ const ServiceCard = ({ service }) => {
             </div>
 
             <div className="service-content">
-                <div className="avatar-layout-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="avatar-layout-row" style={{ display: 'flex', gap: '12px', alignItems: 'center', position: 'relative' }}>
                     <div className="profile-avatar-wrapper small" style={{
                         width: '44px', height: '44px',
                         borderRadius: '50%',
@@ -142,6 +142,24 @@ const ServiceCard = ({ service }) => {
                                 }}>Vendedor Experto</span>
                             )}
                         </div>
+                    </div>
+
+                    {/* RATING BADGE - Fixed top right of content */}
+                    <div className="service-card-rating" style={{ 
+                        marginLeft: 'auto', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        background: 'rgba(251, 191, 36, 0.1)',
+                        color: '#fbbf24',
+                        padding: '4px 8px',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        fontWeight: '800'
+                    }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <span>{rating > 0 ? rating.toFixed(1) : 'Nuevo'}</span>
+                        {reviewCount > 0 && <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>({reviewCount})</span>}
                     </div>
                 </div>
 

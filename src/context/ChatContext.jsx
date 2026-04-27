@@ -101,6 +101,48 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
+    // --- GLOBAL REAL-TIME SYNC ---
+    useEffect(() => {
+        if (!user) return;
+
+        // Subscribe to NEW MESSAGES where I am the receiver
+        const messagesSubscription = supabase
+            .channel('global-messages-sync')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'messages',
+                filter: `receiver_id=eq.${user.id}`
+            }, (payload) => {
+                console.log("[ChatContext] Global message received, refreshing chats...");
+                loadChats();
+            })
+            .subscribe();
+
+        // Subscribe to CHAT updates (status, last_message, etc.)
+        const chatsSubscription = supabase
+            .channel('global-chats-sync')
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'chats'
+            }, (payload) => {
+                // If the chat belongs to me, refresh
+                setChats(prev => {
+                    if (prev.some(c => c.id === payload.new.id)) {
+                        loadChats();
+                    }
+                    return prev;
+                });
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(messagesSubscription);
+            supabase.removeChannel(chatsSubscription);
+        };
+    }, [user]);
+
     const createChat = async (participantIds, type = 'direct', contextId = null, contextTitle = null, options = {}) => {
         if (!user) throw new Error("Debe estar autenticado");
 

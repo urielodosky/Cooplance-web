@@ -86,10 +86,10 @@ const LegalModal = () => {
                     justifyContent: 'center',
                     marginBottom: '2rem'
                 }}>
-                    <Link to="/terms" target="_blank" className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
+                    <Link to="/help?tab=terms" target="_blank" className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
                         Ver Términos y Condiciones
                     </Link>
-                    <Link to="/privacy" target="_blank" className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
+                    <Link to="/help?tab=privacy" target="_blank" className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
                         Ver Política de Privacidad
                     </Link>
                 </div>

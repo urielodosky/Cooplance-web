@@ -218,12 +218,27 @@
 }
 
 .badge-order {
-    background: rgba(6, 182, 212, 0.1);
-    color: var(--secondary);
+    background: rgba(139, 92, 246, 0.15); /* Default violet */
+    color: var(--primary);
     padding: 0.2rem 0.6rem;
     border-radius: 12px;
     font-size: 0.8rem;
     border: 1px solid currentColor;
+
+    &.expired, &.canceled {
+        background: rgba(239, 68, 68, 0.15) !important;
+        color: #ef4444 !important;
+    }
+
+    &.completed {
+        background: rgba(34, 197, 94, 0.15) !important;
+        color: #22c55e !important;
+    }
+
+    &.delivered {
+        background: rgba(56, 189, 248, 0.15) !important;
+        color: #0ea5e9 !important;
+    }
 }
 
 .messages-container {
@@ -952,10 +967,10 @@
     position: absolute;
     right: 1rem;
     top: 3rem;
-    background: #1e293b;
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -977,7 +992,7 @@
 }
 
 .chat-context-menu button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-card-hover);
 }
 
 /* Date Dividers */

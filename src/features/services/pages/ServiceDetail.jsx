@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useServices } from '../context/ServiceContext';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useJobs } from '../../../context/JobContext';
+import { useChat } from '../../../context/ChatContext';
 import ServiceCreateForm from '../components/ServiceCreateForm';
 import { getProfilePicture } from '../../../utils/avatarUtils';
 import PaymentModal from '../../../components/common/PaymentModal';
@@ -21,6 +22,7 @@ const ServiceDetail = () => {
     const { services, deleteService } = useServices();
     const { user, updateBalance, fetchMonthlySpend } = useAuth();
     const { createJob } = useJobs();
+    const { createChat } = useChat();
 
     const service = services.find(s => String(s.id) === String(id));
 
