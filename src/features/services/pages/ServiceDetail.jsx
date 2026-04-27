@@ -43,6 +43,7 @@ const ServiceDetail = () => {
     const [showReviewsModal, setShowReviewsModal] = useState(false);
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [freelancerStats, setFreelancerStats] = useState({ rating: 0, reviewsCount: 0 });
 
     useEffect(() => {
         if (service?.bookingConfig?.requiresBooking) {
@@ -94,6 +95,18 @@ const ServiceDetail = () => {
                     .single();
                 
                 if (profile) setFreelancerInternal(profile);
+
+                // 3. Fetch Freelancer Stats (Real-time sync)
+                const { data: fReviews } = await supabase
+                    .from('service_reviews')
+                    .select('rating')
+                    .eq('target_id', service.freelancerId);
+                
+                if (fReviews) {
+                    const count = fReviews.length;
+                    const avg = count > 0 ? fReviews.reduce((s, r) => s + r.rating, 0) / count : 0;
+                    setFreelancerStats({ rating: avg, reviewsCount: count });
+                }
             } catch (err) {
                 console.error("Error loading service content:", err);
             } finally {
@@ -465,11 +478,11 @@ const ServiceDetail = () => {
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.85rem' }}>
                                     <span style={{ color: 'var(--text-muted)' }}>{displayRealName}</span>
-                                    {service.rating > 0 && (
+                                    {(freelancerStats.rating > 0 || freelancerStats.reviewsCount > 0) && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '3px', paddingLeft: '0.5rem', borderLeft: '1px solid var(--border)' }}>
                                             <span style={{ color: '#fbbf24' }}>★</span>
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{service.rating}</span>
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>({service.reviewsCount || 0})</span>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{Number(freelancerStats.rating || 0).toFixed(1)}</span>
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>({freelancerStats.reviewsCount || 0})</span>
                                         </div>
                                     )}
                                 </div>
@@ -649,7 +662,6 @@ const ServiceDetail = () => {
                                 <div>
                                     <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                                         {reviews.length}
-                                        {service.rating > 0 && <span style={{ fontSize: '0.8rem', color: '#fbbf24' }}>★{service.rating}</span>}
                                     </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Reseñas</div>
                                 </div>

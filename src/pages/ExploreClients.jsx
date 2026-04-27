@@ -94,10 +94,10 @@ const ExploreClients = () => {
             return;
         }
 
-        if (user.role !== 'freelancer') {
+        if (user.role !== 'freelancer' && user.role !== 'coop') {
             showActionModal({
                 title: 'Acción No Permitida',
-                message: 'Solo los freelancers pueden postularse a proyectos.',
+                message: 'Solo los freelancers y cooperativas pueden postularse a proyectos.',
                 severity: 'warning'
             });
             return;

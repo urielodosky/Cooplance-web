@@ -121,8 +121,8 @@ const ProjectDetail = () => {
             return;
         }
 
-        if (user.role !== 'freelancer') {
-            setApplyMessage({ text: 'Solo los freelancers pueden postularse a proyectos.', type: 'error' });
+        if (user.role !== 'freelancer' && user.role !== 'coop') {
+            setApplyMessage({ text: 'Solo los freelancers y cooperativas pueden postularse a proyectos.', type: 'error' });
             setTimeout(() => setApplyMessage({ text: '', type: '' }), 4000);
             return;
         }
@@ -642,10 +642,12 @@ const ProjectDetail = () => {
                             ) : (
                                 <button 
                                     className="btn-primary full-width-btn hire-button" 
-                                    onClick={isOwner ? null : handleApply}
-                                    style={isOwner ? { cursor: 'default', opacity: 0.8, background: 'var(--glass-bg)', border: '1px solid var(--border)', color: 'var(--text-muted)' } : {}}
+                                    onClick={(isOwner || (user && (user.role === 'client' || user.role === 'company'))) ? null : handleApply}
+                                    style={(isOwner || (user && (user.role === 'client' || user.role === 'company'))) ? { cursor: 'default', opacity: 0.8, background: 'var(--glass-bg)', border: '1px solid var(--border)', color: 'var(--text-muted)' } : {}}
                                 >
-                                    {isOwner ? 'Este es tu pedido' : 'Postularse Ahora'}
+                                    {isOwner ? 'Este es tu pedido' : 
+                                     (user && (user.role === 'client' || user.role === 'company')) ? 'Solo para Freelancers' : 
+                                     'Postularse Ahora'}
                                 </button>
                             )}
                         </div>
