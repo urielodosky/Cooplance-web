@@ -58,6 +58,7 @@ const Wallet = () => {
                     const amount = parseFloat(t.amount);
                     if (t.type === 'income') earned += amount;
                     if (t.type === 'expense') spent += amount;
+                    if (t.type === 'refund') earned += amount; // Refund increases balance but we don't count it as "Income (Profit)"
                     if (t.status === 'pending') pending += amount;
 
                     if (!methodStats[t.method]) methodStats[t.method] = { earned: 0, spent: 0, count: 0, pending: 0 };
@@ -116,11 +117,12 @@ const Wallet = () => {
         ? stats.transactions
         : stats.transactions.filter(t => t.method === filterMethod);
 
-    // Calculate Escrow (Pending) Balance from active jobs
+    // Calculate Escrow (Pending) Balance from active/delivered/canceled jobs
     const escrowBalance = useMemo(() => {
         if (!jobs || jobs.length === 0) return 0;
         return jobs.reduce((acc, job) => {
-            if (['active', 'delivered'].includes(job.status)) {
+            // Canceled jobs still have funds in escrow until manually released
+            if (['active', 'delivered', 'canceled', 'cancellation_requested'].includes(job.status)) {
                 return acc + (parseFloat(job.amount) || 0);
             }
             return acc;
@@ -317,8 +319,8 @@ const Wallet = () => {
                                 {filteredTransactions.map((t, idx) => (
                                     <div key={idx} className="tx-item">
                                         <div className="tx-left">
-                                            <div className={`tx-icon ${t.type === 'income' ? 'income' : 'expense'}`}>
-                                                {t.type === 'income' ? '↓' : '↑'}
+                                            <div className={`tx-icon ${t.type === 'income' ? 'income' : (t.type === 'refund' ? 'refund' : 'expense')}`}>
+                                                {t.type === 'income' ? '↓' : (t.type === 'refund' ? '↺' : '↑')}
                                             </div>
                                             <div className="tx-info">
                                                 <div className="tx-title" onClick={() => navigate(t.serviceLink)} style={{ cursor: 'pointer' }}>{t.title}</div>
@@ -328,8 +330,8 @@ const Wallet = () => {
                                             </div>
                                         </div>
                                         <div className="tx-right">
-                                            <div className={`tx-amount ${t.type === 'income' ? 'income' : 'expense'}`}>
-                                                {t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}
+                                            <div className={`tx-amount ${t.type === 'income' ? 'income' : (t.type === 'refund' ? 'refund' : 'expense')}`}>
+                                                {t.type === 'income' ? '+' : (t.type === 'refund' ? '+' : '-')}${t.amount.toLocaleString()}
                                             </div>
                                             <div className="tx-status">{t.status}</div>
                                         </div>

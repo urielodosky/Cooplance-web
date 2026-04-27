@@ -502,41 +502,9 @@ export const JobProvider = ({ children }) => {
                         }
                     }
 
-                    // 2. REFUND TO CLIENT
-                    try {
-                        const { data: clientProfile } = await supabase
-                            .from('profiles')
-                            .select('balance')
-                            .eq('id', job.buyerId)
-                            .single();
-                        
-                        if (clientProfile) {
-                            const newBalance = (clientProfile.balance || 0) + job.amount;
-                            await supabase.from('profiles')
-                                .update({ balance: newBalance })
-                                .eq('id', job.buyerId);
-                            
-                            // Create refund transaction
-                            await supabase.from('transactions').insert([{
-                                user_id: job.buyerId,
-                                type: 'income',
-                                amount: job.amount,
-                                method: 'escrow_refund',
-                                description: `Reembolso por cancelación: ${job.serviceTitle}`,
-                                related_id: job.id
-                            }]);
-
-                            // Notify Client
-                            await NotificationService.createNotification(job.buyerId, {
-                                type: 'payment_refund',
-                                title: 'Reembolso procesado',
-                                message: `Se han reembolsado ${job.amount} ARS a tu billetera por la cancelación de '${job.serviceTitle}'.`,
-                                link: '/wallet'
-                            });
-                        }
-                    } catch (refundErr) {
-                        console.error('[JobContext] Refund error:', refundErr);
-                    }
+                    // NOTE: No automatic refund on cancel. Funds stay in escrow (PENDIENTE)
+                    // until explicitly released to freelancer or refunded to client.
+                    // The release is triggered by the "Forzar Liberación" button or admin action.
 
                     // 2. APPLY V34 COMPLIANCE: Commercial penalty only for level 6+
                     try {
@@ -611,6 +579,62 @@ export const JobProvider = ({ children }) => {
         setJobs(prev => prev.filter(j => j.id !== jobId));
     };
 
+    const resolveEscrow = async (jobId, resolution) => {
+        // resolution: 'release' (to freelancer) or 'refund' (to client)
+        try {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            if (resolution === 'release') {
+                // Reusing updateJobStatus for 'completed' which already handles income/expense transactions
+                await updateJobStatus(jobId, 'completed');
+            } else if (resolution === 'refund') {
+                // 1. Update job status to 'refunded'
+                const { error: jobErr } = await supabase
+                    .from('jobs')
+                    .update({ status: 'refunded' })
+                    .eq('id', jobId);
+                if (jobErr) throw jobErr;
+
+                // 2. Update client balance (Refund)
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('balance')
+                    .eq('id', job.buyerId)
+                    .single();
+                
+                if (profile) {
+                    const newBalance = (profile.balance || 0) + (parseFloat(job.amount) || 0);
+                    await supabase.from('profiles').update({ balance: newBalance }).eq('id', job.buyerId);
+                    
+                    // 3. Create refund transaction (type 'refund' so it doesn't count as 'profit' in wallet)
+                    await supabase.from('transactions').insert([{
+                        user_id: job.buyerId,
+                        type: 'refund',
+                        amount: job.amount,
+                        method: 'escrow_refund',
+                        description: `Reembolso (Escrow): ${job.serviceTitle}`,
+                        related_id: job.id
+                    }]);
+
+                    // 4. Notify client
+                    await NotificationService.createNotification(job.buyerId, {
+                        type: 'payment_refund',
+                        title: 'Fondos Reembolsados',
+                        message: `Se han reembolsado ${job.amount} ARS a tu billetera por '${job.serviceTitle}'.`,
+                        link: '/wallet'
+                    });
+                }
+
+                // Update local state
+                setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'refunded' } : j));
+            }
+        } catch (err) {
+            console.error('[JobContext] Error resolving escrow:', err);
+            throw err;
+        }
+    };
+
     const getVisibleJobs = useCallback(() => {
         const hiddenKey = `hidden_jobs_${user?.id || 'anon'}`;
         const hidden = JSON.parse(localStorage.getItem(hiddenKey) || '[]');
@@ -618,7 +642,16 @@ export const JobProvider = ({ children }) => {
     }, [jobs, user]);
 
     return (
-        <JobContext.Provider value={{ jobs: getVisibleJobs(), loading, createJob, updateJobStatus, extendJobDeadline, hideJob, fetchJobs }}>
+        <JobContext.Provider value={{ 
+            jobs: getVisibleJobs(), 
+            loading, 
+            createJob, 
+            updateJobStatus, 
+            extendJobDeadline, 
+            resolveEscrow, 
+            hideJob, 
+            fetchJobs 
+        }}>
             {children}
         </JobContext.Provider>
     );
