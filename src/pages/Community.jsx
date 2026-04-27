@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { Star, MoreVertical } from 'lucide-react';
-import { useActionModal } from '../features/auth/context/ActionModalContext';
-import ReportModal from '../components/ReportModal';
+import { useActionModal } from '../context/ActionModalContext';
+import ReportModal from '../components/common/ReportModal';
 
 // Helper for Role Translation
 const translateRole = (role) => {
