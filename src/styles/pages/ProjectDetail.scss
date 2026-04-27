@@ -196,75 +196,76 @@
 /* Light Mode Contrast Overrides */
 [data-theme="light"] {
     .sidebar-sticky {
-        background-color: #ffffff !important;
-        border-color: #d1d5db !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+        background-color: var(--bg-card) !important;
+        border-color: var(--border) !important;
+        box-shadow: var(--shadow-lg) !important;
     }
 
     .pricing-box {
-        background-color: #ffffff !important;
+        background-color: var(--bg-card) !important;
     }
 
     .sidebar-reviews-section {
-        background: #f9fafb !important;
-        border-top-color: #e5e7eb !important;
+        background: var(--bg-card-hover) !important;
+        border-top-color: var(--border) !important;
     }
 
     .client-profile-card {
-        background-color: #ffffff !important;
-        border-color: #d1d5db !important;
+        background-color: var(--bg-card) !important;
+        border-color: var(--border) !important;
 
         &:hover {
-            background-color: #f3f4f6 !important;
+            background-color: var(--bg-card-hover) !important;
             border-color: var(--primary) !important;
         }
 
         .client-name {
-            color: #111827 !important;
+            color: var(--text-primary) !important;
         }
 
         .client-rating {
-            color: #4b5563 !important;
+            color: var(--text-secondary) !important;
         }
     }
 
     .project-status-badge {
-        background: #ecfdf5 !important;
-        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.05) !important;
+        border-color: rgba(16, 185, 129, 0.2) !important;
     }
 
     .detail-tag {
-        background: #f3f4f6 !important;
-        border-color: #d1d5db !important;
-        color: #374151 !important;
+        background: var(--bg-card-hover) !important;
+        border-color: var(--border) !important;
+        color: var(--text-secondary) !important;
 
         &:hover {
-            background: #e5e7eb !important;
+            background: rgba(255, 255, 255, 0.8) !important;
         }
     }
 
     .category-pill {
-        background: #f9fafb !important;
-        border-color: #e5e7eb !important;
+        background: var(--bg-card-hover) !important;
+        border-color: var(--border) !important;
         
-        .pill-label { color: #6b7280 !important; }
-        .pill-value { color: #111827 !important; }
+        .pill-label { color: var(--text-muted) !important; }
+        .pill-value { color: var(--text-primary) !important; }
     }
 
     .specialty-tag {
-        background: #fff !important;
-        border-color: #d1d5db !important;
+        background: var(--bg-card) !important;
+        border-color: var(--border) !important;
         color: var(--primary) !important;
     }
 
     .detail-section {
-        border-top-color: #e5e7eb !important;
+        border-top-color: var(--border) !important;
         
-        h3 { color: #111827 !important; }
+        h3 { color: var(--text-primary) !important; }
     }
 
     .faq-item.glass {
-        background: #ffffff !important;
-        border-color: #d1d5db !important;
+        background: var(--bg-card) !important;
+        border-color: var(--border) !important;
+        box-shadow: var(--shadow-sm);
     }
 }

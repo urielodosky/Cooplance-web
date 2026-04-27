@@ -45,8 +45,8 @@
 }
 
 [data-theme="light"] {
-  --bg-dark: #b2ebf2;
-  /* Stronger Pastel Cyan (Material 100) */
+  --bg-dark: #f0f9ff;
+  /* Very light Sky/Cyan */
   --bg-card: #ffffff;
   --bg-card-hover: #f8fafc;
 
@@ -57,16 +57,17 @@
   --text-muted: #94a3b8;
   /* Slate 400 */
 
-  --border: #80deea;
-  /* Cyan 200 for borders */
+  --border: rgba(128, 222, 234, 0.25);
+  /* Subtler Cyan border */
+  --glass-bg: rgba(255, 255, 255, 0.7);
 
   /* Lighter gradients */
   --gradient-bg: radial-gradient(circle at top right, rgba(139, 92, 246, 0.05), transparent 40%),
     radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.08), transparent 40%);
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-  --shadow-glow: 0 0 15px rgba(6, 182, 212, 0.2);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px -5px rgba(128, 222, 234, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  --shadow-glow: 0 0 15px rgba(6, 182, 212, 0.1);
 }
 
 body {

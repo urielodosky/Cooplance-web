@@ -459,14 +459,14 @@
     .faq-item, 
     .review-card, 
     .detail-section {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: var(--shadow-lg) !important;
         backdrop-filter: none !important;
-        color: #1a1a1a !important;
+        color: var(--text-primary) !important;
 
         h1, h2, h3, h4, .detail-title, .price-amount {
-            color: #1a1a1a !important;
+            color: var(--text-primary) !important;
         }
 
         .detail-description, 
@@ -474,23 +474,23 @@
         .price-unit, 
         .feature-item, 
         .faq-answer {
-            color: #4a5568 !important;
+            color: var(--text-secondary) !important;
         }
     }
 
     .specialty-tag, .thumbnail-btn {
-        background: #f1f5f9 !important;
-        border: 1px solid #e2e8f0 !important;
-        color: #475569 !important;
+        background: var(--bg-card-hover) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
     }
 
     .category-pill {
-        background: rgba(99, 102, 241, 0.08) !important;
-        border-color: rgba(99, 102, 241, 0.2) !important;
+        background: rgba(99, 102, 241, 0.05) !important;
+        border-color: rgba(99, 102, 241, 0.15) !important;
     }
 
     .detail-thumbnail-strip {
-        background: #f8fafc !important;
+        background: var(--bg-card-hover) !important;
         padding: 10px;
         border-radius: var(--radius-md);
         margin-top: 1rem;
