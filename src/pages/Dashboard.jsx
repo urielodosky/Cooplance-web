@@ -220,14 +220,21 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             marginBottom: '1.2rem'
                         }}>
                             {/* Avatar Section */}
-                            <div style={{
+                            <div 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const role = job.buyerRole || 'buyer';
+                                    navigate(role === 'company' ? `/company/${job.buyerId}` : `/client/${job.buyerId}`);
+                                }}
+                                style={{
                                 width: '60px', 
                                 height: '60px', 
                                 borderRadius: '50%', 
                                 overflow: 'hidden', 
                                 border: '2px solid var(--primary)',
                                 flexShrink: 0,
-                                boxShadow: '0 0 15px rgba(139, 92, 246, 0.2)'
+                                boxShadow: '0 0 15px rgba(139, 92, 246, 0.2)',
+                                cursor: 'pointer'
                             }}>
                                 <img src={getProfilePicture({ role: job.buyerRole, avatar: job.buyerAvatar })} alt={job.buyerName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
@@ -235,7 +242,16 @@ const WorkReceivedSection = ({ loading, myWork, updateJobStatus, createChat, nav
                             {/* Info Section */}
                             <div className="job-main-info" style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
-                                    <h4 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <h4 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const role = job.buyerRole || 'buyer';
+                                            navigate(role === 'company' ? `/company/${job.buyerId}` : `/client/${job.buyerId}`);
+                                        }}
+                                        style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                                        onMouseEnter={(e) => e.target.style.color = 'var(--primary)'}
+                                        onMouseLeave={(e) => e.target.style.color = 'var(--text-primary)'}
+                                    >
                                         {job.buyerUsername ? `@${job.buyerUsername}` : 'Usuario'}
                                     </h4>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>• {job.buyerRealName || 'Cliente'}</span>
@@ -872,7 +888,15 @@ const OrdersSection = ({ loading, myOrders, navigate, createChat, updateJobStatu
                             {/* Info Section */}
                             <div className="job-main-info" style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '4px' }}>
-                                    <h4 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <h4 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(job.freelancerRole === 'company' ? `/company/${job.freelancerId}` : `/freelancer/${job.freelancerId}`);
+                                        }}
+                                        style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                                        onMouseEnter={(e) => e.target.style.color = 'var(--primary)'}
+                                        onMouseLeave={(e) => e.target.style.color = 'var(--text-primary)'}
+                                    >
                                         @{job.freelancerUsername || 'usuario'}
                                     </h4>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>• {job.freelancerName || 'Freelancer'}</span>

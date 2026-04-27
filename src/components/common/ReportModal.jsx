@@ -127,40 +127,34 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
 
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '2rem' }}>
-                                <label style={{ display: 'block', marginBottom: '1.25rem', fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '700', fontSize: '1rem', color: 'var(--text-primary)' }}>
                                     ¿Cuál es el motivo?
                                 </label>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <select 
+                                    value={reason}
+                                    onChange={(e) => setReason(e.target.value)}
+                                    style={{ 
+                                        width: '100%', padding: '1.1rem', borderRadius: '16px',
+                                        background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)', fontSize: '1rem',
+                                        outline: 'none', appearance: 'none', cursor: 'pointer',
+                                        backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23a0aec0\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'right 1.25rem center',
+                                        backgroundSize: '1.25rem'
+                                    }}
+                                >
                                     {REPORT_OPTIONS.map((opt) => (
-                                        <label 
-                                            key={opt.id}
-                                            style={{ 
-                                                display: 'flex', 
-                                                alignItems: 'flex-start', 
-                                                gap: '1rem',
-                                                padding: '1rem',
-                                                borderRadius: '16px',
-                                                border: reason === opt.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                                                background: reason === opt.id ? 'rgba(139, 92, 246, 0.05)' : 'transparent',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            <input 
-                                                type="radio" 
-                                                name="reportReason" 
-                                                value={opt.id}
-                                                checked={reason === opt.id}
-                                                onChange={(e) => setReason(e.target.value)}
-                                                style={{ marginTop: '0.25rem', width: '18px', height: '18px', accentColor: 'var(--primary)' }}
-                                            />
-                                            <div>
-                                                <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{opt.label}</div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{opt.description}</div>
-                                            </div>
-                                        </label>
+                                        <option key={opt.id} value={opt.id} style={{ background: 'var(--bg-card)' }}>
+                                            {opt.label}
+                                        </option>
                                     ))}
-                                </div>
+                                </select>
+                                {reason && (
+                                    <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', paddingLeft: '0.5rem' }}>
+                                        {REPORT_OPTIONS.find(o => o.id === reason)?.description}
+                                    </p>
+                                )}
                             </div>
 
                             <div style={{ marginBottom: '2.5rem' }}>
@@ -186,18 +180,25 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
 
                             <div style={{ 
                                 background: 'rgba(239, 68, 68, 0.05)', 
-                                padding: '1rem', 
-                                borderRadius: '16px', 
+                                padding: '1.25rem', 
+                                borderRadius: '18px', 
                                 marginBottom: '2.5rem',
                                 border: '1px solid rgba(239, 68, 68, 0.1)',
                                 display: 'flex',
-                                gap: '0.75rem',
-                                alignItems: 'center'
+                                flexDirection: 'column',
+                                gap: '0.6rem'
                             }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                                <span style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '600' }}>
-                                    Al reportar, este usuario será bloqueado automáticamente.
-                                </span>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                    <span style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '700' }}>
+                                        Al reportar, este usuario será bloqueado automáticamente.
+                                    </span>
+                                </div>
+                                <div style={{ paddingLeft: '2rem', borderTop: '1px solid rgba(239, 68, 68, 0.1)', paddingTop: '0.6rem', marginTop: '0.2rem' }}>
+                                    <span style={{ fontSize: '0.8rem', color: '#ef4444', opacity: 0.8, fontStyle: 'italic' }}>
+                                        Importante: Cualquier reporte falso con intenciones malignas será sancionado.
+                                    </span>
+                                </div>
                             </div>
 
                             <div style={{ display: 'flex', gap: '1.25rem' }}>
