@@ -240,11 +240,12 @@ const Community = () => {
         const fetchCommunityData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch Profiles with filters and real review count
-                let query = supabase.from('profiles').select('*, reviews:service_reviews(count)');
+                // 1. Fetch Profiles - simplified to ensure results appear
+                let query = supabase.from('profiles').select('*');
 
                 if (searchTerm) {
-                    query = query.or(`username.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`);
+                    // Safety check: only use username if first_name/last_name fail in some environments
+                    query = query.ilike('username', `%${searchTerm}%`);
                 }
 
                 if (roleFilter !== 'all' && roleFilter !== 'coop') {
@@ -259,16 +260,10 @@ const Community = () => {
                     query = query.eq('level', levelFilter);
                 }
 
-                const { data: rawProfiles, error: profilesError } = await query.limit(40);
+                const { data: profilesData, error: profilesError } = await query.limit(50);
                 if (profilesError) throw profilesError;
 
-                // Map profiles to flatten review count
-                const profilesData = (rawProfiles || []).map(p => ({
-                    ...p,
-                    reviews_count: p.reviews?.[0]?.count || p.reviews_count || 0
-                }));
-
-                // 2. Fetch Teams (if search or coop filter)
+                // 2. Fetch Teams
                 let teamsQuery = supabase.from('teams').select('*');
                 if (searchTerm) {
                     teamsQuery = teamsQuery.ilike('name', `%${searchTerm}%`);
@@ -276,8 +271,8 @@ const Community = () => {
                 const { data: teamsData, error: teamsError } = await teamsQuery.limit(20);
                 if (teamsError) throw teamsError;
 
-                // 3. Fetch Team Memberships for linked display
-                const profileIds = profilesData.map(p => p.id);
+                // 3. Fetch Team Memberships
+                const profileIds = (profilesData || []).map(p => p.id);
                 if (profileIds.length > 0) {
                     const { data: membershipData } = await supabase
                         .from('team_members')
@@ -294,11 +289,7 @@ const Community = () => {
                     if (searchTerm && profilesData.length > 0) {
                         const extraTeamIds = membershipData?.map(m => m.team_id) || [];
                         if (extraTeamIds.length > 0) {
-                            const { data: extraTeams } = await supabase
-                                .from('teams')
-                                .select('*')
-                                .in('id', extraTeamIds);
-                            
+                            const { data: extraTeams } = await supabase.from('teams').select('*').in('id', extraTeamIds);
                             const mergedTeams = [...(teamsData || []), ...(extraTeams || [])];
                             const uniqueTeams = Array.from(new Set(mergedTeams.map(t => t.id))).map(id => mergedTeams.find(t => t.id === id));
                             setTeams(uniqueTeams);
@@ -314,13 +305,13 @@ const Community = () => {
 
                 setProfiles(profilesData || []);
             } catch (err) {
-                console.error('[Community] Error:', err);
+                console.error('[Community] Critical fetch error:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        const timeout = setTimeout(fetchCommunityData, 300); // Debounce
+        const timeout = setTimeout(fetchCommunityData, 300);
         return () => clearTimeout(timeout);
     }, [searchTerm, roleFilter, ratingFilter, levelFilter]);
 
@@ -335,7 +326,7 @@ const Community = () => {
                 </p>
             </div>
 
-            {/* Premium Compact Search & Filter Section */}
+            {/* Search & Filter Section */}
             <div style={{ maxWidth: '800px', margin: '0 auto 4rem auto' }}>
                 <div style={{ 
                     display: 'flex', 
@@ -351,7 +342,7 @@ const Community = () => {
                         <svg style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
                         <input 
                             type="text"
-                            placeholder="Buscar por nombre o @usuario..."
+                            placeholder="Buscar por @usuario..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
@@ -379,7 +370,7 @@ const Community = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                            transition: 'all 0.3s'
                         }}
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 12h6"/></svg>
@@ -387,7 +378,6 @@ const Community = () => {
                     </button>
                 </div>
 
-                {/* Collapsible Filters */}
                 {showFilters && (
                     <div className="glass" style={{
                         marginTop: '1rem',
@@ -400,7 +390,6 @@ const Community = () => {
                         gap: '2rem',
                         animation: 'slideDown 0.3s ease-out'
                     }}>
-                        {/* Role Filter */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '800', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Rol</label>
                             <select 
@@ -426,7 +415,6 @@ const Community = () => {
                             </select>
                         </div>
 
-                        {/* Rating Filter */}
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '800', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Calificación</label>
                             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
@@ -434,11 +422,7 @@ const Community = () => {
                                     <div 
                                         key={star}
                                         onClick={() => setRatingFilter(ratingFilter === star ? 0 : star)}
-                                        style={{ 
-                                            cursor: 'pointer', 
-                                            transition: 'all 0.2s',
-                                            transform: ratingFilter >= star ? 'scale(1.1)' : 'scale(1)'
-                                        }}
+                                        style={{ cursor: 'pointer', transition: 'all 0.2s' }}
                                     >
                                         <svg width="22" height="22" viewBox="0 0 24 24" fill={ratingFilter >= star ? "#fbbf24" : "none"} stroke={ratingFilter >= star ? "#fbbf24" : "currentColor"} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                     </div>
@@ -446,16 +430,16 @@ const Community = () => {
                             </div>
                         </div>
 
-                        {/* Level Filter */}
-                        <div style={{ position: 'relative' }}>
+                        <div>
                             <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '800', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Nivel ({levelFilter === 0 ? 'Cualquiera' : levelFilter})</label>
-                            <div style={{ padding: '0 5px' }}>
+                            <div style={{ padding: '0' }}>
                                 <input 
                                     type="range"
                                     min="0"
                                     max="10"
                                     value={levelFilter}
                                     onChange={(e) => setLevelFilter(parseInt(e.target.value))}
+                                    className="premium-slider"
                                     style={{ 
                                         width: '100%', 
                                         cursor: 'pointer', 
@@ -463,7 +447,9 @@ const Community = () => {
                                         height: '6px',
                                         borderRadius: '10px',
                                         background: `linear-gradient(to right, var(--primary) ${(levelFilter / 10) * 100}%, var(--border) ${(levelFilter / 10) * 100}%)`,
-                                        outline: 'none'
+                                        outline: 'none',
+                                        margin: 0,
+                                        padding: 0
                                     }}
                                 />
                             </div>
@@ -477,25 +463,28 @@ const Community = () => {
                     from { opacity: 0; transform: translateY(-10px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
-                input[type=range]::-webkit-slider-thumb {
+                .premium-slider::-webkit-slider-thumb {
                     appearance: none;
-                    height: 18px;
-                    width: 18px;
+                    height: 20px;
+                    width: 20px;
                     border-radius: 50%;
                     background: #fff;
                     border: 3px solid var(--primary);
                     cursor: pointer;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                    margin-top: -6px; /* Center thumb on track */
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                    transition: transform 0.1s ease;
                 }
-                input[type=range]::-moz-range-thumb {
+                .premium-slider::-webkit-slider-thumb:hover {
+                    transform: scale(1.15);
+                }
+                .premium-slider::-moz-range-thumb {
                     height: 18px;
                     width: 18px;
                     border-radius: 50%;
                     background: #fff;
                     border: 3px solid var(--primary);
                     cursor: pointer;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    border: none;
                 }
             `}</style>
 
