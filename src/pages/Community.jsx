@@ -228,6 +228,7 @@ const Community = () => {
     const [teams, setTeams] = useState([]);
     const [teamMemberships, setTeamMemberships] = useState({});
     const [loading, setLoading] = useState(true);
+    const [showFilters, setShowFilters] = useState(false);
     
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -239,11 +240,11 @@ const Community = () => {
         const fetchCommunityData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch Profiles with filters
-                let query = supabase.from('profiles').select('*');
+                // 1. Fetch Profiles with filters and real review count
+                let query = supabase.from('profiles').select('*, reviews:service_reviews(count)');
 
                 if (searchTerm) {
-                    query = query.ilike('username', `%${searchTerm}%`);
+                    query = query.or(`username.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`);
                 }
 
                 if (roleFilter !== 'all' && roleFilter !== 'coop') {
@@ -258,8 +259,14 @@ const Community = () => {
                     query = query.eq('level', levelFilter);
                 }
 
-                const { data: profilesData, error: profilesError } = await query.limit(40);
+                const { data: rawProfiles, error: profilesError } = await query.limit(40);
                 if (profilesError) throw profilesError;
+
+                // Map profiles to flatten review count
+                const profilesData = (rawProfiles || []).map(p => ({
+                    ...p,
+                    reviews_count: p.reviews?.[0]?.count || p.reviews_count || 0
+                }));
 
                 // 2. Fetch Teams (if search or coop filter)
                 let teamsQuery = supabase.from('teams').select('*');
@@ -284,7 +291,6 @@ const Community = () => {
                     });
                     setTeamMemberships(membershipMap);
 
-                    // If searching for a specific user, we might want to also include the teams they belong to even if they don't match the search term
                     if (searchTerm && profilesData.length > 0) {
                         const extraTeamIds = membershipData?.map(m => m.team_id) || [];
                         if (extraTeamIds.length > 0) {
@@ -293,7 +299,6 @@ const Community = () => {
                                 .select('*')
                                 .in('id', extraTeamIds);
                             
-                            // Merge and unique
                             const mergedTeams = [...(teamsData || []), ...(extraTeams || [])];
                             const uniqueTeams = Array.from(new Set(mergedTeams.map(t => t.id))).map(id => mergedTeams.find(t => t.id === id));
                             setTeams(uniqueTeams);
@@ -321,161 +326,192 @@ const Community = () => {
 
     return (
         <div className="container" style={{ padding: '4rem 1rem' }}>
-            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-                <h1 style={{ fontSize: '3.5rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-1px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-1.5px' }}>
                     Comunidad <span style={{ color: 'var(--primary)' }}>Cooplance</span>
                 </h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>
-                    Encuentra el talento ideal, conecta con cooperativas visionarias y descubre nuevas oportunidades de colaboración.
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
+                    Encuentra talento, conecta con cooperativas y descubre nuevas oportunidades de colaboración.
                 </p>
             </div>
 
-            {/* Search & Filters Section */}
-            <div className="glass" style={{
-                padding: '2rem',
-                borderRadius: '32px',
-                border: '1px solid var(--border)',
-                marginBottom: '3rem',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '1.5rem',
-                alignItems: 'end',
-                background: 'var(--bg-card)'
-            }}>
-                {/* Search */}
-                <div style={{ flex: 2 }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '700', fontSize: '0.9rem' }}>Buscador @usuario</label>
-                    <div style={{ position: 'relative' }}>
+            {/* Premium Compact Search & Filter Section */}
+            <div style={{ maxWidth: '800px', margin: '0 auto 4rem auto' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '1rem', 
+                    background: 'var(--bg-card)', 
+                    padding: '0.75rem', 
+                    borderRadius: '24px', 
+                    border: '1px solid var(--border)',
+                    boxShadow: 'var(--shadow-lg)',
+                    alignItems: 'center'
+                }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                        <svg style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
                         <input 
                             type="text"
-                            placeholder="Ej: jdoe, cooplance_dev..."
+                            placeholder="Buscar por nombre o @usuario..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
                                 width: '100%',
-                                padding: '1rem 1rem 1rem 3rem',
+                                padding: '1rem 1rem 1rem 3.5rem',
                                 borderRadius: '16px',
-                                border: '1px solid var(--border)',
-                                background: 'var(--bg-card-hover)',
+                                border: 'none',
+                                background: 'transparent',
                                 color: 'var(--text-primary)',
+                                fontSize: '1rem',
                                 outline: 'none'
                             }}
                         />
-                        <svg style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
                     </div>
-                </div>
-
-                {/* Role Filter */}
-                <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '700', fontSize: '0.9rem' }}>Rol</label>
-                    <select 
-                        value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value)}
+                    <button 
+                        onClick={() => setShowFilters(!showFilters)}
                         style={{
-                            width: '100%',
-                            padding: '1rem',
+                            padding: '0.75rem 1.5rem',
                             borderRadius: '16px',
+                            background: showFilters ? 'var(--primary)' : 'var(--bg-card-hover)',
+                            color: showFilters ? 'white' : 'var(--text-primary)',
                             border: '1px solid var(--border)',
-                            background: 'var(--bg-card-hover)',
-                            color: 'var(--text-primary)',
-                            outline: 'none',
-                            cursor: 'pointer'
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                         }}
                     >
-                        <option value="all">Todos los Roles</option>
-                        <option value="freelancer">Freelancer</option>
-                        <option value="client">Cliente</option>
-                        <option value="company">Empresa</option>
-                        <option value="coop">Cooperativa (Coop)</option>
-                    </select>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 12h6"/></svg>
+                        Filtros
+                    </button>
                 </div>
 
-                {/* Rating Filter */}
-                <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '700', fontSize: '0.9rem' }}>Calificación (Mín)</label>
-                    <div style={{ display: 'flex', gap: '0.25rem', padding: '0.5rem', background: 'var(--bg-card-hover)', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <div 
-                                key={star}
-                                onClick={() => setRatingFilter(ratingFilter === star ? 0 : star)}
-                                style={{ 
-                                    cursor: 'pointer', 
-                                    padding: '0.4rem', 
-                                    borderRadius: '8px',
-                                    background: ratingFilter >= star ? 'rgba(251, 191, 36, 0.1)' : 'transparent',
-                                    transition: 'all 0.2s'
+                {/* Collapsible Filters */}
+                {showFilters && (
+                    <div className="glass" style={{
+                        marginTop: '1rem',
+                        padding: '2rem',
+                        borderRadius: '24px',
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-card)',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '2rem',
+                        animation: 'slideDown 0.3s ease-out'
+                    }}>
+                        {/* Role Filter */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '800', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Rol</label>
+                            <select 
+                                value={roleFilter}
+                                onChange={(e) => setRoleFilter(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.85rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--bg-card-hover)',
+                                    color: 'var(--text-primary)',
+                                    outline: 'none',
+                                    cursor: 'pointer',
+                                    fontWeight: '600'
                                 }}
                             >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill={ratingFilter >= star ? "#fbbf24" : "none"} stroke={ratingFilter >= star ? "#fbbf24" : "currentColor"} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                                <option value="all">Todos los Roles</option>
+                                <option value="freelancer">Freelancer</option>
+                                <option value="client">Cliente</option>
+                                <option value="company">Empresa</option>
+                                <option value="coop">Cooperativa (Coop)</option>
+                            </select>
+                        </div>
 
-                {/* Level Filter */}
-                <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '700', fontSize: '0.9rem' }}>Nivel (1-10)</label>
-                    <div style={{ position: 'relative', width: '100%' }}>
-                        <input 
-                            type="range"
-                            min="0"
-                            max="10"
-                            value={levelFilter}
-                            onChange={(e) => setLevelFilter(parseInt(e.target.value))}
-                            style={{ 
-                                width: '100%', 
-                                cursor: 'pointer', 
-                                appearance: 'none',
-                                height: '8px',
-                                borderRadius: '10px',
-                                background: `linear-gradient(to right, var(--primary) ${(levelFilter / 10) * 100}%, var(--border) ${(levelFilter / 10) * 100}%)`,
-                                outline: 'none',
-                                marginBottom: '1rem'
-                            }}
-                        />
-                        <style>{`
-                            input[type=range]::-webkit-slider-thumb {
-                                appearance: none;
-                                height: 20px;
-                                width: 20px;
-                                border-radius: 50%;
-                                background: #fff;
-                                border: 3px solid var(--primary);
-                                cursor: pointer;
-                                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-                                transition: all 0.2s;
-                            }
-                            input[type=range]::-webkit-slider-thumb:hover {
-                                transform: scale(1.1);
-                                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-                            }
-                            input[type=range]:focus {
-                                outline: none;
-                                box-shadow: none;
-                            }
-                        `}</style>
+                        {/* Rating Filter */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '800', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Calificación</label>
+                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <div 
+                                        key={star}
+                                        onClick={() => setRatingFilter(ratingFilter === star ? 0 : star)}
+                                        style={{ 
+                                            cursor: 'pointer', 
+                                            transition: 'all 0.2s',
+                                            transform: ratingFilter >= star ? 'scale(1.1)' : 'scale(1)'
+                                        }}
+                                    >
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill={ratingFilter >= star ? "#fbbf24" : "none"} stroke={ratingFilter >= star ? "#fbbf24" : "currentColor"} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Level Filter */}
+                        <div style={{ position: 'relative' }}>
+                            <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '800', fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Nivel ({levelFilter === 0 ? 'Cualquiera' : levelFilter})</label>
+                            <div style={{ padding: '0 5px' }}>
+                                <input 
+                                    type="range"
+                                    min="0"
+                                    max="10"
+                                    value={levelFilter}
+                                    onChange={(e) => setLevelFilter(parseInt(e.target.value))}
+                                    style={{ 
+                                        width: '100%', 
+                                        cursor: 'pointer', 
+                                        appearance: 'none',
+                                        height: '6px',
+                                        borderRadius: '10px',
+                                        background: `linear-gradient(to right, var(--primary) ${(levelFilter / 10) * 100}%, var(--border) ${(levelFilter / 10) * 100}%)`,
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div style={{ textAlign: 'center', fontSize: '0.8rem', fontWeight: '800', marginTop: '0.5rem' }}>
-                        {levelFilter === 0 ? 'Cualquiera' : `Nivel ${levelFilter}`}
-                    </div>
-                </div>
+                )}
             </div>
+
+            <style>{`
+                @keyframes slideDown {
+                    from { opacity: 0; transform: translateY(-10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                input[type=range]::-webkit-slider-thumb {
+                    appearance: none;
+                    height: 18px;
+                    width: 18px;
+                    border-radius: 50%;
+                    background: #fff;
+                    border: 3px solid var(--primary);
+                    cursor: pointer;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    margin-top: -6px; /* Center thumb on track */
+                }
+                input[type=range]::-moz-range-thumb {
+                    height: 18px;
+                    width: 18px;
+                    border-radius: 50%;
+                    background: #fff;
+                    border: 3px solid var(--primary);
+                    cursor: pointer;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                }
+            `}</style>
 
             {/* Results Grid */}
             {loading ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
                     {[...Array(6)].map((_, i) => (
-                        <div key={i} className="glass skeleton-anim" style={{ height: '300px', borderRadius: '24px' }}></div>
+                        <div key={i} className="glass skeleton-anim" style={{ height: '320px', borderRadius: '24px' }}></div>
                     ))}
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
-                    {/* Render Teams First if in Coop mode or searching */}
                     {(roleFilter === 'all' || roleFilter === 'coop') && teams.map(team => (
                         <TeamCard key={team.id} team={team} navigate={navigate} />
                     ))}
 
-                    {/* Render Profiles */}
                     {roleFilter !== 'coop' && profiles.map(profile => (
                         <UserCard 
                             key={profile.id} 
