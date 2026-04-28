@@ -16,6 +16,7 @@ const CoopDetail = () => {
     const { teams, userTeams, addMemberToTeam, updateMemberRole, leaveTeam, dissolveCoop, updateTeam, acceptRules, updateRules } = useTeams();
     
     const [activeTab, setActiveTab] = useState('info');
+    const [showRules, setShowRules] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [pendingJobs, setPendingJobs] = useState([]);
     const [payouts, setPayouts] = useState([]);
@@ -296,30 +297,49 @@ const CoopDetail = () => {
                             <h3 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Sobre la Agencia</h3>
                             <p style={{ lineHeight: '1.8', color: 'var(--text-secondary)', fontSize: '1.05rem' }}>{coop.description}</p>
                             
-                            <h3 style={{ marginTop: '2.5rem', marginBottom: '1.5rem' }}>Estatuto Interno</h3>
-                            <div style={{ 
-                                background: 'rgba(0,0,0,0.2)', 
-                                padding: '1.5rem', 
-                                borderRadius: '16px', 
-                                fontFamily: 'monospace', 
-                                fontSize: '0.9rem', 
-                                lineHeight: '1.6',
-                                border: '1px solid rgba(255,255,255,0.05)',
-                                color: 'var(--text-muted)'
-                            }}>
-                                {coop.internal_rules || 'No hay reglas definidas.'}
+                            <div 
+                                onClick={() => setShowRules(!showRules)}
+                                style={{ 
+                                    marginTop: '2.5rem', 
+                                    marginBottom: '1.5rem', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'space-between',
+                                    cursor: 'pointer',
+                                    padding: '1rem',
+                                    background: 'var(--bg-card-hover)',
+                                    borderRadius: '16px',
+                                    border: '1px solid var(--border)',
+                                    transition: 'all 0.3s'
+                                }}
+                            >
+                                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Reglas y condiciones de la Coop</h3>
+                                <svg 
+                                    width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" 
+                                    style={{ transform: showRules ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}
+                                >
+                                    <path d="M6 9l6 6 6-6" />
+                                </svg>
                             </div>
+
+                            {showRules && (
+                                <div style={{ 
+                                    background: 'rgba(0,0,0,0.2)', 
+                                    padding: '1.5rem', 
+                                    borderRadius: '16px', 
+                                    fontFamily: 'monospace', 
+                                    fontSize: '0.9rem', 
+                                    lineHeight: '1.6',
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    color: 'var(--text-muted)',
+                                    animation: 'slideDown 0.3s ease-out'
+                                }}>
+                                    {coop.internal_rules || 'No hay reglas definidas.'}
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                            <div className="glass" style={{ padding: '1.5rem', borderRadius: '24px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--primary)', marginBottom: '0.2rem' }}>{coop.level || 1}</div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Nivel Coop</div>
-                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', marginTop: '1.5rem', overflow: 'hidden' }}>
-                                    <div style={{ width: '30%', height: '100%', background: 'var(--primary)' }}></div>
-                                </div>
-                                <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>Próximo nivel: 450 XP</div>
-                            </div>
 
                             <div className="glass" style={{ padding: '1.5rem', borderRadius: '24px' }}>
                                 <h4 style={{ marginTop: 0, marginBottom: '1rem' }}>Métricas</h4>
