@@ -167,6 +167,7 @@ export const TeamProvider = ({ children }) => {
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
+            .eq('role', 'freelancer') // Only freelancers can be invited to Coops
             .or(`username.ilike.%${query}%,email.ilike.%${query}%`)
             .limit(1)
             .single();
