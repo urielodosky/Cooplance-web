@@ -95,7 +95,8 @@ const CreateCoop = () => {
             // Validation for step 1
             if (currentStep === 1) {
                 if (!formData.name || !formData.description || !formData.logo || !formData.category_1) {
-                    setError('Por favor completa todos los campos obligatorios de la identidad.');
+                    setError('Todos los campos son obligatorios: Nombre, Descripción, Logo y al menos una Categoría.');
+                    window.scrollTo(0, 0);
                     return;
                 }
             }
@@ -232,32 +233,26 @@ const CreateCoop = () => {
                                 </div>
                             </div>
 
-                            <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                                <div className="form-group">
-                                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Cat. 1</label>
+                            <div className="form-group">
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Categorías (Máximo 3)</label>
+                                <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                                     <CustomDropdown 
                                         options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
                                         value={formData.category_1} 
                                         onChange={(v) => setFormData({...formData, category_1: v})}
-                                        placeholder="Cat. 1"
+                                        placeholder="Principal (Obligatorio)"
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Cat. 2</label>
                                     <CustomDropdown 
-                                        options={Object.keys(serviceCategories).filter(c => c !== formData.category_1).map(cat => ({ label: cat, value: cat }))} 
+                                        options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
                                         value={formData.category_2} 
                                         onChange={(v) => setFormData({...formData, category_2: v})}
-                                        placeholder="Cat. 2"
+                                        placeholder="Opcional"
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Cat. 3</label>
                                     <CustomDropdown 
-                                        options={Object.keys(serviceCategories).filter(c => c !== formData.category_1 && c !== formData.category_2).map(cat => ({ label: cat, value: cat }))} 
+                                        options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
                                         value={formData.category_3} 
                                         onChange={(v) => setFormData({...formData, category_3: v})}
-                                        placeholder="Cat. 3"
+                                        placeholder="Opcional"
                                     />
                                 </div>
                             </div>
