@@ -308,7 +308,9 @@ export const ChatProvider = ({ children }) => {
                 text: m.content,
                 attachments: m.attachments || [],
                 timestamp: m.created_at,
-                isSystem: m.is_system
+                isSystem: m.is_system,
+                isRead: m.is_read,
+                deliveredAt: m.delivered_at
             }));
         } catch (error) {
             console.error("[ChatContext] Error al obtener mensajes:", error);
@@ -479,6 +481,34 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
+    const markMessagesAsRead = async (chatId) => {
+        if (!user) return;
+        try {
+            await supabase
+                .from('messages')
+                .update({ is_read: true })
+                .eq('chat_id', chatId)
+                .eq('receiver_id', user.id)
+                .eq('is_read', false);
+        } catch (error) {
+            console.error("[ChatContext] Error marking as read:", error);
+        }
+    };
+
+    const markMessagesAsDelivered = async (chatId) => {
+        if (!user) return;
+        try {
+            await supabase
+                .from('messages')
+                .update({ delivered_at: new Date().toISOString() })
+                .eq('chat_id', chatId)
+                .eq('receiver_id', user.id)
+                .is('delivered_at', null);
+        } catch (error) {
+            console.error("[ChatContext] Error marking as delivered:", error);
+        }
+    };
+
     const getChatById = (chatId) => {
         return chats.find(c => c.id === chatId);
     };
@@ -497,6 +527,8 @@ export const ChatProvider = ({ children }) => {
             isCleaning,
             sendMessage,
             fetchMessages,
+            markMessagesAsRead,
+            markMessagesAsDelivered,
             getChatById,
             getUserChats,
             loadChats

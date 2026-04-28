@@ -17,7 +17,7 @@ const chatThrottler = createThrottler(1500);
 const Chat = () => {
     const { chatId } = useParams();
     const { user, isTutorView } = useAuth();
-    const { getUserChats, getChatById, sendMessage, toggleChatBlock, deleteChat, fetchMessages, purgeDuplicateChats, isCleaning } = useChat();
+    const { getUserChats, getChatById, sendMessage, toggleChatBlock, deleteChat, fetchMessages, markMessagesAsRead, markMessagesAsDelivered, purgeDuplicateChats, isCleaning } = useChat();
     const { jobs, extendJobDeadline, updateJobStatus } = useJobs();
     const navigate = useNavigate();
     const { showActionModal } = useActionModal();
@@ -140,48 +140,71 @@ const Chat = () => {
             const msgs = await fetchMessages(chatId);
             setMessages(msgs);
             setIsLoadingMessages(false);
+            
+            // Mark existing messages as delivered and read
+            markMessagesAsDelivered(chatId);
+            markMessagesAsRead(chatId);
         };
         load();
 
         const channel = supabase
             .channel(`chat:${chatId}`)
             .on('postgres_changes', {
-                event: 'INSERT',
+                event: '*',
                 schema: 'public',
                 table: 'messages',
                 filter: `chat_id=eq.${chatId}`
             }, (payload) => {
-                setMessages(prev => {
-                    const exists = prev.find(m =>
-                        (m.id === payload.new.id) ||
-                        (m.isOptimistic && m.text === payload.new.content && String(m.senderId) === String(payload.new.sender_id))
-                    );
-                    if (exists) {
-                        return prev.map(m => (m.isOptimistic && m.text === payload.new.content) ? {
+                if (payload.eventType === 'INSERT') {
+                    setMessages(prev => {
+                        const exists = prev.find(m =>
+                            (m.id === payload.new.id) ||
+                            (m.isOptimistic && m.text === payload.new.content && String(m.senderId) === String(payload.new.sender_id))
+                        );
+                        if (exists) {
+                            return prev.map(m => (m.isOptimistic && m.text === payload.new.content) ? {
+                                id: payload.new.id,
+                                senderId: payload.new.sender_id,
+                                senderName: payload.new.sender_name,
+                                text: payload.new.content,
+                                attachments: payload.new.attachments || [],
+                                timestamp: payload.new.created_at,
+                                isSystem: payload.new.is_system,
+                                isRead: payload.new.is_read,
+                                deliveredAt: payload.new.delivered_at
+                            } : m);
+                        }
+                        
+                        // If it's for me, mark as delivered and read (since I have the chat open)
+                        if (String(payload.new.receiver_id) === String(user.id)) {
+                            markMessagesAsDelivered(chatId);
+                            markMessagesAsRead(chatId);
+                        }
+
+                        return [...prev, {
                             id: payload.new.id,
                             senderId: payload.new.sender_id,
                             senderName: payload.new.sender_name,
                             text: payload.new.content,
                             attachments: payload.new.attachments || [],
                             timestamp: payload.new.created_at,
-                            isSystem: payload.new.is_system
-                        } : m);
-                    }
-                    return [...prev, {
-                        id: payload.new.id,
-                        senderId: payload.new.sender_id,
-                        senderName: payload.new.sender_name,
-                        text: payload.new.content,
-                        attachments: payload.new.attachments || [],
-                        timestamp: payload.new.created_at,
-                        isSystem: payload.new.is_system
-                    }];
-                });
+                            isSystem: payload.new.is_system,
+                            isRead: payload.new.is_read,
+                            deliveredAt: payload.new.delivered_at
+                        }];
+                    });
+                } else if (payload.eventType === 'UPDATE') {
+                    setMessages(prev => prev.map(m => m.id === payload.new.id ? {
+                        ...m,
+                        isRead: payload.new.is_read,
+                        deliveredAt: payload.new.delivered_at
+                    } : m));
+                }
             })
             .subscribe();
 
         return () => supabase.removeChannel(channel);
-    }, [chatId, fetchMessages]);
+    }, [chatId, fetchMessages, markMessagesAsRead, markMessagesAsDelivered, user?.id]);
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -856,9 +879,22 @@ const Chat = () => {
                                                             </div>
                                                         )}
                                                         {msg.text && <span className="message-text">{msg.text}</span>}
-                                                        <span className="message-time">
-                                                            {msgDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', alignSelf: 'flex-end' }}>
+                                                            <span className="message-time">
+                                                                {msgDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                            {isMe && !msg.isOptimistic && (
+                                                                <div className={`message-status ${msg.isRead ? 'read' : msg.deliveredAt ? 'delivered' : 'sent'}`}>
+                                                                    {msg.isRead ? (
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34b7f1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="2 12 8 18 22 4"/><polyline points="8 12 14 18 22 10"/></svg>
+                                                                    ) : msg.deliveredAt ? (
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="2 12 8 18 22 4"/><polyline points="8 12 14 18 22 10"/></svg>
+                                                                    ) : (
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </React.Fragment>
