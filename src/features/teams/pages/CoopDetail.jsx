@@ -234,7 +234,7 @@ const CoopDetail = () => {
                             )}
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
-                            {[coop.category_1, coop.category_2].filter(Boolean).map((cat, i) => (
+                            {(coop.categories || []).map((cat, i) => (
                                 <span key={i} style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '6px' }}>{cat}</span>
                             ))}
                         </div>
