@@ -482,40 +482,43 @@ const CoopDetail = () => {
                                     cursor: 'pointer'
                                 }}>
                                     {/* PHOTO */}
-                                    <div style={{ position: 'relative' }}>
-                                        {member.profiles?.avatar_url ? (
-                                            <img src={member.profiles.avatar_url} alt={member.profiles.username} style={{ width: '60px', height: '60px', borderRadius: '18px', objectFit: 'cover', border: '2px solid var(--primary-soft)' }} />
+                                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                                        {member.profile?.avatar_url ? (
+                                            <img src={member.profile.avatar_url} alt={member.profile.username} style={{ width: '60px', height: '60px', borderRadius: '18px', objectFit: 'cover', border: '2px solid var(--primary-soft)' }} />
                                         ) : (
                                             <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                                                {member.profiles?.username?.charAt(0).toUpperCase()}
+                                                {member.profile?.username?.charAt(0).toUpperCase() || 'U'}
                                             </div>
                                         )}
-                                        <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: member.accepted_rules_at ? '#10b981' : '#f59e0b', width: '14px', height: '14px', borderRadius: '50%', border: '3px solid var(--bg-card)', title: member.accepted_rules_at ? 'Firmó Estatuto' : 'Pendiente' }}></div>
+                                        <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: member.accepted_rules_at ? '#10b981' : '#f59e0b', width: '14px', height: '14px', borderRadius: '50%', border: '3px solid var(--bg-card)' }}></div>
                                     </div>
 
                                     {/* INFO */}
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                                <span onClick={() => navigate(`/profile/${member.profiles?.username}`)} style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
-                                                    @{member.profiles?.username}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                                                <span 
+                                                    onClick={() => navigate(`/profile/${member.profile?.username}`)} 
+                                                    style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text-primary)', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                                >
+                                                    @{member.profile?.username || 'Usuario'}
                                                 </span>
-                                                <span style={{ fontSize: '0.65rem', background: member.role === 'owner' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)', color: member.role === 'owner' ? '#a78bfa' : 'var(--text-muted)', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', textTransform: 'uppercase' }}>
+                                                <span style={{ fontSize: '0.65rem', background: member.role === 'owner' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)', color: member.role === 'owner' ? '#a78bfa' : 'var(--text-muted)', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', textTransform: 'uppercase', flexShrink: 0 }}>
                                                     {member.role}
                                                 </span>
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800', flexShrink: 0 }}>
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                                 4.9
                                             </div>
                                         </div>
 
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
-                                                {member.profiles?.first_name} {member.profiles?.last_name}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {member.profile?.first_name || 'Nombre'} {member.profile?.last_name || 'No disp.'}
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--primary)' }}>
-                                                LVL {member.profiles?.level || 1}
+                                            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--primary)', flexShrink: 0 }}>
+                                                LVL {member.profile?.level || 1}
                                             </div>
                                         </div>
 
