@@ -234,10 +234,29 @@ const CoopDetail = () => {
                                 <span style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '800', border: '1px solid rgba(245, 158, 11, 0.2)' }}>BORRADOR</span>
                             )}
                         </div>
-                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
-                            {(coop.categories || []).map((cat, i) => (
-                                <span key={i} style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '6px' }}>{cat}</span>
-                            ))}
+                        <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
+                            {(coop.categories || []).map((cat, i) => {
+                                const colors = [
+                                    { bg: 'rgba(139, 92, 246, 0.1)', text: '#a78bfa', border: 'rgba(139, 92, 246, 0.2)' },
+                                    { bg: 'rgba(6, 182, 212, 0.1)', text: '#22d3ee', border: 'rgba(6, 182, 212, 0.2)' },
+                                    { bg: 'rgba(236, 72, 153, 0.1)', text: '#f472b6', border: 'rgba(236, 72, 153, 0.2)' }
+                                ];
+                                const color = colors[i % colors.length];
+                                return (
+                                    <span key={i} style={{ 
+                                        fontSize: '0.75rem', 
+                                        color: color.text, 
+                                        background: color.bg, 
+                                        padding: '4px 12px', 
+                                        borderRadius: '100px', 
+                                        fontWeight: '700',
+                                        border: `1px solid ${color.border}`,
+                                        letterSpacing: '0.5px'
+                                    }}>
+                                        {cat}
+                                    </span>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -451,36 +470,63 @@ const CoopDetail = () => {
                             )}
                         </div>
                         
-                        <div style={{ display: 'grid', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
                             {coop.members?.map((member, idx) => (
-                                <div key={idx} style={{ 
-                                    padding: '1rem 1.5rem', 
-                                    background: 'rgba(255,255,255,0.02)', 
-                                    borderRadius: '16px', 
-                                    border: '1px solid rgba(255,255,255,0.05)',
+                                <div key={idx} className="glass card-hover" style={{ 
+                                    padding: '1.5rem', 
+                                    borderRadius: '24px', 
+                                    border: '1px solid rgba(255,255,255,0.08)',
                                     display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
+                                    gap: '1.2rem',
+                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                    cursor: 'pointer'
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                                            {member.profile?.username?.charAt(0).toUpperCase() || 'U'}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: '700' }}>{member.profile?.username || 'Usuario'}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{member.role.toUpperCase()}</div>
-                                        </div>
+                                    {/* PHOTO */}
+                                    <div style={{ position: 'relative' }}>
+                                        {member.profiles?.avatar_url ? (
+                                            <img src={member.profiles.avatar_url} alt={member.profiles.username} style={{ width: '60px', height: '60px', borderRadius: '18px', objectFit: 'cover', border: '2px solid var(--primary-soft)' }} />
+                                        ) : (
+                                            <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                                                {member.profiles?.username?.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: member.accepted_rules_at ? '#10b981' : '#f59e0b', width: '14px', height: '14px', borderRadius: '50%', border: '3px solid var(--bg-card)', title: member.accepted_rules_at ? 'Firmó Estatuto' : 'Pendiente' }}></div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <span style={{ fontSize: '0.8rem', color: member.accepted_rules_at ? '#10b981' : '#f59e0b', fontWeight: '600' }}>
-                                            {member.accepted_rules_at ? '✅ Firmó Estatuto' : '⏳ Pendiente Firma'}
-                                        </span>
+
+                                    {/* INFO */}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                <span onClick={() => navigate(`/profile/${member.profiles?.username}`)} style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                                                    @{member.profiles?.username}
+                                                </span>
+                                                <span style={{ fontSize: '0.65rem', background: member.role === 'owner' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)', color: member.role === 'owner' ? '#a78bfa' : 'var(--text-muted)', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', textTransform: 'uppercase' }}>
+                                                    {member.role}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800' }}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                4.9
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
+                                                {member.profiles?.first_name} {member.profiles?.last_name}
+                                            </div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--primary)' }}>
+                                                LVL {member.profiles?.level || 1}
+                                            </div>
+                                        </div>
+
                                         {amIAdmin && member.user_id !== user.id && member.role !== 'owner' && (
                                             <button 
-                                                onClick={() => { setMemberToExpel(member); setIsExpulsionModalOpen(true); }}
-                                                style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.7rem', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold' }}
+                                                onClick={(e) => { e.stopPropagation(); setMemberToExpel(member); setIsExpulsionModalOpen(true); }}
+                                                style={{ marginTop: '0.8rem', background: 'transparent', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#f87171', cursor: 'pointer', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', width: '100%', transition: 'all 0.2s' }}
+                                                onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.05)'}
+                                                onMouseOut={(e) => e.target.style.background = 'transparent'}
                                             >
-                                                EXPULSAR
+                                                EXPULSAR MIEMBRO
                                             </button>
                                         )}
                                     </div>
