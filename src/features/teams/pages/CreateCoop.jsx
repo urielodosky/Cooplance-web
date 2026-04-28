@@ -312,10 +312,22 @@ const CreateCoop = () => {
                                     />
                                     <button 
                                         type="button" 
-                                        className="btn-secondary" 
                                         onClick={handleInvite}
                                         disabled={inviteLoading}
-                                        style={{ borderRadius: '14px', padding: '0 2rem', fontWeight: 'bold' }}
+                                        style={{ 
+                                            borderRadius: '14px', 
+                                            padding: '0 1.5rem', 
+                                            fontWeight: 'bold',
+                                            background: 'var(--primary)',
+                                            color: 'white',
+                                            border: 'none',
+                                            height: '48px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            minWidth: '100px'
+                                        }}
                                     >
                                         {inviteLoading ? '...' : 'Buscar'}
                                     </button>
@@ -348,7 +360,21 @@ const CreateCoop = () => {
 
                     <div style={{ marginTop: '4rem', display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
                         {currentStep > 1 ? (
-                            <button type="button" className="btn-secondary" onClick={() => setCurrentStep(currentStep - 1)} style={{ padding: '0.8rem 2rem', borderRadius: '14px', border: '1px solid var(--border)', background: 'var(--bg-card-hover)' }}>Volver</button>
+                            <button 
+                                type="button" 
+                                onClick={() => setCurrentStep(currentStep - 1)} 
+                                style={{ 
+                                    padding: '0.8rem 2rem', 
+                                    borderRadius: '14px', 
+                                    border: '1px solid var(--border)', 
+                                    background: 'var(--bg-card-hover)',
+                                    color: 'var(--text-primary)',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Volver
+                            </button>
                         ) : (
                             <div></div>
                         )}
