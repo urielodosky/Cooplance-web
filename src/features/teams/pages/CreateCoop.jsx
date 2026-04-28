@@ -315,7 +315,7 @@ const CreateCoop = () => {
                                         className="btn-secondary" 
                                         onClick={handleInvite}
                                         disabled={inviteLoading}
-                                        style={{ borderRadius: '14px', padding: '0 1.5rem' }}
+                                        style={{ borderRadius: '14px', padding: '0 2rem', fontWeight: 'bold' }}
                                     >
                                         {inviteLoading ? '...' : 'Buscar'}
                                     </button>
