@@ -486,23 +486,51 @@ const CoopDetail = () => {
                                         {member.profile?.avatar_url ? (
                                             <img src={member.profile.avatar_url} alt={member.profile.username} style={{ width: '60px', height: '60px', borderRadius: '18px', objectFit: 'cover', border: '2px solid var(--primary-soft)' }} />
                                         ) : (
-                                            <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                                            <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.4rem', color: 'var(--primary)' }}>
                                                 {member.profile?.username?.charAt(0).toUpperCase() || 'U'}
                                             </div>
                                         )}
-                                        <div style={{ position: 'absolute', bottom: '-5px', right: '-5px', background: member.accepted_rules_at ? '#10b981' : '#f59e0b', width: '14px', height: '14px', borderRadius: '50%', border: '3px solid var(--bg-card)' }}></div>
+                                        {/* Status Indicator (Top Right) */}
+                                        <div 
+                                            style={{ 
+                                                position: 'absolute', 
+                                                top: '-5px', 
+                                                right: '-5px', 
+                                                background: member.accepted_rules_at ? '#10b981' : '#f59e0b', 
+                                                width: '16px', 
+                                                height: '16px', 
+                                                borderRadius: '50%', 
+                                                border: '3px solid #1a1c23', // Matching background color for contrast
+                                                zIndex: 2
+                                            }}
+                                            title={member.accepted_rules_at ? 'Firmó Estatuto' : 'Pendiente Firma'}
+                                        ></div>
                                     </div>
 
                                     {/* INFO */}
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '0.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
-                                                <span 
+                                                <button 
                                                     onClick={() => navigate(`/profile/${member.profile?.username}`)} 
-                                                    style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text-primary)', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                                    style={{ 
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        padding: 0,
+                                                        fontWeight: '800', 
+                                                        fontSize: '1rem', 
+                                                        color: 'var(--primary)', 
+                                                        cursor: 'pointer', 
+                                                        whiteSpace: 'nowrap', 
+                                                        overflow: 'hidden', 
+                                                        textOverflow: 'ellipsis',
+                                                        textDecoration: 'none'
+                                                    }}
+                                                    onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
+                                                    onMouseOut={(e) => e.target.style.textDecoration = 'none'}
                                                 >
                                                     @{member.profile?.username || 'Usuario'}
-                                                </span>
+                                                </button>
                                                 <span style={{ fontSize: '0.65rem', background: member.role === 'owner' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)', color: member.role === 'owner' ? '#a78bfa' : 'var(--text-muted)', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', textTransform: 'uppercase', flexShrink: 0 }}>
                                                     {member.role}
                                                 </span>
