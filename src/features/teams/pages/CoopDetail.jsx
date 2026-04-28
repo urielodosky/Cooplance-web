@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTeams } from '../../../context/TeamContext';
 import { useAuth } from '../../auth/context/AuthContext';
 import CoopRulesAcceptance from '../components/CoopRulesAcceptance';
-import CoopAssignmentModal from '../../project/CoopAssignmentModal';
+import CoopAssignmentModal from '../../../components/project/CoopAssignmentModal';
 import CoopChat from '../components/CoopChat';
 import { supabase } from '../../../lib/supabase';
 import TeamService from '../../../services/TeamService';
