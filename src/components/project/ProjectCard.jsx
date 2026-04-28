@@ -69,11 +69,11 @@ const ProjectCard = ({ project, onApply, onDelete }) => {
 
             <div className="project-image-container">
                 <img 
-                    src={project.imageUrl || project.image_url || (project.images && project.images[0]) || 'https://ui-avatars.com/api/?name=Project&background=0a0a1a&color=6366f1&size=512'} 
+                    src={project.imageUrl || project.image_url || (project.images && project.images[0]) || getProfilePicture({ role: project.clientRole || 'client', avatar: avatar })} 
                     alt={project.title} 
                     className="project-image" 
                     onError={(e) => {
-                        e.target.src = 'https://ui-avatars.com/api/?name=Project&background=0a0a1a&color=6366f1&size=512';
+                        e.target.src = getProfilePicture({ role: project.clientRole || 'client', avatar: avatar });
                     }}
                 />
             </div>

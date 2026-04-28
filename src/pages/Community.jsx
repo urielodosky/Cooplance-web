@@ -42,14 +42,21 @@ const UserCard = ({ profile, teams = [], navigate }) => {
     }, [currentUser, profile.id]);
 
     const checkOnlineStatus = () => {
-        if (currentUser?.id === profile.id) return true;
+        if (!profile) return false;
+        
+        // El propio usuario siempre está en línea para sí mismo
+        if (currentUser && String(currentUser.id) === String(profile.id)) return true;
+        
         if (!profile.last_seen) return false;
         
         try {
             const lastSeen = new Date(profile.last_seen);
             const now = new Date();
-            const diffInMinutes = (now - lastSeen) / (1000 * 60);
-            return diffInMinutes < 5; // En línea si estuvo activo hace menos de 5 min
+            // Diferencia absoluta para manejar desfases de reloj entre cliente y servidor
+            const diffInMinutes = Math.abs(now - lastSeen) / (1000 * 60);
+            
+            // Si estuvo activo hace menos de 5 min
+            return diffInMinutes < 5;
         } catch (e) {
             return false;
         }

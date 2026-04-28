@@ -16,8 +16,8 @@ const ServiceCard = ({ service }) => {
     const isOwner = user && String(user.id) === String(service.freelancerId);
 
     // Mock data if missing
-    const rating = service.rating || 0;
-    const reviewCount = service.reviewCount || 0;
+    const rating = service.freelancerRating || 0; // V53: Use freelancer overall rating for the main badge
+    const reviewCount = service.reviewCount || 0; // Service-specific count for the count label
 
     // Prioritize the real username from the mapped service data (Supabase)
     const displayUsername = service.freelancerUsername || service.freelancerName?.replace(/\s+/g, '_').toLowerCase();

@@ -151,14 +151,25 @@ export const ServiceProvider = ({ children }) => {
             // 2. Fetch all reviews to calculate aggregates (Optimization: should be a view)
             const { data: reviewsData, error: rError } = await supabase
                 .from('service_reviews')
-                .select('service_id, rating');
+                .select('service_id, target_id, rating');
             
-            const ratingsMap = {};
+            const serviceRatingsMap = {};
+            const freelancerRatingsMap = {};
+
             if (reviewsData) {
                 reviewsData.forEach(r => {
-                    if (!ratingsMap[r.service_id]) ratingsMap[r.service_id] = { sum: 0, count: 0 };
-                    ratingsMap[r.service_id].sum += r.rating;
-                    ratingsMap[r.service_id].count += 1;
+                    // Per service
+                    if (r.service_id) {
+                        if (!serviceRatingsMap[r.service_id]) serviceRatingsMap[r.service_id] = { sum: 0, count: 0 };
+                        serviceRatingsMap[r.service_id].sum += r.rating;
+                        serviceRatingsMap[r.service_id].count += 1;
+                    }
+                    // Per freelancer
+                    if (r.target_id) {
+                        if (!freelancerRatingsMap[r.target_id]) freelancerRatingsMap[r.target_id] = { sum: 0, count: 0 };
+                        freelancerRatingsMap[r.target_id].sum += r.rating;
+                        freelancerRatingsMap[r.target_id].count += 1;
+                    }
                 });
             }
             
@@ -166,12 +177,15 @@ export const ServiceProvider = ({ children }) => {
             if (isMounted.current) {
                 const mapped = (data || []).map(row => {
                     const service = mapFromDB(row);
-                    const stats = ratingsMap[service.id] || { sum: 0, count: 0 };
+                    const serviceStats = serviceRatingsMap[service.id] || { sum: 0, count: 0 };
+                    const freelancerStats = freelancerRatingsMap[service.freelancerId] || { sum: 0, count: 0 };
                     
                     return {
                         ...service,
-                        rating: stats.count > 0 ? stats.sum / stats.count : 0,
-                        reviewCount: stats.count,
+                        rating: serviceStats.count > 0 ? serviceStats.sum / serviceStats.count : 0,
+                        reviewCount: serviceStats.count,
+                        freelancerRating: freelancerStats.count > 0 ? freelancerStats.sum / freelancerStats.count : 0,
+                        freelancerReviewCount: freelancerStats.count,
                         // Proxy for sales: XP / 40 (approx 2 jobs for Level 1)
                         sales: row.profiles?.gamification?.xp ? Math.floor(row.profiles.gamification.xp / 40) : 0
                     };

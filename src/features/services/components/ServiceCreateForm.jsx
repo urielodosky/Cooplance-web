@@ -505,6 +505,15 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
             }
         }
 
+        // Mandatory image validation for Step 2
+        if (currentStep === 2) {
+            if (!images || images.length === 0) {
+                setError('Debes subir al menos una foto de portada para tu servicio.');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+        }
+
         if (currentStep < totalSteps) {
             handleNextStep();
             return;
