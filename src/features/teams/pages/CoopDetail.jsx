@@ -512,7 +512,7 @@ const CoopDetail = () => {
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem', gap: '0.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
                                                 <button 
-                                                    onClick={() => navigate(`/profile/${member.profile?.username}`)} 
+                                                    onClick={() => navigate(`/profile/${member.user_id}`)} 
                                                     style={{ 
                                                         background: 'none',
                                                         border: 'none',
@@ -536,8 +536,14 @@ const CoopDetail = () => {
                                                 </span>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800', flexShrink: 0 }}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                                4.9
+                                                {member.profile?.rating ? (
+                                                    <>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                        {Number(member.profile.rating).toFixed(1)}
+                                                    </>
+                                                ) : (
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Nuevo</span>
+                                                )}
                                             </div>
                                         </div>
 
