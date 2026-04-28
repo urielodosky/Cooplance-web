@@ -129,7 +129,7 @@ const CreateCoop = () => {
 
     return (
         <div className="container" style={{ padding: '4rem 1rem', maxWidth: '850px' }}>
-            <div className="glass" style={{ padding: '3rem', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.08)', position: 'relative', overflow: 'hidden' }}>
+            <div className="glass" style={{ padding: '3rem', borderRadius: '40px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
                 
                 {/* Step Indicator (matching ProjectCreateForm style) */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '3rem' }}>
@@ -137,9 +137,9 @@ const CreateCoop = () => {
                         <div key={s} style={{
                             width: '40px', height: '40px', borderRadius: '50%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: s === currentStep ? 'var(--primary)' : s < currentStep ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)',
+                            background: s === currentStep ? 'var(--primary)' : s < currentStep ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-card-hover)',
                             color: s === currentStep ? 'white' : s < currentStep ? '#10b981' : 'var(--text-muted)',
-                            fontWeight: '800', border: s === currentStep ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                            fontWeight: '800', border: s === currentStep ? 'none' : '1px solid var(--border)',
                             transition: 'all 0.3s'
                         }}>
                             {s < currentStep ? '✓' : s}
@@ -176,7 +176,7 @@ const CreateCoop = () => {
                                             type="text" 
                                             placeholder="Ej: Alpha Creative Group" 
                                             className="search-input" 
-                                            style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                            style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                                             value={formData.name}
                                             onChange={(e) => setFormData({...formData, name: e.target.value})}
                                             required
@@ -188,7 +188,7 @@ const CreateCoop = () => {
                                             placeholder="¿Qué problemas resuelven? ¿Cómo trabajan?..." 
                                             className="search-input" 
                                             rows="4"
-                                            style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', minHeight: '100px' }}
+                                            style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', minHeight: '100px', color: 'var(--text-primary)' }}
                                             value={formData.description}
                                             onChange={(e) => setFormData({...formData, description: e.target.value})}
                                             required
@@ -215,8 +215,8 @@ const CreateCoop = () => {
                                             />
                                             <div style={{ 
                                                 width: '100%', height: '100%', borderRadius: '24px', 
-                                                background: formData.logo ? 'none' : 'rgba(255,255,255,0.02)', 
-                                                border: '2px dashed rgba(255,255,255,0.1)',
+                                                background: formData.logo ? 'none' : 'var(--bg-card-hover)', 
+                                                border: '2px dashed var(--border)',
                                                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
                                             }}>
                                                 {formData.logo ? (
@@ -247,7 +247,7 @@ const CreateCoop = () => {
                                 <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Etiquetas / Tags (Presiona Enter)</label>
                                 <div style={{ 
                                     display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.8rem', 
-                                    borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '14px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)',
                                     minHeight: '50px', alignItems: 'center'
                                 }}>
                                     {formData.tags.map(tag => (
@@ -266,7 +266,7 @@ const CreateCoop = () => {
                                         value={tagInput}
                                         onChange={(e) => setTagInput(e.target.value)}
                                         onKeyDown={handleAddTag}
-                                        style={{ background: 'none', border: 'none', color: 'white', outline: 'none', flex: 1, fontSize: '0.9rem' }}
+                                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none', flex: 1, fontSize: '0.9rem' }}
                                     />
                                 </div>
                             </div>
@@ -281,8 +281,8 @@ const CreateCoop = () => {
                                 rows="12"
                                 style={{ 
                                     width: '100%', padding: '1.5rem', borderRadius: '20px', 
-                                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', 
-                                    fontSize: '0.9rem', lineHeight: '1.7', fontFamily: 'monospace', color: 'white'
+                                    background: 'var(--bg-card-hover)', border: '1px solid var(--border)', 
+                                    fontSize: '0.9rem', lineHeight: '1.7', fontFamily: 'monospace', color: 'var(--text-primary)'
                                 }}
                                 value={formData.internalRules}
                                 onChange={(e) => setFormData({...formData, internalRules: e.target.value})}
@@ -305,7 +305,7 @@ const CreateCoop = () => {
                                         type="text" 
                                         placeholder="Nombre de usuario o email..." 
                                         className="search-input" 
-                                        style={{ flex: 1, padding: '1rem', borderRadius: '14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                        style={{ flex: 1, padding: '1rem', borderRadius: '14px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                                         value={inviteQuery}
                                         onChange={(e) => setInviteQuery(e.target.value)}
                                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleInvite())}
@@ -331,12 +331,12 @@ const CreateCoop = () => {
                                     </p>
                                 ) : (
                                     invitedMembers.map(m => (
-                                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem 1.2rem', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem 1.2rem', background: 'var(--bg-card-hover)', borderRadius: '14px', border: '1px solid var(--border)' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                 <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem' }}>
                                                     {m.avatar ? <img src={m.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} /> : m.username.charAt(0).toUpperCase()}
                                                 </div>
-                                                <span style={{ fontWeight: '600' }}>@{m.username}</span>
+                                                <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>@{m.username}</span>
                                             </div>
                                             <button type="button" onClick={() => removeInvitation(m.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontWeight: '700' }}>Quitar</button>
                                         </div>
