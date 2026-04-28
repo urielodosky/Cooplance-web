@@ -27,9 +27,9 @@ import HelpCenter from './pages/HelpCenter'
 import ExploreTeams from './pages/ExploreTeams'
 import SupportChatbot from './components/common/SupportChatbot'
 import FreelancerDetail from './pages/FreelancerDetail'
-import CreateTeam from './features/teams/pages/CreateTeam'
-import TeamDashboard from './features/teams/pages/TeamDashboard'
-import TeamList from './features/teams/pages/TeamList'
+import CreateCoop from './features/teams/pages/CreateCoop'
+import CoopDetail from './features/teams/pages/CoopDetail'
+import MyCoops from './features/teams/pages/MyCoops'
 import TeamPublicProfile from './features/teams/pages/TeamPublicProfile'
 import Wallet from './pages/Wallet'
 import AdminFinanceDashboard from './pages/AdminFinanceDashboard'
@@ -85,11 +85,11 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/create-project" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
-                <Route path="/create-team" element={<ProtectedRoute><CreateTeam /></ProtectedRoute>} />
+                <Route path="/create-coop" element={<ProtectedRoute><CreateCoop /></ProtectedRoute>} />
                 <Route path="/explore-teams" element={<ExploreTeams />} />
-                <Route path="/my-coops" element={<ProtectedRoute><TeamList /></ProtectedRoute>} />
-                <Route path="/team/:teamId" element={<ProtectedRoute><TeamDashboard /></ProtectedRoute>} />
-                <Route path="/team/:teamId/public" element={<TeamPublicProfile />} />
+                <Route path="/my-coops" element={<ProtectedRoute><MyCoops /></ProtectedRoute>} />
+                <Route path="/coop/:coopId" element={<ProtectedRoute><CoopDetail /></ProtectedRoute>} />
+                <Route path="/coop/:coopId/public" element={<TeamPublicProfile />} />
                 <Route path="/profile/:id" element={<ProfileSwitcher />} />
                 <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                 <Route path="/chat/:chatId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />

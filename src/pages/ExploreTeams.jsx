@@ -156,7 +156,7 @@ const ExploreTeams = () => {
                                 gap: '1rem',
                                 transition: 'transform 0.3s ease',
                                 cursor: 'pointer'
-                            }} onClick={() => navigate(`/team/${team.id}/public`)}>
+                            }} onClick={() => navigate(`/coop/${team.id}/public`)}>
                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                     {team.logo_url ? (
                                         <img src={team.logo_url} alt={team.name} style={{ width: '64px', height: '64px', borderRadius: '16px', objectFit: 'cover' }} />

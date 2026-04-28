@@ -4,7 +4,7 @@ import { useAuth } from '../../features/auth/context/AuthContext';
 import { createProposal } from '../../lib/proposalService';
 import { sanitizeText } from '../../utils/security';
 
-const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
+const ProposalApplyModal = ({ project, onClose, onSuccess, coopId, assignment }) => {
     const { user, updateUser } = useAuth();
     const [answers, setAnswers] = useState({});
     const [coverLetter, setCoverLetter] = useState('');
@@ -47,12 +47,14 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
             await createProposal({
                 projectId: project.id,
                 userId: user.id,
-                userName: userName,
+                userName: coopId ? `Coop: ${userName}` : userName, // Visual hint
                 userRole: user.role || 'freelancer',
                 coverLetter: cleanCoverLetter,
                 answers: processedAnswers,
                 amount: project.budget || 0,
                 deliveryDays: expirationDays ? parseInt(expirationDays) : 30,
+                coopId: coopId,
+                assignment: assignment
             });
 
             if (updateUser) {
@@ -88,9 +90,22 @@ const ProposalApplyModal = ({ project, onClose, onSuccess }) => {
                     </button>
                 </div>
 
-                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)' }}>{project.title}</h4>
+                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: coopId ? '1px solid var(--primary)' : 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <h4 style={{ margin: 0, color: 'var(--primary)' }}>{project.title}</h4>
+                        {coopId && (
+                            <span style={{ 
+                                background: 'var(--primary)', color: 'white', fontSize: '0.7rem', 
+                                padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' 
+                            }}>Postulación de Agencia</span>
+                        )}
+                    </div>
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Por {project.clientName}</p>
+                    {assignment && (
+                        <p style={{ margin: '8px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            <b>Equipo:</b> {assignment.memberIds.length} miembros | <b>Encargado:</b> Designado
+                        </p>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

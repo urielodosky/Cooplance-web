@@ -31,8 +31,8 @@ export const TeamProvider = ({ children }) => {
         setLoading(true);
         try {
             const { data: allTeams, error } = await supabase
-                .from('teams')
-                .select('*, members:team_members(*, profile:profiles(*)), services(*)');
+                .from('coops')
+                .select('*, members:coop_members(*, profile:profiles(*)), services:jobs(*)');
             
             if (error) throw error;
             
@@ -44,7 +44,7 @@ export const TeamProvider = ({ children }) => {
             );
             setUserTeams(relevant);
         } catch (err) {
-            console.error('Error fetching teams:', err);
+            console.error('Error fetching coops:', err);
         } finally {
             setLoading(false);
         }
@@ -56,10 +56,10 @@ export const TeamProvider = ({ children }) => {
         // Real-time subscription
         const channel = supabase
             .channel('team-updates')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'coops' }, () => {
                 fetchTeams().catch(err => console.error('[TeamContext] Re-fetch error:', err));
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'coop_members' }, () => {
                 fetchTeams().catch(err => console.error('[TeamContext] Re-fetch error:', err));
             })
             .subscribe();
@@ -82,7 +82,7 @@ export const TeamProvider = ({ children }) => {
         try {
             // Fetch team info for the notification
             const { data: team } = await supabase
-                .from('teams')
+                .from('coops')
                 .select('name')
                 .eq('id', teamId)
                 .single();

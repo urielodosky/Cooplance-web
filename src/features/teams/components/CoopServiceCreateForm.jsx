@@ -434,10 +434,10 @@ return (
                 <label className="category-label">Categoría del Servicio</label>
                 <div style={{ marginBottom: '1rem' }}>
                     <CustomDropdown
-                        options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))}
+                        options={(activeTeam?.categories || []).map(cat => ({ label: cat, value: cat }))}
                         value={formData.category}
                         onChange={handleCategoryChange}
-                        placeholder="Selecciona una Categoría Principal"
+                        placeholder="Selecciona una de las categorías de tu Coop"
                     />
                 </div>
 

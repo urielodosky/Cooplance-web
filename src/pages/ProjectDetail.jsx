@@ -128,7 +128,7 @@ const ProjectDetail = () => {
         }
 
         // V23: Age protection - U18 Freelancers cannot apply to Company projects
-        if (calculateAge(user.dob) < 18 && project?.clientRole === 'company') {
+        if (user.dob && calculateAge(user.dob) < 18 && project?.clientRole === 'company') {
             setApplyMessage({ 
                 text: 'Debes ser mayor de 18 años para postularte a ofertas de empresas.', 
                 type: 'error' 

@@ -101,8 +101,8 @@ const Navbar = () => {
                                     <button onClick={() => handleOptionClick('/explore-clients')} className="dropdown-item">
                                         Clientes
                                     </button>
-                                    {/* Hide Companies for U18 Freelancers */}
-                                    {!(user?.role === 'freelancer' && calculateAge(user.dob) < 18) && (
+                                    {/* Hide Companies only for confirmed U18 Freelancers */}
+                                    {!(user?.role === 'freelancer' && user.dob && calculateAge(user.dob) < 18) && (
                                         <button onClick={() => handleOptionClick('/companies')} className="dropdown-item">
                                             Empresas
                                         </button>
@@ -296,8 +296,8 @@ const Navbar = () => {
                             {(!user || user.role === 'freelancer') && (
                                 <>
                                     <Link to="/explore-clients" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Clientes</Link>
-                                    {/* Mobile Hide Companies for U18 Freelancers */}
-                                    {!(user?.role === 'freelancer' && calculateAge(user.dob) < 18) && (
+                                    {/* Mobile Hide Companies only for confirmed U18 Freelancers */}
+                                    {!(user?.role === 'freelancer' && user.dob && calculateAge(user.dob) < 18) && (
                                         <Link to="/companies" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>Explorar Empresas</Link>
                                     )}
                                 </>

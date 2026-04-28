@@ -144,7 +144,7 @@ const getWeeklyLimit = (level) => {
     return 50; // Level 5+
 };
 
-export const createProposal = async ({ projectId, userId, userName, userRole, coverLetter, amount, deliveryDays }) => {
+export const createProposal = async ({ projectId, userId, userName, userRole, coverLetter, amount, deliveryDays, coopId, assignment }) => {
     try {
         // 1. Fetch user level
         const { data: profile } = await supabase
@@ -191,6 +191,8 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
                 amount: parseFloat(amount) || 0,
                 delivery_days: parseInt(deliveryDays) || null,
                 status: 'pending',
+                coop_id: coopId || null,
+                assignment_snapshot: assignment || null // Snapshot of the team at postulation time
             })
             .select('*')
             .single();

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTeams } from '../../../context/TeamContext';
 import { useAuth } from '../../../features/auth/context/AuthContext';
+import ReportModal from '../../../components/common/ReportModal';
 import '../../../styles/main.scss';
 
 const TeamPublicProfile = () => {
@@ -12,6 +13,7 @@ const TeamPublicProfile = () => {
     const [team, setTeam] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchTeam = async () => {
@@ -57,8 +59,26 @@ const TeamPublicProfile = () => {
                     {team.name.charAt(0)}
                 </div>
                 <div style={{ flex: 1 }}>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{team.name}</h1>
-                    <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '600px', marginBottom: '1rem' }}>{team.description}</p>
+                    <h1 style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }}>{team.name}</h1>
+                    
+                    {/* Categories Chips */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '1.2rem' }}>
+                        {(team.categories || []).map((cat, i) => (
+                            <span key={i} style={{ 
+                                background: 'rgba(139, 92, 246, 0.1)', 
+                                color: '#a78bfa', 
+                                padding: '0.4rem 1rem', 
+                                borderRadius: '12px', 
+                                fontSize: '0.85rem', 
+                                fontWeight: '600',
+                                border: '1px solid rgba(139, 92, 246, 0.2)'
+                            }}>
+                                {cat}
+                            </span>
+                        ))}
+                    </div>
+
+                    <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '600px', marginBottom: '1.5rem' }}>{team.description}</p>
 
                     {isPendingMember && (
                         <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
@@ -85,7 +105,24 @@ const TeamPublicProfile = () => {
                         </div>
                     </div>
                 </div>
+                
+                <div style={{ display: 'flex', gap: '1rem', marginLeft: 'auto', alignSelf: 'flex-start' }}>
+                    <button 
+                        onClick={() => setIsReportModalOpen(true)}
+                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0.6rem 1rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                        Reportar Agencia
+                    </button>
+                </div>
             </div>
+
+            <ReportModal 
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                reportedId={team.id}
+                referenceType="coop"
+                itemName={team.name}
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 1fr', gap: '2rem' }}>
 
@@ -155,11 +192,17 @@ const TeamPublicProfile = () => {
                                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                                         {member.username.charAt(0)}
                                     </div>
-                                    <div>
-                                        <div style={{ fontWeight: '600' }}>{member.username}</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                            {member.role === 'owner' ? 'Fundador' : member.role} • Nivel {member.level}
+                                    <div className="team-text-info">
+                                        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>{member.username}</h2>
+                                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.1rem' }}>
+                                            {(team.categories || []).slice(0, 2).map((cat, i) => (
+                                                <span key={i} style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '4px', color: 'var(--text-muted)' }}>{cat}</span>
+                                            ))}
+                                            {team.categories?.length > 2 && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>+1</span>}
                                         </div>
+                                    </div>
+                                    <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        {member.role === 'owner' ? 'Fundador' : member.role} • Nivel {member.level}
                                     </div>
                                 </div>
                             ))}

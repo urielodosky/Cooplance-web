@@ -308,7 +308,12 @@ const TeamDashboard = () => {
                             )}
                             <div className="team-text-info">
                                 <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>{activeTeam.name}</h2>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{members.length} miembros</span>
+                                <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.1rem' }}>
+                                    {(activeTeam.categories || []).slice(0, 2).map((cat, i) => (
+                                        <span key={i} style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '4px', color: 'var(--text-muted)' }}>{cat}</span>
+                                    ))}
+                                    {activeTeam.categories?.length > 2 && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>+1</span>}
+                                </div>
                             </div>
                         </div>
                         <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

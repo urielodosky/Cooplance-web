@@ -16,7 +16,7 @@ const Explore = () => {
     // V23: Age-based filtering for buyers
     const getVisibleServices = () => {
         let list = [...services];
-        if (user && user.role === 'buyer' && calculateAge(user.dob) < 18) {
+        if (user && user.role === 'buyer' && user.dob && calculateAge(user.dob) < 18) {
             // Only allow digital/remote services
             list = list.filter(s => {
                 const workMode = s.workMode || [];

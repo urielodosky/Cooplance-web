@@ -238,6 +238,26 @@ const Chat = () => {
         }
         if (!activeChat || !messageInput.trim()) return;
 
+        // Phase 3: Project Lead Restriction for Coops
+        const cid = activeChat.context_id || activeChat.contextId;
+        if (cid) {
+            const associatedJob = jobs.find(j => String(j.id) === String(cid));
+            if (associatedJob && associatedJob.coop_id && associatedJob.project_lead_id) {
+                // If it's a Coop job, only the client and the project lead can write
+                const isClient = String(associatedJob.client_id) === String(user.id);
+                const isProjectLead = String(associatedJob.project_lead_id) === String(user.id);
+                
+                if (!isClient && !isProjectLead) {
+                    showActionModal({
+                        title: 'Permiso Denegado',
+                        message: "Solo el Encargado (Project Lead) designado puede hablar con el cliente en este chat.",
+                        severity: 'warning'
+                    });
+                    return;
+                }
+            }
+        }
+
         if (!chatThrottler()) {
             console.warn("Throttling activado: Evitando spam de mensajes.");
             return;
@@ -365,6 +385,25 @@ const Chat = () => {
             return;
         }
         if (!file || !activeChat || activeChat.status === 'blocked') return;
+
+        // Phase 3: Project Lead Restriction for Coops
+        const cid = activeChat.context_id || activeChat.contextId;
+        if (cid) {
+            const associatedJob = jobs.find(j => String(j.id) === String(cid));
+            if (associatedJob && associatedJob.coop_id && associatedJob.project_lead_id) {
+                const isClient = String(associatedJob.client_id) === String(user.id);
+                const isProjectLead = String(associatedJob.project_lead_id) === String(user.id);
+                
+                if (!isClient && !isProjectLead) {
+                    showActionModal({
+                        title: 'Permiso Denegado',
+                        message: "Solo el Encargado (Project Lead) puede enviar archivos en este chat.",
+                        severity: 'warning'
+                    });
+                    return;
+                }
+            }
+        }
 
         if (file.type.startsWith('video')) {
             showActionModal({

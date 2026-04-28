@@ -250,7 +250,7 @@ const UserCard = ({ profile, teams = [], navigate }) => {
                     alignItems: 'center',
                     gap: '8px',
                     cursor: 'pointer'
-                }} onClick={() => navigate(`/team/${teams[0].id}`)}>
+                }} onClick={() => navigate(`/coop/${teams[0].id}`)}>
                     <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem', fontWeight: 'bold' }}>
                         {teams[0].name?.charAt(0).toUpperCase()}
                     </div>
@@ -276,7 +276,7 @@ const TeamCard = ({ team, navigate }) => {
         }}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <div 
-                    onClick={() => navigate(`/team/${team.id}`)}
+                    onClick={() => navigate(`/coop/${team.id}`)}
                     style={{
                         width: '64px',
                         height: '64px',
@@ -315,7 +315,7 @@ const TeamCard = ({ team, navigate }) => {
                     {team.members_count || 0} Miembros activos
                 </span>
                 <button 
-                    onClick={() => navigate(`/team/${team.id}`)}
+                    onClick={() => navigate(`/coop/${team.id}`)}
                     className="btn-primary"
                     style={{ 
                         padding: '0.5rem 1rem', 
@@ -399,7 +399,7 @@ const Community = () => {
                 }
 
                 // 2. Fetch Teams
-                let teamsQuery = supabase.from('teams').select('*');
+                let teamsQuery = supabase.from('coops').select('*');
                 if (searchTerm) {
                     teamsQuery = teamsQuery.ilike('name', `%${searchTerm}%`);
                 }
@@ -410,21 +410,21 @@ const Community = () => {
                 const profileIds = profilesData.map(p => p.id);
                 if (profileIds.length > 0) {
                     const { data: membershipData } = await supabase
-                        .from('team_members')
-                        .select('team_id, user_id, teams(id, name)')
+                        .from('coop_members')
+                        .select('coop_id, user_id, coops(id, name)')
                         .in('user_id', profileIds);
 
                     const membershipMap = {};
                     membershipData?.forEach(m => {
                         if (!membershipMap[m.user_id]) membershipMap[m.user_id] = [];
-                        membershipMap[m.user_id].push(m.teams);
+                        membershipMap[m.user_id].push(m.coops);
                     });
                     setTeamMemberships(membershipMap);
 
                     if (searchTerm && profilesData.length > 0) {
-                        const extraTeamIds = membershipData?.map(m => m.team_id) || [];
+                        const extraTeamIds = membershipData?.map(m => m.coop_id) || [];
                         if (extraTeamIds.length > 0) {
-                            const { data: extraTeams } = await supabase.from('teams').select('*').in('id', extraTeamIds);
+                            const { data: extraTeams } = await supabase.from('coops').select('*').in('id', extraTeamIds);
                             const mergedTeams = [...(teamsData || []), ...(extraTeams || [])];
                             const uniqueTeams = Array.from(new Set(mergedTeams.map(t => t.id))).map(id => mergedTeams.find(t => t.id === id));
                             setTeams(uniqueTeams);

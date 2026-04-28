@@ -13,9 +13,20 @@ const REPORT_OPTIONS = [
     { id: 'other', label: 'Otro motivo', description: 'Cualquier otra razón (Vuelve obligatorio el campo de descripción).' },
 ];
 
+const COOP_REPORT_OPTIONS = [
+    { id: 'financial_exploitation', label: 'Fraude en los pagos / Explotación', description: 'La agencia no está cumpliendo con los repartos o explota a sus miembros.' },
+    { id: 'abusive_rules', label: 'Reglas Ilegales o Abusivas', description: 'El estatuto interno viola las leyes o los T&C de Cooplance.' },
+    { id: 'toxic_environment', label: 'Ambiente Tóxico / Acoso Grupal', description: 'Comportamiento abusivo coordinado por parte de la agencia.' },
+    { id: 'spam', label: 'Spam o publicidad masiva', description: 'La agencia está enviando mensajes no deseados repetitivamente.' },
+    { id: 'other', label: 'Otro motivo', description: 'Cualquier otra razón relacionada con la agencia.' },
+];
+
 const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, itemName }) => {
     const { user } = useAuth();
-    const [reason, setReason] = useState('physical_safety');
+    const isCoop = referenceType === 'coop';
+    const currentOptions = isCoop ? COOP_REPORT_OPTIONS : REPORT_OPTIONS;
+    
+    const [reason, setReason] = useState(currentOptions[0].id);
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -116,7 +127,7 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                     </div>
                 ) : (
                     <>
-                        <h2 style={{ marginBottom: '0.75rem', fontSize: '2rem', fontWeight: '800' }}>Reportar Usuario</h2>
+                        <h2 style={{ marginBottom: '0.75rem', fontSize: '2rem', fontWeight: '800' }}>{isCoop ? 'Reportar Agencia' : 'Reportar Usuario'}</h2>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1rem' }}>
                             Ayúdanos a proteger la comunidad. Este reporte será revisado por nuestro equipo de seguridad.
                         </p>
@@ -152,7 +163,7 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                                         backgroundSize: '1.25rem'
                                     }}
                                 >
-                                    {REPORT_OPTIONS.map((opt) => (
+                                    {currentOptions.map((opt) => (
                                         <option key={opt.id} value={opt.id} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                                             {opt.label}
                                         </option>
@@ -160,7 +171,7 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                                 </select>
                                 {reason && (
                                     <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', paddingLeft: '0.5rem', lineHeight: '1.4' }}>
-                                        {REPORT_OPTIONS.find(o => o.id === reason)?.description}
+                                        {currentOptions.find(o => o.id === reason)?.description}
                                     </p>
                                 )}
                             </div>
@@ -199,7 +210,7 @@ const ReportModal = ({ isOpen, onClose, reportedId, referenceType, referenceId, 
                                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                                     <span style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '700' }}>
-                                        Al reportar, este usuario será bloqueado automáticamente.
+                                        Al reportar, {isCoop ? 'la agencia' : 'este usuario'} será bloqueado automáticamente.
                                     </span>
                                 </div>
                                 <div style={{ paddingLeft: '2rem', borderTop: '1px solid rgba(239, 68, 68, 0.1)', paddingTop: '0.6rem', marginTop: '0.2rem' }}>

@@ -21,8 +21,8 @@ const CreateTeam = () => {
         logo: ''
     });
 
-    // Categories: Array of { name: string, subcategories: string[] }
-    // Max 2 categories
+    // Categories: Array of strings (category names)
+    // Max 3 categories
     const [selectedCategories, setSelectedCategories] = useState([]);
 
     // Tags: Max 5
@@ -49,40 +49,13 @@ const CreateTeam = () => {
 
     // Category Handlers
     const handleAddCategory = (categoryName) => {
-        if (selectedCategories.length >= 2) return;
-        if (selectedCategories.some(c => c.name === categoryName)) return;
-        setSelectedCategories([...selectedCategories, { name: categoryName, subcategories: [], specialties: [] }]);
+        if (selectedCategories.length >= 3) return;
+        if (selectedCategories.includes(categoryName)) return;
+        setSelectedCategories([...selectedCategories, categoryName]);
     };
 
     const handleRemoveCategory = (categoryName) => {
-        setSelectedCategories(selectedCategories.filter(c => c.name !== categoryName));
-    };
-
-    const handleToggleSubcategory = (categoryName, sub) => {
-        setSelectedCategories(prev => prev.map(cat => {
-            if (cat.name !== categoryName) return cat;
-
-            const isSelected = cat.subcategories.includes(sub);
-            if (isSelected) {
-                return { ...cat, subcategories: cat.subcategories.filter(s => s !== sub) };
-            } else {
-                if (cat.subcategories.length >= 3) return cat; // Max 3 limit
-                return { ...cat, subcategories: [...cat.subcategories, sub] };
-            }
-        }));
-    };
-
-    const handleToggleSpecialty = (categoryName, spec) => {
-        setSelectedCategories(prev => prev.map(cat => {
-            if (cat.name !== categoryName) return cat;
-            const currentSpecs = cat.specialties || [];
-            if (currentSpecs.includes(spec)) {
-                return { ...cat, specialties: currentSpecs.filter(s => s !== spec) };
-            } else {
-                if (currentSpecs.length >= 5) return cat; // Max 5 limit
-                return { ...cat, specialties: [...currentSpecs, spec] };
-            }
-        }));
+        setSelectedCategories(selectedCategories.filter(c => c !== categoryName));
     };
 
     // Tag Handlers
@@ -199,8 +172,20 @@ const CreateTeam = () => {
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
 
                     {/* 1. Basic Info */}
-                    <div className="form-section">
-                        <h3 className="section-subtitle" style={{ marginBottom: '1rem', fontSize: '1.3rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Información Básica</h3>
+                    <div className="form-section animate-in">
+                        <h3 className="section-subtitle" style={{ 
+                            marginBottom: '1.5rem', 
+                            fontSize: '1.4rem', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.8rem',
+                            color: '#fff'
+                        }}>
+                            <span style={{ background: 'rgba(139, 92, 246, 0.2)', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            </span>
+                            Identidad de la Coop
+                        </h3>
                         <div className="form-group" style={{ marginBottom: '1.5rem' }}>
                             <label style={{ marginBottom: '0.6rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '500' }}>Nombre de la Coop</label>
                             <input
@@ -252,99 +237,101 @@ const CreateTeam = () => {
                                 </label>
                             </div>
                         </div>
+                        <div style={{ 
+                            background: 'rgba(59, 130, 246, 0.05)', 
+                            padding: '1rem', 
+                            borderRadius: '12px', 
+                            border: '1px solid rgba(59, 130, 246, 0.2)',
+                            marginTop: '2rem',
+                            display: 'flex',
+                            gap: '1rem',
+                            alignItems: 'start'
+                        }}>
+                            <span style={{ fontSize: '1.2rem' }}>💡</span>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                                <strong>Dato:</strong> El nombre y logo de tu Coop son su marca en el mercado. 
+                                Podrás cambiarlos más adelante, pero esto quedará registrado en el historial público para asegurar la transparencia.
+                            </p>
+                        </div>
                     </div>
 
-                    {/* 2. Categories & Subcategories */}
+                    {/* 2. Categories Selection (Simplified) */}
                     <div className="form-section">
-                        <h3 className="section-subtitle" style={{ marginBottom: '1rem', fontSize: '1.3rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Especialización (Máx. 2 Categorías)</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem' }}>
+                            <h3 className="section-subtitle" style={{ margin: 0, fontSize: '1.3rem' }}>Áreas de Operación</h3>
+                            <span style={{ fontSize: '0.85rem', color: selectedCategories.length === 3 ? 'var(--primary)' : 'var(--text-muted)', fontWeight: '600' }}>
+                                {selectedCategories.length} / 3 Seleccionadas
+                            </span>
+                        </div>
 
-                        {selectedCategories.length < 2 && (
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <CustomDropdown
-                                    options={Object.keys(serviceCategories)
-                                        .filter(cat => !selectedCategories.some(c => c.name === cat)) // Filter out selected
-                                        .map(cat => ({ label: cat, value: cat }))}
-                                    onChange={handleAddCategory}
-                                    placeholder="+ Agregar Categoría"
-                                />
-                            </div>
-                        )}
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                            Elige hasta 3 categorías principales que definan el propósito de tu Coop. 
+                            Las especialidades detalladas se configurarán en cada servicio individual.
+                        </p>
 
-                        <div className="categories-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div className="category-selection-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
                             {selectedCategories.map((cat, idx) => (
-                                <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                                        <h4 style={{ margin: 0, color: 'var(--primary)', fontSize: '1rem' }}>{cat.name}</h4>
-                                        <button type="button" onClick={() => handleRemoveCategory(cat.name)} className="btn-icon danger" style={{ background: 'rgba(255,0,0,0.1)', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>×</button>
-                                    </div>
-
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>
-                                        Selecciona hasta 3 subcategorías ({cat.subcategories.length}/3)
-                                    </p>
-
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                        {Object.keys(serviceCategories[cat.name] || {}).map(sub => (
-                                            <button
-                                                key={sub}
-                                                type="button"
-                                                onClick={() => handleToggleSubcategory(cat.name, sub)}
-                                                className={`chip ${cat.subcategories.includes(sub) ? 'active' : ''}`}
-                                                style={{
-                                                    padding: '0.3rem 0.8rem',
-                                                    borderRadius: '16px',
-                                                    border: '1px solid var(--border)',
-                                                    background: cat.subcategories.includes(sub) ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
-                                                    color: cat.subcategories.includes(sub) ? '#fff' : 'var(--text-primary)',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.85rem',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                {sub}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {cat.subcategories.length > 0 && (
-                                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>
-                                                Especialidades disponibles (Máx. 5: {(cat.specialties || []).length}/5)
-                                            </p>
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                                {cat.subcategories.flatMap(sub => serviceCategories[cat.name]?.[sub] || []).map(spec => {
-                                                    const isSelected = (cat.specialties || []).includes(spec);
-                                                    return (
-                                                        <button
-                                                            key={spec}
-                                                            type="button"
-                                                            onClick={() => handleToggleSpecialty(cat.name, spec)}
-                                                            className={`chip ${isSelected ? 'active' : ''}`}
-                                                            style={{
-                                                                padding: '0.25rem 0.6rem',
-                                                                borderRadius: '16px',
-                                                                border: isSelected ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
-                                                                background: isSelected ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                                                                color: isSelected ? '#a78bfa' : 'var(--text-muted)',
-                                                                cursor: 'pointer',
-                                                                fontSize: '0.75rem',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                        >
-                                                            {spec}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
+                                <div key={idx} className="glass animate-in" style={{ 
+                                    background: 'rgba(139, 92, 246, 0.05)', 
+                                    padding: '1rem', 
+                                    borderRadius: '16px', 
+                                    border: '1px solid rgba(139, 92, 246, 0.2)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}>
+                                    <span style={{ fontSize: '0.95rem', fontWeight: '600', color: '#fff' }}>{cat}</span>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleRemoveCategory(cat)}
+                                        style={{ 
+                                            background: 'rgba(239, 68, 68, 0.1)', 
+                                            border: 'none', 
+                                            color: '#ef4444', 
+                                            width: '28px', 
+                                            height: '28px', 
+                                            borderRadius: '50%', 
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '1.1rem'
+                                        }}
+                                    >
+                                        ×
+                                    </button>
                                 </div>
                             ))}
+
+                            {selectedCategories.length < 3 && (
+                                <div className="category-dropdown-container">
+                                    <CustomDropdown
+                                        options={Object.keys(serviceCategories)
+                                            .filter(cat => !selectedCategories.includes(cat))
+                                            .map(cat => ({ label: cat, value: cat }))}
+                                        onChange={handleAddCategory}
+                                        placeholder="+ Añadir Categoría"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* 3. Tags */}
-                    <div className="form-section">
-                        <h3 className="section-subtitle" style={{ marginBottom: '1rem', fontSize: '1.3rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Etiquetas ({tags.length}/5)</h3>
+                    <div className="form-section animate-in" style={{ animationDelay: '0.1s' }}>
+                        <h3 className="section-subtitle" style={{ 
+                            marginBottom: '1.5rem', 
+                            fontSize: '1.4rem', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.8rem',
+                            color: '#fff'
+                        }}>
+                            <span style={{ background: 'rgba(236, 72, 153, 0.2)', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                            </span>
+                            Etiquetas de Búsqueda ({tags.length}/5)
+                        </h3>
                         <div className="tags-input-container">
                             <div className="tags-wrapper" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.5rem 0.8rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', minHeight: 'auto', alignItems: 'center' }}>
                                 {tags.map(tag => (
@@ -367,8 +354,20 @@ const CreateTeam = () => {
                     </div>
 
                     {/* 4. Members Invite */}
-                    <div className="form-section">
-                        <h3 className="section-subtitle" style={{ marginBottom: '1rem', fontSize: '1.3rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>Invitar Miembros</h3>
+                    <div className="form-section animate-in" style={{ animationDelay: '0.2s' }}>
+                        <h3 className="section-subtitle" style={{ 
+                            marginBottom: '1.5rem', 
+                            fontSize: '1.4rem', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.8rem',
+                            color: '#fff'
+                        }}>
+                            <span style={{ background: 'rgba(16, 185, 129, 0.2)', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="16" y1="11" x2="22" y2="11"></line></svg>
+                            </span>
+                            Equipo Inicial
+                        </h3>
                         <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '1rem' }}>
                             <input
                                 type="text"

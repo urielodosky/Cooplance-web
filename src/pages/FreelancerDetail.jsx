@@ -184,7 +184,7 @@ const FreelancerDetail = ({ isBlocked = false }) => {
 
     // Calculate teams where this freelancer is a member
     const memberTeams = teams.filter(team =>
-        team.members && team.members.some(m => m.userId.toString() === (id || '').toString())
+        team.members && team.members.some(m => m.user_id === id)
     );
 
     useEffect(() => {
@@ -213,6 +213,7 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                 // Map services to match the structure expected by ServiceCard
                 const mappedServices = (servicesData || []).map(s => ({
                     ...s,
+                    freelancerId: s.owner_id,
                     freelancerUsername: s.owner?.username,
                     freelancerAvatar: s.owner?.avatar_url,
                     freelancerName: s.owner?.first_name ? `${s.owner.first_name} ${s.owner.last_name || ''}`.trim() : s.owner?.username,
@@ -685,7 +686,11 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                                 {freelancerServices.map(service => (
                                     <ServiceCard
                                         key={service.id}
-                                        service={service}
+                                        service={{
+                                            ...service,
+                                            freelancerRating: averageRating ? parseFloat(averageRating) : 0,
+                                            reviewCount: reviewsReceived.filter(r => r.job?.service_id === service.id).length
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -837,9 +842,9 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                         {memberTeams.length > 0 ? (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
                                 {memberTeams.map(team => {
-                                    const role = team.members.find(m => m.userId.toString() === id.toString())?.role || 'Miembro';
+                                    const role = team.members.find(m => m.user_id === id)?.role || 'Miembro';
                                     return (
-                                        <div key={team.id} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border)', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => navigate(`/team/${team.id}`)}>
+                                        <div key={team.id} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border)', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => navigate(`/coop/${team.id}`)}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                                                 <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>
                                                     {team.name.charAt(0).toUpperCase()}

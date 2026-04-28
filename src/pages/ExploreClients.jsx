@@ -7,8 +7,11 @@ import { searchAndFilterItems } from '../utils/searchUtils';
 import { useAuth } from '../features/auth/context/AuthContext';
 import { registerActivity } from '../utils/gamification';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
+import PostulationTypeModal from '../components/project/PostulationTypeModal';
+import CoopAssignmentModal from '../components/project/CoopAssignmentModal';
 import { getProjects } from '../lib/projectService';
 import { useActionModal } from '../context/ActionModalContext';
+import { useTeams } from '../context/TeamContext';
 import '../styles/pages/Explore.scss';
 
 const ExploreClients = () => {
@@ -18,6 +21,13 @@ const ExploreClients = () => {
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [selectedProjectForApply, setSelectedProjectForApply] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Phase 3: Coop Postulation States
+    const { userTeams } = useTeams();
+    const [isPostulationTypeModalOpen, setIsPostulationTypeModalOpen] = useState(false);
+    const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+    const [selectedCoopId, setSelectedCoopId] = useState(null);
+    const [assignmentData, setAssignmentData] = useState(null);
 
     const [filters, setFilters] = useState({
         query: '',
@@ -122,11 +132,38 @@ const ExploreClients = () => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
-        setSelectedProjectForApply(project);
+        // Phase 3: Check if user can apply as a Coop
+        const manageableCoops = userTeams.filter(t => 
+            t.members.some(m => m.user_id === user.id && ['owner', 'admin'].includes(m.role))
+        );
+
+        if (manageableCoops.length > 0) {
+            setSelectedProjectForApply(project);
+            setIsPostulationTypeModalOpen(true);
+        } else {
+            setSelectedProjectForApply(project);
+        }
+    };
+
+    const handlePostulationTypeSelect = (type, coopId) => {
+        setIsPostulationTypeModalOpen(false);
+        if (type === 'coop') {
+            setSelectedCoopId(coopId);
+            setIsAssignmentModalOpen(true);
+        }
+        // If 'individual', just leave it as is, ProposalApplyModal will open next
+    };
+
+    const handleAssignmentConfirm = (data) => {
+        setIsAssignmentModalOpen(false);
+        setAssignmentData(data);
+        // Now the individual flow continues but with assignment data
     };
 
     const handleApplySuccess = () => {
         setSelectedProjectForApply(null);
+        setAssignmentData(null);
+        setSelectedCoopId(null);
         showActionModal({
             title: '¡Éxito!',
             message: '¡Postulación enviada con éxito!',
@@ -180,13 +217,40 @@ const ExploreClients = () => {
                 </div>
             </div>
 
-            {selectedProjectForApply && (
+            {selectedProjectForApply && !isPostulationTypeModalOpen && !isAssignmentModalOpen && (
                 <ProposalApplyModal
                     project={selectedProjectForApply}
-                    onClose={() => setSelectedProjectForApply(null)}
+                    onClose={() => {
+                        setSelectedProjectForApply(null);
+                        setAssignmentData(null);
+                        setSelectedCoopId(null);
+                    }}
                     onSuccess={handleApplySuccess}
+                    coopId={selectedCoopId}
+                    assignment={assignmentData}
                 />
             )}
+
+            <PostulationTypeModal 
+                isOpen={isPostulationTypeModalOpen}
+                onClose={() => {
+                    setIsPostulationTypeModalOpen(false);
+                    setSelectedProjectForApply(null);
+                }}
+                onSelect={handlePostulationTypeSelect}
+                coops={userTeams.filter(t => t.members.some(m => m.user_id === user?.id && ['owner', 'admin'].includes(m.role)))}
+            />
+
+            <CoopAssignmentModal 
+                isOpen={isAssignmentModalOpen}
+                onClose={() => {
+                    setIsAssignmentModalOpen(false);
+                    setIsPostulationTypeModalOpen(true); // Go back
+                }}
+                coopId={selectedCoopId}
+                budget={selectedProjectForApply?.budget || 0}
+                onConfirm={handleAssignmentConfirm}
+            />
         </div>
     );
 };
