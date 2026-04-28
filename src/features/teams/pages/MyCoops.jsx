@@ -42,13 +42,13 @@ const MyCoops = () => {
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
-                        gap: '0.8rem',
-                        padding: '1rem 2rem',
-                        fontSize: '1.1rem',
+                        gap: '0.6rem',
+                        padding: '0.7rem 1.4rem',
+                        fontSize: '0.9rem',
                         fontWeight: '700',
                         boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)'
                     }} onClick={() => navigate('/create-coop')}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         Fundar Nueva Coop
                     </button>
                 )}
@@ -58,19 +58,21 @@ const MyCoops = () => {
             {userTeams.length === 0 ? (
                 <div className="glass" style={{ 
                     textAlign: 'center', 
-                    padding: '6rem 2rem', 
+                    padding: '4rem 2rem', 
                     borderRadius: '32px',
                     border: '2px dashed rgba(255,255,255,0.1)',
                     background: 'rgba(255,255,255,0.01)'
                 }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🏢</div>
+                    <div style={{ marginBottom: '1.5rem', color: 'var(--primary)' }}>
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="22"></line><line x1="15" y1="22" x2="15" y2="22"></line><line x1="12" y1="18" x2="12" y2="18"></line><line x1="12" y1="14" x2="12" y2="14"></line><line x1="12" y1="10" x2="12" y2="10"></line><line x1="12" y1="6" x2="12" y2="6"></line><line x1="8" y1="18" x2="8" y2="18"></line><line x1="8" y1="14" x2="8" y2="14"></line><line x1="8" y1="10" x2="8" y2="10"></line><line x1="8" y1="6" x2="8" y2="6"></line><line x1="16" y1="18" x2="16" y2="18"></line><line x1="16" y1="14" x2="16" y2="14"></line><line x1="16" y1="10" x2="16" y2="10"></line><line x1="16" y1="6" x2="16" y2="6"></line></svg>
+                    </div>
                     <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontWeight: '800' }}>Aún no perteneces a ninguna Coop</h2>
                     <p style={{ maxWidth: '600px', margin: '0 auto 2.5rem', color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.6' }}>
                         {user.role === 'freelancer'
                             ? 'Las agencias son el futuro del trabajo remoto. Crea tu propia Coop para invitar a otros colegas y empezar a competir por proyectos de alto presupuesto.'
                             : 'Arma tu equipo ideal. Reúne a tus freelancers favoritos bajo una misma bandera y simplifica la gestión de tus proyectos más complejos.'}
                     </p>
-                    <button className="btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }} onClick={() => navigate('/create-coop')}>
+                    <button className="btn-primary" style={{ padding: '0.8rem 2rem', fontSize: '1rem' }} onClick={() => navigate('/create-coop')}>
                         Comenzar Ahora
                     </button>
                 </div>
@@ -212,8 +214,10 @@ const MyCoops = () => {
                             gap: '1rem',
                             minHeight: '300px'
                         }} onClick={() => navigate('/create-coop')}>
-                            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>+</div>
-                            <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Nueva Agencia</span>
+                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </div>
+                            <span style={{ fontWeight: '700', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nueva Agencia</span>
                         </div>
                     )}
                 </div>

@@ -21,7 +21,9 @@ const CoopRulesAcceptance = ({ coop, onAccept }) => {
             <div className="glass animate-in" style={{ padding: '3rem', borderRadius: '32px', boxShadow: 'var(--shadow-xl)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤝</div>
+                    <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                    </div>
                     <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '0.5rem' }}>Bienvenido a {coop.name}</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Antes de unirte al equipo, debes leer y firmar el estatuto interno.</p>
                 </div>
@@ -53,7 +55,9 @@ const CoopRulesAcceptance = ({ coop, onAccept }) => {
                     gap: '1rem',
                     alignItems: 'flex-start'
                 }}>
-                    <div style={{ fontSize: '1.2rem' }}>⚖️</div>
+                    <div style={{ color: '#f87171', marginTop: '2px' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    </div>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
                         Al firmar, declaras que has leído los términos de esta Coop y te comprometes a respetarlos, reconociendo que Cooplance actúa únicamente como plataforma mediadora.
                     </p>
@@ -88,8 +92,8 @@ const CoopRulesAcceptance = ({ coop, onAccept }) => {
                     onClick={handleAccept}
                     style={{ 
                         width: '100%', 
-                        padding: '1.2rem', 
-                        fontSize: '1.1rem', 
+                        padding: '1rem', 
+                        fontSize: '1rem', 
                         fontWeight: '800',
                         borderRadius: '16px',
                         boxShadow: agreed ? '0 10px 25px rgba(139, 92, 246, 0.3)' : 'none'

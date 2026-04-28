@@ -155,9 +155,11 @@ const CoopDetail = () => {
     if (!coop) {
         return (
             <div className="container" style={{ padding: '4rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔎</div>
+                <div style={{ color: 'var(--primary)', marginBottom: '1rem' }}>
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
                 <h2>Coop no encontrada</h2>
-                <button className="btn-secondary" onClick={() => navigate('/my-coops')} style={{ marginTop: '1rem' }}>Volver a mis Coops</button>
+                <button className="btn-secondary" onClick={() => navigate('/my-coops')} style={{ marginTop: '1rem', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>Volver a mis Coops</button>
             </div>
         );
     }
@@ -222,12 +224,12 @@ const CoopDetail = () => {
             {/* TAB NAVIGATION */}
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', overflowX: 'auto' }}>
                 {[
-                    { id: 'info', label: 'Inicio', icon: '🏠' },
-                    { id: 'orders', label: 'Pedidos', icon: '📥' },
-                    { id: 'members', label: 'Miembros', icon: '👥' },
-                    { id: 'chat', label: 'Chat', icon: '💬' },
-                    { id: 'finance', label: 'Reparto', icon: '💰', restricted: !amIManager },
-                    { id: 'settings', label: 'Ajustes', icon: '⚙️', restricted: !amIAdmin }
+                    { id: 'info', label: 'Inicio', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> },
+                    { id: 'orders', label: 'Pedidos', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> },
+                    { id: 'members', label: 'Miembros', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> },
+                    { id: 'chat', label: 'Chat', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> },
+                    { id: 'finance', label: 'Reparto', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>, restricted: !amIManager },
+                    { id: 'settings', label: 'Ajustes', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>, restricted: !amIAdmin }
                 ].filter(tab => !tab.restricted).map(tab => (
                     <button
                         key={tab.id}
@@ -343,7 +345,9 @@ const CoopDetail = () => {
                             </div>
                         ) : (
                             <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📥</div>
+                                <div style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                </div>
                                 <h4 style={{ margin: '0 0 0.5rem 0' }}>No hay pedidos pendientes</h4>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Las contrataciones directas que reciba tu agencia aparecerán aquí.</p>
                             </div>
@@ -450,9 +454,12 @@ const CoopDetail = () => {
                     <div className="glass" style={{ padding: '2rem', borderRadius: '24px' }}>
                         <h3 style={{ marginTop: 0, marginBottom: '2rem' }}>Estatuto Interno</h3>
                         
-                        <div style={{ background: 'rgba(245, 158, 11, 0.05)', padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(245, 158, 11, 0.1)', marginBottom: '1.5rem' }}>
+                        <div style={{ background: 'rgba(245, 158, 11, 0.05)', padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(245, 158, 11, 0.1)', marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                            <div style={{ color: '#f59e0b', marginTop: '2px' }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            </div>
                             <p style={{ margin: 0, fontSize: '0.85rem', color: '#f59e0b', lineHeight: '1.5' }}>
-                                ⚠️ <b>Versionado de Seguridad:</b> Al guardar cambios en el estatuto, todos los miembros (excepto el Fundador) deberán volver a aceptarlo explícitamente para poder operar en la Agencia.
+                                <b>Versionado de Seguridad:</b> Al guardar cambios en el estatuto, todos los miembros (excepto el Fundador) deberán volver a aceptarlo explícitamente para poder operar en la Agencia.
                             </p>
                         </div>
 

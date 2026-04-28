@@ -209,9 +209,12 @@ const CoopAssignmentModal = ({ isOpen, onClose, coopId, budget = 0, onConfirm })
                             })}
                         </div>
 
-                        <div style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.1)', marginBottom: '2rem' }}>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#f59e0b' }}>
-                                ⚠️ <b>Regla Anti-Explotación:</b> La suma debe ser 100% y el mínimo por miembro es 10%. Cooplance retiene un 12% de comisión de plataforma.
+                        <div style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.1)', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                            <div style={{ color: '#f59e0b', marginTop: '2px' }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#f59e0b', lineHeight: '1.4' }}>
+                                <b>Regla Anti-Explotación:</b> La suma debe ser 100% y el mínimo por miembro es 10%. Cooplance retiene un 12% de comisión de plataforma.
                             </p>
                         </div>
 

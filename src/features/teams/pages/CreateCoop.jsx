@@ -80,7 +80,9 @@ const CreateCoop = () => {
                 <div style={{ position: 'absolute', top: 0, right: 0, width: '300px', height: '300px', background: 'var(--primary)', filter: 'blur(150px)', opacity: '0.05', pointerEvents: 'none' }}></div>
 
                 <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏗️</div>
+                    <div style={{ marginBottom: '1rem', color: 'var(--primary)' }}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem' }}>Fundar Nueva Agencia (Coop)</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto' }}>
                         Estás a un paso de crear tu propia estructura profesional en Cooplance.
@@ -175,7 +177,7 @@ const CreateCoop = () => {
                                                 <img src={formData.logo} alt="Logo Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
                                                 <>
-                                                    <span style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📸</span>
+                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: '0.5rem', opacity: 0.5 }}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Subir Logo</span>
                                                 </>
                                             )}
@@ -256,7 +258,9 @@ const CreateCoop = () => {
                             display: 'flex',
                             gap: '1rem'
                         }}>
-                            <div style={{ fontSize: '1.5rem' }}>⚠️</div>
+                            <div style={{ color: '#f87171' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            </div>
                             <div>
                                 <h4 style={{ color: '#f87171', margin: '0 0 0.5rem 0', fontSize: '0.95rem', fontWeight: '700' }}>IMPORTANTE: Marco Legal y T&C</h4>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
@@ -273,8 +277,8 @@ const CreateCoop = () => {
                             className="btn-primary" 
                             disabled={isSubmitting}
                             style={{ 
-                                padding: '1.2rem 4rem', 
-                                fontSize: '1.2rem', 
+                                padding: '1rem 3rem', 
+                                fontSize: '1.1rem', 
                                 fontWeight: '800', 
                                 borderRadius: '999px',
                                 boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'
