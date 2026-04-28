@@ -13,3 +13,6 @@ ALTER TABLE coops ADD COLUMN IF NOT EXISTS config_changes_left INTEGER DEFAULT 2
 ALTER TABLE coops ADD COLUMN IF NOT EXISTS internal_rules TEXT DEFAULT 'No hay reglas definidas.';
 ALTER TABLE coops ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
 ALTER TABLE coops ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT '{}';
+
+-- 4. Ensure coop_members has the rule acceptance tracking column
+ALTER TABLE coop_members ADD COLUMN IF NOT EXISTS accepted_rules_at TIMESTAMP WITH TIME ZONE;
