@@ -60,8 +60,11 @@ export const createTeam = async (teamData, founderId) => {
             categories: teamData.categories || [],
             tags: teamData.tags || [],
             internal_rules: teamData.internalRules || "No hay reglas definidas.",
+            founder_id: founderId,
+            status: 'active',
             level: 1,
-            config_changes_left: 2
+            config_changes_left: 2,
+            distribution_config: { method: 'equal' }
         })
         .select()
         .single();
