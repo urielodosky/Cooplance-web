@@ -30,6 +30,9 @@ const CoopDetail = () => {
     const [isSavingRules, setIsSavingRules] = useState(false);
     const [rulesText, setRulesText] = useState('');
 
+    const [isReassignment, setIsReassignment] = useState(false);
+    const [reassignmentData, setReassignmentData] = useState(null);
+
     // Find the current coop
     const coop = (teams || []).find(t => t.id === coopId);
     
@@ -130,26 +133,55 @@ const CoopDetail = () => {
 
     const handleAssignmentConfirm = async (data) => {
         try {
-            // Using the new RPC function for Phase 5
-            const { error } = await supabase.rpc('assign_job_team_and_payouts', {
-                p_job_id: selectedJobId,
-                p_project_lead_id: data.projectLeadId,
-                p_member_ids: data.memberIds,
-                p_percentages: data.percentages,
-                p_method: data.payoutMethod
-            });
+            if (isReassignment) {
+                await TeamService.reassignProjectTeam({
+                    jobId: selectedJobId,
+                    ...data
+                });
+            } else {
+                const { error } = await supabase.rpc('assign_job_team_and_payouts', {
+                    p_job_id: selectedJobId,
+                    p_project_lead_id: data.projectLeadId,
+                    p_member_ids: data.memberIds,
+                    p_percentages: data.percentages,
+                    p_method: data.payoutMethod
+                });
+                if (error) throw error;
+            }
 
-            if (error) throw error;
-
-            // 3. Success!
             setIsAssignmentModalOpen(false);
             setSelectedJobId(null);
+            setIsReassignment(false);
+            setReassignmentData(null);
             fetchPendingJobs();
-            alert('Trabajo aceptado y equipo asignado con su plan de pagos.');
+            alert(isReassignment ? 'Equipo y plan de pagos actualizados.' : 'Trabajo aceptado y equipo asignado.');
         } catch (err) {
-            console.error('Error accepting job:', err);
-            alert('Error al aceptar el trabajo: ' + err.message);
+            console.error('Error with job assignment:', err);
+            alert('Error: ' + err.message);
         }
+    };
+
+    const handleModifyTeam = async (job) => {
+        // Fetch current payouts for this job to populate initial data
+        const { data: currentPayouts } = await supabase
+            .from('job_payouts')
+            .select('*')
+            .eq('job_id', job.id);
+        
+        const manualPcts = {};
+        currentPayouts?.forEach(p => {
+            manualPcts[p.user_id] = p.percentage;
+        });
+
+        setSelectedJobId(job.id);
+        setIsReassignment(true);
+        setReassignmentData({
+            memberIds: currentPayouts?.map(p => p.user_id) || [],
+            projectLeadId: job.project_lead_id,
+            payoutMethod: currentPayouts?.[0]?.payout_method || 'equal',
+            manualPercentages: manualPcts
+        });
+        setIsAssignmentModalOpen(true);
     };
 
     if (!coop) {
@@ -293,14 +325,49 @@ const CoopDetail = () => {
                                 <h4 style={{ marginTop: 0, marginBottom: '1rem' }}>Métricas</h4>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>0</div>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Proyectos</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{coop.services?.filter(s => s.status === 'completed').length || 0}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Completados</div>
                                     </div>
                                     <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                         <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>0.0</div>
                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Rating</div>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* ACTIVE PROJECTS SECTION */}
+                            <div className="glass" style={{ padding: '1.5rem', borderRadius: '24px' }}>
+                                <h4 style={{ marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    Trabajos en Curso
+                                </h4>
+                                {coop.services?.filter(s => s.status === 'active').length > 0 ? (
+                                    <div style={{ display: 'grid', gap: '1rem' }}>
+                                        {coop.services.filter(s => s.status === 'active').map(job => (
+                                            <div key={job.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{job.service_title}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Presupuesto: ${job.budget}</div>
+                                                    </div>
+                                                    {amIAdmin && (
+                                                        <button 
+                                                            onClick={() => handleModifyTeam(job)}
+                                                            style={{ background: 'var(--primary)', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer' }}
+                                                        >
+                                                            MODIFICAR EQUIPO
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
+                                                    <div style={{ width: '45%', height: '100%', background: '#10b981', borderRadius: '10px' }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', margin: '1rem 0' }}>No hay proyectos activos en este momento.</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -560,10 +627,14 @@ const CoopDetail = () => {
                 onClose={() => {
                     setIsAssignmentModalOpen(false);
                     setSelectedJobId(null);
+                    setIsReassignment(false);
+                    setReassignmentData(null);
                 }}
                 coopId={coop.id}
-                budget={pendingJobs.find(j => j.id === selectedJobId)?.budget || 0}
+                budget={isReassignment ? (coop.services?.find(j => j.id === selectedJobId)?.budget || 0) : (pendingJobs.find(j => j.id === selectedJobId)?.budget || 0)}
                 onConfirm={handleAssignmentConfirm}
+                isReassignment={isReassignment}
+                initialData={reassignmentData}
             />
         </div>
     );

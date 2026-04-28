@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TeamService from '../../services/TeamService';
 
-const CoopAssignmentModal = ({ isOpen, onClose, coopId, budget = 0, onConfirm }) => {
+const CoopAssignmentModal = ({ isOpen, onClose, coopId, budget = 0, onConfirm, isReassignment = false, initialData = null }) => {
     const [step, setStep] = useState(1); // 1: Team, 2: Payout
     const [members, setMembers] = useState([]);
     const [selectedMembers, setSelectedMembers] = useState([]);
@@ -21,6 +21,15 @@ const CoopAssignmentModal = ({ isOpen, onClose, coopId, budget = 0, onConfirm })
                     const data = await TeamService.getTeamMembers(coopId);
                     const activeMembers = data.filter(m => m.accepted_rules_at);
                     setMembers(activeMembers);
+                    
+                    if (isReassignment && initialData) {
+                        setSelectedMembers(initialData.memberIds || []);
+                        setProjectLead(initialData.projectLeadId || '');
+                        setPayoutMethod(initialData.payoutMethod || 'equal');
+                        if (initialData.manualPercentages) {
+                            setManualPercentages(initialData.manualPercentages);
+                        }
+                    }
                 } catch (err) {
                     console.error('Error fetching members:', err);
                     setError('No se pudieron cargar los miembros.');
@@ -29,12 +38,16 @@ const CoopAssignmentModal = ({ isOpen, onClose, coopId, budget = 0, onConfirm })
                 }
             };
             fetchMembers();
-            setStep(1);
-            setSelectedMembers([]);
-            setProjectLead('');
+            setStep(1); // Start at step 1 even for reassignment to allow changing team
+            if (!isReassignment) {
+                setSelectedMembers([]);
+                setProjectLead('');
+                setPayoutMethod('equal');
+                setManualPercentages({});
+            }
             setError('');
         }
-    }, [isOpen, coopId]);
+    }, [isOpen, coopId, isReassignment, initialData]);
 
     const toggleMember = (userId) => {
         if (selectedMembers.includes(userId)) {

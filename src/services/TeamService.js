@@ -59,6 +59,8 @@ export const createTeam = async (teamData, founderId) => {
             avatar_url: teamData.logo,
             category_1: teamData.categories?.[0] || 'General',
             category_2: teamData.categories?.[1] || null,
+            category_3: teamData.categories?.[2] || null,
+            tags: teamData.tags || [],
             internal_rules: teamData.internalRules || "No hay reglas definidas.",
             level: 1,
             config_changes_left: 2
@@ -314,6 +316,19 @@ export const acceptTeamRules = async (coopId, userId) => {
     if (error) throw error;
 };
 
+export const reassignProjectTeam = async (data) => {
+    const { error } = await supabase.rpc('assign_job_team_and_payouts', {
+        p_job_id: data.jobId,
+        p_project_lead_id: data.projectLeadId,
+        p_member_ids: data.memberIds,
+        p_percentages: data.percentages,
+        p_method: data.payoutMethod
+    });
+
+    if (error) throw error;
+    return true;
+};
+
 export const submitMemberReview = async (coopId, projectId, evaluatorId, targetUserId, score, feedback) => {
     const { error } = await supabase
         .from('member_reviews')
@@ -394,5 +409,6 @@ export default {
     acceptTeamRules,
     respondToInvite,
     getTeamMembers,
-    expelMember
+    expelMember,
+    reassignProjectTeam
 };
