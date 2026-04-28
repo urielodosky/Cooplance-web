@@ -31,9 +31,7 @@ const CreateCoop = () => {
         description: '',
         logo: '',
         internalRules: rulesTemplate,
-        category_1: '',
-        category_2: '',
-        category_3: '',
+        categories: [],
         tags: []
     });
 
@@ -94,7 +92,7 @@ const CreateCoop = () => {
         if (currentStep < 3) {
             // Validation for step 1
             if (currentStep === 1) {
-                if (!formData.name || !formData.description || !formData.logo || !formData.category_1) {
+                if (!formData.name || !formData.description || !formData.logo || !formData.categories || formData.categories.length === 0) {
                     setError('Todos los campos son obligatorios: Nombre, Descripción, Logo y al menos una Categoría.');
                     window.scrollTo(0, 0);
                     return;
@@ -110,7 +108,6 @@ const CreateCoop = () => {
         try {
             const teamData = {
                 ...formData,
-                categories: [formData.category_1, formData.category_2, formData.category_3].filter(Boolean),
                 status: 'Borrador',
                 created_at: new Date().toISOString(),
                 founder_id: user.id
@@ -234,27 +231,16 @@ const CreateCoop = () => {
                             </div>
 
                             <div className="form-group">
-                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Categorías (Máximo 3)</label>
-                                <div className="form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                                    <CustomDropdown 
-                                        options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
-                                        value={formData.category_1} 
-                                        onChange={(v) => setFormData({...formData, category_1: v})}
-                                        placeholder="Principal (Obligatorio)"
-                                    />
-                                    <CustomDropdown 
-                                        options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
-                                        value={formData.category_2} 
-                                        onChange={(v) => setFormData({...formData, category_2: v})}
-                                        placeholder="Opcional"
-                                    />
-                                    <CustomDropdown 
-                                        options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
-                                        value={formData.category_3} 
-                                        onChange={(v) => setFormData({...formData, category_3: v})}
-                                        placeholder="Opcional"
-                                    />
-                                </div>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Categorías</label>
+                                <CustomDropdown 
+                                    options={Object.keys(serviceCategories).map(cat => ({ label: cat, value: cat }))} 
+                                    value={formData.categories} 
+                                    onChange={(v) => setFormData({...formData, categories: v})}
+                                    placeholder="Selecciona hasta 3 categorías..."
+                                    multiple={true}
+                                    maxSelections={3}
+                                    searchable={true}
+                                />
                             </div>
 
                             <div className="form-group">
