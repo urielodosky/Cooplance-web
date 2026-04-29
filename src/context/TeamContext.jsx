@@ -32,17 +32,27 @@ export const TeamProvider = ({ children }) => {
         try {
             const { data: allTeams, error } = await supabase
                 .from('coops')
-                .select('*, members:coop_members(*, profile:profiles(*, reviews:service_reviews!target_id(rating)), inviter:profiles!invited_by(username, first_name, last_name, avatar_url)), jobs(*), team_services:services(*)');
+                .select('*, members:coop_members(*, profile:profiles(*)), jobs(*), team_services:services(*)');
             
+            console.log('DEBUG: fetchTeams - allTeams from DB:', allTeams);
+            console.log('DEBUG: fetchTeams - current user.id:', user?.id);
+
             if (error) throw error;
             
             setTeams(allTeams || []);
             
             // Filter teams where user is a member
             const relevant = (allTeams || []).filter(team => {
-                if (!team.members) return false;
-                return team.members.some(member => member.user_id === user.id);
+                if (!team.members) {
+                    console.warn(`DEBUG: Team ${team.name} (${team.id}) has NO members array!`);
+                    return false;
+                }
+                const isMember = team.members.some(member => member.user_id === user.id);
+                console.log(`DEBUG: Checking team ${team.name} - isMember:`, isMember, team.members);
+                return isMember;
             });
+            
+            console.log('DEBUG: fetchTeams - final relevant teams:', relevant);
             setUserTeams(relevant);
         } catch (err) {
             console.error('Error fetching coops:', err);
@@ -88,7 +98,10 @@ export const TeamProvider = ({ children }) => {
                 .eq('id', teamId)
                 .single();
 
-            await TeamService.addMember(teamId, newUserId, user.id, message);
+            await TeamService.addMember(teamId, newUserId, {
+                invitedBy: user.id,
+                message: message
+            });
             await fetchTeams();
 
             // Notify the new member
