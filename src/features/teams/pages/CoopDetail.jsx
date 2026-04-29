@@ -132,6 +132,7 @@ const CoopDetail = () => {
             setExpulsionReason('');
         } catch (err) {
             console.error('Error expelling/canceling:', err);
+            alert('Error al cancelar: ' + (err.message || JSON.stringify(err)));
         }
     };
 
