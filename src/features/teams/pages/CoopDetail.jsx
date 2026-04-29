@@ -17,6 +17,7 @@ const CoopDetail = () => {
     
     const [activeTab, setActiveTab] = useState('info');
     const [showRules, setShowRules] = useState(false);
+    const [activeDropdown, setActiveDropdown] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [pendingJobs, setPendingJobs] = useState([]);
     const [payouts, setPayouts] = useState([]);
@@ -466,7 +467,29 @@ const CoopDetail = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                             <h3 style={{ margin: 0 }}>Equipo de Trabajo ({coop.members?.length || 0})</h3>
                             {amIOwner && (
-                                <button className="btn-primary" onClick={() => navigate(`/coop/${coop.id}/invite`)} style={{ fontSize: '0.85rem' }}>+ Invitar</button>
+                                <button 
+                                    onClick={() => navigate(`/coop/${coop.id}/invite`)} 
+                                    style={{ 
+                                        background: 'linear-gradient(135deg, var(--primary), var(--primary-dark, #6d28d9))', 
+                                        border: 'none', 
+                                        color: 'white', 
+                                        padding: '8px 20px', 
+                                        borderRadius: '100px', 
+                                        fontSize: '0.85rem', 
+                                        fontWeight: '700', 
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)',
+                                        transition: 'transform 0.2s, box-shadow 0.2s'
+                                    }}
+                                    onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(139, 92, 246, 0.4)' }}
+                                    onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(139, 92, 246, 0.3)' }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Invitar
+                                </button>
                             )}
                         </div>
                         
@@ -563,15 +586,39 @@ const CoopDetail = () => {
                                             </div>
                                         </div>
 
+                                        {/* Options Menu */}
                                         {amIAdmin && member.user_id !== user.id && member.role !== 'owner' && (
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); setMemberToExpel(member); setIsExpulsionModalOpen(true); }}
-                                                style={{ marginTop: '0.8rem', background: 'transparent', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#f87171', cursor: 'pointer', fontSize: '0.65rem', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold', width: '100%', transition: 'all 0.2s' }}
-                                                onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.05)'}
-                                                onMouseOut={(e) => e.target.style.background = 'transparent'}
-                                            >
-                                                EXPULSAR MIEMBRO
-                                            </button>
+                                            <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === member.user_id ? null : member.user_id); }}
+                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                                                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                >
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                                                </button>
+
+                                                {activeDropdown === member.user_id && (
+                                                    <div style={{ position: 'absolute', top: '100%', right: '0', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', borderRadius: '12px', padding: '0.5rem', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '150px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); alert('Próximamente: Cambio de roles'); setActiveDropdown(null); }}
+                                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
+                                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                        >
+                                                            Cambiar rol
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setMemberToExpel(member); setIsExpulsionModalOpen(true); setActiveDropdown(null); }}
+                                                            style={{ background: 'transparent', border: 'none', color: '#ef4444', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
+                                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                        >
+                                                            Expulsar
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
