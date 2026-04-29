@@ -39,9 +39,12 @@ export const TeamProvider = ({ children }) => {
             setTeams(allTeams || []);
             
             // Filter teams where user is a member
-            const relevant = (allTeams || []).filter(team =>
-                team.members.some(member => member.user_id === user.id)
-            );
+            const relevant = (allTeams || []).filter(team => {
+                if (!team.members) return false;
+                return team.members.some(member => 
+                    (member.user_id === user.id) || (member.userId === user.id)
+                );
+            });
             setUserTeams(relevant);
         } catch (err) {
             console.error('Error fetching coops:', err);

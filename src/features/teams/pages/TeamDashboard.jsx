@@ -60,8 +60,8 @@ const TeamDashboard = () => {
 
     // --- 2. DERIVED STATE ---
     const members = activeTeam?.members || [];
-    const amIMember = user && activeTeam && members.some(m => m.user_id === user.id);
-    const amIFounder = user && activeTeam && members.find(m => m.user_id === user.id)?.role === 'owner';
+    const amIMember = user && activeTeam && members.some(m => (m.user_id === user.id || m.userId === user.id));
+    const amIFounder = user && activeTeam && members.find(m => (m.user_id === user.id || m.userId === user.id))?.role === 'owner';
 
     // Force tab to services or reviews if not a member and trying to access private tabs
     useEffect(() => {
@@ -485,9 +485,9 @@ const TeamDashboard = () => {
                                                 </div>
                                             ) : (
                                                 activeTeam.messages.filter(m => (m.type || 'internal') === chatView).map((msg, idx, arr) => {
-                                                    const isMe = user && msg.userId === user.id;
+                                                    const isMe = user && (msg.user_id === user.id || msg.userId === user.id);
                                                     const prevMsg = arr[idx - 1]; // Use the filtered array to get the actual previous message
-                                                    const isSameUser = prevMsg && prevMsg.userId === msg.userId && (new Date(msg.timestamp) - new Date(prevMsg.timestamp) < 5 * 60 * 1000);
+                                                    const isSameUser = prevMsg && (prevMsg.user_id === msg.user_id || prevMsg.userId === msg.userId) && (new Date(msg.timestamp) - new Date(prevMsg.timestamp) < 5 * 60 * 1000);
                                                     return (
                                                         <div key={msg.id} className={`message - group ${isMe ? 'me' : 'other'} ${isSameUser ? 'same-user' : ''} `}>
                                                             {!isSameUser && <div className="message-sender">{msg.username}</div>}
@@ -554,14 +554,15 @@ const TeamDashboard = () => {
                                 <h3 className="section-title" style={{ marginBottom: '1.5rem' }}>Miembros ({activeTeam.members?.length || 0})</h3>
                                 <div className="member-list-container">
                                     {(activeTeam.members || []).map((member, idx) => {
-                                        const isMe = user && member.user_id === user.id;
-                                        const amIFounder = user && activeTeam.members.find(m => m.user_id === user.id)?.role === 'owner';
-                                        const displayName = isMe ? `${user.username || user.firstName} (Tú)` : (member.profile?.username || `Usuario ${member.user_id.substring(0, 5)}...`);
+                                        const memberId = member.user_id || member.userId;
+                                        const isMe = user && memberId === user.id;
+                                        const amIFounder = user && activeTeam.members.find(m => (m.user_id === user.id || m.userId === user.id))?.role === 'owner';
+                                        const displayName = isMe ? `${user.username || user.firstName} (Tú)` : (member.profile?.username || `Usuario ${memberId.substring(0, 5)}...`);
                                         const hasWarning = member.expulsionWarning;
-                                        const isOpen = openMenuId === member.user_id;
+                                        const isOpen = openMenuId === memberId;
                                         return (
                                             <div key={idx} className="member-item" style={{ position: 'relative', paddingRight: amIFounder && !isMe ? '3rem' : '1rem', zIndex: isOpen ? 100 : 1 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', flex: 1, position: 'relative', zIndex: 2 }} onClick={() => navigate(`/profile/${member.user_id}`)}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', flex: 1, position: 'relative', zIndex: 2 }} onClick={() => navigate(`/profile/${memberId}`)}>
                                                     <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.3)', color: 'white' }}>{displayName.charAt(0).toUpperCase()}</div>
                                                     <div>
                                                         <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{displayName}{hasWarning && <span style={{ fontSize: '0.7rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>⚠ Expulsión en 2d</span>}</h4>
@@ -572,14 +573,14 @@ const TeamDashboard = () => {
                                                     <span style={{ display: 'block', fontWeight: 'bold', color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.1)', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.9rem' }}>Nivel {isMe ? (user?.level || 1) : (member.profile?.level || 1)}</span>
                                                     {amIFounder && !isMe && (
                                                         <div style={{ position: 'relative' }}>
-                                                            <button className="btn-icon-soft" style={{ position: 'relative', background: isOpen ? 'rgba(255,255,255,0.1)' : 'transparent', color: isOpen ? 'var(--text-primary)' : 'currentColor' }} onClick={(e) => { e.stopPropagation(); setOpenMenuId(isOpen ? null : member.user_id); }}>
+                                                            <button className="btn-icon-soft" style={{ position: 'relative', background: isOpen ? 'rgba(255,255,255,0.1)' : 'transparent', color: isOpen ? 'var(--text-primary)' : 'currentColor' }} onClick={(e) => { e.stopPropagation(); setOpenMenuId(isOpen ? null : memberId); }}>
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                                                             </button>
                                                             {isOpen && (
                                                                 <div className="dropdown-menu" style={{ position: 'absolute', top: '0', right: '100%', marginRight: '0.5rem', padding: '0.5rem', borderRadius: '16px', minWidth: '200px', zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }} onClick={(e) => e.stopPropagation()}>
-                                                                    <button className="menu-item" onClick={() => handleRoleChangeRequest(member.user_id, member.role)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>🛡</span> Cambiar Rol</button>
-                                                                    <button className="menu-item" onClick={() => handleWarnExpulsion(member.user_id)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>⚠</span> Avisar Expulsión</button>
-                                                                    <button className="menu-item" onClick={() => handlePrivateMessage(member.user_id)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>💬</span> Mensaje Privado</button>
+                                                                    <button className="menu-item" onClick={() => handleRoleChangeRequest(memberId, member.role)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>🛡</span> Cambiar Rol</button>
+                                                                    <button className="menu-item" onClick={() => handleWarnExpulsion(memberId)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>⚠</span> Avisar Expulsión</button>
+                                                                    <button className="menu-item" onClick={() => handlePrivateMessage(memberId)} style={{ width: '100%', padding: '10px', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.target.style.background = 'var(--bg-muted)'} onMouseOut={(e) => e.target.style.background = 'none'}><span style={{ fontSize: '1.1rem' }}>💬</span> Mensaje Privado</button>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -633,7 +634,7 @@ const TeamDashboard = () => {
                                                             {proj.participants.map(uid => {
                                                                 const levelAtStart = proj.frozenLevels[uid];
                                                                 // Try to find name in current members, else 'Ex-Miembro'
-                                                                const memName = members.find(m => m.userId === uid)?.username || 'Usuario';
+                                                                const memName = members.find(m => (m.user_id === uid || m.userId === uid))?.username || 'Usuario';
                                                                 const share = (levelAtStart / proj.financials.totalWeight) * proj.financials.net;
 
                                                                 // Check for Peer Review Eligibility
@@ -676,12 +677,13 @@ const TeamDashboard = () => {
                                         <h4 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Detalle por Miembro (Si se activara hoy)</h4>
                                         <div className="member-list-container">
                                             {simulationResult.distribution.map((share, idx) => {
-                                                const member = members.find(m => m.userId === share.userId) || {};
-                                                const isMe = user && share.userId === user.id;
-                                                const safeId = share.userId ? share.userId.toString() : '???';
+                                                const shareUserId = share.user_id || share.userId;
+                                                const member = members.find(m => (m.user_id === shareUserId || m.userId === shareUserId)) || {};
+                                                const isMe = user && shareUserId === user.id;
+                                                const safeId = shareUserId ? shareUserId.toString() : '???';
                                                 const displayName = isMe ? `${user.username || user.firstName} (Tú)` : (member.username || `Usuario ${safeId.substring(0, 5)}...`);
                                                 return (
-                                                    <div key={idx} className="member-item" style={{ padding: '0.8rem 1rem', cursor: 'pointer' }} onClick={() => navigate(`/ profile / ${share.userId} `)}>
+                                                    <div key={idx} className="member-item" style={{ padding: '0.8rem 1rem', cursor: 'pointer' }} onClick={() => navigate(`/profile/${shareUserId}`)}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                             <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-card-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--text-primary)', border: '1px solid var(--border)', fontSize: '1rem' }}>{displayName.charAt(0).toUpperCase()}</div>
                                                             <div><h5 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: '600' }}>{displayName}</h5><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Nivel {share.level} • {share.percentage}%</span></div>

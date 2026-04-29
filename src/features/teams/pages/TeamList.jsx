@@ -53,7 +53,7 @@ const TeamList = () => {
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                     {userTeams.map(team => {
-                        const myRole = team.members.find(m => m.userId === user.id)?.role || 'member';
+                        const myRole = team.members.find(m => m.user_id === user.id || m.userId === user.id)?.role || 'member';
                         const categoryLabel = team.categories && team.categories.length > 0
                             ? team.categories.map(c => c.name).join(', ')
                             : 'General';
