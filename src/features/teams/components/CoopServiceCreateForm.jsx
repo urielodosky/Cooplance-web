@@ -33,12 +33,13 @@ const CoopServiceCreateForm = ({ onCancel, teamId, initialData, dashboardMembers
             const membersToMap = dashboardMembers || activeTeam.members || [];
             const storedUsers = JSON.parse(localStorage.getItem('cooplance_db_users') || '[]');
             const details = membersToMap.map(member => {
-                const userDetail = storedUsers.find(u => u.id === member.userId || u.id === member.id);
+                const memberId = member.user_id;
+                const userDetail = storedUsers.find(u => u.id === memberId || u.id === member.id);
                 if (userDetail) {
                     return { ...userDetail, role: member.role, id: userDetail.id, level: member.level || userDetail.level };
                 }
                 // Fallback for mocked or fake members injected by Dashboard
-                return { ...member, id: member.userId, level: member.level || 1 };
+                return { ...member, id: memberId, level: member.level || 1 };
             }).filter(Boolean);
 
             console.log('ACTIVE TEAM MEMBERS:', activeTeam.members);

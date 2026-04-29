@@ -60,8 +60,8 @@ const TeamDashboard = () => {
 
     // --- 2. DERIVED STATE ---
     const members = activeTeam?.members || [];
-    const amIMember = user && activeTeam && members.some(m => (m.user_id === user.id || m.userId === user.id));
-    const amIFounder = user && activeTeam && members.find(m => (m.user_id === user.id || m.userId === user.id))?.role === 'owner';
+    const amIMember = user && activeTeam && members.some(m => m.user_id === user.id);
+    const amIFounder = user && activeTeam && members.find(m => m.user_id === user.id)?.role === 'owner';
 
     // Force tab to services or reviews if not a member and trying to access private tabs
     useEffect(() => {
@@ -485,9 +485,9 @@ const TeamDashboard = () => {
                                                 </div>
                                             ) : (
                                                 activeTeam.messages.filter(m => (m.type || 'internal') === chatView).map((msg, idx, arr) => {
-                                                    const isMe = user && (msg.user_id === user.id || msg.userId === user.id);
+                                                    const isMe = user && msg.user_id === user.id;
                                                     const prevMsg = arr[idx - 1]; // Use the filtered array to get the actual previous message
-                                                    const isSameUser = prevMsg && (prevMsg.user_id === msg.user_id || prevMsg.userId === msg.userId) && (new Date(msg.timestamp) - new Date(prevMsg.timestamp) < 5 * 60 * 1000);
+                                                    const isSameUser = prevMsg && prevMsg.user_id === msg.user_id && (new Date(msg.timestamp) - new Date(prevMsg.timestamp) < 5 * 60 * 1000);
                                                     return (
                                                         <div key={msg.id} className={`message - group ${isMe ? 'me' : 'other'} ${isSameUser ? 'same-user' : ''} `}>
                                                             {!isSameUser && <div className="message-sender">{msg.username}</div>}
@@ -554,9 +554,9 @@ const TeamDashboard = () => {
                                 <h3 className="section-title" style={{ marginBottom: '1.5rem' }}>Miembros ({activeTeam.members?.length || 0})</h3>
                                 <div className="member-list-container">
                                     {(activeTeam.members || []).map((member, idx) => {
-                                        const memberId = member.user_id || member.userId;
+                                        const memberId = member.user_id;
                                         const isMe = user && memberId === user.id;
-                                        const amIFounder = user && activeTeam.members.find(m => (m.user_id === user.id || m.userId === user.id))?.role === 'owner';
+                                        const amIFounder = user && activeTeam.members.find(m => m.user_id === user.id)?.role === 'owner';
                                         const displayName = isMe ? `${user.username || user.firstName} (Tú)` : (member.profile?.username || `Usuario ${memberId.substring(0, 5)}...`);
                                         const hasWarning = member.expulsionWarning;
                                         const isOpen = openMenuId === memberId;
@@ -634,7 +634,7 @@ const TeamDashboard = () => {
                                                             {proj.participants.map(uid => {
                                                                 const levelAtStart = proj.frozenLevels[uid];
                                                                 // Try to find name in current members, else 'Ex-Miembro'
-                                                                const memName = members.find(m => (m.user_id === uid || m.userId === uid))?.username || 'Usuario';
+                                                                const memName = members.find(m => m.user_id === uid)?.username || 'Usuario';
                                                                 const share = (levelAtStart / proj.financials.totalWeight) * proj.financials.net;
 
                                                                 // Check for Peer Review Eligibility
@@ -677,8 +677,8 @@ const TeamDashboard = () => {
                                         <h4 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Detalle por Miembro (Si se activara hoy)</h4>
                                         <div className="member-list-container">
                                             {simulationResult.distribution.map((share, idx) => {
-                                                const shareUserId = share.user_id || share.userId;
-                                                const member = members.find(m => (m.user_id === shareUserId || m.userId === shareUserId)) || {};
+                                                const shareUserId = share.user_id;
+                                                const member = members.find(m => m.user_id === shareUserId) || {};
                                                 const isMe = user && shareUserId === user.id;
                                                 const safeId = shareUserId ? shareUserId.toString() : '???';
                                                 const displayName = isMe ? `${user.username || user.firstName} (Tú)` : (member.username || `Usuario ${safeId.substring(0, 5)}...`);

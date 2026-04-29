@@ -11,13 +11,13 @@ const MyCoops = () => {
 
     const activeCoops = userTeams.filter(team => {
         if (!team.members) return false;
-        const m = team.members.find(mem => mem.user_id === user.id || mem.userId === user.id);
+        const m = team.members.find(mem => mem.user_id === user.id);
         return m?.accepted_rules_at !== null;
     });
 
     const pendingInvitations = userTeams.filter(team => {
         if (!team.members) return false;
-        const m = team.members.find(mem => mem.user_id === user.id || mem.userId === user.id);
+        const m = team.members.find(mem => mem.user_id === user.id);
         return m?.accepted_rules_at === null;
     });
 
@@ -75,7 +75,7 @@ const MyCoops = () => {
                     </h3>
                     <div style={{ display: 'grid', gap: '1.5rem' }}>
                         {pendingInvitations.map(team => {
-                            const invite = team.members.find(m => m.user_id === user.id || m.userId === user.id);
+                            const invite = team.members.find(m => m.user_id === user.id);
                             const inviter = invite?.inviter;
                             const inviterName = inviter ? (inviter.first_name ? `${inviter.first_name} ${inviter.last_name || ''}` : inviter.username) : 'Un miembro';
                             
@@ -185,7 +185,7 @@ const MyCoops = () => {
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
                     {activeCoops.map(team => {
-                        const myMember = team.members.find(m => m.user_id === user.id || m.userId === user.id);
+                        const myMember = team.members.find(m => m.user_id === user.id);
                         const myRole = myMember?.role || 'worker';
                         
                         return (

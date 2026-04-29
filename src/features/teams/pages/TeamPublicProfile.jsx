@@ -33,7 +33,7 @@ const TeamPublicProfile = () => {
     if (error) return <div className="container" style={{ padding: '4rem' }}><h2>Error: {error}</h2></div>;
     if (!team) return null;
 
-    const isPendingMember = team.members.some(m => (m.user_id === user?.id || m.userId === user?.id) && m.status === 'pending');
+    const isPendingMember = team.members.some(m => m.user_id === user?.id && m.status === 'pending');
 
     const handleInviteResponse = async (accept) => {
         try {
@@ -152,7 +152,7 @@ const TeamPublicProfile = () => {
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                                 {team.members.filter(m => m.status === 'left').map(m => (
-                                    <div key={m.user_id || m.userId} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '12px', fontSize: '0.9rem' }}>
+                                    <div key={m.user_id} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '12px', fontSize: '0.9rem' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
                                             <span style={{ fontWeight: '600' }}>{m.username}</span>
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Salió: {new Date(m.leftAt).toLocaleDateString()}</span>
@@ -188,7 +188,7 @@ const TeamPublicProfile = () => {
                         <h3 className="section-title" style={{ marginBottom: '1rem' }}>Equipo Activo</h3>
                         <div style={{ display: 'grid', gap: '1rem' }}>
                             {team.members.filter(m => m.status === 'active').map(member => (
-                                <div key={member.user_id || member.userId} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
+                                <div key={member.user_id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
                                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                                         {member.username.charAt(0)}
                                     </div>

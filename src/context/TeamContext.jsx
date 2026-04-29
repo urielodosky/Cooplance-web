@@ -41,9 +41,7 @@ export const TeamProvider = ({ children }) => {
             // Filter teams where user is a member
             const relevant = (allTeams || []).filter(team => {
                 if (!team.members) return false;
-                return team.members.some(member => 
-                    (member.user_id === user.id) || (member.userId === user.id)
-                );
+                return team.members.some(member => member.user_id === user.id);
             });
             setUserTeams(relevant);
         } catch (err) {
