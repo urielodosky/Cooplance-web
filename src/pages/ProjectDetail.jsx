@@ -4,6 +4,7 @@ import { useAuth } from '../features/auth/context/AuthContext';
 import { getProfilePicture } from '../utils/avatarUtils';
 import { registerActivity } from '../utils/gamification';
 import ProposalApplyModal from '../components/project/ProposalApplyModal';
+import { useTeams } from '../context/TeamContext';
 import { formatLocationDetail } from '../utils/locationFormat';
 import { calculateAge } from '../utils/ageUtils';
 import { getProjectById, deleteProject } from '../lib/projectService';
@@ -19,6 +20,7 @@ const ProjectDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user, updateUser } = useAuth();
+    const { userTeams } = useTeams();
     const { showActionModal } = useActionModal();
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -138,10 +140,15 @@ const ProjectDetail = () => {
         }
 
         if (hasApplied) {
-            return; // Button should be disabled, but just in case
+            return; 
         }
 
-        const checkLimitAndOpen = async () => {
+        const adminTeams = userTeams.filter(t => {
+            const m = t.members.find(mem => mem.user_id === user.id);
+            return m?.role === 'owner' || m?.role === 'admin';
+        });
+
+        const checkLimitAndOpen = async (selectedCoop = null) => {
             const { getWeeklyProposalCount } = await import('../lib/proposalService');
             const weeklyProposals = await getWeeklyProposalCount(user.id);
             
@@ -184,11 +191,37 @@ const ProjectDetail = () => {
             }
 
             // All checks passed, open the modal
+            if (selectedCoop) {
+                setCoopToApply(selectedCoop);
+            } else {
+                setCoopToApply(null);
+            }
             setShowApplyModal(true);
         };
 
-        checkLimitAndOpen();
+        if (adminTeams.length > 0) {
+            showActionModal({
+                title: 'Postularse como...',
+                message: 'Elige si deseas postularte de forma individual o en nombre de una de tus agencias.',
+                type: 'confirm',
+                confirmText: 'Freelancer',
+                cancelText: 'Mi Agencia', // This is tricky because we might have multiple
+                onConfirm: () => checkLimitAndOpen(null),
+                onCancel: () => {
+                    if (adminTeams.length === 1) {
+                        checkLimitAndOpen(adminTeams[0]);
+                    } else {
+                        // For now just pick the first or show a specialized modal
+                        checkLimitAndOpen(adminTeams[0]);
+                    }
+                }
+            });
+        } else {
+            checkLimitAndOpen();
+        }
     };
+
+    const [coopToApply, setCoopToApply] = useState(null);
 
     const handleApplySuccess = () => {
         setShowApplyModal(false);
@@ -691,8 +724,12 @@ const ProjectDetail = () => {
             {showApplyModal && (
                 <ProposalApplyModal
                     project={project}
-                    onClose={() => setShowApplyModal(false)}
+                    onClose={() => {
+                        setShowApplyModal(false);
+                        setCoopToApply(null);
+                    }}
                     onSuccess={handleApplySuccess}
+                    coopId={coopToApply?.id}
                 />
             )}
 

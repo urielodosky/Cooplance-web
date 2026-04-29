@@ -21,7 +21,7 @@ const withTimeout = (promise, ms, actionName) => {
     ]);
 };
 
-const ServiceCreateForm = ({ onCancel, initialData }) => {
+const ServiceCreateForm = ({ onCancel, initialData, coopId, coopMembers }) => {
     const { addService, updateService } = useServices();
     const { user } = useAuth();
     const { refreshBadges } = useBadgeNotification();
@@ -58,6 +58,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
         subcategory: (typeof initialData?.subcategory === 'string') ? initialData?.subcategory : '',
         specialties: initialData?.specialties || (Array.isArray(initialData?.subcategory) ? initialData?.subcategory : []),
         workMode: initialData?.workMode || ['remote'],
+        coopDistribution: initialData?.coopDistribution || {},
         price: initialData?.price || '',
         description: initialData?.description || '',
         deliveryTime: initialData?.deliveryTime || '',
@@ -637,6 +638,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 isSessionBased: isSessionBased,
                 faqs: faqs.filter(f => f.question && f.answer),
                 freelancerId: user.id,
+                teamId: coopId || null,
                 freelancerName: user.role === 'company' ? user.company_name : `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username,
                 level: initialData?.level || user.level || 1,
                 images: imageUrls,
@@ -644,6 +646,7 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                 videos: finalVideos,
                 video: finalVideos[0]?.src || formData.videoUrl || null,
                 mediaType: mediaType,
+                coopDistribution: coopId ? formData.coopDistribution : null,
                 bookingConfig: formData.bookingConfig?.requiresBooking ? formData.bookingConfig : null,
                 date: initialData?.date || new Date().toISOString(),
                 country: formData.country,
@@ -1465,6 +1468,51 @@ const ServiceCreateForm = ({ onCancel, initialData }) => {
                             </div>
                         </div>
 
+                        {coopId && coopMembers && (
+                            <div className="premium-form-section" style={{ marginTop: '2rem' }}>
+                                <h4>Reparto de Ganancias (Cooperativa)</h4>
+                                <p className="subtitle" style={{ fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'left' }}>Define el porcentaje de ganancias para cada miembro en este servicio.</p>
+                                <div style={{ display: 'grid', gap: '1rem' }}>
+                                    {coopMembers.map(member => (
+                                        <div key={member.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                                {member.profile?.avatar_url ? (
+                                                    <img src={member.profile.avatar_url} alt={member.profile.username} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                                        {member.profile?.username?.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{member.profile?.username}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{member.role}</div>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <input 
+                                                    type="number" 
+                                                    min="0" 
+                                                    max="100" 
+                                                    value={formData.coopDistribution[member.user_id] || 0} 
+                                                    onChange={(e) => setFormData(prev => ({ 
+                                                        ...prev, 
+                                                        coopDistribution: { ...prev.coopDistribution, [member.user_id]: Number(e.target.value) } 
+                                                    }))}
+                                                    style={{ width: '80px', padding: '0.4rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-body)', color: 'var(--text-primary)', textAlign: 'center' }}
+                                                />
+                                                <span style={{ fontWeight: 'bold', color: 'var(--text-secondary)' }}>%</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {Object.values(formData.coopDistribution || {}).reduce((a, b) => a + b, 0) !== 100 && (
+                                        <div style={{ color: '#f59e0b', fontSize: '0.85rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                            El total de porcentajes debe sumar 100% (Actual: {Object.values(formData.coopDistribution || {}).reduce((a, b) => a + b, 0)}%)
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

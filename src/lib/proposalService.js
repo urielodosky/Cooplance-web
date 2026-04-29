@@ -91,6 +91,56 @@ export const getProposalsByUser = async (userId) => {
     }
 };
 
+export const getProposalsByTeam = async (teamId) => {
+    try {
+        const { data, error } = await supabase
+            .from('proposals')
+            .select(`
+                *,
+                project:project_id(
+                    title, 
+                    deadline, 
+                    client_id,
+                    profiles:client_id(username, first_name, last_name, avatar_url, role)
+                )
+            `)
+            .eq('team_id', teamId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('[ProposalService] Supabase error fetching team proposals:', error);
+            return [];
+        }
+
+        return (data || []).map(row => {
+            const project = row.project || {};
+            const client = project.profiles || {};
+            return {
+                id: row.id,
+                projectId: row.project_id,
+                projectTitle: project.title || 'Proyecto sin título',
+                projectDeadline: project.deadline,
+                clientId: project.client_id,
+                clientUsername: client.username,
+                clientRealName: client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : null,
+                clientAvatar: client.avatar_url,
+                clientRole: client.role,
+                teamId: row.team_id,
+                userName: row.user_name,
+                userRole: row.user_role,
+                coverLetter: row.cover_letter,
+                amount: row.amount,
+                deliveryDays: row.delivery_days,
+                status: row.status,
+                createdAt: row.created_at,
+            };
+        });
+    } catch (err) {
+        console.error('[ProposalService] Critical error fetching team proposals:', err);
+        return [];
+    }
+};
+
 export const hasUserApplied = async (projectId, userId) => {
     try {
         const { data, error } = await supabase
@@ -191,7 +241,7 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
                 amount: parseFloat(amount) || 0,
                 delivery_days: parseInt(deliveryDays) || null,
                 status: 'pending',
-                coop_id: coopId || null,
+                team_id: coopId || null,
                 assignment_snapshot: assignment || null // Snapshot of the team at postulation time
             })
             .select('*')

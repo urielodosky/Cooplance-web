@@ -16,6 +16,7 @@ const mapFromDB = (row) => {
 
     return {
         id: row.id,
+        teamId: row.team_id || null,
         title: row.title,
         description: row.description,
         category: row.category,
@@ -31,6 +32,7 @@ const mapFromDB = (row) => {
         tags: config.tags || row.tags || [],
         workMode: config.work_mode || row.work_mode || ['remote'],
         active: row.active,
+        coopDistribution: config.coop_distribution || null,
         bookingConfig: config.booking_config || row.booking_config,
         packages: config.packages || row.packages,
         faqs: config.faqs || row.faqs,
@@ -71,6 +73,7 @@ const mapToDB = (service) => {
         faqs: service.faqs || null,
         booking_config: service.bookingConfig || null,
         media_type: service.mediaType || null,
+        coop_distribution: service.coopDistribution || null,
         work_mode: service.workMode || ['remote'],
         specialties: service.specialties || [],
         tags: service.tags || [],
@@ -86,6 +89,7 @@ const mapToDB = (service) => {
     };
 
     return {
+        team_id: service.teamId || null,
         title: service.title,
         description: service.description,
         category: service.category,

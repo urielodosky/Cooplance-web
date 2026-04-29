@@ -7,6 +7,7 @@ import CoopAssignmentModal from '../../../components/project/CoopAssignmentModal
 import CoopChat from '../components/CoopChat';
 import { supabase } from '../../../lib/supabase';
 import TeamService from '../../../services/TeamService';
+import CoopServicesTab from '../components/CoopServicesTab';
 import '../../../styles/main.scss';
 
 const CoopDetail = () => {
@@ -72,9 +73,9 @@ const CoopDetail = () => {
         try {
             const { data, error } = await supabase
                 .from('jobs')
-                .select('*, profiles:client_id(username, first_name, last_name, avatar_url)')
-                .eq('coop_id', coopId)
-                .eq('status', 'pending');
+                .select('*, profiles:client_id(username, first_name, last_name, avatar_url), services:service_id(config)')
+                .eq('team_id', coopId)
+                .eq('status', 'pending_approval');
             
             if (error) throw error;
             setPendingJobs(data || []);
@@ -104,7 +105,7 @@ const CoopDetail = () => {
     };
 
     useEffect(() => {
-        if (activeTab === 'orders') {
+        if (activeTab === 'services') {
             fetchPendingJobs();
         }
         if (activeTab === 'finance') {
@@ -113,6 +114,18 @@ const CoopDetail = () => {
     }, [activeTab, coopId]);
 
     const handleAcceptJob = (jobId) => {
+        const job = pendingJobs.find(j => j.id === jobId);
+        if (job && job.services?.config?.coop_distribution) {
+            const dist = job.services.config.coop_distribution;
+            setReassignmentData({
+                memberIds: Object.keys(dist),
+                projectLeadId: '', // Lead is not in the distribution usually, just percentages
+                payoutMethod: 'manual',
+                manualPercentages: dist
+            });
+        } else {
+            setReassignmentData(null);
+        }
         setSelectedJobId(jobId);
         setIsAssignmentModalOpen(true);
     };
@@ -314,7 +327,7 @@ const CoopDetail = () => {
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', overflowX: 'auto' }}>
                 {[
                     { id: 'info', label: 'Inicio', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> },
-                    { id: 'orders', label: 'Pedidos', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> },
+                    { id: 'services', label: 'Servicios', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg> },
                     { id: 'members', label: 'Miembros', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> },
                     { id: 'chat', label: 'Chat', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> },
                     { id: 'finance', label: 'Reparto', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>, restricted: !amIManager },
@@ -401,7 +414,7 @@ const CoopDetail = () => {
                                 <h4 style={{ marginTop: 0, marginBottom: '1rem' }}>Métricas</h4>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{coop.services?.filter(s => s.status === 'completed').length || 0}</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{coop.jobs?.filter(s => s.status === 'completed').length || 0}</div>
                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Completados</div>
                                     </div>
                                     <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -411,91 +424,21 @@ const CoopDetail = () => {
                                 </div>
                             </div>
 
-                            {/* ACTIVE PROJECTS SECTION */}
-                            <div className="glass" style={{ padding: '1.5rem', borderRadius: '24px' }}>
-                                <h4 style={{ marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                    Trabajos en Curso
-                                </h4>
-                                {coop.services?.filter(s => s.status === 'active').length > 0 ? (
-                                    <div style={{ display: 'grid', gap: '1rem' }}>
-                                        {coop.services.filter(s => s.status === 'active').map(job => (
-                                            <div key={job.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                                    <div>
-                                                        <div style={{ fontWeight: '700', fontSize: '0.95rem' }}>{job.service_title}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Presupuesto: ${job.budget}</div>
-                                                    </div>
-                                                    {amIAdmin && (
-                                                        <button 
-                                                            onClick={() => handleModifyTeam(job)}
-                                                            style={{ background: 'var(--primary)', border: 'none', color: 'white', padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer' }}
-                                                        >
-                                                            MODIFICAR EQUIPO
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
-                                                    <div style={{ width: '45%', height: '100%', background: '#10b981', borderRadius: '10px' }}></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', margin: '1rem 0' }}>No hay proyectos activos en este momento.</p>
-                                )}
-                            </div>
+                            {/* ACTIVE PROJECTS MOVED TO SERVICIOS TAB */}
                         </div>
                     </div>
                 )}
-                {activeTab === 'orders' && (
-                    <div className="glass" style={{ padding: '2rem', borderRadius: '24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h3 style={{ margin: 0 }}>Pedidos Entrantes</h3>
-                            <button className="btn-icon-soft" onClick={fetchPendingJobs}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
-                            </button>
-                        </div>
-
-                        {loadingJobs ? (
-                            <div style={{ textAlign: 'center', padding: '3rem' }}>Cargando pedidos...</div>
-                        ) : pendingJobs.length > 0 ? (
-                            <div style={{ display: 'grid', gap: '1.5rem' }}>
-                                {pendingJobs.map(job => (
-                                    <div key={job.id} className="glass" style={{ padding: '1.5rem', borderRadius: '18px', border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                                            <div>
-                                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem' }}>{job.service_title || 'Trabajo Directo'}</h4>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem' }}>
-                                                        {job.profiles?.username?.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <span>Cliente: {job.profiles?.first_name ? `${job.profiles.first_name} ${job.profiles.last_name || ''}` : job.profiles?.username}</span>
-                                                </div>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--primary)' }}>${job.budget || 0}</div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{job.delivery_days || 0} días entrega</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
-                                            <button className="btn-primary" style={{ flex: 1 }} onClick={() => handleAcceptJob(job.id)}>Aceptar y Asignar Equipo</button>
-                                            <button className="btn-secondary" style={{ flex: 1, borderColor: '#ef4444', color: '#ef4444' }}>Rechazar</button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                <div style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                                </div>
-                                <h4 style={{ margin: '0 0 0.5rem 0' }}>No hay pedidos pendientes</h4>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Las contrataciones directas que reciba tu agencia aparecerán aquí.</p>
-                            </div>
-                        )}
-                    </div>
+                {activeTab === 'services' && (
+                    <CoopServicesTab 
+                        coop={coop} 
+                        amIOwner={amIOwner}
+                        amIAdmin={amIAdmin}
+                        amIManager={amIManager}
+                        pendingJobs={pendingJobs}
+                        loadingJobs={loadingJobs}
+                        handleAcceptJob={handleAcceptJob}
+                        handleModifyTeam={handleModifyTeam}
+                    />
                 )}
 
                 {activeTab === 'members' && (
@@ -867,7 +810,7 @@ const CoopDetail = () => {
                     setReassignmentData(null);
                 }}
                 coopId={coop.id}
-                budget={isReassignment ? (coop.services?.find(j => j.id === selectedJobId)?.budget || 0) : (pendingJobs.find(j => j.id === selectedJobId)?.budget || 0)}
+                budget={isReassignment ? (coop.jobs?.find(j => j.id === selectedJobId)?.budget || 0) : (pendingJobs.find(j => j.id === selectedJobId)?.budget || 0)}
                 onConfirm={handleAssignmentConfirm}
                 isReassignment={isReassignment}
                 initialData={reassignmentData}

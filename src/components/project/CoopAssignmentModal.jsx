@@ -22,7 +22,7 @@ const CoopAssignmentModal = ({ isOpen, onClose, coopId, budget = 0, onConfirm, i
                     const activeMembers = data.filter(m => m.accepted_rules_at);
                     setMembers(activeMembers);
                     
-                    if (isReassignment && initialData) {
+                    if (initialData) {
                         setSelectedMembers(initialData.memberIds || []);
                         setProjectLead(initialData.projectLeadId || '');
                         setPayoutMethod(initialData.payoutMethod || 'equal');
