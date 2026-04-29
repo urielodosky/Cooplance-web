@@ -44,19 +44,19 @@ export const TeamProvider = ({ children }) => {
             
             setTeams(allTeams || []);
             
-            // Filter teams where user is a member
-            const relevant = (allTeams || []).filter(team => {
-                if (!team.members) {
-                    console.warn(`DEBUG: Team ${team.name} (${team.id}) has NO members array!`);
-                    return false;
-                }
-                const isMember = team.members.some(member => member.user_id === user.id);
-                console.log(`DEBUG: Checking team ${team.name} - isMember:`, isMember, team.members);
-                return isMember;
-            });
+            console.table(allTeams);
+            console.log('DEBUG: Current User ID:', user.id);
+
+            // Temporarily show ALL teams that come from DB to see if they even arrive
+            setUserTeams(allTeams || []);
             
-            console.log('DEBUG: fetchTeams - final relevant teams:', relevant);
+            /* 
+            const relevant = (allTeams || []).filter(team => {
+                if (!team.members) return false;
+                return team.members.some(member => member.user_id === user.id);
+            });
             setUserTeams(relevant);
+            */
         } catch (err) {
             console.error('Error fetching coops:', err);
         } finally {
