@@ -13,7 +13,7 @@ const CoopDetail = () => {
     const { coopId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { teams, userTeams, addMemberToTeam, updateMemberRole, leaveTeam, dissolveCoop, updateTeam, acceptRules, updateRules } = useTeams();
+    const { teams, userTeams, loading, addMemberToTeam, updateMemberRole, leaveTeam, dissolveCoop, updateTeam, acceptRules, updateRules } = useTeams();
     
     const [activeTab, setActiveTab] = useState('info');
     const [showRules, setShowRules] = useState(false);
@@ -185,6 +185,18 @@ const CoopDetail = () => {
         });
         setIsAssignmentModalOpen(true);
     };
+
+    if (loading) {
+        return (
+            <div className="container" style={{ padding: '4rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(139, 92, 246, 0.2)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                <h3 style={{ color: 'var(--text-secondary)' }}>Cargando Coop...</h3>
+                <style>{`
+                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                `}</style>
+            </div>
+        );
+    }
 
     if (!coop) {
         return (
