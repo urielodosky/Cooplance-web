@@ -187,143 +187,90 @@ const MyCoops = () => {
                     {activeCoops.map(team => {
                         const myMember = team.members.find(m => m.user_id === user.id);
                         const myRole = myMember?.role || 'worker';
+                        const activeMembers = team.members?.filter(m => m.status !== 'left') || [];
+                        
+                        // Array of colors for categories
+                        const catColors = [
+                            'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                            'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                            'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+                        ];
                         
                         return (
-                            <div key={team.id} className="team-card animate-in" style={{
-                                padding: '2rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                borderRadius: '28px',
-                                background: 'var(--bg-card)',
-                                border: '1px solid var(--border)',
-                                boxShadow: 'var(--shadow-lg)',
-                                display: 'flex',
+                            <div key={team.id} className="glass coop-card" style={{ 
+                                padding: '2rem', 
+                                borderRadius: '24px', 
+                                position: 'relative', 
+                                overflow: 'hidden', 
+                                border: '1px solid rgba(255,255,255,0.08)', 
+                                transition: 'all 0.3s ease', 
+                                display: 'flex', 
                                 flexDirection: 'column',
-                                position: 'relative',
-                                overflow: 'hidden'
-                            }} onClick={() => navigate(`/coop/${team.id}`)}>
-                                
-                                {/* Glow Effect */}
-                                <div style={{ 
-                                    position: 'absolute', 
-                                    top: '-20px', 
-                                    right: '-20px', 
-                                    width: '100px', 
-                                    height: '100px', 
-                                    background: 'var(--primary)', 
-                                    filter: 'blur(60px)', 
-                                    opacity: '0.1',
-                                    pointerEvents: 'none'
-                                }}></div>
-
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'flex-start' }}>
-                                    {team.logo ? (
-                                        <img src={team.logo} alt={team.name} style={{ width: '64px', height: '64px', borderRadius: '20px', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
-                                    ) : (
-                                        <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'linear-gradient(135deg, var(--primary), #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '900', color: '#fff' }}>
-                                            {team.name.substring(0, 1)}
-                                        </div>
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                                        <span style={{ 
-                                            fontSize: '0.7rem', 
-                                            fontWeight: '800', 
-                                            textTransform: 'uppercase', 
-                                            padding: '4px 10px', 
-                                            borderRadius: '8px',
-                                            background: myRole === 'owner' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)',
-                                            color: myRole === 'owner' ? 'var(--primary)' : 'var(--text-secondary)',
-                                            border: myRole === 'owner' ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.1)'
-                                        }}>
-                                            {myRole === 'owner' ? 'Fundador' : myRole.charAt(0).toUpperCase() + myRole.slice(1)}
-                                        </span>
-                                        {team.status === 'Borrador' && (
-                                            <span style={{ fontSize: '0.65rem', color: '#f59e0b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b' }}></span>
-                                                BORRADOR
-                                            </span>
-                                        )}
+                                boxShadow: 'var(--shadow-lg)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                    <div className="coop-avatar" style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 'bold', color: 'white', boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)' }}>
+                                        {team.avatar_url ? <img src={team.avatar_url} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '18px' }} /> : team.name.charAt(0).toUpperCase()}
                                     </div>
+                                    {myRole === 'owner' && (
+                                        <span style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>Fundador</span>
+                                    )}
                                 </div>
 
-                                <h3 style={{ marginBottom: '0.8rem', fontSize: '1.6rem', fontWeight: '800' }}>{team.name}</h3>
-                                <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '1.8rem', lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                    {team.description}
-                                </p>
+                                <h3 style={{ fontSize: '1.6rem', marginBottom: '0.8rem', color: 'var(--text-primary)' }}>{team.name}</h3>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '2rem', lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{team.description}</p>
 
-                                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-                                    {(team.categories || []).map((cat, i) => (
-                                        <span key={i} style={{ 
-                                            fontSize: '0.75rem', 
-                                            padding: '0.4rem 1rem', 
-                                            borderRadius: '12px', 
-                                            background: 'rgba(255,255,255,0.03)', 
-                                            border: '1px solid rgba(255,255,255,0.08)',
-                                            color: 'var(--text-muted)'
-                                        }}>
-                                            {cat}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', marginBottom: '2.5rem' }}>
+                                    {(team.categories || []).map((cat, idx) => (
+                                        <span key={idx} style={{ padding: '0.5rem 1rem', borderRadius: '12px', background: catColors[idx % catColors.length], color: 'white', fontSize: '0.8rem', fontWeight: '600', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                                            {cat.name || cat}
                                         </span>
                                     ))}
                                 </div>
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '1.5rem', marginTop: 'auto' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', marginRight: '4px' }}>
-                                            {(team.members || []).slice(0, 3).map((m, idx) => (
-                                                <div key={idx} style={{ 
-                                                    width: '28px', 
-                                                    height: '28px', 
-                                                    borderRadius: '50%', 
-                                                    border: '2px solid var(--bg-card)', 
-                                                    background: 'var(--bg-muted)',
-                                                    marginLeft: idx === 0 ? 0 : '-10px',
-                                                    overflow: 'hidden'
-                                                }}>
-                                                    {/* Fallback avatar */}
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 'bold' }}>
-                                                        {m.username?.charAt(0) || 'U'}
-                                                    </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <div className="member-facepile" style={{ display: 'flex', marginRight: '1rem' }}>
+                                            {activeMembers.slice(0, 4).map((m, i) => (
+                                                <div key={i} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #0f172a', marginLeft: i === 0 ? 0 : '-12px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', color: 'white', overflow: 'hidden' }} title={m.profile?.username || 'Miembro'}>
+                                                    {m.profile?.avatar_url ? <img src={m.profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (m.profile?.username || 'U').charAt(0).toUpperCase()}
                                                 </div>
                                             ))}
+                                            {activeMembers.length > 4 && (
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #0f172a', marginLeft: '-12px', background: 'var(--bg-card-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                                                    +{activeMembers.length - 4}
+                                                </div>
+                                            )}
                                         </div>
-                                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                                            {team.members?.length || 0} Miembros
-                                        </span>
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{activeMembers.length} Miembros</span>
                                     </div>
-                                    <div style={{
-                                        color: 'var(--primary)',
-                                        fontSize: '0.95rem',
-                                        fontWeight: '700',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem'
-                                    }}>
-                                        Panel Coop
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                                    </div>
+                                    <button onClick={() => navigate(`/teams/${team.id}/dashboard`)} className="btn-primary" style={{ padding: '0.7rem 1.2rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+                                        Panel Coop <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                    </button>
                                 </div>
                             </div>
                         );
                     })}
-
                     {/* Quick Add Card */}
                     {activeCoops.length > 0 && activeCoops.length < 2 && (
                         <div className="team-card-add glass" style={{
                             padding: '2rem',
                             cursor: 'pointer',
-                            borderRadius: '28px',
+                            borderRadius: '24px',
                             border: '2px dashed rgba(255,255,255,0.1)',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '1rem',
-                            minHeight: '300px'
+                            minHeight: '350px'
                         }} onClick={() => navigate('/create-coop')}>
                             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </div>
-                            <span style={{ fontWeight: '700', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nueva Agencia</span>
+                            <span style={{ fontWeight: '700', color: 'var(--text-secondary)', fontSize: '1rem' }}>Nueva Agencia</span>
                         </div>
                     )}
                 </div>

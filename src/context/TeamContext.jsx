@@ -32,7 +32,7 @@ export const TeamProvider = ({ children }) => {
         try {
             const { data: allTeams, error } = await supabase
                 .from('coops')
-                .select('*, members:coop_members(*)');
+                .select('*, members:coop_members(*, profile:profiles(username, avatar_url, first_name, last_name))');
             
             console.log('DEBUG: fetchTeams - allTeams from DB:', allTeams);
             console.log('DEBUG: fetchTeams - current user.id:', user?.id);
