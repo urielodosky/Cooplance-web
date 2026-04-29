@@ -667,10 +667,8 @@ const CoopDetail = () => {
                                                 LVL {member.profile?.level || 1}
                                             </div>
                                         </div>
-
                                         </div>
                                     </div>
-                                </div>
                             )})}
                         </div>
                     </div>
