@@ -32,12 +32,15 @@ export const TeamProvider = ({ children }) => {
         try {
             const { data: allTeams, error } = await supabase
                 .from('coops')
-                .select('*, members:coop_members(*, profile:profiles(username, avatar_url, first_name, last_name))');
+                .select('*, members:coop_members(*, profile:profiles(username, avatar_url))');
             
             console.log('DEBUG: fetchTeams - allTeams from DB:', allTeams);
             console.log('DEBUG: fetchTeams - current user.id:', user?.id);
 
-            if (error) throw error;
+            if (error) {
+                console.error('DEBUG: fetchTeams ERROR DETAILS:', error);
+                throw error;
+            }
             
             setTeams(allTeams || []);
             
