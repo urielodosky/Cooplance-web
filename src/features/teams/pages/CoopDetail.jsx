@@ -123,9 +123,8 @@ const CoopDetail = () => {
                 if (!expulsionReason) return;
                 await TeamService.expelMember(coopId, memberToExpel.user_id, user.id, expulsionReason);
             } else {
-                // Cancel invitation silently
-                const { error } = await supabase.from('coop_members').delete().eq('coop_id', coopId).eq('user_id', memberToExpel.user_id);
-                if (error) throw error;
+                // Cancel invitation using RPC to bypass RLS
+                await TeamService.expelMember(coopId, memberToExpel.user_id, user.id, 'Invitación Cancelada');
             }
             setIsExpulsionModalOpen(false);
             setMemberToExpel(null);
