@@ -117,16 +117,21 @@ const CoopDetail = () => {
     };
 
     const handleExpelMember = async () => {
-        if (!memberToExpel || !expulsionReason) return;
+        if (!memberToExpel) return;
         try {
-            await TeamService.expelMember(coopId, memberToExpel.user_id, user.id, expulsionReason);
+            if (memberToExpel.accepted_rules_at) {
+                if (!expulsionReason) return;
+                await TeamService.expelMember(coopId, memberToExpel.user_id, user.id, expulsionReason);
+            } else {
+                // Cancel invitation silently
+                const { error } = await supabase.from('coop_members').delete().eq('coop_id', coopId).eq('user_id', memberToExpel.user_id);
+                if (error) throw error;
+            }
             setIsExpulsionModalOpen(false);
             setMemberToExpel(null);
-            fetchMembers();
-            alert('Miembro expulsado correctamente.');
+            setExpulsionReason('');
         } catch (err) {
-            console.error('Error expelling member:', err);
-            alert('Error: ' + err.message);
+            console.error('Error expelling/canceling:', err);
         }
     };
 
@@ -800,25 +805,44 @@ const CoopDetail = () => {
             {/* Phase 6: Expulsion Modal */}
             {isExpulsionModalOpen && (
                 <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300 }}>
-                    <div className="modal-content glass" style={{ width: '400px', padding: '2rem', borderRadius: '20px' }}>
-                        <h3 style={{ color: 'var(--danger)' }}>Expulsar Miembro</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Estás por expulsar a @{memberToExpel?.profiles?.username}. Esta acción es irreversible y quedará registrada.</p>
+                    <div className="modal-content glass" style={{ width: '400px', padding: '2rem', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+                        <h3 style={{ color: memberToExpel?.accepted_rules_at ? '#ef4444' : 'var(--text-primary)', marginTop: 0 }}>
+                            {memberToExpel?.accepted_rules_at ? 'Expulsar Miembro' : 'Cancelar Solicitud'}
+                        </h3>
                         
-                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>MOTIVO DE LA EXPULSIÓN</label>
-                        <select 
-                            value={expulsionReason} 
-                            onChange={(e) => setExpulsionReason(e.target.value)}
-                            style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', color: 'white', marginBottom: '1.5rem' }}
-                        >
-                            <option value="">Seleccionar motivo...</option>
-                            <option value="inactivity">Inactividad Prolongada</option>
-                            <option value="rule_breaking">Incumplimiento de Reglas Internas</option>
-                            <option value="toxicity">Comportamiento Tóxico / Maltrato</option>
-                        </select>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                            {memberToExpel?.accepted_rules_at 
+                                ? <>Estás por expulsar a <strong style={{color: 'white'}}>@{memberToExpel?.profile?.username || 'Usuario'}</strong>. Esta acción es irreversible y quedará registrada en el historial de la agencia.</>
+                                : <>Estás por cancelar la invitación de <strong style={{color: 'white'}}>@{memberToExpel?.profile?.username || 'Usuario'}</strong>. No podrá acceder a la agencia.</>
+                            }
+                        </p>
+                        
+                        {memberToExpel?.accepted_rules_at && (
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Motivo de la expulsión</label>
+                                <select 
+                                    value={expulsionReason} 
+                                    onChange={(e) => setExpulsionReason(e.target.value)}
+                                    style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', fontSize: '0.9rem', outline: 'none' }}
+                                >
+                                    <option value="">Seleccionar motivo...</option>
+                                    <option value="inactivity">Inactividad Prolongada</option>
+                                    <option value="rule_breaking">Incumplimiento de Reglas Internas</option>
+                                    <option value="toxicity">Comportamiento Tóxico / Maltrato</option>
+                                </select>
+                            </div>
+                        )}
 
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button onClick={() => setIsExpulsionModalOpen(false)} className="btn-secondary" style={{ flex: 1 }}>Cancelar</button>
-                            <button onClick={handleExpelMember} className="btn-primary" style={{ flex: 1, background: 'var(--danger)' }}>Confirmar Expulsión</button>
+                        <div style={{ display: 'flex', gap: '0.8rem' }}>
+                            <button onClick={() => setIsExpulsionModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }}>Cancelar</button>
+                            <button 
+                                onClick={handleExpelMember} 
+                                className="btn-primary" 
+                                style={{ flex: 1, padding: '0.8rem', background: memberToExpel?.accepted_rules_at ? '#ef4444' : 'var(--primary)', border: 'none' }}
+                                disabled={memberToExpel?.accepted_rules_at ? !expulsionReason : false}
+                            >
+                                {memberToExpel?.accepted_rules_at ? 'Confirmar Expulsión' : 'Confirmar'}
+                            </button>
                         </div>
                     </div>
                 </div>
