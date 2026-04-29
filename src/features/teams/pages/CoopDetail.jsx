@@ -536,13 +536,16 @@ const CoopDetail = () => {
                                                 </span>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800', flexShrink: 0 }}>
-                                                {member.profile?.rating ? (
+                                                {Number(member.profile?.rating || 0) > 0 ? (
                                                     <>
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                                         {Number(member.profile.rating).toFixed(1)}
                                                     </>
                                                 ) : (
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>Nuevo</span>
+                                                    <>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}>Nuevo</span>
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
