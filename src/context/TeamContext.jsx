@@ -32,7 +32,7 @@ export const TeamProvider = ({ children }) => {
         try {
             const { data: allTeams, error } = await supabase
                 .from('coops')
-                .select('*, members:coop_members(*, profile:profiles(username, avatar_url))');
+                .select('*, members:coop_members(*)');
             
             console.log('DEBUG: fetchTeams - allTeams from DB:', allTeams);
             console.log('DEBUG: fetchTeams - current user.id:', user?.id);
@@ -44,19 +44,12 @@ export const TeamProvider = ({ children }) => {
             
             setTeams(allTeams || []);
             
-            console.table(allTeams);
-            console.log('DEBUG: Current User ID:', user.id);
-
-            // Temporarily show ALL teams that come from DB to see if they even arrive
-            setUserTeams(allTeams || []);
-            
-            /* 
+            // Filter teams where user is a member
             const relevant = (allTeams || []).filter(team => {
                 if (!team.members) return false;
                 return team.members.some(member => member.user_id === user.id);
             });
             setUserTeams(relevant);
-            */
         } catch (err) {
             console.error('Error fetching coops:', err);
         } finally {
