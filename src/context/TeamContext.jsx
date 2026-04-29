@@ -32,7 +32,7 @@ export const TeamProvider = ({ children }) => {
         try {
             const { data: allTeams, error } = await supabase
                 .from('coops')
-                .select('*, members:coop_members(*, profile:profiles(*)), services:jobs(*)');
+                .select('*, members:coop_members(*, profile:profiles(*, reviews:service_reviews!target_id(rating))), services:jobs(*)');
             
             if (error) throw error;
             

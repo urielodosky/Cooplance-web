@@ -471,7 +471,11 @@ const CoopDetail = () => {
                         </div>
                         
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
-                            {coop.members?.map((member, idx) => (
+                            {coop.members?.map((member, idx) => {
+                                const ratings = member.profile?.reviews?.map(r => r.rating) || [];
+                                const computedRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : Number(member.profile?.rating || 0);
+
+                                return (
                                 <div key={idx} className="glass card-hover" style={{ 
                                     padding: '1.5rem', 
                                     borderRadius: '24px', 
@@ -536,10 +540,10 @@ const CoopDetail = () => {
                                                 </span>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800', flexShrink: 0 }}>
-                                                {Number(member.profile?.rating || 0) > 0 ? (
+                                                {computedRating > 0 ? (
                                                     <>
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                                        {Number(member.profile.rating).toFixed(1)}
+                                                        {Number(computedRating).toFixed(1)}
                                                     </>
                                                 ) : (
                                                     <>
@@ -571,7 +575,7 @@ const CoopDetail = () => {
                                         )}
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     </div>
                 )}
