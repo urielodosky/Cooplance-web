@@ -536,7 +536,9 @@ const CoopDetail = () => {
                                     gap: '1.2rem',
                                     position: 'relative',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    overflow: 'visible',
+                                    zIndex: activeDropdown === member.user_id ? 50 : 1
                                 }}>
                                     {/* PHOTO */}
                                     <div style={{ position: 'relative', flexShrink: 0 }}>
