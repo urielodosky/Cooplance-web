@@ -211,15 +211,22 @@ const MyCoops = () => {
                                 boxShadow: 'var(--shadow-lg)'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                                    <div className="coop-avatar" style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 'bold', color: 'white', boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)' }}>
-                                        {team.avatar_url ? <img src={team.avatar_url} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '18px' }} /> : team.name.charAt(0).toUpperCase()}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div className="coop-avatar" style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 'bold', color: 'white', boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)', flexShrink: 0 }}>
+                                            {team.avatar_url ? <img src={team.avatar_url} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '18px' }} /> : team.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: '1.4rem', margin: '0 0 0.4rem 0', color: 'var(--text-primary)', lineHeight: '1.2' }}>{team.name}</h3>
+                                            <span style={{ padding: '0.2rem 0.6rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                Nivel {team.level || 1}
+                                            </span>
+                                        </div>
                                     </div>
                                     {myRole === 'owner' && (
                                         <span style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>Fundador</span>
                                     )}
                                 </div>
 
-                                <h3 style={{ fontSize: '1.6rem', marginBottom: '0.8rem', color: 'var(--text-primary)' }}>{team.name}</h3>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: '2rem', lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{team.description}</p>
 
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', marginBottom: '2.5rem' }}>

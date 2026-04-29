@@ -42,6 +42,25 @@ export const TeamProvider = ({ children }) => {
                 throw error;
             }
             
+            // 2. Fetch profiles safely avoiding foreign key ambiguity
+            const allMembers = (allTeams || []).flatMap(team => team.members || []);
+            const userIds = [...new Set(allMembers.map(m => m.user_id).filter(Boolean))];
+            
+            if (userIds.length > 0) {
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('id, username, avatar_url, first_name, last_name')
+                    .in('id', userIds);
+                    
+                if (profiles) {
+                    (allTeams || []).forEach(team => {
+                        (team.members || []).forEach(member => {
+                            member.profile = profiles.find(p => p.id === member.user_id) || null;
+                        });
+                    });
+                }
+            }
+            
             setTeams(allTeams || []);
             
             // Filter teams where user is a member
