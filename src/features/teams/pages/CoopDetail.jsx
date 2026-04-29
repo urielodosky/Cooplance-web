@@ -587,6 +587,62 @@ const CoopDetail = () => {
                                                 <span style={{ fontSize: '0.65rem', background: member.role === 'owner' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)', color: member.role === 'owner' ? '#a78bfa' : 'var(--text-muted)', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', textTransform: 'uppercase', flexShrink: 0 }}>
                                                     {member.role}
                                                 </span>
+
+                                                {/* Options Menu (Moved next to role badge) */}
+                                                {amIAdmin && member.user_id !== user.id && member.role !== 'owner' && (
+                                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setShowRoleSubmenu(null); setActiveDropdown(activeDropdown === member.user_id ? null : member.user_id); }}
+                                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                        >
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                                                        </button>
+
+                                                        {activeDropdown === member.user_id && (
+                                                            <div style={{ position: 'absolute', top: '100%', left: '0', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', borderRadius: '12px', padding: '0.5rem', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '150px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                                                                {showRoleSubmenu === member.user_id ? (
+                                                                    <>
+                                                                        <div style={{ fontSize: '0.7rem', padding: '4px 12px', color: 'var(--text-muted)' }}>Asignar Rol</div>
+                                                                        {['admin', 'manager', 'worker'].map(r => (
+                                                                            <button 
+                                                                                key={r}
+                                                                                onClick={(e) => { e.stopPropagation(); handleChangeRole(member, r); }}
+                                                                                style={{ background: member.role === r ? 'rgba(139, 92, 246, 0.2)' : 'transparent', border: 'none', color: member.role === r ? '#a78bfa' : 'var(--text-primary)', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
+                                                                                onMouseOver={(e) => e.currentTarget.style.background = member.role === r ? 'rgba(139, 92, 246, 0.3)' : 'rgba(255,255,255,0.05)'}
+                                                                                onMouseOut={(e) => e.currentTarget.style.background = member.role === r ? 'rgba(139, 92, 246, 0.2)' : 'transparent'}
+                                                                            >
+                                                                                {r.charAt(0).toUpperCase() + r.slice(1)}
+                                                                            </button>
+                                                                        ))}
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        {amIOwner && (
+                                                                            <button 
+                                                                                onClick={(e) => { e.stopPropagation(); setShowRoleSubmenu(member.user_id); }}
+                                                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
+                                                                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                                                                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                                            >
+                                                                                Cambiar rol
+                                                                            </button>
+                                                                        )}
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); setMemberToExpel(member); setIsExpulsionModalOpen(true); setActiveDropdown(null); }}
+                                                                            style={{ background: 'transparent', border: 'none', color: '#ef4444', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
+                                                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                                                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                                        >
+                                                                            Expulsar
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '800', flexShrink: 0 }}>
                                                 {computedRating > 0 ? (
@@ -612,61 +668,7 @@ const CoopDetail = () => {
                                             </div>
                                         </div>
 
-                                        {/* Options Menu */}
-                                        {amIAdmin && member.user_id !== user.id && member.role !== 'owner' && (
-                                            <div style={{ position: 'absolute', bottom: '1.2rem', right: '1.2rem', display: 'flex', justifyContent: 'flex-end' }}>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setShowRoleSubmenu(null); setActiveDropdown(activeDropdown === member.user_id ? null : member.user_id); }}
-                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
-                                                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                                                >
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                                                </button>
-
-                                                {activeDropdown === member.user_id && (
-                                                    <div style={{ position: 'absolute', bottom: '100%', right: '0', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', borderRadius: '12px', padding: '0.5rem', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '150px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
-                                                        {showRoleSubmenu === member.user_id ? (
-                                                            <>
-                                                                <div style={{ fontSize: '0.7rem', padding: '4px 12px', color: 'var(--text-muted)' }}>Asignar Rol</div>
-                                                                {['admin', 'manager', 'worker'].map(r => (
-                                                                    <button 
-                                                                        key={r}
-                                                                        onClick={(e) => { e.stopPropagation(); handleChangeRole(member, r); }}
-                                                                        style={{ background: member.role === r ? 'rgba(139, 92, 246, 0.2)' : 'transparent', border: 'none', color: member.role === r ? '#a78bfa' : 'var(--text-primary)', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
-                                                                        onMouseOver={(e) => e.currentTarget.style.background = member.role === r ? 'rgba(139, 92, 246, 0.3)' : 'rgba(255,255,255,0.05)'}
-                                                                        onMouseOut={(e) => e.currentTarget.style.background = member.role === r ? 'rgba(139, 92, 246, 0.2)' : 'transparent'}
-                                                                    >
-                                                                        {r.charAt(0).toUpperCase() + r.slice(1)}
-                                                                    </button>
-                                                                ))}
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                {amIOwner && (
-                                                                    <button 
-                                                                        onClick={(e) => { e.stopPropagation(); setShowRoleSubmenu(member.user_id); }}
-                                                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
-                                                                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                                                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                                                                    >
-                                                                        Cambiar rol
-                                                                    </button>
-                                                                )}
-                                                                <button 
-                                                                    onClick={(e) => { e.stopPropagation(); setMemberToExpel(member); setIsExpulsionModalOpen(true); setActiveDropdown(null); }}
-                                                                    style={{ background: 'transparent', border: 'none', color: '#ef4444', textAlign: 'left', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '500' }}
-                                                                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                                                                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                                                                >
-                                                                    Expulsar
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
                             )})}
