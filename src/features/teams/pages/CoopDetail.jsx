@@ -35,6 +35,7 @@ const CoopDetail = () => {
 
     const [isReassignment, setIsReassignment] = useState(false);
     const [reassignmentData, setReassignmentData] = useState(null);
+    const [isExpelling, setIsExpelling] = useState(false);
 
     const handleChangeRole = async (member, newRole) => {
         try {
@@ -118,9 +119,13 @@ const CoopDetail = () => {
 
     const handleExpelMember = async () => {
         if (!memberToExpel) return;
+        setIsExpelling(true);
         try {
             if (memberToExpel.accepted_rules_at) {
-                if (!expulsionReason) return;
+                if (!expulsionReason) {
+                    setIsExpelling(false);
+                    return;
+                }
                 await TeamService.expelMember(coopId, memberToExpel.user_id, user.id, expulsionReason);
             } else {
                 // Cancel invitation silently
@@ -133,6 +138,8 @@ const CoopDetail = () => {
         } catch (err) {
             console.error('Error expelling/canceling:', err);
             alert('Error al cancelar: ' + (err.message || JSON.stringify(err)));
+        } finally {
+            setIsExpelling(false);
         }
     };
 
@@ -837,14 +844,14 @@ const CoopDetail = () => {
                         )}
 
                         <div style={{ display: 'flex', gap: '0.8rem' }}>
-                            <button onClick={() => setIsExpulsionModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }}>Cancelar</button>
+                            <button onClick={() => setIsExpulsionModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }} disabled={isExpelling}>Cancelar</button>
                             <button 
                                 onClick={handleExpelMember} 
                                 className="btn-primary" 
-                                style={{ flex: 1, padding: '0.8rem', background: memberToExpel?.accepted_rules_at ? '#ef4444' : 'var(--primary)', border: 'none' }}
-                                disabled={memberToExpel?.accepted_rules_at ? !expulsionReason : false}
+                                style={{ flex: 1, padding: '0.8rem', background: memberToExpel?.accepted_rules_at ? '#ef4444' : 'var(--primary)', border: 'none', opacity: isExpelling ? 0.7 : 1 }}
+                                disabled={(memberToExpel?.accepted_rules_at ? !expulsionReason : false) || isExpelling}
                             >
-                                {memberToExpel?.accepted_rules_at ? 'Confirmar Expulsión' : 'Confirmar'}
+                                {isExpelling ? 'Procesando...' : (memberToExpel?.accepted_rules_at ? 'Confirmar Expulsión' : 'Confirmar')}
                             </button>
                         </div>
                     </div>
