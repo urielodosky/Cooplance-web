@@ -28,6 +28,13 @@ const CoopDetail = () => {
     
     // Phase 6
     const [isExpulsionModalOpen, setIsExpulsionModalOpen] = useState(false);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [inviteQuery, setInviteQuery] = useState('');
+    const [inviteMessage, setInviteMessage] = useState('');
+    const [searchResult, setSearchResult] = useState(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [isInviting, setIsInviting] = useState(false);
+    const [inviteError, setInviteError] = useState('');
     const [memberToExpel, setMemberToExpel] = useState(null);
     const [expulsionReason, setExpulsionReason] = useState('');
     const [isSavingRules, setIsSavingRules] = useState(false);
@@ -128,6 +135,48 @@ const CoopDetail = () => {
         }
         setSelectedJobId(jobId);
         setIsAssignmentModalOpen(true);
+    };
+
+    const handleSearchUser = async (e) => {
+        e.preventDefault();
+        if (!inviteQuery.trim()) return;
+        setIsSearching(true);
+        setInviteError('');
+        try {
+            const result = await searchUser(inviteQuery);
+            if (result) {
+                setSearchResult(result);
+            } else {
+                setInviteError('Usuario no encontrado.');
+                setSearchResult(null);
+            }
+        } catch (err) {
+            setInviteError('Error al buscar usuario.');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleSendInvite = async () => {
+        if (!searchResult) return;
+        setIsInviting(true);
+        setInviteError('');
+        try {
+            await addMemberToTeam(coop.id, searchResult.id, inviteMessage);
+            setIsInviteModalOpen(false);
+            setInviteQuery('');
+            setInviteMessage('');
+            setSearchResult(null);
+            showActionModal({
+                title: '¡Invitación Enviada!',
+                message: `Se ha enviado la solicitud a @${searchResult.username}.`,
+                type: 'info'
+            });
+        } catch (err) {
+            setInviteError(err.message || 'Error al enviar invitación.');
+        } finally {
+            setIsInviting(false);
+        }
     };
 
     const handleExpelMember = async () => {
@@ -447,7 +496,7 @@ const CoopDetail = () => {
                             <h3 style={{ margin: 0 }}>Equipo de Trabajo ({coop.members?.length || 0})</h3>
                             {amIOwner && (
                                 <button 
-                                    onClick={() => navigate(`/coop/${coop.id}/invite`)} 
+                                    onClick={() => setIsInviteModalOpen(true)} 
                                     style={{ 
                                         background: 'linear-gradient(135deg, var(--primary), var(--primary-dark, #6d28d9))', 
                                         border: 'none', 
@@ -795,6 +844,71 @@ const CoopDetail = () => {
                                 disabled={(memberToExpel?.accepted_rules_at ? !expulsionReason : false) || isExpelling}
                             >
                                 {isExpelling ? 'Procesando...' : (memberToExpel?.accepted_rules_at ? 'Confirmar Expulsión' : 'Confirmar')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Invite Modal */}
+            {isInviteModalOpen && (
+                <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300 }}>
+                    <div className="modal-content glass" style={{ width: '450px', padding: '2rem', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Invitar Talento</h3>
+                            <button onClick={() => setIsInviteModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSearchUser} style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Buscar por Username o Email</label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input 
+                                    type="text" 
+                                    value={inviteQuery}
+                                    onChange={(e) => setInviteQuery(e.target.value)}
+                                    placeholder="Ej: jdoe o juan@mail.com"
+                                    style={{ flex: 1, padding: '0.8rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', outline: 'none' }}
+                                />
+                                <button type="submit" className="btn-primary" style={{ padding: '0 1.2rem' }} disabled={isSearching}>
+                                    {isSearching ? '...' : 'Buscar'}
+                                </button>
+                            </div>
+                        </form>
+
+                        {searchResult && (
+                            <div style={{ background: 'rgba(139, 92, 246, 0.05)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(139, 92, 246, 0.2)', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                        {searchResult.username.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 'bold' }}>@{searchResult.username}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{searchResult.firstName} {searchResult.lastName}</div>
+                                    </div>
+                                </div>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Mensaje de invitación (Opcional)</label>
+                                <textarea 
+                                    value={inviteMessage}
+                                    onChange={(e) => setInviteMessage(e.target.value)}
+                                    placeholder="Hola, nos gustaría que formes parte de nuestra agencia para..."
+                                    style={{ width: '100%', height: '80px', padding: '0.8rem', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', fontSize: '0.9rem', resize: 'none', outline: 'none' }}
+                                />
+                            </div>
+                        )}
+
+                        {inviteError && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '1.5rem' }}>{inviteError}</p>}
+
+                        <div style={{ display: 'flex', gap: '0.8rem' }}>
+                            <button onClick={() => setIsInviteModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }}>Cancelar</button>
+                            <button 
+                                onClick={handleSendInvite} 
+                                className="btn-primary" 
+                                style={{ flex: 1, padding: '0.8rem' }}
+                                disabled={!searchResult || isInviting}
+                            >
+                                {isInviting ? 'Enviando...' : 'Enviar Invitación'}
                             </button>
                         </div>
                     </div>

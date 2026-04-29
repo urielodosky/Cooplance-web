@@ -5,9 +5,19 @@ import { useAuth } from '../../auth/context/AuthContext';
 import '../../../styles/main.scss';
 
 const MyCoops = () => {
-    const { userTeams, loading } = useTeams();
+    const { userTeams, loading, respondToInvite, acceptRules } = useTeams();
     const { user } = useAuth();
     const navigate = useNavigate();
+
+    const activeCoops = userTeams.filter(team => {
+        const m = team.members.find(mem => mem.user_id === user.id);
+        return m?.accepted_rules_at !== null;
+    });
+
+    const pendingInvitations = userTeams.filter(team => {
+        const m = team.members.find(mem => mem.user_id === user.id);
+        return m?.accepted_rules_at === null;
+    });
 
     if (loading) return <div className="loading-spinner"></div>;
 
@@ -54,8 +64,102 @@ const MyCoops = () => {
                 )}
             </div>
 
+            {/* Invitations Section */}
+            {pendingInvitations.length > 0 && (
+                <div style={{ marginBottom: '3rem' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                        Invitaciones Pendientes ({pendingInvitations.length})
+                    </h3>
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                        {pendingInvitations.map(team => {
+                            const invite = team.members.find(m => m.user_id === user.id);
+                            const inviter = invite?.inviter;
+                            const inviterName = inviter ? (inviter.first_name ? `${inviter.first_name} ${inviter.last_name || ''}` : inviter.username) : 'Un miembro';
+                            
+                            return (
+                                <div key={team.id} className="glass animate-in" style={{ 
+                                    padding: '1.5rem', 
+                                    borderRadius: '24px', 
+                                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                                    background: 'rgba(139, 92, 246, 0.05)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1.2rem'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                            <div 
+                                                onClick={() => navigate(`/coop/${team.id}/public`)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                {team.logo || team.avatar_url ? (
+                                                    <img src={team.logo || team.avatar_url} alt={team.name} style={{ width: '50px', height: '50px', borderRadius: '14px', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '50px', height: '50px', borderRadius: '14px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '900', color: '#fff' }}>
+                                                        {team.name.substring(0, 1)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: '1.1rem' }}>
+                                                    <span 
+                                                        onClick={() => navigate(`/coop/${team.id}/public`)}
+                                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                                    >
+                                                        {team.name}
+                                                    </span>
+                                                </h4>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                                    Invitado por <strong>@{inviter?.username || 'miembro'}</strong> ({inviterName})
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                            <button 
+                                                className="btn-secondary" 
+                                                style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                                                onClick={() => respondToInvite(team.id, false)}
+                                            >
+                                                Rechazar
+                                            </button>
+                                            <button 
+                                                className="btn-primary" 
+                                                style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem' }}
+                                                onClick={() => acceptRules(team.id)}
+                                            >
+                                                Aceptar e Ingresar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {invite?.invitation_message && (
+                                        <div style={{ 
+                                            background: 'rgba(255,255,255,0.03)', 
+                                            padding: '1rem', 
+                                            borderRadius: '12px', 
+                                            borderLeft: '4px solid var(--primary)',
+                                            fontSize: '0.9rem',
+                                            lineHeight: '1.5',
+                                            color: 'var(--text-secondary)',
+                                            fontStyle: 'italic'
+                                        }}>
+                                            "{invite.invitation_message}"
+                                        </div>
+                                    )}
+
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                        Al aceptar, confirmas que has leído y aceptas el <strong>Estatuto Interno</strong> de la agencia.
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* List */}
-            {userTeams.length === 0 ? (
+            {activeCoops.length === 0 ? (
                 <div className="glass" style={{ 
                     textAlign: 'center', 
                     padding: '4rem 2rem', 
@@ -78,8 +182,8 @@ const MyCoops = () => {
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-                    {userTeams.map(team => {
-                        const myMember = team.members.find(m => m.userId === user.id || m.id === user.id);
+                    {activeCoops.map(team => {
+                        const myMember = team.members.find(m => m.user_id === user.id);
                         const myRole = myMember?.role || 'worker';
                         
                         return (
@@ -201,7 +305,7 @@ const MyCoops = () => {
                     })}
 
                     {/* Quick Add Card */}
-                    {userTeams.length > 0 && userTeams.length < 2 && (
+                    {activeCoops.length > 0 && activeCoops.length < 2 && (
                         <div className="team-card-add glass" style={{
                             padding: '2rem',
                             cursor: 'pointer',

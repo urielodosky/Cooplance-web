@@ -201,7 +201,7 @@ export const processMemberExit = async (coopId, userId) => {
     if (error) throw error;
 };
 
-export const addMember = async (coopId, newUserId, actorId) => {
+export const addMember = async (coopId, newUserId, actorId, message = "") => {
     if (!await canPerformAction(coopId, 'invite', actorId)) {
         throw new Error("No tienes permisos para invitar miembros.");
     }
@@ -215,7 +215,9 @@ export const addMember = async (coopId, newUserId, actorId) => {
         .insert({
             coop_id: coopId,
             user_id: newUserId,
-            role: 'worker'
+            role: 'worker',
+            invited_by: actorId,
+            invitation_message: message
         });
 
     if (error) throw error;

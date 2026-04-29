@@ -176,6 +176,7 @@ const CreateCoop = () => {
                                             type="text" 
                                             placeholder="Ej: Alpha Creative Group" 
                                             className="search-input" 
+                                            maxLength="30"
                                             style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                                             value={formData.name}
                                             onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -185,14 +186,14 @@ const CreateCoop = () => {
                                     <div className="form-group">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Descripción Corta</label>
-                                            <span style={{ fontSize: '0.75rem', color: formData.description.length >= 30 ? 'var(--danger)' : 'var(--text-muted)' }}>{formData.description.length}/30</span>
+                                            <span style={{ fontSize: '0.75rem', color: formData.description.length >= 280 ? 'var(--danger)' : 'var(--text-muted)' }}>{formData.description.length}/300</span>
                                         </div>
                                         <textarea 
-                                            placeholder="Ej: Agencia boutique de diseño UI/UX" 
+                                            placeholder="Ej: Agencia boutique de diseño UI/UX enfocada en resultados..." 
                                             className="search-input" 
-                                            rows="2"
-                                            maxLength="30"
-                                            style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', minHeight: '80px', color: 'var(--text-primary)' }}
+                                            rows="3"
+                                            maxLength="300"
+                                            style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', minHeight: '100px', color: 'var(--text-primary)' }}
                                             value={formData.description}
                                             onChange={(e) => setFormData({...formData, description: e.target.value})}
                                             required

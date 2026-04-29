@@ -32,7 +32,7 @@ export const TeamProvider = ({ children }) => {
         try {
             const { data: allTeams, error } = await supabase
                 .from('coops')
-                .select('*, members:coop_members(*, profile:profiles(*, reviews:service_reviews!target_id(rating))), jobs(*), team_services:services(*)');
+                .select('*, members:coop_members(*, profile:profiles(*, reviews:service_reviews!target_id(rating)), inviter:profiles!invited_by(username, first_name, last_name, avatar_url)), jobs(*), team_services:services(*)');
             
             if (error) throw error;
             
@@ -78,7 +78,7 @@ export const TeamProvider = ({ children }) => {
         return team;
     };
 
-    const addMemberToTeam = async (teamId, newUserId) => {
+    const addMemberToTeam = async (teamId, newUserId, message = "") => {
         try {
             // Fetch team info for the notification
             const { data: team } = await supabase
@@ -87,7 +87,7 @@ export const TeamProvider = ({ children }) => {
                 .eq('id', teamId)
                 .single();
 
-            await TeamService.addMember(teamId, newUserId, user.id);
+            await TeamService.addMember(teamId, newUserId, user.id, message);
             await fetchTeams();
 
             // Notify the new member
