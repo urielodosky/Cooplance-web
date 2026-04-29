@@ -41,10 +41,8 @@ const CoopDetail = () => {
             await updateMemberRole(coop.id, member.user_id, newRole);
             setShowRoleSubmenu(null);
             setActiveDropdown(null);
-            alert(`Rol actualizado a ${newRole}`);
         } catch (err) {
             console.error("Error cambiando rol", err);
-            alert("Error al cambiar de rol.");
         }
     };
 
@@ -199,7 +197,7 @@ const CoopDetail = () => {
         setIsAssignmentModalOpen(true);
     };
 
-    if (loading) {
+    if (loading && !coop) {
         return (
             <div className="container" style={{ padding: '4rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                 <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(139, 92, 246, 0.2)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
@@ -635,7 +633,7 @@ const CoopDetail = () => {
                                                                             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
                                                                             onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                                                                         >
-                                                                            Expulsar
+                                                                            {member.accepted_rules_at ? 'Expulsar' : 'Cancelar solicitud'}
                                                                         </button>
                                                                     </>
                                                                 )}
