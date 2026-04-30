@@ -468,7 +468,6 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                         )}
                     </div>
                 </div>
-                </div>
             </div>
 
             {/* CHAT WINDOW */}
@@ -541,7 +540,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                         </div>
                     ) : (
                         messages.map((msg, i) => {
-                            const isMe = msg.sender_id === user.id;
+                            const isMe = msg.sender_id === user.id || msg.user_id === user.id;
                             return (
                                 <div key={msg.id} style={{ 
                                     display: 'flex', 
@@ -634,7 +633,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                             type="text" 
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder={activeChannel ? `Escribe un mensaje en ${activeChannel.name}...` : "Cargando..."}
+                            placeholder={activeChannel ? `Escribe un mensaje en ${activeChannel.name}...` : "Escribe un mensaje..."}
                             style={{ 
                                 flex: 1, background: 'none', border: 'none', color: 'white', outline: 'none', padding: '0.5rem',
                                 fontSize: '0.95rem'
