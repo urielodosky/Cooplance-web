@@ -53,8 +53,9 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
 
             if (channelsError) throw channelsError;
 
-            // 2. If no channels, create General automatically (Safe Fallback)
-            if ((!channelsData || channelsData.length === 0) && (amIOwner || amIAdmin)) {
+            // 2. Ensure General channel exists (Crucial for the "General" button)
+            const hasGeneral = (channelsData || []).some(c => c.type === 'general');
+            if (!hasGeneral && (amIOwner || amIAdmin)) {
                 const { data: newChan, error: createError } = await supabase
                     .from('coop_channels')
                     .insert({
@@ -66,9 +67,9 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     .single();
                 
                 if (!createError && newChan) {
-                    channelsData = [newChan];
+                    channelsData = [...(channelsData || []), newChan];
                 } else if (createError) {
-                    console.error('Error creating fallback channel:', createError);
+                    console.error('Error creating general channel:', createError);
                 }
             }
 
