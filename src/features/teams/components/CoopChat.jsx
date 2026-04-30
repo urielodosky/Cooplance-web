@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../auth/context/AuthContext';
-import { Hash, Lock, Send, Paperclip, MessageSquare, User, Briefcase, Plus } from 'lucide-react';
+import { Hash, Lock, Send, Paperclip, MessageSquare, User, Briefcase, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 
 const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
     const { user } = useAuth();
@@ -12,6 +12,8 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [clientsExpanded, setClientsExpanded] = useState(true);
+    const [membersExpanded, setMembersExpanded] = useState(true);
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -263,83 +265,108 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     </h2>
                 </div>
 
-                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* General */}
-                    <div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px', display: 'block', marginBottom: '0.8rem' }}>GENERAL</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {channels.filter(c => c.type === 'general').map(c => (
-                                <button 
-                                    key={c.id} 
-                                    onClick={() => setActiveChannel(c)}
-                                    style={{
-                                        textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
-                                        background: activeChannel?.id === c.id ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
-                                        color: activeChannel?.id === c.id ? 'white' : 'var(--text-secondary)',
-                                        fontWeight: activeChannel?.id === c.id ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s',
-                                        display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
-                                    }}
-                                >
-                                    <Hash size={14} style={{ opacity: 0.7 }} />
-                                    {c.name || 'General'}
-                                </button>
-                            ))}
-                        </div>
+                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* General Button */}
+                    <div style={{ marginBottom: '0.5rem' }}>
+                        {channels.filter(c => c.type === 'general').map(c => (
+                            <button 
+                                key={c.id} 
+                                onClick={() => setActiveChannel(c)}
+                                style={{
+                                    width: '100%', textAlign: 'left', padding: '0.8rem 1rem', borderRadius: '14px', border: 'none',
+                                    background: activeChannel?.id === c.id ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.02)',
+                                    color: activeChannel?.id === c.id ? 'white' : 'var(--text-secondary)',
+                                    fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
+                                    display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem',
+                                    boxShadow: activeChannel?.id === c.id ? '0 4px 15px rgba(139, 92, 246, 0.1)' : 'none',
+                                    border: activeChannel?.id === c.id ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)'
+                                }}
+                            >
+                                <MessageSquare size={18} style={{ color: activeChannel?.id === c.id ? 'var(--primary)' : 'var(--text-muted)' }} />
+                                GENERAL
+                            </button>
+                        ))}
                     </div>
 
-                    {/* Cliente (Proyectos) */}
+                    {/* Cliente (Collapsible) */}
                     <div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px', display: 'block', marginBottom: '0.8rem' }}>CLIENTE</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {channels.filter(c => c.type === 'project').length > 0 ? channels.filter(c => c.type === 'project').map(c => (
-                                <button 
-                                    key={c.id} 
-                                    onClick={() => setActiveChannel(c)}
-                                    style={{
-                                        textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
-                                        background: activeChannel?.id === c.id ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
-                                        color: activeChannel?.id === c.id ? '#10b981' : 'var(--text-secondary)',
-                                        fontWeight: activeChannel?.id === c.id ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s',
-                                        display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
-                                    }}
-                                >
-                                    <Briefcase size={14} style={{ opacity: 0.7 }} />
-                                    {c.name?.replace('Proyecto: ', '')}
-                                </button>
-                            )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.8rem' }}>Sin proyectos activos</p>}
-                        </div>
+                        <button 
+                            onClick={() => setClientsExpanded(!clientsExpanded)}
+                            style={{ 
+                                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                                background: 'none', border: 'none', padding: '0.5rem', cursor: 'pointer',
+                                color: 'var(--text-muted)', marginBottom: '0.4rem'
+                            }}
+                        >
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px' }}>CLIENTE</span>
+                            {clientsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                        
+                        {clientsExpanded && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {channels.filter(c => c.type === 'project').length > 0 ? channels.filter(c => c.type === 'project').map(c => (
+                                    <button 
+                                        key={c.id} 
+                                        onClick={() => setActiveChannel(c)}
+                                        style={{
+                                            textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
+                                            background: activeChannel?.id === c.id ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                                            color: activeChannel?.id === c.id ? '#10b981' : 'var(--text-secondary)',
+                                            fontWeight: activeChannel?.id === c.id ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s',
+                                            display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
+                                        }}
+                                    >
+                                        <Briefcase size={14} style={{ opacity: 0.7 }} />
+                                        {c.name?.replace('Proyecto: ', '')}
+                                    </button>
+                                )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.8rem' }}>Sin proyectos activos</p>}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Miembros (DMs) */}
+                    {/* Miembros (Collapsible) */}
                     <div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px', display: 'block', marginBottom: '0.8rem' }}>MIEMBROS</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {members.map(m => (
-                                <button 
-                                    key={m.user_id} 
-                                    onClick={() => getDirectChannel(m.user_id)}
-                                    style={{
-                                        textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
-                                        background: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                        color: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'white' : 'var(--text-secondary)',
-                                        fontWeight: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? '700' : '500', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
-                                    }}
-                                >
-                                    <div style={{ position: 'relative' }}>
-                                        {m.profiles?.avatar_url ? (
-                                            <img src={m.profiles.avatar_url} style={{ width: '24px', height: '24px', borderRadius: '8px', objectFit: 'cover' }} alt="" />
-                                        ) : (
-                                            <div style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'white' }}>
-                                                {m.profiles?.username?.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
-                                        <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', border: '2px solid #1a1c23' }}></div>
-                                    </div>
-                                    {m.profiles?.username}
-                                </button>
-                            ))}
-                        </div>
+                        <button 
+                            onClick={() => setMembersExpanded(!membersExpanded)}
+                            style={{ 
+                                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                                background: 'none', border: 'none', padding: '0.5rem', cursor: 'pointer',
+                                color: 'var(--text-muted)', marginBottom: '0.4rem'
+                            }}
+                        >
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px' }}>MIEMBROS</span>
+                            {membersExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
+
+                        {membersExpanded && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {members.map(m => (
+                                    <button 
+                                        key={m.user_id} 
+                                        onClick={() => getDirectChannel(m.user_id)}
+                                        style={{
+                                            textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
+                                            background: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                            color: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'white' : 'var(--text-secondary)',
+                                            fontWeight: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? '700' : '500', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
+                                        }}
+                                    >
+                                        <div style={{ position: 'relative' }}>
+                                            {m.profiles?.avatar_url ? (
+                                                <img src={m.profiles.avatar_url} style={{ width: '24px', height: '24px', borderRadius: '8px', objectFit: 'cover' }} alt="" />
+                                            ) : (
+                                                <div style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'white' }}>
+                                                    {m.profiles?.username?.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', border: '2px solid #1a1c23' }}></div>
+                                        </div>
+                                        {m.profiles?.username}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
