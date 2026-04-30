@@ -7,7 +7,7 @@ import ServiceCard from '../../services/components/ServiceCard';
 import '../../../styles/main.scss';
 
 const TeamPublicProfile = () => {
-    const { teamId } = useParams();
+    const { coopId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
     const { respondToInvite } = useTeams();
@@ -24,7 +24,7 @@ const TeamPublicProfile = () => {
                 const { data: teamData, error: teamError } = await supabase
                     .from('coops')
                     .select('*, members:coop_members(*)')
-                    .eq('id', teamId)
+                    .eq('id', coopId)
                     .single();
 
                 if (teamError) throw teamError;
@@ -51,7 +51,7 @@ const TeamPublicProfile = () => {
                 const { data: servicesData } = await supabase
                     .from('services')
                     .select('*, profiles:freelancer_id(*)')
-                    .eq('config->>teamId', teamId);
+                    .eq('config->>teamId', coopId);
                 
                 setServices(servicesData || []);
 
@@ -62,8 +62,8 @@ const TeamPublicProfile = () => {
             }
         };
 
-        if (teamId) fetchTeamData();
-    }, [teamId]);
+        if (coopId) fetchTeamData();
+    }, [coopId]);
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="loading-spinner"></div></div>;
     if (!team) return <div className="container" style={{ padding: '4rem', textAlign: 'center' }}><h2>Equipo no encontrado.</h2><button className="btn-secondary" onClick={() => navigate(-1)}>Volver</button></div>;
