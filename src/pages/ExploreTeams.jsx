@@ -158,8 +158,8 @@ const ExploreTeams = () => {
                                 cursor: 'pointer'
                             }} onClick={() => navigate(`/coop/${team.id}/public`)}>
                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                    {team.logo_url ? (
-                                        <img src={team.logo_url} alt={team.name} style={{ width: '64px', height: '64px', borderRadius: '16px', objectFit: 'cover' }} />
+                                    {team.avatar_url ? (
+                                        <img src={team.avatar_url} alt={team.name} style={{ width: '64px', height: '64px', borderRadius: '16px', objectFit: 'cover' }} />
                                     ) : (
                                         <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>
                                             {team.name.substring(0, 1)}

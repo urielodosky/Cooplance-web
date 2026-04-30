@@ -81,7 +81,7 @@ const TeamPublicProfile = () => {
     }, [coopId]);
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><div className="loading-spinner"></div></div>;
-    if (!team) return <div className="container" style={{ padding: '6rem 2rem', textAlign: 'center' }}><h2 style={{ opacity: 0.5 }}>Agencia no encontrada.</h2><button className="btn-secondary" style={{ marginTop: '1rem' }} onClick={() => navigate(-1)}>Volver</button></div>;
+    if (!team) return <div className="container" style={{ padding: '6rem 2rem', textAlign: 'center' }}><h2 style={{ opacity: 0.5 }}>Coop no encontrada.</h2><button className="btn-secondary" style={{ marginTop: '1rem' }} onClick={() => navigate(-1)}>Volver</button></div>;
 
     const isPendingMember = (team.members || []).some(m => m.user_id === user?.id && m.status === 'pending');
     const activeMembers = (team.members || []).filter(m => m.status === 'active' || m.role === 'owner');
@@ -140,8 +140,8 @@ const TeamPublicProfile = () => {
                             background: 'var(--bg-card)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            {team.avatar ? (
-                                <img src={team.avatar} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {team.avatar_url ? (
+                                <img src={team.avatar_url} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                                 <div style={{ fontSize: '4rem', fontWeight: 900, color: '#fbbf24' }}>{team.name?.charAt(0).toUpperCase()}</div>
                             )}
@@ -167,7 +167,7 @@ const TeamPublicProfile = () => {
                                     border: '1px solid rgba(251, 191, 36, 0.2)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px'
-                                }}>Agencia</span>
+                                }}>Coop</span>
                                 
                                 <div style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',
@@ -183,7 +183,7 @@ const TeamPublicProfile = () => {
                             
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
                                 <p style={{ margin: 0, fontSize: '1.2rem', color: 'var(--primary)', fontWeight: 700, opacity: 0.8 }}>
-                                    Agencia de Cooplance
+                                    Coop de Cooplance
                                 </p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
                                     <MapPin size={14} />
@@ -205,7 +205,7 @@ const TeamPublicProfile = () => {
                             wordBreak: 'break-word'
                         }}>
                             <svg style={{ position: 'absolute', top: '15px', right: '20px', opacity: 0.1 }} width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017V14C19.017 11.2386 16.7784 9 14.017 9V7C17.883 7 21.017 10.134 21.017 14V21H14.017ZM3.01701 21L3.01701 18C3.01701 16.8954 3.91244 16 5.01701 16H8.01701V14C8.01701 11.2386 5.77844 9 3.01701 9V7C6.88301 7 10.017 10.134 10.017 14V21H3.01701Z"/></svg>
-                            {team.description || "Esta agencia es un espacio de colaboración donde freelancers combinan su talento para ofrecer servicios excepcionales de alta calidad."}
+                            {team.description || "Esta Coop es un espacio de colaboración donde freelancers combinan su talento para ofrecer servicios excepcionales de alta calidad."}
                         </div>
 
                         {/* Categories Chips */}
@@ -235,7 +235,7 @@ const TeamPublicProfile = () => {
                     }}>
                         <div>
                             <h3 style={{ margin: '0 0 0.3rem 0', color: 'var(--primary)' }}>¡Has sido invitado a unirte!</h3>
-                            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>Forma parte de esta agencia para colaborar en proyectos y servicios conjuntos.</p>
+                            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>Forma parte de esta Coop para colaborar en proyectos y servicios conjuntos.</p>
                         </div>
                         <div style={{ display: 'flex', gap: '0.8rem' }}>
                             <button onClick={() => handleInviteResponse(false)} className="btn-secondary" style={{ padding: '0.7rem 1.5rem', borderRadius: '14px' }}>Rechazar</button>
@@ -304,7 +304,7 @@ const TeamPublicProfile = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
                     <h2 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
                         <Briefcase size={28} color="var(--primary)" />
-                        Servicios de la Agencia
+                        Servicios de la Coop
                     </h2>
                     <span style={{
                         background: 'var(--bg-card-hover)', padding: '0.4rem 1rem', borderRadius: '20px', color: 'var(--text-primary)', fontWeight: '600'
@@ -320,7 +320,7 @@ const TeamPublicProfile = () => {
                 ) : (
                     <div className="glass" style={{ padding: '5rem', textAlign: 'center', borderRadius: '24px', border: '1px dashed var(--border)' }}>
                         <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.2 }}>💼</div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Esta agencia no tiene servicios publicados aún.</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Esta Coop no tiene servicios publicados aún.</p>
                     </div>
                 )}
             </div>
@@ -339,7 +339,7 @@ const TeamPublicProfile = () => {
                 </div>
                 
                 <div className="glass" style={{ padding: '4rem', textAlign: 'center', borderRadius: '24px', border: '1px dashed var(--border)' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', margin: 0 }}>Aún no hay reseñas para esta agencia.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', margin: 0 }}>Aún no hay reseñas para esta Coop.</p>
                 </div>
             </div>
         </div>

@@ -13,7 +13,7 @@ const translateRole = (role) => {
         'client': 'Cliente',
         'buyer': 'Cliente',
         'company': 'Empresa',
-        'coop': 'Cooperativa'
+        'coop': 'Coop'
     };
     return roles[role.toLowerCase()] || role.toUpperCase();
 };
@@ -238,25 +238,7 @@ const UserCard = ({ profile, teams = [], navigate }) => {
                 </button>
             </div>
 
-            {/* Team/Coop Link Badge */}
-            {teams.length > 0 && (
-                <div style={{
-                    marginTop: '0.75rem',
-                    padding: '8px 12px',
-                    background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1))',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(251, 191, 36, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    cursor: 'pointer'
-                }} onClick={() => navigate(`/coop/${teams[0].id}/public`)}>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                        {teams[0].name?.charAt(0).toUpperCase()}
-                    </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#d97706' }}>Miembro de {teams[0].name}</span>
-                </div>
-            )}
+            {/* Team/Coop Link Badge removed as requested */}
         </div>
     );
 };
@@ -289,14 +271,19 @@ const TeamCard = ({ team, navigate }) => {
                         fontWeight: 'bold',
                         color: 'white',
                         cursor: 'pointer',
-                        boxShadow: '0 4px 15px rgba(251, 191, 36, 0.3)'
+                        boxShadow: '0 4px 15px rgba(251, 191, 36, 0.3)',
+                        overflow: 'hidden'
                     }}
                 >
-                    {team.name?.charAt(0).toUpperCase()}
+                    {team.avatar_url ? (
+                        <img src={team.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        team.name?.charAt(0).toUpperCase()
+                    )}
                 </div>
                 <div>
                     <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800' }}>{team.name}</h3>
-                    <span style={{ fontSize: '0.85rem', color: '#d97706', fontWeight: '700' }}>Cooperativa (Coop)</span>
+                    <span style={{ fontSize: '0.85rem', color: '#d97706', fontWeight: '700' }}>Coop</span>
                 </div>
             </div>
 
@@ -312,7 +299,7 @@ const TeamCard = ({ team, navigate }) => {
 
             <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    {team.members_count || 0} Miembros activos
+                    {team.members?.length || 0} Miembros activos
                 </span>
                 <button 
                     onClick={() => navigate(`/coop/${team.id}/public`)}
@@ -353,7 +340,7 @@ const Community = () => {
         { value: 'freelancer', label: 'Freelancer' },
         { value: 'client', label: 'Cliente' },
         { value: 'company', label: 'Empresa' },
-        { value: 'coop', label: 'Cooperativa (Coop)' }
+        { value: 'coop', label: 'Coop' }
     ];
 
     useEffect(() => {
@@ -398,8 +385,8 @@ const Community = () => {
                     profilesData = profilesData.filter(p => p.rating >= ratingFilter);
                 }
 
-                // 2. Fetch Teams
-                let teamsQuery = supabase.from('coops').select('*');
+                // 2. Fetch Teams with member counts
+                let teamsQuery = supabase.from('coops').select('*, members:coop_members(id)');
                 if (searchTerm) {
                     teamsQuery = teamsQuery.ilike('name', `%${searchTerm}%`);
                 }
@@ -457,7 +444,7 @@ const Community = () => {
                     Comunidad <span style={{ color: 'var(--primary)' }}>Cooplance</span>
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
-                    Encuentra talento, conecta con cooperativas y descubre nuevas oportunidades de colaboración.
+                    Encuentra talento, conecta con Coops y descubre nuevas oportunidades de colaboración.
                 </p>
             </div>
 

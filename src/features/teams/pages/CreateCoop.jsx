@@ -149,10 +149,10 @@ const CreateCoop = () => {
 
                 <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
                     <h1 style={{ fontSize: '2.2rem', fontWeight: '900', marginBottom: '0.5rem' }}>
-                        {currentStep === 1 ? 'Fundar Mi Agencia' : currentStep === 2 ? 'Estatuto de la Coop' : 'Invitar a Miembros'}
+                        {currentStep === 1 ? 'Fundar Mi Coop' : currentStep === 2 ? 'Estatuto de la Coop' : 'Invitar a Miembros'}
                     </h1>
                     <p style={{ color: 'var(--text-secondary)' }}>
-                        {currentStep === 1 ? 'Define la identidad de tu nueva cooperativa.' : currentStep === 2 ? 'Establece las reglas de convivencia y reparto.' : 'Suma talento a tu equipo para empezar a trabajar.'}
+                        {currentStep === 1 ? 'Define la identidad de tu nueva Coop.' : currentStep === 2 ? 'Establece las reglas de convivencia y reparto.' : 'Suma talento a tu equipo para empezar a trabajar.'}
                     </p>
                 </div>
 
@@ -171,7 +171,7 @@ const CreateCoop = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px', gap: '2rem' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                     <div className="form-group">
-                                        <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Nombre de la Agencia</label>
+                                        <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase' }}>Nombre de la Coop</label>
                                         <input 
                                             type="text" 
                                             placeholder="Ej: Alpha Creative Group" 
@@ -189,7 +189,7 @@ const CreateCoop = () => {
                                             <span style={{ fontSize: '0.75rem', color: formData.description.length >= 280 ? 'var(--danger)' : 'var(--text-muted)' }}>{formData.description.length}/300</span>
                                         </div>
                                         <textarea 
-                                            placeholder="Ej: Agencia boutique de diseño UI/UX enfocada en resultados..." 
+                                            placeholder="Ej: Coop boutique de diseño UI/UX enfocada en resultados..." 
                                             className="search-input" 
                                             rows="3"
                                             maxLength="300"
@@ -295,7 +295,7 @@ const CreateCoop = () => {
                             <div style={{ marginTop: '1.5rem', padding: '1.2rem', borderRadius: '16px', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.1)', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                                 <div style={{ color: '#f59e0b' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div>
                                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                                    Asegúrate de que estas reglas sean justas. Los miembros deberán firmarlas para unirse a la Agencia.
+                                    Asegúrate de que estas reglas sean justas. Los miembros deberán firmarlas para unirse a la Coop.
                                 </p>
                             </div>
                         </div>
@@ -389,7 +389,7 @@ const CreateCoop = () => {
                             disabled={isSubmitting}
                             style={{ padding: '0.8rem 3rem', borderRadius: '14px', fontWeight: '800' }}
                         >
-                            {isSubmitting ? 'Procesando...' : currentStep < 3 ? 'Continuar' : 'Fundar Agencia'}
+                            {isSubmitting ? 'Procesando...' : currentStep < 3 ? 'Continuar' : 'Fundar Coop'}
                         </button>
                     </div>
                 </form>

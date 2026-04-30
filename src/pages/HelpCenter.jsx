@@ -231,7 +231,7 @@ const HelpCenter = () => {
 
             <div className="help-section">
                 <h3>Hiring Coops (Equipos)</h3>
-                <p>Nuestra mayor ventaja competitiva. Como empresa, no solo puedes contratar individuos, sino también <strong>Cooperativas (Coops)</strong>.</p>
+                <p>Nuestra mayor ventaja competitiva. Como empresa, no solo puedes contratar individuos, sino también <strong>Coops</strong>.</p>
                 <div className="legal-note">
                     <p>Contratar una Coop te permite delegar la gestión interna del equipo al Líder de Proyecto de la Coop, reduciendo tu carga administrativa y asegurando que varios profesionales trabajen en sincronía bajo un mismo presupuesto.</p>
                 </div>
@@ -242,7 +242,7 @@ const HelpCenter = () => {
     const renderCoopsGuide = () => (
         <div className="help-content fade-in">
             <h2>Guía de Coops (Agrupaciones / Equipos)</h2>
-            <p>Conviértete en mucho más que un freelancer solitario uniéndote a una "Cooperativa" digital.</p>
+            <p>Conviértete en mucho más que un freelancer solitario uniéndote a una "Coop" digital.</p>
 
             <div className="help-section">
                 <h3>¿Qué son las Coops?</h3>

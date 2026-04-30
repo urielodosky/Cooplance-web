@@ -124,7 +124,7 @@ const ProjectDetail = () => {
         }
 
         if (user.role !== 'freelancer' && user.role !== 'coop') {
-            setApplyMessage({ text: 'Solo los freelancers y cooperativas pueden postularse a proyectos.', type: 'error' });
+            setApplyMessage({ text: 'Solo los freelancers y Coops pueden postularse a proyectos.', type: 'error' });
             setTimeout(() => setApplyMessage({ text: '', type: '' }), 4000);
             return;
         }

@@ -1470,7 +1470,7 @@ const ServiceCreateForm = ({ onCancel, initialData, coopId, coopMembers }) => {
 
                         {coopId && coopMembers && (
                             <div className="premium-form-section" style={{ marginTop: '2rem' }}>
-                                <h4>Reparto de Ganancias (Cooperativa)</h4>
+                                <h4>Reparto de Ganancias (Coop)</h4>
                                 <p className="subtitle" style={{ fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'left' }}>Define el porcentaje de ganancias para cada miembro en este servicio.</p>
                                 <div style={{ display: 'grid', gap: '1rem' }}>
                                     {coopMembers.map(member => (
