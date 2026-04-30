@@ -46,7 +46,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
     const fetchInitialData = async () => {
         setLoading(true);
         try {
-            // 1. Fetch user role locally for safety
+            // 1. Fetch user role locally
             const { data: myMember } = await supabase
                 .from('coop_members')
                 .select('role')
@@ -65,48 +65,43 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
 
             if (channelsError) throw channelsError;
 
-            // 3. Ensure General channel exists
+            // 3. Ensure General exists and is first
             let general = (channelsData || []).find(c => c.type === 'general');
             if (!general && isAuthorized) {
-                const { data: newChan, error: createError } = await supabase
+                const { data: newChan } = await supabase
                     .from('coop_channels')
-                    .insert({
-                        coop_id: coopId,
-                        type: 'general',
-                        name: 'General'
-                    })
-                    .select()
-                    .single();
-                
-                if (!createError && newChan) {
+                    .insert({ coop_id: coopId, type: 'general', name: 'General' })
+                    .select().single();
+                if (newChan) {
                     channelsData = [...(channelsData || []), newChan];
                     general = newChan;
                 }
             }
 
-            // 4. Fetch Active Jobs (for "Clientes" section)
+            // 4. Fetch Active Jobs
             const { data: jobsData } = await supabase
                 .from('jobs')
                 .select('*, profiles:client_id(username, avatar_url), participants:job_participants(*)')
                 .eq('team_id', coopId)
                 .eq('status', 'active');
 
-            // 5. Fetch Members (for DMs)
-            const { data: membersData, error: membersError } = await supabase
+            // 5. Fetch Members
+            const { data: membersData } = await supabase
                 .from('coop_members')
                 .select('*, profiles(*)')
                 .eq('coop_id', coopId)
                 .neq('user_id', user.id);
 
-            if (membersError) throw membersError;
-
             setChannels(channelsData || []);
             setActiveJobs(jobsData || []);
             setMembers(membersData || []);
             
-            // Set General as default or the first one
-            const defaultChan = general || (channelsData || [])[0];
-            if (defaultChan) setActiveChannel(defaultChan);
+            // Auto-select General if available
+            if (general) {
+                setActiveChannel(general);
+            } else if (channelsData && channelsData.length > 0) {
+                setActiveChannel(channelsData[0]);
+            }
         } catch (err) {
             console.error('Error fetching chat data:', err);
         } finally {
@@ -523,7 +518,6 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     )}
                 </div>
 
-                {/* Messages List */}
                 <div style={{ 
                     flex: 1, 
                     overflowY: 'auto', 
@@ -533,7 +527,30 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     gap: '1.5rem',
                     scrollbarWidth: 'thin'
                 }}>
-                    {messages.length === 0 ? (
+                    {!activeChannel ? (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
+                            <div style={{ width: '80px', height: '80px', borderRadius: '24px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                <MessageSquare size={40} />
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>Bienvenido al Workspace</h2>
+                                <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto' }}>
+                                    Aún no hay canales activos. Selecciona uno en la barra lateral o inicializa el canal general.
+                                </p>
+                            </div>
+                            {(amIOwner || amIAdmin) && (
+                                <button 
+                                    onClick={() => fetchInitialData()}
+                                    style={{
+                                        padding: '0.8rem 2rem', borderRadius: '14px', background: 'var(--primary)', color: 'white',
+                                        border: 'none', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 15px rgba(139, 92, 246, 0.3)'
+                                    }}
+                                >
+                                    Inicializar General
+                                </button>
+                            )}
+                        </div>
+                    ) : messages.length === 0 ? (
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', opacity: 0.3 }}>
                             <MessageSquare size={48} />
                             <p style={{ fontWeight: '600' }}>No hay mensajes aún. ¡Comienza la conversación!</p>
