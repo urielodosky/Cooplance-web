@@ -276,26 +276,32 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 </div>
 
                 <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {/* General Button */}
+                    {/* General Button - Always Visible */}
                     <div style={{ marginBottom: '0.5rem' }}>
-                        {channels.filter(c => c.type === 'general').map(c => (
-                            <button 
-                                key={c.id} 
-                                onClick={() => setActiveChannel(c)}
-                                style={{
-                                    width: '100%', textAlign: 'left', padding: '0.8rem 1rem', borderRadius: '14px', border: 'none',
-                                    background: activeChannel?.id === c.id ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.02)',
-                                    color: activeChannel?.id === c.id ? 'white' : 'var(--text-secondary)',
-                                    fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
-                                    display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem',
-                                    boxShadow: activeChannel?.id === c.id ? '0 4px 15px rgba(139, 92, 246, 0.1)' : 'none',
-                                    border: activeChannel?.id === c.id ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)'
-                                }}
-                            >
-                                <MessageSquare size={18} style={{ color: activeChannel?.id === c.id ? 'var(--primary)' : 'var(--text-muted)' }} />
-                                GENERAL
-                            </button>
-                        ))}
+                        <button 
+                            onClick={async () => {
+                                const gen = channels.find(c => c.type === 'general');
+                                if (gen) {
+                                    setActiveChannel(gen);
+                                } else {
+                                    // Try to create it on the fly if missing
+                                    setLoading(true);
+                                    await fetchInitialData(); 
+                                }
+                            }}
+                            style={{
+                                width: '100%', textAlign: 'left', padding: '0.8rem 1rem', borderRadius: '14px', border: 'none',
+                                background: (activeChannel?.type === 'general' || !activeChannel) ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.02)',
+                                color: (activeChannel?.type === 'general' || !activeChannel) ? 'white' : 'var(--text-secondary)',
+                                fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
+                                display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem',
+                                boxShadow: (activeChannel?.type === 'general' || !activeChannel) ? '0 4px 15px rgba(139, 92, 246, 0.1)' : 'none',
+                                border: (activeChannel?.type === 'general' || !activeChannel) ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)'
+                            }}
+                        >
+                            <MessageSquare size={18} style={{ color: (activeChannel?.type === 'general' || !activeChannel) ? 'var(--primary)' : 'var(--text-muted)' }} />
+                            GENERAL {(!channels.some(c => c.type === 'general') && !loading) && <span style={{ fontSize: '0.6rem', opacity: 0.5, marginLeft: 'auto' }}>(REPARAR)</span>}
+                        </button>
                     </div>
 
                     {/* Cliente (Collapsible) */}
@@ -399,15 +405,19 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                         </div>
                         <div>
                             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>
-                                {activeChannel?.type === 'direct' ? (
-                                    members.find(m => activeChannel.member_ids?.includes(m.user_id))?.profiles?.username || 'Chat Privado'
-                                ) : (
-                                    activeChannel?.name || 'Cargando...'
-                                )}
+                                {activeChannel ? (
+                                    activeChannel.type === 'direct' ? (
+                                        members.find(m => activeChannel.member_ids?.includes(m.user_id))?.profiles?.username || 'Chat Privado'
+                                    ) : (
+                                        activeChannel.name || 'Canal'
+                                    )
+                                ) : 'Workspace Inactivo'}
                             </h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Activo ahora</span>
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: activeChannel ? '#10b981' : 'var(--text-muted)' }}></div>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    {activeChannel ? 'Activo ahora' : 'Sin canal seleccionado'}
+                                </span>
                             </div>
                         </div>
                     </div>
