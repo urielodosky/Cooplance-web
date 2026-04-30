@@ -7,6 +7,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
     const { user } = useAuth();
     const [channels, setChannels] = useState([]);
     const [members, setMembers] = useState([]);
+    const [activeJobs, setActiveJobs] = useState([]);
     const [activeChannel, setActiveChannel] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -14,6 +15,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
     const [uploading, setUploading] = useState(false);
     const [clientsExpanded, setClientsExpanded] = useState(true);
     const [membersExpanded, setMembersExpanded] = useState(true);
+    const [extrasExpanded, setExtrasExpanded] = useState(true);
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -29,8 +31,8 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
 
     useEffect(() => {
         if (activeChannel) {
-            fetchMessages(activeChannel.id);
-            const msgSub = subscribeToMessages(activeChannel.id);
+            fetchMessages(activeChannel);
+            const msgSub = subscribeToMessages(activeChannel);
             return () => {
                 supabase.removeChannel(msgSub);
             };
@@ -82,7 +84,14 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 }
             }
 
-            // 4. Fetch Members (for DMs)
+            // 4. Fetch Active Jobs (for "Clientes" section)
+            const { data: jobsData } = await supabase
+                .from('jobs')
+                .select('*, profiles:client_id(username, avatar_url), participants:job_participants(*)')
+                .eq('team_id', coopId)
+                .eq('status', 'active');
+
+            // 5. Fetch Members (for DMs)
             const { data: membersData, error: membersError } = await supabase
                 .from('coop_members')
                 .select('*, profiles(*)')
@@ -92,6 +101,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             if (membersError) throw membersError;
 
             setChannels(channelsData || []);
+            setActiveJobs(jobsData || []);
             setMembers(membersData || []);
             
             // Set General as default or the first one
@@ -104,15 +114,24 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
         }
     };
 
-    const fetchMessages = async (channelId) => {
+    const fetchMessages = async (channel) => {
         try {
-            const { data, error } = await supabase
-                .from('coop_messages')
-                .select('*, profiles(username, first_name, last_name, avatar_url)')
-                .eq('channel_id', channelId)
-                .order('created_at', { ascending: true })
-                .limit(100);
+            let query;
+            if (channel.type === 'client_chat') {
+                query = supabase
+                    .from('messages')
+                    .select('*, profiles:user_id(username, first_name, last_name, avatar_url)')
+                    .eq('job_id', channel.id)
+                    .order('created_at', { ascending: true });
+            } else {
+                query = supabase
+                    .from('coop_messages')
+                    .select('*, profiles(username, first_name, last_name, avatar_url)')
+                    .eq('channel_id', channel.id)
+                    .order('created_at', { ascending: true });
+            }
 
+            const { data, error } = await query;
             if (error) throw error;
             setMessages(data || []);
         } catch (err) {
@@ -129,19 +148,22 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             .subscribe();
     };
 
-    const subscribeToMessages = (channelId) => {
+    const subscribeToMessages = (channel) => {
+        const table = channel.type === 'client_chat' ? 'messages' : 'coop_messages';
+        const filter = channel.type === 'client_chat' ? `job_id=eq.${channel.id}` : `channel_id=eq.${channel.id}`;
+
         return supabase
-            .channel(`coop_messages:${channelId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'coop_messages', filter: `channel_id=eq.${channelId}` }, async (payload) => {
-                const { data, error } = await supabase
-                    .from('coop_messages')
-                    .select('*, profiles(username, first_name, last_name, avatar_url)')
-                    .eq('id', payload.new.id)
+            .channel(`room-${channel.id}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter }, async (payload) => {
+                const senderId = payload.new.sender_id || payload.new.user_id;
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('username, first_name, last_name, avatar_url')
+                    .eq('id', senderId)
                     .single();
                 
-                if (!error && data) {
-                    setMessages(prev => [...prev, data]);
-                }
+                const newMessage = { ...payload.new, profiles: profile };
+                setMessages(prev => [...prev, newMessage]);
             })
             .subscribe();
     };
@@ -150,17 +172,36 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
         e.preventDefault();
         if (!newMessage.trim() || !activeChannel) return;
 
+        // Restriction: Only lead can chat in Clientes section
+        if (activeChannel.type === 'client_chat' && activeChannel.job?.assignee_id !== user.id) {
+            alert('Solo el encargado de este servicio puede chatear con el cliente.');
+            return;
+        }
+
         const content = newMessage.trim();
         setNewMessage('');
 
         try {
-            const { error } = await supabase
-                .from('coop_messages')
-                .insert({
-                    channel_id: activeChannel.id,
-                    sender_id: user.id,
-                    content: content
-                });
+            let error;
+            if (activeChannel.type === 'client_chat') {
+                const { error: err } = await supabase
+                    .from('messages')
+                    .insert({
+                        job_id: activeChannel.id,
+                        user_id: user.id,
+                        content: content
+                    });
+                error = err;
+            } else {
+                const { error: err } = await supabase
+                    .from('coop_messages')
+                    .insert({
+                        channel_id: activeChannel.id,
+                        sender_id: user.id,
+                        content: content
+                    });
+                error = err;
+            }
 
             if (error) throw error;
         } catch (err) {
@@ -276,35 +317,28 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 </div>
 
                 <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {/* General Button - Always Visible */}
+                    {/* 1. General Button */}
                     <div style={{ marginBottom: '0.5rem' }}>
                         <button 
-                            onClick={async () => {
+                            onClick={() => {
                                 const gen = channels.find(c => c.type === 'general');
-                                if (gen) {
-                                    setActiveChannel(gen);
-                                } else {
-                                    // Try to create it on the fly if missing
-                                    setLoading(true);
-                                    await fetchInitialData(); 
-                                }
+                                if (gen) setActiveChannel(gen);
                             }}
                             style={{
                                 width: '100%', textAlign: 'left', padding: '0.8rem 1rem', borderRadius: '14px', border: 'none',
-                                background: (activeChannel?.type === 'general' || !activeChannel) ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.02)',
-                                color: (activeChannel?.type === 'general' || !activeChannel) ? 'white' : 'var(--text-secondary)',
+                                background: activeChannel?.type === 'general' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.02)',
+                                color: activeChannel?.type === 'general' ? 'white' : 'var(--text-secondary)',
                                 fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
                                 display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem',
-                                boxShadow: (activeChannel?.type === 'general' || !activeChannel) ? '0 4px 15px rgba(139, 92, 246, 0.1)' : 'none',
-                                border: (activeChannel?.type === 'general' || !activeChannel) ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)'
+                                border: activeChannel?.type === 'general' ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)'
                             }}
                         >
-                            <MessageSquare size={18} style={{ color: (activeChannel?.type === 'general' || !activeChannel) ? 'var(--primary)' : 'var(--text-muted)' }} />
-                            GENERAL {(!channels.some(c => c.type === 'general') && !loading) && <span style={{ fontSize: '0.6rem', opacity: 0.5, marginLeft: 'auto' }}>(REPARAR)</span>}
+                            <MessageSquare size={18} style={{ color: activeChannel?.type === 'general' ? 'var(--primary)' : 'var(--text-muted)' }} />
+                            GENERAL
                         </button>
                     </div>
 
-                    {/* Cliente (Collapsible) */}
+                    {/* 2. Clientes (Jobs) */}
                     <div>
                         <button 
                             onClick={() => setClientsExpanded(!clientsExpanded)}
@@ -314,33 +348,38 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                 color: 'var(--text-muted)', marginBottom: '0.4rem'
                             }}
                         >
-                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px' }}>CLIENTE</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px' }}>CLIENTES</span>
                             {clientsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </button>
                         
                         {clientsExpanded && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                {channels.filter(c => c.type === 'project').length > 0 ? channels.filter(c => c.type === 'project').map(c => (
+                                {activeJobs.length > 0 ? activeJobs.map(job => (
                                     <button 
-                                        key={c.id} 
-                                        onClick={() => setActiveChannel(c)}
+                                        key={job.id} 
+                                        onClick={() => setActiveChannel({ 
+                                            id: job.id, 
+                                            type: 'client_chat', 
+                                            name: job.service_title || 'Servicio',
+                                            job: job
+                                        })}
                                         style={{
                                             textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
-                                            background: activeChannel?.id === c.id ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
-                                            color: activeChannel?.id === c.id ? '#10b981' : 'var(--text-secondary)',
-                                            fontWeight: activeChannel?.id === c.id ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s',
+                                            background: activeChannel?.id === job.id && activeChannel.type === 'client_chat' ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                                            color: activeChannel?.id === job.id && activeChannel.type === 'client_chat' ? '#10b981' : 'var(--text-secondary)',
+                                            fontWeight: activeChannel?.id === job.id ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s',
                                             display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
                                         }}
                                     >
                                         <Briefcase size={14} style={{ opacity: 0.7 }} />
-                                        {c.name?.replace('Proyecto: ', '')}
+                                        {job.service_title?.substring(0, 20)}...
                                     </button>
-                                )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.8rem' }}>Sin proyectos activos</p>}
+                                )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.8rem' }}>Sin clientes activos</p>}
                             </div>
                         )}
                     </div>
 
-                    {/* Miembros (Collapsible) */}
+                    {/* 3. Miembros (DMs) */}
                     <div>
                         <button 
                             onClick={() => setMembersExpanded(!membersExpanded)}
@@ -376,7 +415,6 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                                     {m.profiles?.username?.charAt(0).toUpperCase()}
                                                 </div>
                                             )}
-                                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', border: '2px solid #1a1c23' }}></div>
                                         </div>
                                         {m.profiles?.username}
                                     </button>
@@ -384,6 +422,52 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                             </div>
                         )}
                     </div>
+
+                    {/* 4. Extras (Custom Channels) */}
+                    <div>
+                        <button 
+                            onClick={() => setExtrasExpanded(!extrasExpanded)}
+                            style={{ 
+                                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                                background: 'none', border: 'none', padding: '0.5rem', cursor: 'pointer',
+                                color: 'var(--text-muted)', marginBottom: '0.4rem'
+                            }}
+                        >
+                            <span style={{ fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px' }}>EXTRAS</span>
+                            {extrasExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                        
+                        {extrasExpanded && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {channels.filter(c => !['general', 'direct', 'project'].includes(c.type)).map(c => (
+                                    <button 
+                                        key={c.id} 
+                                        onClick={() => setActiveChannel(c)}
+                                        style={{
+                                            textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
+                                            background: activeChannel?.id === c.id ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                            color: activeChannel?.id === c.id ? 'white' : 'var(--text-secondary)',
+                                            fontWeight: activeChannel?.id === c.id ? '700' : '500', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
+                                        }}
+                                    >
+                                        <Hash size={14} style={{ opacity: 0.7 }} />
+                                        {c.name}
+                                    </button>
+                                ))}
+                                {(amIOwner || amIAdmin) && (
+                                    <button style={{ 
+                                        background: 'none', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', 
+                                        padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem'
+                                    }}>
+                                        <Plus size={14} /> Crear Canal
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
                 </div>
             </div>
 
@@ -401,7 +485,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                            {activeChannel?.type === 'direct' ? <User size={20} /> : activeChannel?.type === 'project' ? <Briefcase size={20} /> : <MessageSquare size={20} />}
+                            {activeChannel?.type === 'direct' ? <User size={20} /> : activeChannel?.type === 'project' || activeChannel?.type === 'client_chat' ? <Briefcase size={20} /> : <MessageSquare size={20} />}
                         </div>
                         <div>
                             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800' }}>
@@ -416,11 +500,28 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: activeChannel ? '#10b981' : 'var(--text-muted)' }}></div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                    {activeChannel ? 'Activo ahora' : 'Sin canal seleccionado'}
+                                    {activeChannel?.type === 'client_chat' ? 'Chat con Cliente' : activeChannel?.type === 'project' ? 'Grupo de Trabajo' : 'Canal del Equipo'}
                                 </span>
                             </div>
                         </div>
                     </div>
+
+                    {/* Work Group Button (Only for Client Chat) */}
+                    {activeChannel?.type === 'client_chat' && (
+                        <button 
+                            onClick={() => {
+                                const internal = channels.find(c => c.type === 'project' && c.reference_id === activeChannel.id);
+                                if (internal) setActiveChannel(internal);
+                            }}
+                            style={{
+                                padding: '0.5rem 1rem', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)',
+                                color: 'var(--primary)', border: '1px solid rgba(139, 92, 246, 0.2)', fontSize: '0.8rem',
+                                fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                            }}
+                        >
+                            <User size={14} /> Grupo de Trabajo
+                        </button>
+                    )}
                 </div>
 
                 {/* Messages List */}
