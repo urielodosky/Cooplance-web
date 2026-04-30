@@ -385,8 +385,8 @@ const Community = () => {
                     profilesData = profilesData.filter(p => p.rating >= ratingFilter);
                 }
 
-                // 2. Fetch Teams with member counts
-                let teamsQuery = supabase.from('coops').select('*, members:coop_members(id)');
+                // 2. Fetch Teams with member counts - using * for members to ensure relation matches Context style
+                let teamsQuery = supabase.from('coops').select('*, members:coop_members(*)');
                 if (searchTerm) {
                     teamsQuery = teamsQuery.ilike('name', `%${searchTerm}%`);
                 }
@@ -411,7 +411,7 @@ const Community = () => {
                     if (searchTerm && profilesData.length > 0) {
                         const extraTeamIds = membershipData?.map(m => m.coop_id) || [];
                         if (extraTeamIds.length > 0) {
-                            const { data: extraTeams } = await supabase.from('coops').select('*').in('id', extraTeamIds);
+                            const { data: extraTeams } = await supabase.from('coops').select('*, members:coop_members(*)').in('id', extraTeamIds);
                             const mergedTeams = [...(teamsData || []), ...(extraTeams || [])];
                             const uniqueTeams = Array.from(new Set(mergedTeams.map(t => t.id))).map(id => mergedTeams.find(t => t.id === id));
                             setTeams(uniqueTeams);
