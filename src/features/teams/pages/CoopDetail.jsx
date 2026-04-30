@@ -596,7 +596,7 @@ const CoopDetail = () => {
                                                     @{member.profile?.username || 'Usuario'}
                                                 </button>
                                                 <span style={{ fontSize: '0.65rem', background: member.role === 'owner' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)', color: member.role === 'owner' ? '#a78bfa' : 'var(--text-muted)', padding: '2px 8px', borderRadius: '6px', fontWeight: '800', textTransform: 'uppercase', flexShrink: 0 }}>
-                                                    {member.role}
+                                                    {member.role === 'owner' ? 'Fundador' : member.role === 'admin' ? 'Admin' : member.role === 'manager' ? 'Gestor' : 'Miembro'}
                                                 </span>
 
                                                 {/* Options Menu (Moved next to role badge) */}
@@ -624,7 +624,7 @@ const CoopDetail = () => {
                                                                                 onMouseOver={(e) => e.currentTarget.style.background = member.role === r ? 'rgba(139, 92, 246, 0.3)' : 'rgba(255,255,255,0.05)'}
                                                                                 onMouseOut={(e) => e.currentTarget.style.background = member.role === r ? 'rgba(139, 92, 246, 0.2)' : 'transparent'}
                                                                             >
-                                                                                {r.charAt(0).toUpperCase() + r.slice(1)}
+                                                                                {r === 'admin' ? 'Admin' : r === 'manager' ? 'Gestor' : 'Miembro'}
                                                                             </button>
                                                                         ))}
                                                                     </>
@@ -675,7 +675,7 @@ const CoopDetail = () => {
                                                 {member.profile?.first_name || 'Nombre'} {member.profile?.last_name || 'No disp.'}
                                             </div>
                                             <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--primary)', flexShrink: 0 }}>
-                                                LVL {member.profile?.level || 1}
+                                                Nivel {member.profile?.level || 1}
                                             </div>
                                         </div>
                                         </div>

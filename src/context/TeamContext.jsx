@@ -49,7 +49,7 @@ export const TeamProvider = ({ children }) => {
             if (userIds.length > 0) {
                 const { data: profiles } = await supabase
                     .from('profiles')
-                    .select('id, username, avatar_url, first_name, last_name')
+                    .select('id, username, avatar_url, first_name, last_name, level, rating')
                     .in('id', userIds);
                     
                 if (profiles) {

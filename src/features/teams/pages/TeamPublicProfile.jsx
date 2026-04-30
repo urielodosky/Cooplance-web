@@ -285,7 +285,7 @@ const TeamPublicProfile = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                     <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>@{member.profile?.username}</span>
                                     <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--border)' }}></span>
-                                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem' }}>Nv. {member.profile?.level || 1}</span>
+                                    <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem' }}>Nivel {member.profile?.level || 1}</span>
                                     <span style={{ 
                                         fontSize: '0.7rem', 
                                         padding: '2px 8px', 
