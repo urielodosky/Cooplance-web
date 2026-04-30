@@ -16,6 +16,9 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
     const [clientsExpanded, setClientsExpanded] = useState(true);
     const [membersExpanded, setMembersExpanded] = useState(true);
     const [extrasExpanded, setExtrasExpanded] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newChannelName, setNewChannelName] = useState('');
+    const [selectedMemberIds, setSelectedMemberIds] = useState([]);
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -173,6 +176,12 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             return;
         }
 
+        // Restriction: Minimum 2 members in coop to chat
+        if (members.length === 0) {
+            alert('La coop debe tener al menos 2 miembros para habilitar el chat.');
+            return;
+        }
+
         const content = newMessage.trim();
         setNewMessage('');
 
@@ -202,6 +211,40 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
         } catch (err) {
             console.error('Error sending message:', err);
             setNewMessage(content); 
+        }
+    };
+
+    const handleCreateChannel = async (e) => {
+        e.preventDefault();
+        const extraChannels = channels.filter(c => !['general', 'direct', 'project'].includes(c.type));
+        if (extraChannels.length >= 6) {
+            alert('Has alcanzado el máximo de 6 canales extra.');
+            return;
+        }
+
+        if (!newChannelName.trim()) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('coop_channels')
+                .insert({
+                    coop_id: coopId,
+                    type: 'extra',
+                    name: newChannelName.trim(),
+                    member_ids: [user.id, ...selectedMemberIds]
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            setChannels(prev => [...prev, data]);
+            setShowCreateModal(false);
+            setNewChannelName('');
+            setSelectedMemberIds([]);
+            setActiveChannel(data);
+        } catch (err) {
+            console.error('Error creating extra channel:', err);
+            alert('Error al crear el canal. Verifica tus permisos.');
         }
     };
 
@@ -451,11 +494,14 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                     </button>
                                 ))}
                                 {(amIOwner || amIAdmin) && (
-                                    <button style={{ 
-                                        background: 'none', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', 
-                                        padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem'
-                                    }}>
+                                    <button 
+                                        onClick={() => setShowCreateModal(true)}
+                                        style={{ 
+                                            background: 'none', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', 
+                                            padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem'
+                                        }}
+                                    >
                                         <Plus size={14} /> Crear Canal
                                     </button>
                                 )}
@@ -689,6 +735,86 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); borderRadius: 10px; }
                 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.1); }
             `}</style>
+
+            {/* Modal Crear Canal */}
+            {showCreateModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+                    padding: '1rem'
+                }}>
+                    <div style={{
+                        width: '100%', maxWidth: '400px', background: 'rgba(30, 32, 44, 0.95)',
+                        borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '2rem', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                    }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Crear Canal</h2>
+                        <form onSubmit={handleCreateChannel}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700' }}>NOMBRE DEL CANAL</label>
+                                <input 
+                                    type="text" 
+                                    value={newChannelName}
+                                    onChange={(e) => setNewChannelName(e.target.value)}
+                                    placeholder="ej: anuncios-importantes"
+                                    style={{
+                                        width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '12px', padding: '0.8rem', color: 'white', outline: 'none'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700' }}>SELECCIONAR MIEMBROS</label>
+                                <div style={{ 
+                                    maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                                    padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px'
+                                }}>
+                                    {members.map(m => (
+                                        <label key={m.user_id} style={{ 
+                                            display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.5rem', 
+                                            cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s',
+                                            background: selectedMemberIds.includes(m.user_id) ? 'rgba(139, 92, 246, 0.1)' : 'transparent'
+                                        }}>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedMemberIds.includes(m.user_id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) setSelectedMemberIds([...selectedMemberIds, m.user_id]);
+                                                    else setSelectedMemberIds(selectedMemberIds.filter(id => id !== m.user_id));
+                                                }}
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                            <span style={{ fontSize: '0.9rem' }}>{m.profiles?.username}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowCreateModal(false)}
+                                    style={{ flex: 1, padding: '0.8rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', cursor: 'pointer' }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit"
+                                    disabled={!newChannelName.trim()}
+                                    style={{ 
+                                        flex: 2, padding: '0.8rem', borderRadius: '12px', background: 'var(--primary)', color: 'white', 
+                                        border: 'none', fontWeight: '700', cursor: 'pointer', opacity: !newChannelName.trim() ? 0.5 : 1
+                                    }}
+                                >
+                                    Crear Canal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
