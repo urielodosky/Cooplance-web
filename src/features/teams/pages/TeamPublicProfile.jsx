@@ -286,6 +286,18 @@ const TeamPublicProfile = () => {
                                     <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>@{member.profile?.username}</span>
                                     <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--border)' }}></span>
                                     <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem' }}>Nv. {member.profile?.level || 1}</span>
+                                    <span style={{ 
+                                        fontSize: '0.7rem', 
+                                        padding: '2px 8px', 
+                                        borderRadius: '6px', 
+                                        background: member.role === 'owner' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                                        color: member.role === 'owner' ? '#f59e0b' : 'var(--primary)',
+                                        fontWeight: '800',
+                                        textTransform: 'uppercase',
+                                        border: member.role === 'owner' ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid rgba(139, 92, 246, 0.2)'
+                                    }}>
+                                        {member.role === 'owner' ? 'Fundador' : member.role === 'admin' ? 'Admin' : member.role === 'manager' ? 'Gestor' : 'Miembro'}
+                                    </span>
                                 </div>
                                 {member.profile?.rating > 0 && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.3rem', color: '#fbbf24', fontSize: '0.8rem', fontWeight: 800 }}>

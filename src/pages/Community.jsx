@@ -281,9 +281,17 @@ const TeamCard = ({ team, navigate }) => {
                         team.name?.charAt(0).toUpperCase()
                     )}
                 </div>
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800' }}>{team.name}</h3>
-                    <span style={{ fontSize: '0.85rem', color: '#d97706', fontWeight: '700' }}>Coop</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.85rem', color: '#d97706', fontWeight: '700' }}>Coop</span>
+                        {team.stats?.avgRating > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: '#fbbf24', fontWeight: '800' }}>
+                                <Star size={12} fill="#fbbf24" />
+                                {team.stats.avgRating.toFixed(1)}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
