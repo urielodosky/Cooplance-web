@@ -264,13 +264,11 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 </div>
 
                 <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Canales */}
+                    {/* General */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>CANALES</span>
-                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px', display: 'block', marginBottom: '0.8rem' }}>GENERAL</span>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {channels.filter(c => c.type !== 'direct').map(c => (
+                            {channels.filter(c => c.type === 'general').map(c => (
                                 <button 
                                     key={c.id} 
                                     onClick={() => setActiveChannel(c)}
@@ -282,16 +280,39 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                         display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
                                     }}
                                 >
-                                    {c.type === 'project' ? <Briefcase size={14} style={{ opacity: 0.7 }} /> : <Hash size={14} style={{ opacity: 0.7 }} />}
-                                    {c.name?.replace('Proyecto: ', '') || 'General'}
+                                    <Hash size={14} style={{ opacity: 0.7 }} />
+                                    {c.name || 'General'}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Mensajes Directos */}
+                    {/* Cliente (Proyectos) */}
                     <div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px', display: 'block', marginBottom: '0.8rem' }}>COLABORADORES</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px', display: 'block', marginBottom: '0.8rem' }}>CLIENTE</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {channels.filter(c => c.type === 'project').length > 0 ? channels.filter(c => c.type === 'project').map(c => (
+                                <button 
+                                    key={c.id} 
+                                    onClick={() => setActiveChannel(c)}
+                                    style={{
+                                        textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
+                                        background: activeChannel?.id === c.id ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                                        color: activeChannel?.id === c.id ? '#10b981' : 'var(--text-secondary)',
+                                        fontWeight: activeChannel?.id === c.id ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s',
+                                        display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
+                                    }}
+                                >
+                                    <Briefcase size={14} style={{ opacity: 0.7 }} />
+                                    {c.name?.replace('Proyecto: ', '')}
+                                </button>
+                            )) : <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.8rem' }}>Sin proyectos activos</p>}
+                        </div>
+                    </div>
+
+                    {/* Miembros (DMs) */}
+                    <div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px', display: 'block', marginBottom: '0.8rem' }}>MIEMBROS</span>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {members.map(m => (
                                 <button 
