@@ -43,7 +43,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
         setLoading(true);
         try {
             // 1. Fetch Channels
-            const { data: channelsData, error: channelsError } = await supabase
+            let { data: channelsData, error: channelsError } = await supabase
                 .from('coop_channels')
                 .select('*')
                 .eq('coop_id', coopId)
@@ -51,7 +51,26 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
 
             if (channelsError) throw channelsError;
 
-            // 2. Fetch Members (for DMs)
+            // 2. If no channels, create General automatically (Safe Fallback)
+            if ((!channelsData || channelsData.length === 0) && (amIOwner || amIAdmin)) {
+                const { data: newChan, error: createError } = await supabase
+                    .from('coop_channels')
+                    .insert({
+                        coop_id: coopId,
+                        type: 'general',
+                        name: 'General'
+                    })
+                    .select()
+                    .single();
+                
+                if (!createError && newChan) {
+                    channelsData = [newChan];
+                } else if (createError) {
+                    console.error('Error creating fallback channel:', createError);
+                }
+            }
+
+            // 3. Fetch Members (for DMs)
             const { data: membersData, error: membersError } = await supabase
                 .from('coop_members')
                 .select('*, profiles(*)')
@@ -64,7 +83,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             setMembers(membersData || []);
             
             // Set General as default or the first one
-            const general = channelsData.find(c => c.type === 'general') || channelsData[0];
+            const general = (channelsData || []).find(c => c.type === 'general') || (channelsData || [])[0];
             if (general) setActiveChannel(general);
         } catch (err) {
             console.error('Error fetching chat data:', err);
