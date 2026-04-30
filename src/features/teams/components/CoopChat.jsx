@@ -44,7 +44,17 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
     const fetchInitialData = async () => {
         setLoading(true);
         try {
-            // 1. Fetch Channels
+            // 1. Fetch user role locally for safety
+            const { data: myMember } = await supabase
+                .from('coop_members')
+                .select('role')
+                .eq('coop_id', coopId)
+                .eq('user_id', user.id)
+                .single();
+            
+            const isAuthorized = myMember?.role === 'owner' || myMember?.role === 'admin' || amIOwner || amIAdmin;
+
+            // 2. Fetch Channels
             let { data: channelsData, error: channelsError } = await supabase
                 .from('coop_channels')
                 .select('*')
@@ -53,9 +63,9 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
 
             if (channelsError) throw channelsError;
 
-            // 2. Ensure General channel exists (Crucial for the "General" button)
-            const hasGeneral = (channelsData || []).some(c => c.type === 'general');
-            if (!hasGeneral && (amIOwner || amIAdmin)) {
+            // 3. Ensure General channel exists
+            let general = (channelsData || []).find(c => c.type === 'general');
+            if (!general && isAuthorized) {
                 const { data: newChan, error: createError } = await supabase
                     .from('coop_channels')
                     .insert({
@@ -68,12 +78,11 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 
                 if (!createError && newChan) {
                     channelsData = [...(channelsData || []), newChan];
-                } else if (createError) {
-                    console.error('Error creating general channel:', createError);
+                    general = newChan;
                 }
             }
 
-            // 3. Fetch Members (for DMs)
+            // 4. Fetch Members (for DMs)
             const { data: membersData, error: membersError } = await supabase
                 .from('coop_members')
                 .select('*, profiles(*)')
@@ -86,8 +95,8 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             setMembers(membersData || []);
             
             // Set General as default or the first one
-            const general = (channelsData || []).find(c => c.type === 'general') || (channelsData || [])[0];
-            if (general) setActiveChannel(general);
+            const defaultChan = general || (channelsData || [])[0];
+            if (defaultChan) setActiveChannel(defaultChan);
         } catch (err) {
             console.error('Error fetching chat data:', err);
         } finally {
