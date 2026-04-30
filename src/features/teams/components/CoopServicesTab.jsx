@@ -189,7 +189,7 @@ const CoopServicesTab = ({ coop, amIOwner, amIAdmin, amIManager, pendingJobs, lo
                                 ))}
                             </div>
                         ) : (
-                            <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                            <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>No hay pedidos pendientes. Las contrataciones directas que reciba tu agencia aparecerán aquí.</p>
                             </div>
                         )}
@@ -271,7 +271,7 @@ const CoopServicesTab = ({ coop, amIOwner, amIAdmin, amIManager, pendingJobs, lo
                                     );
                                 })
                             ) : (
-                                <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                                <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
                                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Las postulaciones que la agencia envíe a proyectos aparecerán aquí.</p>
                                 </div>
                             )}
