@@ -121,9 +121,21 @@ const CoopServicesTab = ({ coop, amIOwner, amIAdmin, amIManager, pendingJobs, lo
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                             <h3 style={{ margin: 0 }}>Servicios Creados</h3>
                             {amIAdmin && coopServices.length < 3 && (
-                                <button className="btn-primary" onClick={handleCreateServiceClick} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                                    + Crear Servicio
-                                </button>
+                                (() => {
+                                    const activeMembersCount = coop.members?.filter(m => m.status !== 'left').length || 0;
+                                    if (activeMembersCount < 2) {
+                                        return (
+                                            <button className="btn-primary" disabled style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', opacity: 0.5, cursor: 'not-allowed' }} title="Necesitas al menos 2 miembros activos en la agencia para poder ofrecer servicios.">
+                                                + Crear Servicio
+                                            </button>
+                                        );
+                                    }
+                                    return (
+                                        <button className="btn-primary" onClick={handleCreateServiceClick} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                                            + Crear Servicio
+                                        </button>
+                                    );
+                                })()
                             )}
                         </div>
                         {coopServices.length > 0 ? (
@@ -133,7 +145,12 @@ const CoopServicesTab = ({ coop, amIOwner, amIAdmin, amIManager, pendingJobs, lo
                                 ))}
                             </div>
                         ) : (
-                            <p style={{ color: 'var(--text-muted)' }}>La agencia no ha creado ningún servicio aún. (Máximo 3).</p>
+                            <p style={{ color: 'var(--text-muted)' }}>
+                                {(coop.members?.filter(m => m.status !== 'left').length || 0) < 2 
+                                    ? "Necesitas reclutar al menos 1 miembro más en tu agencia para poder ofrecer servicios y recibir pedidos."
+                                    : "La agencia no ha creado ningún servicio aún. (Máximo 3)."
+                                }
+                            </p>
                         )}
                     </div>
 
