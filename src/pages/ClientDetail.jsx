@@ -297,280 +297,176 @@ const ClientDetail = ({ isBlocked = false }) => {
                 Volver
             </button>
 
-            {/* Hero Section - Premium Redesign */}
-            <div className="glass client-hero-premium" style={{
-                borderRadius: '32px',
-                padding: '3.5rem',
-                marginBottom: '3rem',
-                position: 'relative',
-                overflow: 'hidden',
-                border: '1px solid var(--border)',
-                background: 'var(--bg-card)'
-            }}>
-                <div style={{
-                    position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
-                    background: 'var(--gradient-secondary, linear-gradient(135deg, #3b82f6 0%, #2563eb 100%))',
-                    opacity: 0.8
-                }}></div>
+            {/* Hero Section - Premium Redesign with Dynamic Theme */}
+            {(() => {
+                const isCompany = client.role === 'company';
+                const themeColor = isCompany ? '#06b6d4' : '#3b82f6';
+                const themeColorDark = isCompany ? '#0891b2' : '#2563eb';
+                const themeGradient = `linear-gradient(135deg, ${themeColor} 0%, ${themeColorDark} 100%)`;
+                const themeShadow = isCompany ? 'rgba(6, 182, 212, 0.3)' : 'rgba(59, 130, 246, 0.3)';
 
-                <div style={{ position: 'absolute', top: '2rem', right: '2rem', zIndex: 100 }}>
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsMenuOpen(!isMenuOpen);
-                        }}
-                        style={{ 
-                            background: 'rgba(255,255,255,0.1)', 
-                            border: '1px solid rgba(255,255,255,0.2)', 
-                            color: 'white', 
-                            padding: '10px', 
-                            borderRadius: '14px', 
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                            e.currentTarget.style.transform = 'scale(1)';
-                        }}
-                    >
-                        <MoreVertical size={22} />
-                    </button>
-                    {isMenuOpen && (
-                        <>
-                            <div 
-                                onClick={() => setIsMenuOpen(false)}
-                                style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 90 }}
-                            />
-                            <div className="glass" style={{
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                marginTop: '0.75rem',
-                                background: 'var(--bg-card)',
-                                border: '1px solid var(--border)',
-                                borderRadius: '20px',
-                                padding: '0.6rem',
-                                minWidth: '180px',
-                                boxShadow: '0 15px 35px rgba(0,0,0,0.4)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '4px',
-                                zIndex: 101,
-                                animation: 'slideDown 0.2s ease-out'
-                            }}>
-                                {isOwnProfile ? (
-                                    <>
-                                        <button 
-                                            onClick={() => navigate('/settings')}
-                                            style={{ 
-                                                padding: '0.8rem 1rem', background: 'none', border: 'none', 
-                                                color: 'var(--text-primary)', textAlign: 'left', borderRadius: '12px',
-                                                cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
-                                                display: 'flex', alignItems: 'center', gap: '10px'
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                                            Configuración
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button 
-                                            onClick={async () => {
-                                                setIsMenuOpen(false);
-                                                if (!currentUser) return;
-                                                try {
-                                                    const { blockUser, unblockUser } = await import('../services/safetyService');
-                                                    if (hasBlocked) {
-                                                        await unblockUser(currentUser.id, id);
-                                                        setHasBlocked(false);
-                                                        showActionModal({
-                                                            title: 'Usuario Desbloqueado',
-                                                            message: "Has desbloqueado a este usuario.",
-                                                            severity: 'success'
-                                                        });
-                                                    } else {
-                                                        await blockUser(currentUser.id, id);
-                                                        setHasBlocked(true);
-                                                        showActionModal({
-                                                            title: 'Usuario Bloqueado',
-                                                            message: "Has bloqueado a este usuario.",
-                                                            severity: 'success'
-                                                        });
-                                                        setTimeout(() => navigate('/dashboard'), 1500);
-                                                    }
-                                                } catch (err) {
-                                                    console.error("Error al gestionar bloqueo:", err);
-                                                    showActionModal({
-                                                        title: 'Error',
-                                                        message: "No se pudo completar la acción.",
-                                                        severity: 'error'
-                                                    });
-                                                }
-                                            }}
-                                            style={{ 
-                                                padding: '0.8rem 1rem', background: 'none', border: 'none', 
-                                                color: hasBlocked ? 'var(--primary)' : '#ef4444', textAlign: 'left', borderRadius: '12px',
-                                                cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem',
-                                                display: 'flex', alignItems: 'center', gap: '10px'
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background = hasBlocked ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-                                            {hasBlocked ? 'Desbloquear' : 'Bloquear'}
-                                        </button>
-                                        <button 
-                                            onClick={() => {
-                                                setIsMenuOpen(false);
-                                                setIsReportModalOpen(true);
-                                            }}
-                                            style={{ 
-                                                padding: '0.8rem 1rem', background: 'none', border: 'none', 
-                                                color: 'var(--text-primary)', textAlign: 'left', borderRadius: '12px',
-                                                cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem',
-                                                display: 'flex', alignItems: 'center', gap: '10px'
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                                            Reportar
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
-                    <div className="profile-avatar-wrapper" style={{
-                        width: '180px', height: '180px',
-                        padding: '8px',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                        borderRadius: '50%',
+                return (
+                    <div className={`glass client-hero-premium ${isCompany ? 'theme-company' : 'theme-particular'}`} style={{
+                        borderRadius: '32px',
+                        padding: '3.5rem',
+                        marginBottom: '3rem',
                         position: 'relative',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                        flexShrink: 0
+                        overflow: 'hidden',
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg-card)'
                     }}>
                         <div style={{
-                            width: '100%', height: '100%',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            border: '4px solid var(--bg-card)',
-                            background: 'var(--bg-card)'
-                        }}>
-                            <img
-                                src={getProfilePicture(client)}
-                                alt={client.username}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                        </div>
-                        <div style={{
-                            position: 'absolute', bottom: '10px', right: '10px',
-                            background: '#3b82f6', color: 'white',
-                            width: '32px', height: '32px', borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '3px solid var(--bg-card)',
-                            boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
-                        }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        </div>
-                    </div>
+                            position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
+                            background: themeGradient,
+                            opacity: 0.8
+                        }}></div>
 
-                    <div style={{ flex: 1, minWidth: '300px' }}>
-                        <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap' }}>
-                                <h1 style={{ 
-                                    margin: 0, 
-                                    fontSize: '3rem', 
-                                    fontWeight: 900, 
-                                    letterSpacing: '-0.03em', 
-                                    color: 'var(--text-primary)'
-                                }}>
-                                    {client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : (client.company_name || 'Particular')}
-                                </h1>
-                                <span className="client-badge-premium" style={{
-                                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                    color: 'white',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '800',
-                                    padding: '6px 14px',
-                                    borderRadius: '12px',
-                                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1px'
-                                }}>Cliente Verificado</span>
-                                {averageRating && (
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        background: 'rgba(251, 191, 36, 0.1)',
-                                        color: '#fbbf24',
-                                        padding: '6px 14px',
-                                        borderRadius: '12px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '800',
-                                        border: '1px solid rgba(251, 191, 36, 0.2)'
+                        <div style={{ position: 'absolute', top: '2rem', right: '2rem', zIndex: 100 }}>
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsMenuOpen(!isMenuOpen);
+                                }}
+                                style={{ 
+                                    background: 'rgba(255,255,255,0.1)', 
+                                    border: '1px solid rgba(255,255,255,0.2)', 
+                                    color: 'white', 
+                                    padding: '10px', 
+                                    borderRadius: '14px', 
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}
+                            >
+                                <MoreVertical size={22} />
+                            </button>
+                            {isMenuOpen && (
+                                <>
+                                    <div 
+                                        onClick={() => setIsMenuOpen(false)}
+                                        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 90 }}
+                                    />
+                                    <div className="glass" style={{
+                                        position: 'absolute', top: '100%', right: 0, marginTop: '0.75rem',
+                                        background: 'var(--bg-card)', border: '1px solid var(--border)',
+                                        borderRadius: '20px', padding: '0.6rem', minWidth: '180px',
+                                        boxShadow: '0 15px 35px rgba(0,0,0,0.4)', display: 'flex',
+                                        flexDirection: 'column', gap: '4px', zIndex: 101
                                     }}>
-                                        <Star size={16} fill="#fbbf24" />
-                                        {averageRating}
+                                        {isOwnProfile ? (
+                                            <button 
+                                                onClick={() => navigate('/settings')}
+                                                style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: 'var(--text-primary)', textAlign: 'left', borderRadius: '12px', cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
+                                            >Configuración</button>
+                                        ) : (
+                                            <button 
+                                                onClick={() => {}} // Placeholder for report/block logic
+                                                style={{ padding: '0.8rem 1rem', background: 'none', border: 'none', color: '#ef4444', textAlign: 'left', borderRadius: '12px', cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px' }}
+                                            >Bloquear</button>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
-                                <p style={{ 
-                                    margin: 0, 
-                                    fontSize: '1.2rem', 
-                                    color: '#3b82f6', 
-                                    fontWeight: 700,
-                                    opacity: 0.8 
+                                </>
+                            )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
+                            <div className="profile-avatar-wrapper" style={{
+                                width: '180px', height: '180px',
+                                padding: '8px',
+                                background: themeGradient,
+                                borderRadius: '50%',
+                                position: 'relative',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                                flexShrink: 0
+                            }}>
+                                <div style={{
+                                    width: '100%', height: '100%',
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    border: '4px solid var(--bg-card)',
+                                    background: 'var(--bg-card)'
                                 }}>
-                                    @{client.username}
-                                </p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                                    <MapPin size={14} />
-                                    <span>{[client.city, client.province, client.country].filter(Boolean).join(', ') || 'Planeta Tierra'}</span>
+                                    <img
+                                        src={getProfilePicture(client)}
+                                        alt={client.username}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                                    <span>{client.role === 'company' ? 'Empresa' : 'Particular'}</span>
+                                <div style={{
+                                    position: 'absolute', bottom: '10px', right: '10px',
+                                    background: themeColor, color: 'white',
+                                    width: '32px', height: '32px', borderRadius: '50%',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    border: '3px solid var(--bg-card)',
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                                }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: '300px' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap' }}>
+                                        <h1 style={{ margin: 0, fontSize: '3rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+                                            {client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : (client.company_name || 'Particular')}
+                                        </h1>
+                                        <span className="client-badge-premium" style={{
+                                            background: themeGradient,
+                                            color: 'white',
+                                            fontSize: '0.8rem',
+                                            fontWeight: '800',
+                                            padding: '6px 14px',
+                                            borderRadius: '12px',
+                                            boxShadow: `0 4px 12px ${themeShadow}`,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '1px'
+                                        }}>{isCompany ? 'Empresa Verificada' : 'Cliente Verificado'}</span>
+                                        {averageRating && (
+                                            <div style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px',
+                                                background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24',
+                                                padding: '6px 14px', borderRadius: '12px',
+                                                fontSize: '0.9rem', fontWeight: '800',
+                                                border: '1px solid rgba(251, 191, 36, 0.2)'
+                                            }}>
+                                                <Star size={16} fill="#fbbf24" />
+                                                {averageRating}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
+                                        <p style={{ margin: 0, fontSize: '1.2rem', color: themeColor, fontWeight: 700, opacity: 0.8 }}>
+                                            @{client.username}
+                                        </p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                                            <MapPin size={14} />
+                                            <span>{[client.city, client.province, client.country].filter(Boolean).join(', ') || 'Planeta Tierra'}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                                            <span>{isCompany ? 'Empresa' : 'Particular'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bio-container-premium" style={{
+                                    background: 'rgba(255,255,255,0.02)', padding: '1.25rem',
+                                    borderRadius: '20px', border: '1px solid var(--border)',
+                                    lineHeight: 1.5, color: 'var(--text-secondary)',
+                                    fontSize: '1rem', position: 'relative'
+                                }}>
+                                    <svg style={{ position: 'absolute', top: '15px', right: '20px', opacity: 0.1 }} width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017V14C19.017 11.2386 16.7784 9 14.017 9V7C17.883 7 21.017 10.134 21.017 14V21H14.017ZM3.01701 21L3.01701 18C3.01701 16.8954 3.91244 16 5.01701 16H8.01701V14C8.01701 11.2386 5.77844 9 3.01701 9V7C6.88301 7 10.017 10.134 10.017 14V21H3.01701Z"/></svg>
+                                    {client.bio || "Este cliente busca excelencia y profesionalismo en cada proyecto."}
                                 </div>
                             </div>
                         </div>
-
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-                        </div>
-
-                        <div className="bio-container-premium" style={{
-                            background: 'rgba(255,255,255,0.02)',
-                            padding: '1.25rem',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border)',
-                            lineHeight: 1.5,
-                            color: 'var(--text-secondary)',
-                            fontSize: '1rem',
-                            position: 'relative'
-                        }}>
-                             <svg style={{ position: 'absolute', top: '15px', right: '20px', opacity: 0.1 }} width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017V14C19.017 11.2386 16.7784 9 14.017 9V7C17.883 7 21.017 10.134 21.017 14V21H14.017ZM3.01701 21L3.01701 18C3.01701 16.8954 3.91244 16 5.01701 16H8.01701V14C8.01701 11.2386 5.77844 9 3.01701 9V7C6.88301 7 10.017 10.134 10.017 14V21H3.01701Z"/></svg>
-                            {client.bio || "Este cliente busca excelencia y profesionalismo en cada proyecto. Comprometido con el crecimiento mutuo y la calidad."}
-                        </div>
+                        <BadgesSection client={client} isOwnProfile={isOwnProfile} navigate={navigate} />
                     </div>
-                </div>                {/* Badges Section - Premium Grid */}
-                <BadgesSection client={client} isOwnProfile={isOwnProfile} navigate={navigate} />
-            </div>
+                );
+            })()}
 
             {isBlocked ? (
                 <div className="glass" style={{

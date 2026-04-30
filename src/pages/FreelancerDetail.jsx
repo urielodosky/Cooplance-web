@@ -354,7 +354,7 @@ const FreelancerDetail = ({ isBlocked = false }) => {
             }}>
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                     opacity: 0.8
                 }}></div>
 
@@ -503,7 +503,7 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                     <div className="profile-avatar-wrapper" style={{
                         width: '180px', height: '180px',
                         padding: '8px',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
                         borderRadius: '50%',
                         position: 'relative',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.3)',

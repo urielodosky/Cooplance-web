@@ -117,7 +117,7 @@ const TeamPublicProfile = () => {
                 {/* Accent bar */}
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                     opacity: 0.8
                 }}></div>
 
@@ -126,7 +126,7 @@ const TeamPublicProfile = () => {
                     <div className="profile-avatar-wrapper" style={{
                         width: '180px', height: '180px',
                         padding: '8px',
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                         borderRadius: '50%',
                         position: 'relative',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
@@ -143,7 +143,7 @@ const TeamPublicProfile = () => {
                             {team.avatar ? (
                                 <img src={team.avatar} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
-                                <div style={{ fontSize: '4rem', fontWeight: 900, color: 'var(--primary)' }}>{team.name?.charAt(0).toUpperCase()}</div>
+                                <div style={{ fontSize: '4rem', fontWeight: 900, color: '#fbbf24' }}>{team.name?.charAt(0).toUpperCase()}</div>
                             )}
                         </div>
                     </div>
@@ -158,13 +158,13 @@ const TeamPublicProfile = () => {
                                     {team.name}
                                 </h1>
                                 <span style={{
-                                    background: 'rgba(16, 185, 129, 0.1)',
-                                    color: '#10b981',
+                                    background: 'rgba(251, 191, 36, 0.1)',
+                                    color: '#fbbf24',
                                     fontSize: '0.8rem',
                                     fontWeight: '800',
                                     padding: '6px 14px',
                                     borderRadius: '12px',
-                                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                                    border: '1px solid rgba(251, 191, 36, 0.2)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px'
                                 }}>Agencia</span>

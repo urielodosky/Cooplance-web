@@ -261,7 +261,7 @@ const CompanyDetail = () => {
             }}>
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '6px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
                     opacity: 0.8
                 }}></div>
 
@@ -352,7 +352,7 @@ const CompanyDetail = () => {
                     <div className="company-logo-wrapper" style={{
                         width: '180px', height: '180px',
                         padding: '8px',
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
                         borderRadius: '50%',
                         position: 'relative',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
@@ -396,13 +396,13 @@ const CompanyDetail = () => {
                                     {company.company_name || company.first_name || 'Empresa Cooplance'}
                                 </h1>
                                 <span className="company-badge-premium" style={{
-                                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                                    background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
                                     color: 'white',
                                     fontSize: '0.8rem',
                                     fontWeight: '800',
                                     padding: '6px 14px',
                                     borderRadius: '12px',
-                                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                                    boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px'
                                 }}>Empresa Verificada</span>
@@ -428,7 +428,7 @@ const CompanyDetail = () => {
                                 <p style={{ 
                                     margin: 0, 
                                     fontSize: '1.2rem', 
-                                    color: '#6366f1', 
+                                    color: '#06b6d4', 
                                     fontWeight: 700,
                                     opacity: 0.8 
                                 }}>
