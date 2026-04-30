@@ -217,8 +217,9 @@ const MyCoops = () => {
                                         </div>
                                         <div>
                                             <h3 style={{ fontSize: '1.4rem', margin: '0 0 0.4rem 0', color: 'var(--text-primary)', lineHeight: '1.2' }}>{team.name}</h3>
-                                            <span style={{ padding: '0.2rem 0.6rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                                Nivel {team.level || 1}
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', borderRadius: '8px', background: 'rgba(255, 215, 0, 0.1)', color: '#ffd700', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.5px', border: '1px solid rgba(255, 215, 0, 0.2)' }}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                                {team.rating ? Number(team.rating).toFixed(1) : '5.0'}
                                             </span>
                                         </div>
                                     </div>
