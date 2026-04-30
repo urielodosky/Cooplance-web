@@ -844,7 +844,7 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                                 {memberTeams.map(team => {
                                     const role = team.members.find(m => m.user_id === id)?.role || 'Miembro';
                                     return (
-                                        <div key={team.id} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border)', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => navigate(`/coop/${team.id}`)}>
+                                        <div key={team.id} className="glass" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border)', transition: 'transform 0.2s', cursor: 'pointer' }} onClick={() => navigate(`/coop/${team.id}/public`)}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                                                 <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>
                                                     {team.name.charAt(0).toUpperCase()}

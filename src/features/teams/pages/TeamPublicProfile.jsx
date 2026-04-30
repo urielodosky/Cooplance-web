@@ -30,11 +30,11 @@ const TeamPublicProfile = () => {
                 if (teamError) throw teamError;
 
                 // Fetch member profiles
-                const memberIds = teamData.members.map(m => m.user_id);
+                const memberIds = (teamData.members || []).map(m => m.user_id);
                 if (memberIds.length > 0) {
                     const { data: profiles } = await supabase
                         .from('profiles')
-                        .select('id, username, avatar_url, first_name, last_name')
+                        .select('id, username, avatar_url, first_name, last_name, level, rating')
                         .in('id', memberIds);
                     
                     if (profiles) {
@@ -68,8 +68,11 @@ const TeamPublicProfile = () => {
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="loading-spinner"></div></div>;
     if (!team) return <div className="container" style={{ padding: '4rem', textAlign: 'center' }}><h2>Equipo no encontrado.</h2><button className="btn-secondary" onClick={() => navigate(-1)}>Volver</button></div>;
 
-    const isPendingMember = team.members.some(m => m.user_id === user?.id && m.status === 'pending');
-    const activeMembers = team.members.filter(m => m.status === 'active' || m.role === 'owner');
+    const isPendingMember = (team.members || []).some(m => m.user_id === user?.id && m.status === 'pending');
+    const activeMembers = (team.members || []).filter(m => m.status === 'active' || m.role === 'owner');
+    
+    // Fallback to team.stats.avgRating if available, otherwise 0
+    const rating = team.stats?.avgRating || 0;
 
     const handleInviteResponse = async (accept) => {
         try {
@@ -98,25 +101,25 @@ const TeamPublicProfile = () => {
                         boxShadow: '0 10px 30px rgba(139, 92, 246, 0.4)',
                         overflow: 'hidden'
                     }}>
-                        {team.avatar ? <img src={team.avatar} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : team.name.charAt(0).toUpperCase()}
+                        {team.avatar ? <img src={team.avatar} alt={team.name || 'Coop'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (team.name?.charAt(0)?.toUpperCase() || 'C')}
                     </div>
                     
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
-                        <h1 style={{ fontSize: '2.5rem', margin: 0 }}>{team.name}</h1>
+                        <h1 style={{ fontSize: '2.5rem', margin: 0 }}>{team.name || 'Agencia sin nombre'}</h1>
                         <div style={{ 
-                            background: team.rating > 0 ? 'rgba(251, 191, 36, 0.15)' : 'rgba(16, 185, 129, 0.15)', 
-                            color: team.rating > 0 ? '#fbbf24' : '#10b981', 
+                            background: rating > 0 ? 'rgba(251, 191, 36, 0.15)' : 'rgba(16, 185, 129, 0.15)', 
+                            color: rating > 0 ? '#fbbf24' : '#10b981', 
                             padding: '0.4rem 1rem', 
                             borderRadius: '12px', 
                             fontSize: '1.2rem', 
                             fontWeight: '800',
-                            border: `1px solid ${team.rating > 0 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+                            border: `1px solid ${rating > 0 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.3rem'
                         }}>
-                            {team.rating > 0 ? (
-                                <>★ {team.rating.toFixed(1)}</>
+                            {rating > 0 ? (
+                                <>★ {rating.toFixed(1)}</>
                             ) : (
                                 "NUEVO"
                             )}
@@ -202,7 +205,7 @@ const TeamPublicProfile = () => {
             <div className="glass" style={{ padding: '2.5rem', borderRadius: '24px', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                     <h3 style={{ margin: 0, fontSize: '1.5rem' }}>Reseñas Recibidas</h3>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>★ {team.rating > 0 ? team.rating.toFixed(1) : '0.0'}</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>★ {rating > 0 ? rating.toFixed(1) : '0.0'}</div>
                 </div>
                 
                 {reviews.length > 0 ? (

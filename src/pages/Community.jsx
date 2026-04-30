@@ -250,7 +250,7 @@ const UserCard = ({ profile, teams = [], navigate }) => {
                     alignItems: 'center',
                     gap: '8px',
                     cursor: 'pointer'
-                }} onClick={() => navigate(`/coop/${teams[0].id}`)}>
+                }} onClick={() => navigate(`/coop/${teams[0].id}/public`)}>
                     <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.7rem', fontWeight: 'bold' }}>
                         {teams[0].name?.charAt(0).toUpperCase()}
                     </div>
@@ -276,7 +276,7 @@ const TeamCard = ({ team, navigate }) => {
         }}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <div 
-                    onClick={() => navigate(`/coop/${team.id}`)}
+                    onClick={() => navigate(`/coop/${team.id}/public`)}
                     style={{
                         width: '64px',
                         height: '64px',
@@ -315,7 +315,7 @@ const TeamCard = ({ team, navigate }) => {
                     {team.members_count || 0} Miembros activos
                 </span>
                 <button 
-                    onClick={() => navigate(`/coop/${team.id}`)}
+                    onClick={() => navigate(`/coop/${team.id}/public`)}
                     className="btn-primary"
                     style={{ 
                         padding: '0.5rem 1rem', 
