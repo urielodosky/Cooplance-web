@@ -198,7 +198,7 @@ const CoopServicesTab = ({ coop, amIOwner, amIAdmin, amIManager, pendingJobs, lo
                     {/* POSTULACIONES ENVIADAS */}
                     <div className="glass" style={{ padding: '2rem', borderRadius: '24px' }}>
                         <h3 style={{ margin: '0 0 2rem 0' }}>Postulaciones Enviadas</h3>
-                        <div className="dashboard-list-scroll">
+                        <div className={proposals.length > 0 ? "dashboard-list-scroll" : ""}>
                             {loadingProposals ? (
                                 <div style={{ textAlign: 'center', padding: '3rem' }}>Cargando postulaciones...</div>
                             ) : proposals.length > 0 ? (
