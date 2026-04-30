@@ -368,7 +368,36 @@ const CoopDetail = () => {
 
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     {amIOwner && (
-                        <button className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }} onClick={() => setIsInviteModalOpen(true)}>
+                        <button 
+                            style={{ 
+                                padding: '0.6rem 1.4rem', 
+                                fontSize: '0.9rem',
+                                background: 'rgba(139, 92, 246, 0.1)',
+                                border: '1px solid rgba(139, 92, 246, 0.3)',
+                                color: 'var(--primary)',
+                                borderRadius: '100px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            }} 
+                            onClick={() => setIsInviteModalOpen(true)}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.background = 'var(--primary)';
+                                e.currentTarget.style.color = 'white';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.4)';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+                                e.currentTarget.style.color = 'var(--primary)';
+                                e.currentTarget.style.boxShadow = 'none';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                             Invitar Miembros
                         </button>
                     )}
@@ -907,12 +936,52 @@ const CoopDetail = () => {
                         {inviteError && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '1.5rem' }}>{inviteError}</p>}
 
                         <div style={{ display: 'flex', gap: '0.8rem' }}>
-                            <button onClick={() => setIsInviteModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }}>Cancelar</button>
+                            <button 
+                                onClick={() => setIsInviteModalOpen(false)} 
+                                style={{ 
+                                    flex: 1, 
+                                    padding: '0.8rem', 
+                                    borderRadius: '14px', 
+                                    background: 'rgba(255,255,255,0.05)', 
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: 'var(--text-secondary)',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'white'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                            >
+                                Cancelar
+                            </button>
                             <button 
                                 onClick={handleSendInvite} 
-                                className="btn-primary" 
-                                style={{ flex: 1, padding: '0.8rem' }}
+                                style={{ 
+                                    flex: 1, 
+                                    padding: '0.8rem', 
+                                    borderRadius: '14px', 
+                                    background: searchResult ? 'var(--primary)' : 'rgba(139, 92, 246, 0.2)',
+                                    border: 'none',
+                                    color: 'white',
+                                    fontWeight: '700',
+                                    cursor: searchResult ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.3s',
+                                    opacity: isInviting ? 0.7 : 1,
+                                    boxShadow: searchResult ? '0 4px 15px rgba(139, 92, 246, 0.3)' : 'none'
+                                }}
                                 disabled={!searchResult || isInviting}
+                                onMouseOver={(e) => { 
+                                    if(searchResult) {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.5)';
+                                    }
+                                }}
+                                onMouseOut={(e) => { 
+                                    if(searchResult) {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(139, 92, 246, 0.3)';
+                                    }
+                                }}
                             >
                                 {isInviting ? 'Enviando...' : 'Enviar Invitación'}
                             </button>
