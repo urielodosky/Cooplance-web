@@ -69,6 +69,12 @@ const CoopDetail = () => {
     const hasAcceptedRules = myMember?.accepted_rules_at !== null;
 
     useEffect(() => {
+        if (!loading && coop && !amIMember) {
+            navigate(`/coop/${coopId}/public`, { replace: true });
+        }
+    }, [loading, coop, amIMember, navigate, coopId]);
+
+    useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);

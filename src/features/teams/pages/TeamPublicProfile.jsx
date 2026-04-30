@@ -1,75 +1,140 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useTeams } from '../../../context/TeamContext';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../features/auth/context/AuthContext';
-import ReportModal from '../../../components/common/ReportModal';
+import { useTeams } from '../../../context/TeamContext';
+import ServiceCard from '../../services/components/ServiceCard';
 import '../../../styles/main.scss';
 
 const TeamPublicProfile = () => {
     const { teamId } = useParams();
     const navigate = useNavigate();
-    const { getPublicProfile, respondToInvite } = useTeams();
     const { user } = useAuth();
+    const { respondToInvite } = useTeams();
+    
     const [team, setTeam] = useState(null);
+    const [services, setServices] = useState([]);
+    const [reviews, setReviews] = useState([]); // Future implementation
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     useEffect(() => {
-        const fetchTeam = async () => {
+        const fetchTeamData = async () => {
             try {
-                const data = await getPublicProfile(teamId);
-                setTeam(data);
+                // Fetch team with members
+                const { data: teamData, error: teamError } = await supabase
+                    .from('coops')
+                    .select('*, members:coop_members(*)')
+                    .eq('id', teamId)
+                    .single();
+
+                if (teamError) throw teamError;
+
+                // Fetch member profiles
+                const memberIds = teamData.members.map(m => m.user_id);
+                if (memberIds.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('id, username, avatar_url, first_name, last_name')
+                        .in('id', memberIds);
+                    
+                    if (profiles) {
+                        teamData.members = teamData.members.map(m => ({
+                            ...m,
+                            profile: profiles.find(p => p.id === m.user_id) || null
+                        }));
+                    }
+                }
+
+                setTeam(teamData);
+
+                // Fetch team services (matching teamId in config)
+                const { data: servicesData } = await supabase
+                    .from('services')
+                    .select('*, profiles:freelancer_id(*)')
+                    .eq('config->>teamId', teamId);
+                
+                setServices(servicesData || []);
+
             } catch (err) {
-                setError("No se pudo cargar el perfil del equipo.");
+                console.error("Error fetching team profile:", err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchTeam();
-    }, [teamId, getPublicProfile]);
 
-    if (loading) return <div className="loading-spinner"></div>;
-    if (error) return <div className="container" style={{ padding: '4rem' }}><h2>Error: {error}</h2></div>;
-    if (!team) return null;
+        if (teamId) fetchTeamData();
+    }, [teamId]);
+
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}><div className="loading-spinner"></div></div>;
+    if (!team) return <div className="container" style={{ padding: '4rem', textAlign: 'center' }}><h2>Equipo no encontrado.</h2><button className="btn-secondary" onClick={() => navigate(-1)}>Volver</button></div>;
 
     const isPendingMember = team.members.some(m => m.user_id === user?.id && m.status === 'pending');
+    const activeMembers = team.members.filter(m => m.status === 'active' || m.role === 'owner');
 
     const handleInviteResponse = async (accept) => {
         try {
             await respondToInvite(team.id, accept);
-            if (accept) {
-                const updatedTeam = await getPublicProfile(team.id);
-                setTeam(updatedTeam);
-            } else {
-                navigate(-1);
-            }
+            if (!accept) navigate(-1);
+            else window.location.reload(); // Quick refresh to load dashboard
         } catch (e) {
             alert(e.message);
         }
     };
 
     return (
-        <div className="container" style={{ padding: '4rem 1rem', maxWidth: '1000px' }}>
-            <button onClick={() => navigate(-1)} style={{ marginBottom: '1rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>← Volver</button>
+        <div className="container" style={{ padding: '4rem 1rem', maxWidth: '900px', margin: '0 auto' }}>
+            <button onClick={() => navigate(-1)} style={{ marginBottom: '2rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Volver
+            </button>
 
-            {/* Header */}
-            <div className="glass" style={{ padding: '2rem', borderRadius: '24px', marginBottom: '2rem', display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ width: '100px', height: '100px', borderRadius: '30px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', fontWeight: 'bold', boxShadow: '0 10px 30px rgba(139, 92, 246, 0.4)' }}>
-                    {team.name.charAt(0)}
-                </div>
-                <div style={{ flex: 1 }}>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }}>{team.name}</h1>
+            {/* TEAM HEADER & BASIC INFO */}
+            <div className="glass" style={{ padding: '3rem', borderRadius: '24px', marginBottom: '2rem', textAlign: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ 
+                        width: '120px', height: '120px', borderRadius: '50%', 
+                        background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        fontSize: '3.5rem', fontWeight: 'bold', color: 'white',
+                        boxShadow: '0 10px 30px rgba(139, 92, 246, 0.4)',
+                        overflow: 'hidden'
+                    }}>
+                        {team.avatar ? <img src={team.avatar} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : team.name.charAt(0).toUpperCase()}
+                    </div>
                     
-                    {/* Categories Chips */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '1.2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+                        <h1 style={{ fontSize: '2.5rem', margin: 0 }}>{team.name}</h1>
+                        <div style={{ 
+                            background: team.rating > 0 ? 'rgba(251, 191, 36, 0.15)' : 'rgba(16, 185, 129, 0.15)', 
+                            color: team.rating > 0 ? '#fbbf24' : '#10b981', 
+                            padding: '0.4rem 1rem', 
+                            borderRadius: '12px', 
+                            fontSize: '1.2rem', 
+                            fontWeight: '800',
+                            border: `1px solid ${team.rating > 0 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                        }}>
+                            {team.rating > 0 ? (
+                                <>★ {team.rating.toFixed(1)}</>
+                            ) : (
+                                "NUEVO"
+                            )}
+                        </div>
+                    </div>
+
+                    <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '600px', margin: '1.5rem auto' }}>
+                        {team.description || "Esta agencia aún no ha agregado una descripción."}
+                    </p>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', justifyContent: 'center' }}>
                         {(team.categories || []).map((cat, i) => (
                             <span key={i} style={{ 
                                 background: 'rgba(139, 92, 246, 0.1)', 
                                 color: '#a78bfa', 
-                                padding: '0.4rem 1rem', 
-                                borderRadius: '12px', 
-                                fontSize: '0.85rem', 
+                                padding: '0.5rem 1.2rem', 
+                                borderRadius: '14px', 
+                                fontSize: '0.9rem', 
                                 fontWeight: '600',
                                 border: '1px solid rgba(139, 92, 246, 0.2)'
                             }}>
@@ -77,156 +142,80 @@ const TeamPublicProfile = () => {
                             </span>
                         ))}
                     </div>
+                </div>
 
-                    <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '600px', marginBottom: '1.5rem' }}>{team.description}</p>
-
-                    {isPendingMember && (
-                        <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                            <span style={{ color: 'var(--primary)', fontWeight: '600' }}>Tienes una invitación pendiente de esta Coop.</span>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => handleInviteResponse(true)} className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>Aceptar</button>
-                                <button onClick={() => handleInviteResponse(false)} className="btn btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>Rechazar</button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '12px' }}>
-                            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Reputación</span>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>★ {team.stats?.avgRating || 0}</span>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '12px' }}>
-                            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Proyectos</span>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{team.stats?.totalProjects || 0}</span>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '12px' }}>
-                            <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Miembros</span>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{team.members.filter(m => m.status === 'active').length}</span>
+                {isPendingMember && (
+                    <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--primary)', marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                        <span style={{ color: 'var(--primary)', fontWeight: '600', fontSize: '1.1rem' }}>Tienes una invitación pendiente para unirte a esta agencia.</span>
+                        <div style={{ display: 'flex', gap: '0.8rem' }}>
+                            <button onClick={() => handleInviteResponse(false)} className="btn-secondary" style={{ padding: '0.6rem 1.2rem' }}>Rechazar</button>
+                            <button onClick={() => handleInviteResponse(true)} className="btn-primary" style={{ padding: '0.6rem 1.2rem' }}>Aceptar Invitación</button>
                         </div>
                     </div>
+                )}
+            </div>
+
+            {/* MEMBERS SECTION */}
+            <div className="glass" style={{ padding: '2.5rem', borderRadius: '24px', marginBottom: '2rem' }}>
+                <h3 style={{ margin: '0 0 2rem 0', fontSize: '1.5rem' }}>Equipo ({activeMembers.length})</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                    {activeMembers.map(member => (
+                        <div key={member.user_id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border)' }}>
+                            <Link to={`/freelancer/${member.user_id}`} style={{ display: 'block' }}>
+                                <div style={{ width: '50px', height: '50px', borderRadius: '14px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '1.2rem', overflow: 'hidden' }}>
+                                    {member.profile?.avatar_url ? <img src={member.profile.avatar_url} alt={member.profile.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (member.profile?.username?.charAt(0).toUpperCase() || 'U')}
+                                </div>
+                            </Link>
+                            <div style={{ flex: 1 }}>
+                                <Link to={`/freelancer/${member.user_id}`} style={{ textDecoration: 'none' }}>
+                                    <h4 style={{ margin: '0 0 0.3rem 0', color: 'var(--text-primary)', fontSize: '1.1rem' }}>
+                                        {member.profile?.first_name ? `${member.profile.first_name} ${member.profile.last_name || ''}` : member.profile?.username}
+                                    </h4>
+                                </Link>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.85rem' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>@{member.profile?.username}</span>
+                                    <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>• Nivel {member.profile?.level || 1}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* SERVICES SECTION */}
+            <div className="glass" style={{ padding: '2.5rem', borderRadius: '24px', marginBottom: '2rem' }}>
+                <h3 style={{ margin: '0 0 2rem 0', fontSize: '1.5rem' }}>Servicios de la Agencia</h3>
+                {services.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                        {services.map(service => (
+                            <ServiceCard key={service.id} service={{...service, level: 1}} />
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', margin: 0 }}>Esta agencia no tiene servicios publicados aún.</p>
+                    </div>
+                )}
+            </div>
+
+            {/* REVIEWS SECTION */}
+            <div className="glass" style={{ padding: '2.5rem', borderRadius: '24px', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.5rem' }}>Reseñas Recibidas</h3>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>★ {team.rating > 0 ? team.rating.toFixed(1) : '0.0'}</div>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '1rem', marginLeft: 'auto', alignSelf: 'flex-start' }}>
-                    <button 
-                        onClick={() => setIsReportModalOpen(true)}
-                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '0.6rem 1rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer' }}
-                    >
-                        Reportar Agencia
-                    </button>
-                </div>
+                {reviews.length > 0 ? (
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                        {/* Map reviews here when available */}
+                    </div>
+                ) : (
+                    <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', margin: 0 }}>La agencia aún no tiene reseñas de clientes.</p>
+                    </div>
+                )}
             </div>
 
-            <ReportModal 
-                isOpen={isReportModalOpen}
-                onClose={() => setIsReportModalOpen(false)}
-                reportedId={team.id}
-                referenceType="coop"
-                itemName={team.name}
-            />
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 1fr', gap: '2rem' }}>
-
-                {/* Left Column: Transparency & History */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                    {/* Transparency Metrics */}
-                    <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px' }}>
-                        <h3 className="section-title" style={{ marginBottom: '1.5rem' }}>Transparencia</h3>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                            <span>Tasa de Rotación Histórica</span>
-                            <span style={{ fontWeight: 'bold', color: parseFloat(team.metrics.rotationRate) > 30 ? '#ef4444' : '#10b981' }}>{team.metrics.rotationRate}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Tiempo Promedio Entrega</span>
-                            <span style={{ fontWeight: 'bold' }}>{team.metrics.avgDeliveryTime}</span>
-                        </div>
-                    </div>
-
-                    {/* Ex-Members History */}
-                    <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px' }}>
-                        <h3 className="section-title" style={{ marginBottom: '1rem' }}>Historial de Miembros</h3>
-
-                        {team.members.filter(m => m.status === 'left').length === 0 ? (
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No hay registros de salidas.</p>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                                {team.members.filter(m => m.status === 'left').map(m => (
-                                    <div key={m.user_id} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '12px', fontSize: '0.9rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                                            <span style={{ fontWeight: '600' }}>{m.username}</span>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Salió: {new Date(m.leftAt).toLocaleDateString()}</span>
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rol anterior: {m.role}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Name History */}
-                    {team.nameHistory && team.nameHistory.length > 0 && (
-                        <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px' }}>
-                            <h3 className="section-title" style={{ marginBottom: '1rem', color: '#f59e0b' }}>Historial de Nombres</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {team.nameHistory.map((h, i) => (
-                                    <div key={i} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>{h.oldName}</span>
-                                        <span style={{ fontSize: '0.8rem' }}>{new Date(h.changedAt).toLocaleDateString()}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Column: Current Team & Services */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                    {/* Active Members */}
-                    <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px' }}>
-                        <h3 className="section-title" style={{ marginBottom: '1rem' }}>Equipo Activo</h3>
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            {team.members.filter(m => m.status === 'active').map(member => (
-                                <div key={member.user_id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-                                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                                        {member.username.charAt(0)}
-                                    </div>
-                                    <div className="team-text-info">
-                                        <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>{member.username}</h2>
-                                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.1rem' }}>
-                                            {(team.categories || []).slice(0, 2).map((cat, i) => (
-                                                <span key={i} style={{ fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '4px', color: 'var(--text-muted)' }}>{cat}</span>
-                                            ))}
-                                            {team.categories?.length > 2 && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>+1</span>}
-                                        </div>
-                                    </div>
-                                    <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        {member.role === 'owner' ? 'Fundador' : member.role} • Nivel {member.level}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Services */}
-                    <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px' }}>
-                        <h3 className="section-title" style={{ marginBottom: '1rem' }}>Servicios</h3>
-                        {team.services && team.services.length > 0 ? (
-                            <div style={{ display: 'grid', gap: '0.8rem' }}>
-                                {team.services.map(s => (
-                                    <div key={s.id} style={{ padding: '1rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}>
-                                        <div style={{ fontWeight: '600', marginBottom: '0.3rem' }}>{s.title}</div>
-                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{s.price}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p style={{ color: 'var(--text-secondary)' }}>Este equipo no ofrece servicios públicos aún.</p>
-                        )}
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };
