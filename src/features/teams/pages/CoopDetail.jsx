@@ -368,7 +368,7 @@ const CoopDetail = () => {
 
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     {amIOwner && (
-                        <button className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }} onClick={() => navigate(`/coop/${coop.id}/invite`)}>
+                        <button className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }} onClick={() => setIsInviteModalOpen(true)}>
                             Invitar Miembros
                         </button>
                     )}
