@@ -133,7 +133,7 @@ const CompanyDetail = () => {
         : null;
 
     // V23: Strict access control for U18 Freelancers
-    const isU18Freelancer = currentUser?.role === 'freelancer' && calculateAge(currentUser.dob) < 18;
+    const isU18Freelancer = currentUser?.role === 'freelancer' && currentUser?.dob && calculateAge(currentUser.dob) < 18;
 
     useEffect(() => {
         if (isU18Freelancer) {
