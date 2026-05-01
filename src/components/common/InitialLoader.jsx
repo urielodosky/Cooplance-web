@@ -75,6 +75,10 @@ const InitialLoader = () => {
                     </AnimatePresence>
                 </div>
             </motion.div>
+
+            {/* Background elements for depth */}
+            <div style={bgBlob1} />
+            <div style={bgBlob2} />
         </div>
     );
 };
@@ -86,19 +90,21 @@ const containerStyle = {
     alignItems: 'center',
     height: '100vh',
     width: '100vw',
-    backgroundColor: '#0A0F1C', // Deep premium dark blue
+    backgroundColor: '#05070a', // Unified ultra dark
     position: 'fixed',
     top: 0,
     left: 0,
     zIndex: 9999,
-    fontFamily: '"Inter", sans-serif'
+    fontFamily: '"Outfit", "Inter", sans-serif',
+    overflow: 'hidden'
 };
 
 const contentStyle = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '32px'
+    gap: '32px',
+    zIndex: 10
 };
 
 const logoStyle = {
@@ -119,7 +125,7 @@ const logoTextStyle = {
 const loaderTrackStyle = {
     width: '280px',
     height: '6px',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '6px',
     overflow: 'hidden',
     position: 'relative'
@@ -141,6 +147,27 @@ const textStyle = {
     textAlign: 'center'
 };
 
+const bgBlob1 = {
+    position: 'absolute',
+    top: '-10%',
+    right: '-10%',
+    width: '60vw',
+    height: '60vw',
+    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.07) 0%, transparent 70%)',
+    zIndex: 1,
+    pointerEvents: 'none'
+};
+
+const bgBlob2 = {
+    position: 'absolute',
+    bottom: '-10%',
+    left: '-10%',
+    width: '50vw',
+    height: '50vw',
+    background: 'radial-gradient(circle, rgba(6, 182, 212, 0.07) 0%, transparent 70%)',
+    zIndex: 1,
+    pointerEvents: 'none'
+};
 
 export default InitialLoader;
 
