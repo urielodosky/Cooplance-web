@@ -363,7 +363,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                 if (gen) setActiveChannel(gen);
                             }}
                             style={{
-                                width: '100%', textAlign: 'left', padding: '0.8rem 1rem', borderRadius: '14px', border: 'none',
+                                width: '100%', textAlign: 'left', padding: '0.8rem 1rem', borderRadius: '14px',
                                 background: activeChannel?.type === 'general' ? 'rgba(139, 92, 246, 0.15)' : 'var(--bg-card-hover)',
                                 color: activeChannel?.type === 'general' ? 'var(--primary)' : 'var(--text-secondary)',
                                 fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
