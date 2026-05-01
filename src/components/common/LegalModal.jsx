@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { useAuth, CURRENT_LEGAL_VERSION } from '../../features/auth/context/AuthContext';
+import { useAuth } from '../../features/auth/context/AuthContext';
 import { Link } from 'react-router-dom';
+
+export const CURRENT_LEGAL_VERSION = 1;
 
 const LegalModal = () => {
     const { user, updateUser } = useAuth();
     const [accepted, setAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Si no hay usuario o si ya aceptó el interruptor v2, no mostramos nada
-    if (!user || user.terms_accepted_v2 === true) {
+    // If no user is logged in, or if they already accepted the current (or newer) version, don't show the modal
+    if (!user || user.accepted_legal_version >= CURRENT_LEGAL_VERSION) {
         return null;
     }
 
@@ -16,8 +18,8 @@ const LegalModal = () => {
         if (!accepted) return;
         setLoading(true);
         try {
-            await updateUser({ terms_accepted_v2: true });
-            // App unblocks automatically because user.terms_accepted_v2 will be true
+            await updateUser({ ...user, accepted_legal_version: CURRENT_LEGAL_VERSION });
+            // App unblocks automatically because user.accepted_legal_version >= CURRENT_LEGAL_VERSION will be true
         } catch (error) {
             console.error('Error updating legal version:', error);
             alert('Hubo un error al guardar tu aceptación. Por favor, intenta nuevamente.');
@@ -33,83 +35,77 @@ const LegalModal = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            backdropFilter: 'blur(15px)',
-            zIndex: 999999,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(10px)',
+            zIndex: 999999, // Highest possible z-index
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: '15px'
+            padding: '20px'
         }}>
             <div className="glass" style={{
                 background: 'var(--bg-card)',
-                borderRadius: '28px',
-                padding: '2.5rem 2rem',
-                maxWidth: '550px',
+                borderRadius: '24px',
+                padding: '3rem',
+                maxWidth: '600px',
                 width: '100%',
-                maxHeight: '90vh',
-                overflowY: 'auto',
                 border: '1px solid var(--border)',
-                boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-                textAlign: 'center',
-                scrollbarWidth: 'none', // Hide scrollbar for cleaner look
-                msOverflowStyle: 'none'
+                boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                textAlign: 'center'
             }}>
-                <style>{`
-                    .glass::-webkit-scrollbar { display: none; }
-                `}</style>
-                
                 <div style={{
                     width: '64px',
                     height: '64px',
-                    borderRadius: '20px',
-                    background: 'linear-gradient(135deg, var(--primary), #8b5cf6)',
+                    borderRadius: '50%',
+                    background: 'rgba(139, 92, 246, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    margin: '0 auto 1.5rem auto',
-                    boxShadow: '0 10px 20px rgba(139, 92, 246, 0.3)'
+                    margin: '0 auto 1.5rem auto'
                 }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
                     </svg>
                 </div>
 
-                <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '1rem', fontWeight: '800', letterSpacing: '-0.5px' }}>
+                <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '1rem', fontWeight: '800' }}>
                     Actualización Legal
                 </h2>
                 
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '2rem' }}>
-                    Hemos actualizado nuestros <strong>Términos y Condiciones</strong> y <strong>Políticas de Privacidad</strong> para mejorar tu seguridad en la plataforma.
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+                    Han cambiado nuestras Políticas de Privacidad y Términos y Condiciones. Para continuar usando Cooplance, es necesario que revises y aceptes las nuevas condiciones.
                 </p>
 
                 <div style={{
                     display: 'flex',
-                    flexDirection: window.innerWidth < 480 ? 'column' : 'row',
-                    gap: '0.8rem',
+                    gap: '1rem',
                     justifyContent: 'center',
                     marginBottom: '2rem'
                 }}>
-                    <Link to="/help?tab=terms" target="_blank" className="btn-secondary" style={{ padding: '0.7rem 1rem', fontSize: '0.85rem', flex: 1 }}>
-                        Leer Términos
+                    <Link to="/help?tab=terms" target="_blank" className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
+                        Ver Términos y Condiciones
                     </Link>
-                    <Link to="/help?tab=privacy" target="_blank" className="btn-secondary" style={{ padding: '0.7rem 1rem', fontSize: '0.85rem', flex: 1 }}>
-                        Ver Privacidad
+                    <Link to="/help?tab=privacy" target="_blank" className="btn-secondary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
+                        Ver Política de Privacidad
                     </Link>
                 </div>
 
                 <div style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    padding: '1.2rem',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(0,0,0,0.2)',
+                    padding: '1.5rem',
+                    borderRadius: '16px',
+                    border: '1px solid var(--border)',
                     textAlign: 'left',
-                    marginBottom: '2.5rem'
+                    marginBottom: '2rem'
                 }}>
                     <label style={{
                         display: 'flex',
                         alignItems: 'flex-start',
-                        gap: '12px',
+                        gap: '1rem',
                         cursor: 'pointer'
                     }}>
                         <input 
@@ -117,15 +113,15 @@ const LegalModal = () => {
                             checked={accepted} 
                             onChange={(e) => setAccepted(e.target.checked)}
                             style={{
-                                width: '22px',
-                                height: '22px',
-                                marginTop: '3px',
+                                width: '24px',
+                                height: '24px',
+                                marginTop: '2px',
                                 accentColor: 'var(--primary)',
                                 cursor: 'pointer'
                             }}
                         />
-                        <span style={{ color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: '1.5', fontWeight: '500' }}>
-                            Confirmo que he leído y acepto la nueva versión de los acuerdos legales de Cooplance.
+                        <span style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                            He leído y acepto los nuevos Términos y Condiciones y la Política de Privacidad de Cooplance.
                         </span>
                     </label>
                 </div>
@@ -136,17 +132,13 @@ const LegalModal = () => {
                     className="btn-primary"
                     style={{
                         width: '100%',
-                        padding: '1.1rem',
+                        padding: '1rem',
                         fontSize: '1.1rem',
-                        fontWeight: '700',
-                        borderRadius: '16px',
-                        transition: 'all 0.3s',
-                        transform: (accepted && !loading) ? 'scale(1)' : 'scale(0.98)',
                         opacity: (!accepted || loading) ? 0.5 : 1,
                         cursor: (!accepted || loading) ? 'not-allowed' : 'pointer'
                     }}
                 >
-                    {loading ? 'Procesando...' : 'Aceptar y Continuar'}
+                    {loading ? 'Guardando...' : 'Aceptar y Continuar'}
                 </button>
             </div>
         </div>
