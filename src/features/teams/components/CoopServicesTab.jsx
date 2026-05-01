@@ -174,7 +174,7 @@ const CoopServicesTab = ({ coop, amIOwner, amIAdmin, amIManager, pendingJobs, lo
                                                 </div>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--primary)' }}>${job.budget || 0}</div>
+                                                <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--primary)' }}>${job.amount || 0}</div>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{job.delivery_days || 0} días entrega</div>
                                             </div>
                                         </div>
@@ -293,7 +293,7 @@ const CoopServicesTab = ({ coop, amIOwner, amIAdmin, amIManager, pendingJobs, lo
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                         <div>
                                             <div style={{ fontWeight: '700', fontSize: '1.1rem', marginBottom: '0.3rem' }}>{job.service_title}</div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Presupuesto: ${job.budget}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Presupuesto: ${job.amount}</div>
                                         </div>
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button 

@@ -58,7 +58,7 @@ function App() {
       <ActionModalProvider>
         <TeamProvider>
           <div className="app-container">
-            <LegalModal />
+            {/* <LegalModal /> */}
             <MirrorModeBanner />
             <Navbar />
             <main>

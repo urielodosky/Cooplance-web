@@ -116,7 +116,7 @@ const CoopDetail = () => {
             // Workers only get their records. Owner/Admins get all.
             const { data, error } = await supabase
                 .from('job_payouts')
-                .select('*, jobs(service_title, budget), profiles(username)')
+                .select('*, jobs(service_title, amount), profiles(username)')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -847,7 +847,7 @@ const CoopDetail = () => {
                                     <tbody>
                                         {payouts.map(p => (
                                             <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', fontSize: '0.9rem' }}>
-                                                <td style={{ padding: '1rem', fontWeight: '600' }}>{p.jobs?.service_title || 'Trabajo Directo'}</td>
+                                                <td style={{ padding: '1rem', fontWeight: '600' }}>{p.jobs?.service_title || 'Trabajo Directo'} (${p.jobs?.amount || 0})</td>
                                                 {amIManager && <td style={{ padding: '1rem' }}>@{p.profiles?.username}</td>}
                                                 <td style={{ padding: '1rem', color: 'var(--primary)', fontWeight: '800' }}>{p.percentage}%</td>
                                                 <td style={{ padding: '1rem', fontWeight: '700' }}>${p.amount.toFixed(2)}</td>
@@ -1237,7 +1237,7 @@ const CoopDetail = () => {
                     setReassignmentData(null);
                 }}
                 coopId={coop.id}
-                budget={isReassignment ? (coop.jobs?.find(j => j.id === selectedJobId)?.budget || 0) : (pendingJobs.find(j => j.id === selectedJobId)?.budget || 0)}
+                budget={isReassignment ? (coop.jobs?.find(j => j.id === selectedJobId)?.amount || 0) : (pendingJobs.find(j => j.id === selectedJobId)?.amount || 0)}
                 onConfirm={handleAssignmentConfirm}
                 isReassignment={isReassignment}
                 initialData={reassignmentData}
