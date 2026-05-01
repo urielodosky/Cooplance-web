@@ -31,8 +31,11 @@ export const AuthProvider = ({ children }) => {
                 const cachedProfile = localStorage.getItem(`cooplance_profile_${session.user.id}`);
                 if (cachedProfile) {
                     const parsed = JSON.parse(cachedProfile);
-                    setUser({ ...parsed, is_cached: true });
-                    setLoading(false);
+                    // Use a stable value check
+                    if (!user || user.id !== parsed.id || user.is_partial) {
+                        setUser({ ...parsed, is_cached: true });
+                        setLoading(false);
+                    }
                 } else {
                     setLoading(true);
                 }
@@ -50,7 +53,7 @@ export const AuthProvider = ({ children }) => {
             console.error("[AuthContext] handleSession error:", err);
             setLoading(false);
         }
-    }, []); // fetchProfile is used here but it's defined below. This is fine in JS due to hoisting if defined as function, but here it's a const. I'll move fetchProfile up or just leave it if I change it to a function. Actually, better move it or use function declaration.
+    }, [user?.id]); // Added dependency on user.id for stability check
 
     // ─── Bootstrap ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -134,54 +137,54 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     // ─── REALTIME PROFILE SYNC (V41) ──────────────────────────────────────────
+    const userId = user?.id; // Primitive for dependency array
     useEffect(() => {
-        if (!user?.id || isTutorView) return;
+        if (!userId || isTutorView) return;
 
-        console.log(`[AuthContext] Subscribing to realtime profile updates for ${user.id}...`);
+        console.log(`[AuthContext] Subscribing to realtime profile updates for ${userId}...`);
         const profileSubscription = supabase
-            .channel(`profile_sync_${user.id}`)
+            .channel(`profile_sync_${userId}`)
             .on('postgres_changes', { 
                 event: 'UPDATE', 
                 schema: 'public', 
                 table: 'profiles',
-                filter: `id=eq.${user.id}`
+                filter: `id=eq.${userId}`
             }, (payload) => {
-                console.log("[AuthContext] Profile update received via Realtime:", payload.new);
-                
+                // V42.1: DEEP DEDUPLICATION - Ignore updates that only touch last_seen
                 setUser(prev => {
                     if (!prev) return prev;
 
-                    // V42: Strict deduplication to prevent loops from 'last_seen' heartbeat
                     const { last_seen: oldLastSeen, ...oldData } = prev;
                     const { last_seen: newLastSeen, ...newData } = payload.new;
 
-                    // If everything except last_seen is the same, ignore the update
-                    if (JSON.stringify(oldData) === JSON.stringify(newData)) {
-                        return prev;
-                    }
+                    // Compare all other fields. If identical, bail out to avoid re-render loops.
+                    const isSame = JSON.stringify(oldData) === JSON.stringify(newData);
+                    if (isSame) return prev;
 
-                    console.log("[AuthContext] Significant profile change detected. Updating state.");
+                    console.log("[AuthContext] PETICION RECIBIDA (Realtime): Significant change found.");
                     return { ...prev, ...payload.new };
                 });
             })
             .subscribe();
 
         return () => {
-            console.log(`[AuthContext] Unsubscribing from profile updates for ${user.id}`);
+            console.log(`[AuthContext] Unsubscribing from profile updates for ${userId}`);
             supabase.removeChannel(profileSubscription);
         };
-    }, [user?.id, isTutorView]);
+    }, [userId, isTutorView]);
 
     // ─── ONLINE STATUS HEARTBEAT (V50) ──────────────────────────────────────
+    const isCached = user?.is_cached;
     useEffect(() => {
-        if (!user?.id || user.is_cached) return;
+        if (!userId || isCached) return;
 
         const updateOnlineStatus = async () => {
             try {
+                console.log('[AuthContext] PETICION DISPARADA (Heartbeat last_seen)');
                 await supabase
                     .from('profiles')
                     .update({ last_seen: new Date().toISOString() })
-                    .eq('id', user.id);
+                    .eq('id', userId);
             } catch (err) {
                 console.error("[AuthContext] Failed to update last_seen:", err);
             }
@@ -194,7 +197,7 @@ export const AuthProvider = ({ children }) => {
         const interval = setInterval(updateOnlineStatus, 4 * 60 * 1000);
 
         return () => clearInterval(interval);
-    }, [user?.id, user?.is_cached]);
+    }, [userId, isCached]);
 
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = useCallback(async (userId, authUser = null) => {
@@ -207,7 +210,7 @@ export const AuthProvider = ({ children }) => {
         try {
             while (attempts < maxAttempts) {
                 try {
-                    console.log(`[AuthContext] Syncing profile for ${userId} (Attempt ${attempts + 1})...`);
+                    console.log(`[AuthContext] PETICION DISPARADA (fetchProfile) for ${userId} (Attempt ${attempts + 1})...`);
                     const { data, error } = await withTimeout(
                         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
                         30000, // V13: Increased to 30s
@@ -835,8 +838,7 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
-        console.log(`[AuthContext] Updating profile ${targetId} with payload:`, filteredPayload);
-        
+        console.log(`[AuthContext] PETICION DISPARADA (updateUser Profile) for ${targetId}`);
         const { error } = await supabase
             .from('profiles')
             .update(filteredPayload)

@@ -1527,32 +1527,38 @@ const Dashboard = () => {
         return diffHours >= 72;
     };
 
+    const userId = user?.id;
+    const authUserId = authUser?.id;
+    const authUserRole = authUser?.role;
+
     useEffect(() => {
-        if (!user) return;
+        if (!userId) return;
         const loadInitData = async () => {
-            const cachedProjects = localStorage.getItem(`cooplance_projects_${user.id}`);
-            const cachedProposals = localStorage.getItem(`cooplance_proposals_${user.id}`);
+            const cachedProjects = localStorage.getItem(`cooplance_projects_${userId}`);
+            const cachedProposals = localStorage.getItem(`cooplance_proposals_${userId}`);
             if (cachedProjects) setMyPublishedProjects(JSON.parse(cachedProjects));
             if (cachedProposals) setMyProposals(JSON.parse(cachedProposals));
 
             try {
-                const projects = await getProjectsByClient(user.id);
-                const proposals = await getProposalsByUser(user.id);
-                const received = await getReceivedProposals(user.id);
+                console.log('[Dashboard] PETICION DISPARADA (loadInitData)');
+                const projects = await getProjectsByClient(userId);
+                const proposals = await getProposalsByUser(userId);
+                const received = await getReceivedProposals(userId);
                 setMyPublishedProjects(projects);
                 setMyProposals(proposals);
                 setReceivedProposals(received);
-                localStorage.setItem(`cooplance_projects_${user.id}`, JSON.stringify(projects));
-                localStorage.setItem(`cooplance_proposals_${user.id}`, JSON.stringify(proposals));
+                localStorage.setItem(`cooplance_projects_${userId}`, JSON.stringify(projects));
+                localStorage.setItem(`cooplance_proposals_${userId}`, JSON.stringify(proposals));
             } catch (err) { console.error(err); }
             finally { setLoading(false); }
         };
         loadInitData();
 
-        if (authUser?.id && authUser.role === 'freelancer' && !isTutorView) {
+        if (authUserId && authUserRole === 'freelancer' && !isTutorView) {
             const fetchTutorados = async () => {
                 try {
-                    const { data, error } = await supabase.from('profiles').select('*').eq('parent_id', authUser.id);
+                    console.log('[Dashboard] PETICION DISPARADA (fetchTutorados)');
+                    const { data, error } = await supabase.from('profiles').select('*').eq('parent_id', authUserId);
                     if (error) throw error;
                     if (data) setTutorados(data);
                 } catch (err) {
@@ -1561,36 +1567,39 @@ const Dashboard = () => {
             };
             fetchTutorados();
         }
-    }, [user?.id, authUser.id, isTutorView]);
+    }, [userId, authUserId, authUserRole, isTutorView]);
 
     // V40: Robust Gamification Sync - Prevent infinite DoS loops
     const lastSyncRef = useRef(null);
     const hasSyncedGamification = useRef(false); // V42: One-shot catch-up per mount
 
+    const userLevel = user?.level;
+    const userXP = user?.xp;
+    const userGamificationStr = JSON.stringify(user?.gamification);
+
     useEffect(() => {
-        if (!user || (user.role !== 'freelancer' && user.role !== 'company') || isTutorView) return;
+        if (!userId || (user?.role !== 'freelancer' && user?.role !== 'company') || isTutorView) return;
         if (hasSyncedGamification.current) return;
 
         const processedUser = processGamificationRules(user);
         
-        // Deep comparison of gamification object to avoid stringify loops
-        const currentG = JSON.stringify(user.gamification);
+        // Deep comparison using stringified version
         const processedG = JSON.stringify(processedUser.gamification);
         
         const hasChanges =
-            processedUser.xp !== user.xp ||
-            processedUser.level !== user.level ||
-            processedG !== currentG;
+            processedUser.xp !== userXP ||
+            processedUser.level !== userLevel ||
+            processedG !== userGamificationStr;
 
         if (hasChanges && lastSyncRef.current !== processedG) {
-            console.log("[Dashboard] Syncing gamification changes...");
+            console.log("[Dashboard] PETICION DISPARADA (Sync gamification)");
             lastSyncRef.current = processedG;
             hasSyncedGamification.current = true; // Mark as done for this mount
             updateUser(processedUser).catch(err => {
                 console.warn("[Dashboard] Silently failed to sync gamification rules:", err);
             });
         }
-    }, [user?.id, user?.xp, user?.level, user?.gamification, updateUser, isTutorView]);
+    }, [userId, userXP, userLevel, userGamificationStr, updateUser, isTutorView]);
 
     const myOrders = useMemo(() => user ? (jobs || []).filter(j => j.buyerId === user.id) : [], [jobs, user?.id]);
     const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);
@@ -1605,7 +1614,7 @@ const Dashboard = () => {
     }, [myProposals, activeProposalTab]);
 
     useEffect(() => {
-        if (!user || loading) return;
+        if (!userId || loading) return;
         
         const checkReviews = async () => {
             const jobsToPrompt = myOrders.filter(j => j.status === 'completed');
@@ -1614,9 +1623,10 @@ const Dashboard = () => {
             if (allJobsForTracking.length === 0) return;
 
             try {
+                console.log('[Dashboard] PETICION DISPARADA (checkReviews)');
                 const results = await Promise.all(
                     allJobsForTracking.map(async (job) => {
-                        const reviewed = await ReviewService.hasUserReviewedJob(job.id, user.id);
+                        const reviewed = await ReviewService.hasUserReviewedJob(job.id, userId);
                         return { id: job.id, reviewed };
                     })
                 );
@@ -1639,9 +1649,9 @@ const Dashboard = () => {
             }
         };
         
-        const timer = setTimeout(checkReviews, 2000);
+        const timer = setTimeout(checkReviews, 3000); // Increased to 3s
         return () => clearTimeout(timer);
-    }, [myWork.length, myOrders.length, user?.id, loading]);
+    }, [myWork.length, myOrders.length, userId, loading]);
 
     if (!user) return null;
 
