@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
     const [isTutorView, setIsTutorView] = useState(false); // V27: Mirror Mode for adults
     const [supervisedUser, setSupervisedUser] = useState(null); // The minor being watched
     const syncInProgress = useRef(null); // V24: Track active syncing UID to prevent loops
+    const hasAppliedDeferred = useRef(new Set()); // V42: Guard for automatic profile updates (one-shot per session)
 
     const handleSession = useCallback(async (session) => {
         try {
@@ -146,13 +147,20 @@ export const AuthProvider = ({ children }) => {
                 filter: `id=eq.${user.id}`
             }, (payload) => {
                 console.log("[AuthContext] Profile update received via Realtime:", payload.new);
-                // We only update if it's a relevant change (XP, Level, or gamification)
+                
                 setUser(prev => {
                     if (!prev) return prev;
-                    // Prevent loops: only update if data is actually different
-                    if (prev.xp === payload.new.xp && prev.level === payload.new.level && JSON.stringify(prev.gamification) === JSON.stringify(payload.new.gamification)) {
+
+                    // V42: Strict deduplication to prevent loops from 'last_seen' heartbeat
+                    const { last_seen: oldLastSeen, ...oldData } = prev;
+                    const { last_seen: newLastSeen, ...newData } = payload.new;
+
+                    // If everything except last_seen is the same, ignore the update
+                    if (JSON.stringify(oldData) === JSON.stringify(newData)) {
                         return prev;
                     }
+
+                    console.log("[AuthContext] Significant profile change detected. Updating state.");
                     return { ...prev, ...payload.new };
                 });
             })
@@ -219,7 +227,8 @@ export const AuthProvider = ({ children }) => {
                         
                         // V24: Check for deferred data from registration
                         const cachedHeavyData = sessionStorage.getItem('cooplance_pending_profile_data');
-                        if (cachedHeavyData) {
+                        if (cachedHeavyData && !hasAppliedDeferred.current.has(userId)) {
+                            hasAppliedDeferred.current.add(userId);
                             applyDeferredProfileData(userId, JSON.parse(cachedHeavyData));
                         }
 

@@ -1565,9 +1565,11 @@ const Dashboard = () => {
 
     // V40: Robust Gamification Sync - Prevent infinite DoS loops
     const lastSyncRef = useRef(null);
+    const hasSyncedGamification = useRef(false); // V42: One-shot catch-up per mount
 
     useEffect(() => {
         if (!user || (user.role !== 'freelancer' && user.role !== 'company') || isTutorView) return;
+        if (hasSyncedGamification.current) return;
 
         const processedUser = processGamificationRules(user);
         
@@ -1583,6 +1585,7 @@ const Dashboard = () => {
         if (hasChanges && lastSyncRef.current !== processedG) {
             console.log("[Dashboard] Syncing gamification changes...");
             lastSyncRef.current = processedG;
+            hasSyncedGamification.current = true; // Mark as done for this mount
             updateUser(processedUser).catch(err => {
                 console.warn("[Dashboard] Silently failed to sync gamification rules:", err);
             });
