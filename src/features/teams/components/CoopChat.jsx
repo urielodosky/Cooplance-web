@@ -84,8 +84,8 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             // 4. Fetch Active Jobs
             const { data: jobsData } = await supabase
                 .from('jobs')
-                .select('*, profiles:client_id(username, avatar_url), participants:job_participants(*)')
-                .eq('team_id', coopId)
+                .select('*, client:profiles!jobs_client_id_fkey(username, avatar_url), participants:job_participants(*)')
+                .eq('coop_id', coopId)
                 .eq('status', 'active');
 
             // 5. Fetch Members
@@ -118,7 +118,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             if (channel.type === 'client_chat') {
                 query = supabase
                     .from('messages')
-                    .select('*, profiles:user_id(username, first_name, last_name, avatar_url)')
+                    .select('*, profiles:sender_id(username, first_name, last_name, avatar_url)')
                     .eq('job_id', channel.id)
                     .order('created_at', { ascending: true });
             } else {
@@ -153,7 +153,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
         return supabase
             .channel(`room-${channel.id}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter }, async (payload) => {
-                const senderId = payload.new.sender_id || payload.new.user_id;
+                const senderId = payload.new.sender_id;
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('username, first_name, last_name, avatar_url')
@@ -192,7 +192,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     .from('messages')
                     .insert({
                         job_id: activeChannel.id,
-                        user_id: user.id,
+                        sender_id: user.id,
                         content: content
                     });
                 error = err;

@@ -11,10 +11,11 @@ export const getJobsByUserId = async (userId, role = 'provider') => {
         .from('jobs')
         .select(`
             *,
-            service:service_id(*),
-            project:project_id(*),
-            client:client_id(username, first_name, last_name, avatar_url),
-            provider:provider_id(username, first_name, last_name, avatar_url)
+            service:services!jobs_service_id_fkey(*),
+            project:projects!jobs_project_id_fkey(*),
+            client:profiles!jobs_client_id_fkey(username, first_name, last_name, avatar_url),
+            provider:profiles!jobs_provider_id_fkey(username, first_name, last_name, avatar_url),
+            coop:coops!jobs_coop_id_fkey(*)
         `)
         .eq(column, userId)
         .order('created_at', { ascending: false });
@@ -32,10 +33,11 @@ export const getJobById = async (id) => {
         .from('jobs')
         .select(`
             *,
-            service:service_id(*),
-            project:project_id(*),
-            client:client_id(username, first_name, last_name, avatar_url),
-            provider:provider_id(username, first_name, last_name, avatar_url)
+            service:services!jobs_service_id_fkey(*),
+            project:projects!jobs_project_id_fkey(*),
+            client:profiles!jobs_client_id_fkey(username, first_name, last_name, avatar_url),
+            provider:profiles!jobs_provider_id_fkey(username, first_name, last_name, avatar_url),
+            coop:coops!jobs_coop_id_fkey(*)
         `)
         .eq('id', id)
         .single();

@@ -104,7 +104,7 @@ export const getProposalsByTeam = async (teamId) => {
                     profiles:client_id(username, first_name, last_name, avatar_url, role)
                 )
             `)
-            .eq('team_id', teamId)
+            .eq('coop_id', teamId)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -125,7 +125,7 @@ export const getProposalsByTeam = async (teamId) => {
                 clientRealName: client.first_name ? `${client.first_name} ${client.last_name || ''}`.trim() : null,
                 clientAvatar: client.avatar_url,
                 clientRole: client.role,
-                teamId: row.team_id,
+                coopId: row.coop_id,
                 userName: row.user_name,
                 userRole: row.user_role,
                 coverLetter: row.cover_letter,
@@ -241,7 +241,7 @@ export const createProposal = async ({ projectId, userId, userName, userRole, co
                 amount: parseFloat(amount) || 0,
                 delivery_days: parseInt(deliveryDays) || null,
                 status: 'pending',
-                team_id: coopId || null,
+                coop_id: coopId || null,
                 assignment_snapshot: assignment || null // Snapshot of the team at postulation time
             })
             .select('*')

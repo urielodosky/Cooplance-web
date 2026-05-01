@@ -84,8 +84,9 @@ export const JobProvider = ({ children }) => {
                 .from('jobs')
                 .select(`
                     *,
-                    client:client_id(username, first_name, last_name, avatar_url, role),
-                    provider:provider_id(username, first_name, last_name, avatar_url, role)
+                    client:profiles!jobs_client_id_fkey(username, first_name, last_name, avatar_url, role),
+                    provider:profiles!jobs_provider_id_fkey(username, first_name, last_name, avatar_url, role),
+                    coop:coops!jobs_coop_id_fkey(*)
                 `)
                 .or(`client_id.eq.${user.id},provider_id.eq.${user.id}`)
                 .order('created_at', { ascending: false });

@@ -95,8 +95,8 @@ const CoopDetail = () => {
         try {
             const { data, error } = await supabase
                 .from('jobs')
-                .select('*, profiles:client_id(username, first_name, last_name, avatar_url), services:service_id(config)')
-                .eq('team_id', coopId)
+                .select('*, client:profiles!jobs_client_id_fkey(username, first_name, last_name, avatar_url), service:services!jobs_service_id_fkey(config)')
+                .eq('coop_id', coopId)
                 .eq('status', 'pending_approval');
             
             if (error) throw error;
@@ -137,8 +137,8 @@ const CoopDetail = () => {
 
     const handleAcceptJob = (jobId) => {
         const job = pendingJobs.find(j => j.id === jobId);
-        if (job && job.services?.config?.coop_distribution) {
-            const dist = job.services.config.coop_distribution;
+        if (job && job.service?.config?.coop_distribution) {
+            const dist = job.service.config.coop_distribution;
             setReassignmentData({
                 memberIds: Object.keys(dist),
                 projectLeadId: '', // Lead is not in the distribution usually, just percentages

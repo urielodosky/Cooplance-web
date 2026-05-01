@@ -257,7 +257,7 @@ const FreelancerDetail = ({ isBlocked = false }) => {
                         .select('id')
                         .eq('blocker_id', currentUser.id)
                         .eq('blocked_id', id)
-                        .single();
+                        .maybeSingle();
                     setHasBlocked(!!blockData);
                 }
 

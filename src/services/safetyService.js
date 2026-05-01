@@ -73,7 +73,7 @@ export const isUserBlocked = async (userId, targetId) => {
             .select('id')
             .eq('blocker_id', targetId) // Did target block user?
             .eq('blocked_id', userId)
-            .single();
+            .maybeSingle();
 
         if (error && error.code !== 'PGRST116') throw error;
         return !!data;

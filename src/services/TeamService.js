@@ -441,7 +441,7 @@ export const updateTeamInfo = async (coopId, data, actorId) => {
 export const getPublicTeamProfile = async (coopId) => {
     const { data, error } = await supabase
         .from('coops')
-        .select('*, members:coop_members(*, profile:profiles(*))')
+        .select('*, members:coop_members(*, profile:profiles!coop_members_user_id_fkey(*))')
         .eq('id', coopId)
         .single();
 
@@ -452,7 +452,7 @@ export const getPublicTeamProfile = async (coopId) => {
 export const getTeamMembers = async (coopId) => {
     const { data, error } = await supabase
         .from('coop_members')
-        .select('*, profiles:profiles(*)')
+        .select('*, profiles:profiles!coop_members_user_id_fkey(*)')
         .eq('coop_id', coopId);
     
     if (error) throw error;
