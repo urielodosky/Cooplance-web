@@ -52,6 +52,7 @@ const CoopDetail = () => {
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [isDissolving, setIsDissolving] = useState(false);
     const [dissolveError, setDissolveError] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleChangeRole = async (member, newRole) => {
         try {
@@ -170,6 +171,34 @@ const CoopDetail = () => {
             console.error("Error al actualizar coop:", err);
         } finally {
             setIsSavingEdit(false);
+        }
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        setIsUploading(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${coop.id}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('team-avatars')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('team-avatars')
+                .getPublicUrl(filePath);
+
+            setEditData({ ...editData, logo: publicUrl });
+        } catch (err) {
+            console.error("Error al subir imagen:", err);
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -1091,11 +1120,27 @@ const CoopDetail = () => {
                         <h3 style={{ marginTop: 0, fontSize: '1.5rem', marginBottom: '1.5rem' }}>Modificar Perfil de la Coop</h3>
                         
                         <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
-                            <div style={{ flex: '0 0 100px' }}>
-                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Logo URL</label>
-                                <div style={{ width: '100px', height: '100px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {editData.logo ? <img src={editData.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '2rem' }}>🏢</span>}
+                            <div style={{ flex: '0 0 100px', textAlign: 'center' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Logo</label>
+                                <div 
+                                    onClick={() => document.getElementById('logo-upload').click()}
+                                    style={{ 
+                                        width: '100px', height: '100px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', 
+                                        overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative'
+                                    }}
+                                >
+                                    {isUploading ? (
+                                        <div style={{ fontSize: '0.7rem', fontWeight: '700' }}>Subiendo...</div>
+                                    ) : (
+                                        <>
+                                            {editData.logo ? <img src={editData.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '2rem' }}>🏢</span>}
+                                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', opacity: 0, transition: 'opacity 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseOver={(e) => e.currentTarget.style.opacity = 1} onMouseOut={(e) => e.currentTarget.style.opacity = 0}>
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
+                                <input id="logo-upload" type="file" hidden accept="image/*" onChange={handleFileUpload} />
                             </div>
                             <div style={{ flex: 1 }}>
                                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Nombre de la Agencia</label>
@@ -1105,13 +1150,7 @@ const CoopDetail = () => {
                                     onChange={(e) => setEditData({...editData, name: e.target.value})}
                                     style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', marginBottom: '1rem' }}
                                 />
-                                <input 
-                                    type="text" 
-                                    placeholder="Pegar URL del nuevo logo..."
-                                    value={editData.logo}
-                                    onChange={(e) => setEditData({...editData, logo: e.target.value})}
-                                    style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', fontSize: '0.85rem' }}
-                                />
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>* Haz clic en el logo para subir una foto desde tus archivos.</div>
                             </div>
                         </div>
 
@@ -1123,8 +1162,21 @@ const CoopDetail = () => {
                         />
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button onClick={() => setIsEditModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>Cancelar</button>
-                            <button onClick={handleSaveEdit} className="btn-primary" style={{ flex: 1, padding: '1rem' }} disabled={isSavingEdit || !editData.name.trim()}>
+                            <button 
+                                onClick={() => setIsEditModalOpen(false)} 
+                                className="btn-secondary" 
+                                style={{ 
+                                    flex: 1, 
+                                    padding: '1rem', 
+                                    background: 'rgba(255,255,255,0.05)', 
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: 'white',
+                                    fontWeight: '700'
+                                }}
+                            >
+                                Cancelar
+                            </button>
+                            <button onClick={handleSaveEdit} className="btn-primary" style={{ flex: 1, padding: '1rem' }} disabled={isSavingEdit || !editData.name.trim() || isUploading}>
                                 {isSavingEdit ? 'Guardando...' : 'Guardar Cambios'}
                             </button>
                         </div>
@@ -1154,7 +1206,20 @@ const CoopDetail = () => {
                         )}
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button onClick={() => { setIsDissolveModalOpen(false); setDissolveError(''); }} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>Cancelar</button>
+                            <button 
+                                onClick={() => { setIsDissolveModalOpen(false); setDissolveError(''); }} 
+                                className="btn-secondary" 
+                                style={{ 
+                                    flex: 1, 
+                                    padding: '1rem',
+                                    background: 'rgba(255,255,255,0.05)', 
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: 'white',
+                                    fontWeight: '700'
+                                }}
+                            >
+                                Cancelar
+                            </button>
                             <button onClick={handleDissolve} className="btn-primary" style={{ flex: 1, padding: '1rem', background: '#ef4444', border: 'none' }} disabled={isDissolving}>
                                 {isDissolving ? 'Disolviendo...' : 'Sí, Disolver'}
                             </button>
