@@ -331,25 +331,25 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
             display: 'grid', 
             gridTemplateColumns: '280px 1fr', 
             height: '700px', 
-            background: 'rgba(15, 17, 26, 0.4)', 
+            background: 'var(--bg-card)', 
             backdropFilter: 'blur(10px)',
             borderRadius: '28px', 
             overflow: 'hidden', 
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)'
         }}>
             
             {/* SIDEBAR - Workspace Style */}
             <div style={{ 
-                background: 'rgba(255,255,255,0.02)', 
-                borderRight: '1px solid rgba(255,255,255,0.05)', 
+                background: 'rgba(var(--primary-rgb, 139, 92, 246), 0.02)', 
+                borderRight: '1px solid var(--border)', 
                 display: 'flex', 
                 flexDirection: 'column', 
                 overflowY: 'auto' 
             }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <h2 style={{ fontSize: '1rem', fontWeight: '800', margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'var(--primary)' }}></div>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: '800', margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <div style={{ width: '100px', height: '10px', borderRadius: '3px', background: 'var(--primary)' }}></div>
                         WORKSPACE
                     </h2>
                 </div>
@@ -364,11 +364,11 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                             }}
                             style={{
                                 width: '100%', textAlign: 'left', padding: '0.8rem 1rem', borderRadius: '14px', border: 'none',
-                                background: activeChannel?.type === 'general' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.02)',
-                                color: activeChannel?.type === 'general' ? 'white' : 'var(--text-secondary)',
+                                background: activeChannel?.type === 'general' ? 'rgba(139, 92, 246, 0.15)' : 'var(--bg-card-hover)',
+                                color: activeChannel?.type === 'general' ? 'var(--primary)' : 'var(--text-secondary)',
                                 fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s',
                                 display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.95rem',
-                                border: activeChannel?.type === 'general' ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)'
+                                border: activeChannel?.type === 'general' ? '1px solid var(--primary)' : '1px solid var(--border)'
                             }}
                         >
                             <MessageSquare size={18} style={{ color: activeChannel?.type === 'general' ? 'var(--primary)' : 'var(--text-muted)' }} />
@@ -439,8 +439,8 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                         onClick={() => getDirectChannel(m.user_id)}
                                         style={{
                                             textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: '12px', border: 'none',
-                                            background: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                            color: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'white' : 'var(--text-secondary)',
+                                            background: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'var(--bg-card-hover)' : 'transparent',
+                                            color: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? 'var(--primary)' : 'var(--text-secondary)',
                                             fontWeight: activeChannel?.type === 'direct' && activeChannel.member_ids?.includes(m.user_id) ? '700' : '500', cursor: 'pointer',
                                             display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '0.9rem'
                                         }}
@@ -497,7 +497,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                     <button 
                                         onClick={() => setShowCreateModal(true)}
                                         style={{ 
-                                            background: 'none', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', 
+                                            background: 'none', border: '1px dashed var(--border)', borderRadius: '12px', 
                                             padding: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem'
                                         }}
@@ -517,11 +517,11 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                 {/* Header */}
                 <div style={{ 
                     padding: '1.2rem 2rem', 
-                    borderBottom: '1px solid rgba(255,255,255,0.05)', 
+                    borderBottom: '1px solid var(--border)', 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    background: 'rgba(255,255,255,0.02)'
+                    background: 'rgba(var(--primary-rgb, 139, 92, 246), 0.02)'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
@@ -571,7 +571,8 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     display: 'flex', 
                     flexDirection: 'column', 
                     gap: '1.5rem',
-                    scrollbarWidth: 'thin'
+                    scrollbarWidth: 'thin',
+                    background: 'var(--bg-dark)'
                 }}>
                     {!activeChannel ? (
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
@@ -626,12 +627,12 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                         <div style={{ 
                                             padding: '0.8rem 1.2rem', 
                                             borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                                            background: isMe ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                                            background: isMe ? 'var(--primary)' : 'var(--bg-card-hover)',
                                             color: isMe ? 'white' : 'var(--text-primary)',
                                             fontSize: '0.95rem',
                                             lineHeight: '1.5',
                                             boxShadow: isMe ? '0 4px 15px rgba(139, 92, 246, 0.2)' : 'none',
-                                            border: isMe ? 'none' : '1px solid rgba(255,255,255,0.05)'
+                                            border: isMe ? 'none' : '1px solid var(--border)'
                                         }}>
                                             {msg.content}
                                             {msg.attachments?.map((att, j) => (
@@ -665,10 +666,10 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     <form onSubmit={handleSendMessage} style={{ 
                         display: 'flex', 
                         gap: '0.8rem', 
-                        background: 'rgba(255,255,255,0.03)', 
+                        background: 'var(--bg-card-hover)', 
                         padding: '0.6rem', 
                         borderRadius: '20px', 
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        border: '1px solid var(--border)',
                         alignItems: 'center'
                     }}>
                         <button 
@@ -698,7 +699,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder={activeChannel ? `Escribe un mensaje en ${activeChannel.name}...` : "Escribe un mensaje..."}
                             style={{ 
-                                flex: 1, background: 'none', border: 'none', color: 'white', outline: 'none', padding: '0.5rem',
+                                flex: 1, background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none', padding: '0.5rem',
                                 fontSize: '0.95rem'
                             }}
                         />
@@ -745,11 +746,12 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                     padding: '1rem'
                 }}>
                     <div style={{
-                        width: '100%', maxWidth: '400px', background: 'rgba(30, 32, 44, 0.95)',
-                        borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)',
-                        padding: '2rem', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                        width: '100%', maxWidth: '400px', background: 'var(--bg-card)',
+                        borderRadius: '24px', border: '1px solid var(--border)',
+                        padding: '2rem', boxShadow: 'var(--shadow-lg)',
+                        backdropFilter: 'blur(20px)'
                     }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Crear Canal</h2>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Crear Canal</h2>
                         <form onSubmit={handleCreateChannel}>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700' }}>NOMBRE DEL CANAL</label>
@@ -759,8 +761,8 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                     onChange={(e) => setNewChannelName(e.target.value)}
                                     placeholder="ej: anuncios-importantes"
                                     style={{
-                                        width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '12px', padding: '0.8rem', color: 'white', outline: 'none'
+                                        width: '100%', background: 'var(--bg-card-hover)', border: '1px solid var(--border)',
+                                        borderRadius: '12px', padding: '0.8rem', color: 'var(--text-primary)', outline: 'none'
                                     }}
                                 />
                             </div>
@@ -769,13 +771,14 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700' }}>SELECCIONAR MIEMBROS</label>
                                 <div style={{ 
                                     maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem',
-                                    padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px'
+                                    padding: '0.5rem', background: 'rgba(var(--primary-rgb, 139, 92, 246), 0.05)', borderRadius: '12px'
                                 }}>
                                     {members.map(m => (
                                         <label key={m.user_id} style={{ 
                                             display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.5rem', 
                                             cursor: 'pointer', borderRadius: '8px', transition: 'all 0.2s',
-                                            background: selectedMemberIds.includes(m.user_id) ? 'rgba(139, 92, 246, 0.1)' : 'transparent'
+                                            background: selectedMemberIds.includes(m.user_id) ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                                            color: 'var(--text-primary)'
                                         }}>
                                             <input 
                                                 type="checkbox" 
@@ -796,7 +799,7 @@ const CoopChat = ({ coopId, amIOwner, amIAdmin }) => {
                                 <button 
                                     type="button" 
                                     onClick={() => setShowCreateModal(false)}
-                                    style={{ flex: 1, padding: '0.8rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', cursor: 'pointer' }}
+                                    style={{ flex: 1, padding: '0.8rem', borderRadius: '12px', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', cursor: 'pointer' }}
                                 >
                                     Cancelar
                                 </button>

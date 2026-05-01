@@ -4,6 +4,8 @@ import { supabase } from '../../../lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 import InitialLoader from '../../../components/common/InitialLoader';
 
+export const CURRENT_LEGAL_VERSION = 2;
+
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
@@ -390,6 +392,7 @@ export const AuthProvider = ({ children }) => {
             parent_id: registrationData.parentId || null,
             status: registrationData.parentId ? 'pending_parental_approval' : 'active',
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
+            accepted_legal_version: CURRENT_LEGAL_VERSION, // V28: New users are always on latest version
             avatar_url: registrationData.profileImage || null, // V28: Added to metadata for trigger
         };
 
@@ -801,17 +804,34 @@ export const AuthProvider = ({ children }) => {
             sync_error, 
             ...updatePayload 
         } = dbReady;
+
+        // V28: Selective payload to avoid PostgREST 400 errors with unknown columns
+        const validColumns = [
+            'username', 'first_name', 'last_name', 'avatar_url', 'bio', 'role', 
+            'level', 'xp', 'points', 'gender', 'location', 'country', 'dob', 
+            'phone', 'dni', 'province', 'city', 'cuil_cuit', 'company_name',
+            'responsible_name', 'responsible_first_name', 'responsible_last_name',
+            'status', 'parent_id', 'terms_accepted_at', 'accepted_legal_version',
+            'gamification', 'last_seen', 'is_verified', 'verification_status'
+        ];
+
+        const filteredPayload = {};
+        Object.keys(updatePayload).forEach(key => {
+            if (validColumns.includes(key)) {
+                filteredPayload[key] = updatePayload[key];
+            }
+        });
+
+        console.log(`[AuthContext] Updating profile ${user.id} with payload:`, filteredPayload);
         
         const { error } = await supabase
             .from('profiles')
-            .update(updatePayload)
+            .update(filteredPayload)
             .eq('id', user.id);
 
         if (error) {
-            const techDetail = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
             console.error('[AuthContext] Update Profile Failed:', error);
-            console.log('[AuthContext] Attempted Payload:', updatePayload); // Critical for debugging "no me deja usarlo"
-            const enrichedError = new Error(`Fallo al actualizar perfil: ${techDetail}`);
+            const enrichedError = new Error(`Error de base de datos: ${error.message}`);
             enrichedError.details = error;
             throw enrichedError;
         } else {
