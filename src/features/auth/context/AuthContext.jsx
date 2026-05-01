@@ -240,6 +240,14 @@ export const AuthProvider = ({ children }) => {
                     }
                     
                     console.warn(`[AuthContext] Profile NOT FOUND (attempt ${attempts + 1}).`);
+                    
+                    // V43: If we reach max attempts and NO profile was found, the account is invalid/deleted.
+                    if (attempts === maxAttempts - 1) {
+                        console.error("[AuthContext] Profile missing in DB. Terminating ghost session.");
+                        logout(); 
+                        return;
+                    }
+
                     await new Promise(r => setTimeout(r, 2000));
                 } catch (err) {
                     console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
