@@ -21,7 +21,7 @@ export const TeamProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const fetchTeams = useCallback(async () => {
-        if (!user) {
+        if (!user?.id) {
             setTeams([]);
             setUserTeams([]);
             setLoading(false);
@@ -35,7 +35,7 @@ export const TeamProvider = ({ children }) => {
                 .select('*, members:coop_members(*)');
             
             console.log('DEBUG: fetchTeams - allTeams from DB:', allTeams);
-            console.log('DEBUG: fetchTeams - current user.id:', user?.id);
+            console.log('DEBUG: fetchTeams - current user.id:', user.id);
 
             if (error) {
                 console.error('DEBUG: fetchTeams ERROR DETAILS:', error);
@@ -74,7 +74,7 @@ export const TeamProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user?.id]);
 
     useEffect(() => {
         fetchTeams().catch(err => console.error('[TeamContext] Unhandled fetchTeams error:', err));
@@ -97,14 +97,14 @@ export const TeamProvider = ({ children }) => {
 
     // --- Actions ---
 
-    const createTeam = async (teamData) => {
-        if (!user) throw new Error('Auth required');
+    const createTeam = useCallback(async (teamData) => {
+        if (!user?.id) throw new Error('Auth required');
         const team = await TeamService.createTeam(teamData, user.id);
         await fetchTeams();
         return team;
-    };
+    }, [user?.id, fetchTeams]);
 
-    const addMemberToTeam = async (teamId, newUserId, message = "") => {
+    const addMemberToTeam = useCallback(async (teamId, newUserId, message = "") => {
         try {
             // Fetch team info for the notification
             const { data: team } = await supabase
@@ -132,67 +132,67 @@ export const TeamProvider = ({ children }) => {
         } catch (err) {
             console.error('[TeamContext] Error inviting member:', err);
         }
-    };
+    }, [user, fetchTeams]);
 
-    const updateMemberRole = async (teamId, targetUserId, newRole) => {
+    const updateMemberRole = useCallback(async (teamId, targetUserId, newRole) => {
         await TeamService.updateMemberRole(teamId, targetUserId, newRole, user.id);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const leaveTeam = async (teamId) => {
+    const leaveTeam = useCallback(async (teamId) => {
         await TeamService.processMemberExit(teamId, user.id);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const dissolveCoop = async (teamId) => {
+    const dissolveCoop = useCallback(async (teamId) => {
         await TeamService.dissolveTeam(teamId, user.id);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const toggleService = async (teamId, serviceId) => {
+    const toggleService = useCallback(async (teamId, serviceId) => {
         await TeamService.toggleTeamService(teamId, serviceId, user.id);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const updateRules = async (teamId, rulesText) => {
+    const updateRules = useCallback(async (teamId, rulesText) => {
         await TeamService.updateTeamRules(teamId, rulesText, user.id);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const acceptRules = async (teamId) => {
+    const acceptRules = useCallback(async (teamId) => {
         await TeamService.acceptTeamRules(teamId, user.id);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const closeProject = async (teamId, projectId, ratings) => {
+    const closeProject = useCallback(async (teamId, projectId, ratings) => {
         await TeamService.completeProject(teamId, projectId, ratings);
         await fetchTeams();
-    };
+    }, [fetchTeams]);
 
-    const submitEvaluation = async (teamId, projectId, targetUserId, score, feedback) => {
+    const submitEvaluation = useCallback(async (teamId, projectId, targetUserId, score, feedback) => {
         await TeamService.submitMemberReview(teamId, projectId, user.id, targetUserId, score, feedback);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const updateTeam = async (teamId, data) => {
+    const updateTeam = useCallback(async (teamId, data) => {
         await TeamService.updateTeamInfo(teamId, data, user.id);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const respondToInvite = async (teamId, accept) => {
+    const respondToInvite = useCallback(async (teamId, accept) => {
         await TeamService.respondToInvite(teamId, user.id, accept);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const applyToTeam = async (teamId, coverLetter) => {
+    const applyToTeam = useCallback(async (teamId, coverLetter) => {
         await TeamService.applyToCoop(teamId, user.id, coverLetter);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
-    const handleApplicationResponse = async (teamId, applicantId, accept) => {
+    const handleApplicationResponse = useCallback(async (teamId, applicantId, accept) => {
         await TeamService.handleApplication(teamId, applicantId, user.id, accept);
         await fetchTeams();
-    };
+    }, [user?.id, fetchTeams]);
 
     // Helper for UI
     const canCreateTeam = (user) => {
@@ -225,7 +225,7 @@ export const TeamProvider = ({ children }) => {
         return TeamService.canPerformAction(teamId, action, user.id, targetUserId);
     };
 
-    const value = {
+    const value = React.useMemo(() => ({
         teams,
         userTeams,
         loading,
@@ -246,7 +246,26 @@ export const TeamProvider = ({ children }) => {
         canCreateTeam,
         searchUser,
         canPerformAction
-    };
+    }), [
+        teams,
+        userTeams,
+        loading,
+        createTeam,
+        leaveTeam,
+        addMemberToTeam,
+        updateMemberRole,
+        dissolveCoop,
+        toggleService,
+        updateRules,
+        acceptRules,
+        closeProject,
+        submitEvaluation,
+        updateTeam,
+        respondToInvite,
+        applyToTeam,
+        handleApplicationResponse,
+        canPerformAction
+    ]);
 
     return (
         <TeamContext.Provider value={value}>

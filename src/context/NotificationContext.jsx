@@ -16,7 +16,7 @@ export const NotificationProvider = ({ children }) => {
     const [toasts, setToasts] = useState([]); // Real-time visual alerts
 
     const loadNotifications = useCallback(async () => {
-        if (!user) {
+        if (!user?.id) {
             setNotifications([]);
             setUnreadCount(0);
             return;
@@ -29,11 +29,11 @@ export const NotificationProvider = ({ children }) => {
         } catch (err) {
             console.error('[NotificationContext] Error in loadNotifications:', err);
         }
-    }, [user]);
+    }, [user?.id]);
 
     // Real-time subscription
     useEffect(() => {
-        if (!user) return;
+        if (!user?.id) return;
 
         const channel = supabase
             .channel(`user-notifications-${user.id}`)
@@ -75,7 +75,7 @@ export const NotificationProvider = ({ children }) => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user, loadNotifications]);
+    }, [user?.id, loadNotifications]);
 
     // Load on mount or user change
     useEffect(() => {
@@ -89,7 +89,7 @@ export const NotificationProvider = ({ children }) => {
         return () => clearInterval(interval);
     }, [loadNotifications]);
 
-    const markAsRead = async (notificationId) => {
+    const markAsRead = useCallback(async (notificationId) => {
         try {
             const updated = await NotificationService.markNotificationAsRead(notificationId);
             if (updated) {
@@ -99,10 +99,10 @@ export const NotificationProvider = ({ children }) => {
         } catch (err) {
             console.error('[NotificationContext] Error marking as read:', err);
         }
-    };
+    }, []);
 
-    const markAllAsRead = async () => {
-        if (!user) return;
+    const markAllAsRead = useCallback(async () => {
+        if (!user?.id) return;
         try {
             const success = await NotificationService.markAllAsRead(user.id);
             if (success) {
@@ -112,9 +112,9 @@ export const NotificationProvider = ({ children }) => {
         } catch (err) {
             console.error('[NotificationContext] Error marking all as read:', err);
         }
-    };
+    }, [user?.id]);
 
-    const deleteNotification = async (notificationId) => {
+    const deleteNotification = useCallback(async (notificationId) => {
         try {
             await NotificationService.deleteNotification(notificationId);
             setNotifications(prev => prev.filter(n => n.id !== notificationId));
@@ -125,18 +125,32 @@ export const NotificationProvider = ({ children }) => {
         } catch (err) {
             console.error('[NotificationContext] Error deleting notification:', err);
         }
-    };
+    }, [notifications]);
+
+    const unreadMessagesCount = React.useMemo(() => 
+        notifications.filter(n => n.type === 'new_message' && !n.read).length, 
+    [notifications]);
+
+    const value = React.useMemo(() => ({
+        notifications,
+        unreadCount,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        refresh: loadNotifications,
+        unreadMessagesCount
+    }), [
+        notifications,
+        unreadCount,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        loadNotifications,
+        unreadMessagesCount
+    ]);
 
     return (
-        <NotificationContext.Provider value={{
-            notifications,
-            unreadCount,
-            markAsRead,
-            markAllAsRead,
-            deleteNotification,
-            refresh: loadNotifications,
-            unreadMessagesCount: notifications.filter(n => n.type === 'new_message' && !n.read).length
-        }}>
+        <NotificationContext.Provider value={value}>
             {children}
 
             {/* REAL-TIME TOAST UI */}

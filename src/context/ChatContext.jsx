@@ -29,8 +29,8 @@ export const ChatProvider = ({ children }) => {
         }
     }, [hiddenChats, user?.id]);
 
-    const loadChats = async () => {
-        if (!user) return;
+    const loadChats = useCallback(async () => {
+        if (!user?.id) return;
         try {
             // 1. Obtener chats donde participo
             const { data: participations, error: pError } = await supabase
@@ -99,11 +99,11 @@ export const ChatProvider = ({ children }) => {
         } catch (error) {
             console.error("[ChatContext] Error loading chats:", error);
         }
-    };
+    }, [user?.id, hiddenChats]);
 
     // --- GLOBAL REAL-TIME SYNC ---
     useEffect(() => {
-        if (!user) return;
+        if (!user?.id) return;
 
         // Subscribe to NEW MESSAGES where I am the receiver
         const messagesSubscription = supabase
@@ -141,10 +141,10 @@ export const ChatProvider = ({ children }) => {
             supabase.removeChannel(messagesSubscription);
             supabase.removeChannel(chatsSubscription);
         };
-    }, [user]);
+    }, [user?.id, loadChats]);
 
-    const createChat = async (participantIds, type = 'direct', contextId = null, contextTitle = null, options = {}) => {
-        if (!user) throw new Error("Debe estar autenticado");
+    const createChat = useCallback(async (participantIds, type = 'direct', contextId = null, contextTitle = null, options = {}) => {
+        if (!user?.id) throw new Error("Debe estar autenticado");
 
         const normalizedContextId = contextId?.toString();
         
@@ -155,31 +155,24 @@ export const ChatProvider = ({ children }) => {
             let targetChatId = null;
 
             if (normalizedContextId) {
-                // AGGRESSIVE SEARCH: If there's a contextId, we MUST find any existing chat for it
-                // We don't care about the type here, because one context (Project/Order) should only have ONE chat.
                 const { data: existingChats } = await supabase
                     .from('chats')
                     .select('id, type')
                     .eq('context_id', normalizedContextId);
                 
                 if (existingChats && existingChats.length > 0) {
-                    // We found at least one. We take the one that is NOT empty if possible.
-                    // But for now, just taking the first one found is enough to prevent duplicates.
                     targetChatId = existingChats[0].id;
                     console.log(`[ChatContext] Found existing chat for context ${normalizedContextId}:`, targetChatId);
                 }
             } 
             
-            // Si no encontramos por contexto o es un chat directo, buscamos por participantes
             if (!targetChatId && type === 'direct') {
                 const otherId = participantIds.find(id => id !== user.id);
                 if (otherId) {
-                    // Buscamos chats de tipo direct donde ambos participemos
                     const { data: commonPart } = await supabase
                         .rpc('get_common_chats', { user_a: user.id, user_b: otherId });
                     
                     if (commonPart && commonPart.length > 0) {
-                        // Verificamos cuál de esos es 'direct'
                         const { data: directChats } = await supabase
                             .from('chats')
                             .select('id')
@@ -195,11 +188,7 @@ export const ChatProvider = ({ children }) => {
                 }
             }
 
-            // 2. SI EL CHAT EXISTE, ASEGURAR QUE TODOS LOS PARTICIPANTES ESTÁN DENTRO (RE-UNIÓN)
             if (targetChatId) {
-                console.log("[ChatContext] El chat ya existe. Verificando participantes...");
-                
-                // Obtenemos participantes actuales en DB
                 const { data: currentParticipants } = await supabase
                     .from('chat_participants')
                     .select('user_id')
@@ -209,7 +198,6 @@ export const ChatProvider = ({ children }) => {
                 const missingParticipants = participantIds.filter(pid => !existingUserIds.includes(String(pid)));
 
                 if (missingParticipants.length > 0) {
-                    console.log("[ChatContext] Re-uniendo participantes faltantes:", missingParticipants);
                     const joinData = missingParticipants.map(pid => ({
                         chat_id: targetChatId,
                         user_id: pid
@@ -217,15 +205,12 @@ export const ChatProvider = ({ children }) => {
                     await supabase.from('chat_participants').insert(joinData);
                 }
 
-                // Recargar si no está en el estado local
                 if (!chats.some(c => c.id === targetChatId)) {
                     await loadChats();
                 }
                 return targetChatId;
             }
 
-            // 3. SI NO EXISTE, ENTONCES SÍ CREAR UNO TOTALMENTE NUEVO
-            console.log("[ChatContext] No se encontró chat previo. Creando nuevo registro...");
             const { data: chat, error: cError } = await supabase
                 .from('chats')
                 .insert({
@@ -241,7 +226,6 @@ export const ChatProvider = ({ children }) => {
 
             if (cError) throw cError;
 
-            // 4. Añadir participantes iniciales
             const pData = participantIds.map(pid => ({
                 chat_id: chat.id,
                 user_id: pid
@@ -253,7 +237,6 @@ export const ChatProvider = ({ children }) => {
 
             if (pError) throw pError;
 
-            // Actualizar estado local y devolver
             await loadChats();
             return chat.id;
 
@@ -261,15 +244,15 @@ export const ChatProvider = ({ children }) => {
             console.error("[ChatContext] Error crítico en createChat:", error);
             throw error;
         }
-    };
+    }, [user?.id, chats, loadChats]);
 
     // Cargar al montar o cambiar usuario
     useEffect(() => {
         loadChats().catch(err => console.error("[ChatContext] Unhandled loadChats error:", err));
-    }, [user]);
+    }, [loadChats]);
 
     // Suscripción Global a Mensajes
-    const toggleChatBlock = async (chatId) => {
+    const toggleChatBlock = useCallback(async (chatId) => {
         const chat = chats.find(c => c.id === chatId);
         if (!chat) return;
 
@@ -289,9 +272,9 @@ export const ChatProvider = ({ children }) => {
         } catch (error) {
             console.error("[ChatContext] Error al bloquear chat:", error);
         }
-    };
+    }, [chats]);
 
-    const fetchMessages = async (chatId) => {
+    const fetchMessages = useCallback(async (chatId) => {
         try {
             const { data, error } = await supabase
                 .from('messages')
@@ -316,16 +299,15 @@ export const ChatProvider = ({ children }) => {
             console.error("[ChatContext] Error al obtener mensajes:", error);
             return [];
         }
-    };
+    }, []);
 
     // Track last notification time per chat to avoid spam
     const [lastNotifMap, setLastNotifMap] = useState({});
 
-    const sendMessage = async (chatId, text, attachments = [], options = {}) => {
-        if (!user && !options.isSystem) throw new Error("Debe estar autenticado");
+    const sendMessage = useCallback(async (chatId, text, attachments = [], options = {}) => {
+        if (!user?.id && !options.isSystem) throw new Error("Debe estar autenticado");
 
         try {
-            // Determinar el receiver_id (ID del otro participante)
             let receiverId = options.receiverId;
 
             if (!receiverId) {
@@ -336,7 +318,6 @@ export const ChatProvider = ({ children }) => {
                 }
 
                 if (!receiverId) {
-                    console.log(`[ChatContext] receiverId no hallado en estado local para chat ${chatId}. Consultando DB...`);
                     const { data: participants } = await supabase
                         .from('chat_participants')
                         .select('user_id')
@@ -347,9 +328,6 @@ export const ChatProvider = ({ children }) => {
                 }
             }
 
-            console.log(`[ChatContext] Enviando mensaje a receiverId: ${receiverId}`);
-
-            // Sanitización contra inyección/XSS antes de guardar a DB
             const cleanText = text ? sanitizeText(text) : text;
 
             const { data: message, error } = await supabase
@@ -368,7 +346,6 @@ export const ChatProvider = ({ children }) => {
 
             if (error) throw error;
 
-            // Actualizar el "último mensaje" en el chat
             await supabase
                 .from('chats')
                 .update({
@@ -377,12 +354,10 @@ export const ChatProvider = ({ children }) => {
                 })
                 .eq('id', chatId);
 
-            // --- NOTIFICATION LOGIC ---
             if (receiverId && !options.isSystem && cleanText) {
                 const now = Date.now();
                 const lastTime = lastNotifMap[chatId] || 0;
                 
-                // Anti-spam: Only notify if 15 seconds have passed since last one for this chat
                 if (now - lastTime > 15000) {
                     const senderName = user.first_name || user.username || 'Un usuario';
                     
@@ -395,22 +370,14 @@ export const ChatProvider = ({ children }) => {
                         });
                         
                         if (notifResult) {
-                            console.log(`[ChatContext] Notificación creada con éxito para ${receiverId}`);
                             setLastNotifMap(prev => ({ ...prev, [chatId]: now }));
-                        } else {
-                            console.warn(`[ChatContext] El servicio de notificaciones devolvió null para ${receiverId}. Posible error de RLS.`);
                         }
                     } catch (notifErr) {
                         console.error("[ChatContext] Error crítico al crear notificación:", notifErr);
                     }
-                } else {
-                    console.log(`[ChatContext] Notificación omitida por anti-spam (<15s) para chat ${chatId}`);
                 }
-            } else {
-                console.warn(`[ChatContext] No se pudo enviar notificación: receiverId=${receiverId}, isSystem=${options.isSystem}, cleanText=${!!cleanText}`);
             }
 
-            // Registro de actividad gamificada
             if (user && !options.isSystem) {
                 const updated = registerActivity(user);
                 updateUser(updated).catch(e => console.warn('[ChatContext] Activity sync failed:', e));
@@ -421,38 +388,28 @@ export const ChatProvider = ({ children }) => {
             console.error("[ChatContext] Error al enviar mensaje:", error);
             throw error;
         }
-    };
+    }, [user, chats, lastNotifMap, updateUser]);
 
-    const deleteChat = async (chatId) => {
-        if (!user) return;
-        // SOFT DELETE: We just hide it for this user, but keep participation 
-        // to avoid breaking metadata for the other participant.
+    const deleteChat = useCallback(async (chatId) => {
+        if (!user?.id) return;
         setHiddenChats(prev => [...new Set([...prev, chatId])]);
         setChats(prev => prev.filter(c => c.id !== chatId));
         return true;
-    };
+    }, [user?.id]);
 
-    const purgeDuplicateChats = async () => {
-        if (!user || isCleaning) return 0;
+    const purgeDuplicateChats = useCallback(async () => {
+        if (!user?.id || isCleaning) return 0;
         setIsCleaning(true);
         
         try {
-            // Group chats logic
             const groups = {};
-            
-            // Re-fetch all to be sure
             const { data: participations } = await supabase.from('chat_participants').select('chat_id').eq('user_id', user.id);
             const chatIds = (participations || []).map(p => p.chat_id);
             const { data: chatsData } = await supabase.from('chats').select('*').in('id', chatIds);
             
-            // Reconstruct groups
             (chatsData || []).forEach(chat => {
                 let key = '';
                 if (chat.type === 'order' && chat.context_id) key = `order_${chat.context_id}`;
-                else if (chat.type === 'direct') {
-                    // For direct chats we need the other participant... this is tricky without the full enrichment
-                    // But we can skip direct purge here and focus on order/project ones which are the most common duplicates
-                }
                 if (key) {
                     if (!groups[key]) groups[key] = [];
                     groups[key].push(chat);
@@ -479,10 +436,10 @@ export const ChatProvider = ({ children }) => {
         } finally {
             setIsCleaning(false);
         }
-    };
+    }, [user?.id, isCleaning, loadChats]);
 
-    const markMessagesAsRead = async (chatId) => {
-        if (!user) return;
+    const markMessagesAsRead = useCallback(async (chatId) => {
+        if (!user?.id) return;
         try {
             await supabase
                 .from('messages')
@@ -493,10 +450,10 @@ export const ChatProvider = ({ children }) => {
         } catch (error) {
             console.error("[ChatContext] Error marking as read:", error);
         }
-    };
+    }, [user?.id]);
 
-    const markMessagesAsDelivered = async (chatId) => {
-        if (!user) return;
+    const markMessagesAsDelivered = useCallback(async (chatId) => {
+        if (!user?.id) return;
         try {
             await supabase
                 .from('messages')
@@ -507,32 +464,38 @@ export const ChatProvider = ({ children }) => {
         } catch (error) {
             console.error("[ChatContext] Error marking as delivered:", error);
         }
-    };
+    }, [user?.id]);
 
-    const getChatById = (chatId) => {
-        return chats.find(c => c.id === chatId);
-    };
-
-    const getUserChats = () => {
-        return chats;
-    };
+    const value = React.useMemo(() => ({
+        chats,
+        createChat,
+        toggleChatBlock,
+        deleteChat,
+        purgeDuplicateChats,
+        isCleaning,
+        sendMessage,
+        fetchMessages,
+        markMessagesAsRead,
+        markMessagesAsDelivered,
+        getChatById: (chatId) => chats.find(c => c.id === chatId),
+        getUserChats: () => chats,
+        loadChats
+    }), [
+        chats,
+        createChat,
+        toggleChatBlock,
+        deleteChat,
+        purgeDuplicateChats,
+        isCleaning,
+        sendMessage,
+        fetchMessages,
+        markMessagesAsRead,
+        markMessagesAsDelivered,
+        loadChats
+    ]);
 
     return (
-        <ChatContext.Provider value={{
-            chats,
-            createChat,
-            toggleChatBlock,
-            deleteChat,
-            purgeDuplicateChats,
-            isCleaning,
-            sendMessage,
-            fetchMessages,
-            markMessagesAsRead,
-            markMessagesAsDelivered,
-            getChatById,
-            getUserChats,
-            loadChats
-        }}>
+        <ChatContext.Provider value={value}>
             {children}
         </ChatContext.Provider>
     );
