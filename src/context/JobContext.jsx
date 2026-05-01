@@ -69,7 +69,7 @@ const mapJobToDB = (job, serviceOrProject, buyer) => {
 // ── Provider ─────────────────────────────────────────────────
 
 export const JobProvider = ({ children }) => {
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, loading: authLoading } = useAuth();
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -143,12 +143,15 @@ export const JobProvider = ({ children }) => {
     }, [user]);
 
     useEffect(() => {
+        // V41: Sequential Loading - Wait for Auth to be ready
+        if (authLoading || !user?.id) return;
+
         fetchJobs()
             .then(jobs => {
                 if (jobs) checkDeadlines(jobs);
             })
             .catch(err => console.error('[JobContext] Unhandled fetchJobs error:', err));
-    }, [fetchJobs, checkDeadlines]);
+    }, [authLoading, user?.id, fetchJobs, checkDeadlines]);
 
     // REAL-TIME SUBSCRIPTION
     useEffect(() => {

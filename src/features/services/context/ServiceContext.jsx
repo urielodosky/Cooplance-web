@@ -118,7 +118,7 @@ const mapToDB = (service) => {
 // ── Provider ─────────────────────────────────────────────────
 
 export const ServiceProvider = ({ children }) => {
-    const { user, updateUser } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const isMounted = useRef(true);
@@ -209,8 +209,11 @@ export const ServiceProvider = ({ children }) => {
     }, []); // isMounted is a ref, doesn't need to be in dependencies
 
     useEffect(() => {
+        // V41: Sequential Loading
+        if (authLoading) return;
+        
         fetchServices().catch(err => console.error('[ServiceContext] Unhandled fetchServices error:', err));
-    }, [fetchServices]);
+    }, [authLoading, fetchServices]);
 
     const addService = async (service) => {
         try {

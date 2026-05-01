@@ -15,7 +15,7 @@ export const useTeams = () => {
 };
 
 export const TeamProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [teams, setTeams] = useState([]);
     const [userTeams, setUserTeams] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -77,6 +77,9 @@ export const TeamProvider = ({ children }) => {
     }, [user?.id]);
 
     useEffect(() => {
+        // V41: Sequential Loading
+        if (authLoading || !user?.id) return;
+        
         fetchTeams().catch(err => console.error('[TeamContext] Unhandled fetchTeams error:', err));
         
         // Real-time subscription

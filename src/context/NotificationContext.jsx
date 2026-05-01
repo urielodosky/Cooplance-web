@@ -10,7 +10,7 @@ export const useNotifications = () => {
 };
 
 export const NotificationProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [toasts, setToasts] = useState([]); // Real-time visual alerts
@@ -79,6 +79,9 @@ export const NotificationProvider = ({ children }) => {
 
     // Load on mount or user change
     useEffect(() => {
+        // V41: Sequential Loading
+        if (authLoading || !user?.id) return;
+
         loadNotifications();
         
         // Polling fallback every 60 seconds
@@ -87,7 +90,7 @@ export const NotificationProvider = ({ children }) => {
         }, 60000);
 
         return () => clearInterval(interval);
-    }, [loadNotifications]);
+    }, [authLoading, user?.id, loadNotifications]);
 
     const markAsRead = useCallback(async (notificationId) => {
         try {

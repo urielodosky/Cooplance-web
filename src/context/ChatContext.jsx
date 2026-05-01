@@ -10,7 +10,7 @@ const ChatContext = createContext();
 export const useChat = () => useContext(ChatContext);
 
 export const ChatProvider = ({ children }) => {
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, loading: authLoading } = useAuth();
     const [chats, setChats] = useState([]);
     const [isCleaning, setIsCleaning] = useState(false);
     const [hiddenChats, setHiddenChats] = useState(() => {
@@ -248,8 +248,11 @@ export const ChatProvider = ({ children }) => {
 
     // Cargar al montar o cambiar usuario
     useEffect(() => {
+        // V41: Sequential Loading
+        if (authLoading || !user?.id) return;
+        
         loadChats().catch(err => console.error("[ChatContext] Unhandled loadChats error:", err));
-    }, [loadChats]);
+    }, [authLoading, loadChats, user?.id]);
 
     // Suscripción Global a Mensajes
     const toggleChatBlock = useCallback(async (chatId) => {
