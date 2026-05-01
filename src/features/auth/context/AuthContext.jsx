@@ -392,7 +392,7 @@ export const AuthProvider = ({ children }) => {
             parent_id: registrationData.parentId || null,
             status: registrationData.parentId ? 'pending_parental_approval' : 'active',
             terms_accepted: registrationData.termsAccepted || registrationData.terms_accepted || false,
-            accepted_legal_version: CURRENT_LEGAL_VERSION, // V28: New users are always on latest version
+            terms_accepted_v2: true, // V28: New users start as accepted
             avatar_url: registrationData.profileImage || null, // V28: Added to metadata for trigger
         };
 
@@ -811,7 +811,7 @@ export const AuthProvider = ({ children }) => {
             'level', 'xp', 'points', 'gender', 'location', 'country', 'dob', 
             'phone', 'dni', 'province', 'city', 'cuil_cuit', 'company_name',
             'responsible_name', 'responsible_first_name', 'responsible_last_name',
-            'status', 'parent_id', 'terms_accepted_at', 'accepted_legal_version',
+            'status', 'parent_id', 'terms_accepted_at', 'terms_accepted_v2',
             'gamification', 'last_seen', 'is_verified', 'verification_status'
         ];
 

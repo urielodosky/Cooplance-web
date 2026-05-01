@@ -7,8 +7,8 @@ const LegalModal = () => {
     const [accepted, setAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // If no user is logged in, or if they already accepted the current (or newer) version, don't show the modal
-    if (!user || user.accepted_legal_version >= CURRENT_LEGAL_VERSION) {
+    // Si no hay usuario o si ya aceptó el interruptor v2, no mostramos nada
+    if (!user || user.terms_accepted_v2 === true) {
         return null;
     }
 
@@ -16,9 +16,8 @@ const LegalModal = () => {
         if (!accepted) return;
         setLoading(true);
         try {
-            // ONLY send the field we want to update to avoid RLS/Schema errors with joined fields
-            await updateUser({ accepted_legal_version: CURRENT_LEGAL_VERSION });
-            // App unblocks automatically because user.accepted_legal_version >= CURRENT_LEGAL_VERSION will be true
+            await updateUser({ terms_accepted_v2: true });
+            // App unblocks automatically because user.terms_accepted_v2 will be true
         } catch (error) {
             console.error('Error updating legal version:', error);
             alert('Hubo un error al guardar tu aceptación. Por favor, intenta nuevamente.');
