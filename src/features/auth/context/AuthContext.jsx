@@ -245,7 +245,7 @@ export const AuthProvider = ({ children }) => {
                         sessionStorage.clear();
                         setUser(null);
                         setLoading(false);
-                        supabase.auth.signOut();
+                        try { supabase.auth.signOut(); } catch(e) {}
                         return;
                     }
 
@@ -253,12 +253,22 @@ export const AuthProvider = ({ children }) => {
                 } catch (err) {
                     console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
                     
-                    // Detect Network/CORS/520 block and fail fast
-                    if (err.message === 'Failed to fetch' || err.name === 'TypeError' || err.status === 520) {
-                        console.warn("[AuthContext] Network/CORS/520 block detected. Aborting and clearing.");
+                    // Detect Network/CORS/520/403 block and fail fast
+                    const isConnError = err.message === 'Failed to fetch' || 
+                                       err.name === 'TypeError' || 
+                                       err.status === 520 || 
+                                       err.status === 403;
+
+                    if (isConnError) {
+                        console.warn("[AuthContext] Connection/Security block detected. Forcing Deep Clean...");
                         localStorage.clear();
+                        sessionStorage.clear();
                         setUser(null);
                         setLoading(false);
+                        // Force redirect to register to break the loop
+                        if (window.location.pathname !== '/register') {
+                            window.location.href = '/register';
+                        }
                         break;
                     }
 
@@ -270,7 +280,6 @@ export const AuthProvider = ({ children }) => {
             console.error("[AuthContext] fetchProfile critical crash:", globalErr);
         } finally {
             syncInProgress.current = null;
-            // Only set loading false if we have a user or if we explicitly failed
             if (!syncInProgress.current) setLoading(false);
         }
     }, []); 
