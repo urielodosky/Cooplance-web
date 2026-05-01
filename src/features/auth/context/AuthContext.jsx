@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { processGamificationRules } from '../../../utils/gamification';
 import { supabase } from '../../../lib/supabase';
 import { createClient } from '@supabase/supabase-js';
