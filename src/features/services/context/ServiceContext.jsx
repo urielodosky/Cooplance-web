@@ -206,7 +206,7 @@ export const ServiceProvider = ({ children }) => {
                 setLoading(false);
             }
         }
-    }, [isMounted]);
+    }, []); // isMounted is a ref, doesn't need to be in dependencies
 
     useEffect(() => {
         fetchServices().catch(err => console.error('[ServiceContext] Unhandled fetchServices error:', err));
@@ -236,7 +236,7 @@ export const ServiceProvider = ({ children }) => {
         }
     };
 
-    const updateService = async (updatedService) => {
+    const updateService = useCallback(async (updatedService) => {
         try {
             const { data: { user: sessionUser } } = await supabase.auth.getUser();
             const dbRow = mapToDB(updatedService);
@@ -270,9 +270,9 @@ export const ServiceProvider = ({ children }) => {
             console.error('[ServiceContext] Error updating service:', err);
             throw err;
         }
-    };
+    }, [user?.id]);
 
-    const deleteService = async (serviceId) => {
+    const deleteService = useCallback(async (serviceId) => {
         try {
             console.log(`[ServiceContext] Attempting to delete service: ${serviceId}`);
             const { error, count } = await supabase
@@ -294,10 +294,14 @@ export const ServiceProvider = ({ children }) => {
             console.error('[ServiceContext] Error deleting service:', err);
             throw err;
         }
-    };
+    }, []);
+
+    const value = React.useMemo(() => ({
+        services, loading, addService, updateService, deleteService, fetchServices
+    }), [services, loading, fetchServices, updateService, deleteService]);
 
     return (
-        <ServiceContext.Provider value={{ services, loading, addService, updateService, deleteService, fetchServices }}>
+        <ServiceContext.Provider value={value}>
             {children}
         </ServiceContext.Provider>
     );

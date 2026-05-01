@@ -1563,22 +1563,31 @@ const Dashboard = () => {
         }
     }, [user?.id, authUser.id, isTutorView]);
 
+    // V40: Robust Gamification Sync - Prevent infinite DoS loops
+    const lastSyncRef = useRef(null);
+
     useEffect(() => {
-        if (!user || (user.role !== 'freelancer' && user.role !== 'company')) return;
+        if (!user || (user.role !== 'freelancer' && user.role !== 'company') || isTutorView) return;
 
         const processedUser = processGamificationRules(user);
-
+        
+        // Deep comparison of gamification object to avoid stringify loops
+        const currentG = JSON.stringify(user.gamification);
+        const processedG = JSON.stringify(processedUser.gamification);
+        
         const hasChanges =
             processedUser.xp !== user.xp ||
             processedUser.level !== user.level ||
-            JSON.stringify(processedUser.gamification) !== JSON.stringify(user.gamification);
+            processedG !== currentG;
 
-        if (hasChanges) {
+        if (hasChanges && lastSyncRef.current !== processedG) {
+            console.log("[Dashboard] Syncing gamification changes...");
+            lastSyncRef.current = processedG;
             updateUser(processedUser).catch(err => {
                 console.warn("[Dashboard] Silently failed to sync gamification rules:", err);
             });
         }
-    }, [user?.id, user?.xp, user?.level, updateUser]);
+    }, [user?.id, user?.xp, user?.level, user?.gamification, updateUser, isTutorView]);
 
     const myOrders = useMemo(() => user ? (jobs || []).filter(j => j.buyerId === user.id) : [], [jobs, user?.id]);
     const myWork = useMemo(() => user ? (jobs || []).filter(j => j.freelancerId === user.id) : [], [jobs, user?.id]);

@@ -190,7 +190,7 @@ export const JobProvider = ({ children }) => {
         };
     }, [user, fetchJobs]);
 
-    const createJob = async (service, buyer) => {
+    const createJob = useCallback(async (service, buyer) => {
         try {
             const dbRow = mapJobToDB({}, service, buyer);
 
@@ -232,9 +232,9 @@ export const JobProvider = ({ children }) => {
             console.error('[JobContext] Error creating job:', err);
             throw err;
         }
-    };
+    }, [user, updateUser]);
 
-    const updateJobStatus = async (jobId, status, explicitDeliveryResult = null) => {
+    const updateJobStatus = useCallback(async (jobId, status, explicitDeliveryResult = null) => {
         try {
             const updateData = { status };
 
@@ -573,9 +573,9 @@ export const JobProvider = ({ children }) => {
         } catch (err) {
             console.error('[JobContext] Error updating job status:', err);
         }
-    };
+    }, [jobs, user, updateUser]);
 
-    const extendJobDeadline = async (jobId, extraDays) => {
+    const extendJobDeadline = useCallback(async (jobId, extraDays) => {
         try {
             const job = jobs.find(j => j.id === jobId);
             if (!job?.deadline) return;
@@ -598,9 +598,9 @@ export const JobProvider = ({ children }) => {
         } catch (err) {
             console.error('[JobContext] Error extending deadline:', err);
         }
-    };
+    }, [jobs]);
 
-    const hideJob = (jobId) => {
+    const hideJob = useCallback((jobId) => {
         // Hide from dashboard without deleting from DB or touching reviews
         const hiddenKey = `hidden_jobs_${user?.id || 'anon'}`;
         const hidden = JSON.parse(localStorage.getItem(hiddenKey) || '[]');
@@ -610,9 +610,9 @@ export const JobProvider = ({ children }) => {
         }
         // Remove from local state so it disappears immediately
         setJobs(prev => prev.filter(j => j.id !== jobId));
-    };
+    }, [user?.id]);
 
-    const resolveEscrow = async (jobId, resolution) => {
+    const resolveEscrow = useCallback(async (jobId, resolution) => {
         // resolution: 'release' (to freelancer) or 'refund' (to client)
         try {
             const job = jobs.find(j => j.id === jobId);
@@ -666,25 +666,27 @@ export const JobProvider = ({ children }) => {
             console.error('[JobContext] Error resolving escrow:', err);
             throw err;
         }
-    };
+    }, [jobs, updateJobStatus]);
 
-    const getVisibleJobs = useCallback(() => {
+    const visibleJobs = React.useMemo(() => {
         const hiddenKey = `hidden_jobs_${user?.id || 'anon'}`;
         const hidden = JSON.parse(localStorage.getItem(hiddenKey) || '[]');
         return jobs.filter(j => !hidden.includes(j.id));
-    }, [jobs, user]);
+    }, [jobs, user?.id]);
+
+    const value = React.useMemo(() => ({ 
+        jobs: visibleJobs, 
+        loading, 
+        createJob, 
+        updateJobStatus, 
+        extendJobDeadline, 
+        resolveEscrow, 
+        hideJob, 
+        fetchJobs 
+    }), [visibleJobs, loading, createJob, updateJobStatus, extendJobDeadline, resolveEscrow, hideJob, fetchJobs]);
 
     return (
-        <JobContext.Provider value={{ 
-            jobs: getVisibleJobs(), 
-            loading, 
-            createJob, 
-            updateJobStatus, 
-            extendJobDeadline, 
-            resolveEscrow, 
-            hideJob, 
-            fetchJobs 
-        }}>
+        <JobContext.Provider value={value}>
             {children}
         </JobContext.Provider>
     );

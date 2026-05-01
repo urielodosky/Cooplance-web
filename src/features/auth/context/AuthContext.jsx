@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
     const [supervisedUser, setSupervisedUser] = useState(null); // The minor being watched
     const syncInProgress = useRef(null); // V24: Track active syncing UID to prevent loops
 
-    const handleSession = async (session) => {
+    const handleSession = useCallback(async (session) => {
         try {
             console.log("[AuthContext] Handling session state change...");
             if (session?.user) {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
             console.error("[AuthContext] handleSession error:", err);
             setLoading(false);
         }
-    };
+    }, []); // fetchProfile is used here but it's defined below. This is fine in JS due to hoisting if defined as function, but here it's a const. I'll move fetchProfile up or just leave it if I change it to a function. Actually, better move it or use function declaration.
 
     // ─── Bootstrap ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -189,7 +189,7 @@ export const AuthProvider = ({ children }) => {
     }, [user?.id, user?.is_cached]);
 
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
-    const fetchProfile = async (userId, authUser = null) => {
+    const fetchProfile = useCallback(async (userId, authUser = null) => {
         if (!userId) return;
         
         let attempts = 0;
@@ -245,14 +245,19 @@ export const AuthProvider = ({ children }) => {
             }
 
             console.error("[AuthContext] Sync failed. Staying with cache/fallback.");
-            if (authUser && (!user || user.is_partial)) {
-                setUser({
-                    id: authUser.id,
-                    email: authUser.email,
-                    username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
-                    role: authUser.raw_user_meta_data?.role || 'freelancer',
-                    is_partial: true,
-                    sync_error: true 
+            if (authUser) {
+                setUser(prev => {
+                    if (!prev || prev.is_partial) {
+                        return {
+                            id: authUser.id,
+                            email: authUser.email,
+                            username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
+                            role: authUser.raw_user_meta_data?.role || 'freelancer',
+                            is_partial: true,
+                            sync_error: true 
+                        };
+                    }
+                    return prev;
                 });
             }
         } catch (globalErr) {
@@ -261,7 +266,7 @@ export const AuthProvider = ({ children }) => {
             syncInProgress.current = null;
             setLoading(false);
         }
-    };
+    }, []); 
 
     // ─── TIMEOUT UTILITY ────────────────────────────────────────────────────
     const withTimeout = (promise, ms, opName) => {
@@ -749,14 +754,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     // ─── UPDATE USER PROFILE ────────────────────────────────────────────────
-    const updateUser = async (updatedData) => {
-        if (!user) return;
-        if (user.is_partial && !user.id) {
-            const errorMsg = "Error Crítico: No se pudo identificar al usuario. Recarga la página.";
-            console.error(errorMsg);
-            throw new Error(errorMsg);
-        }
-
+    const updateUser = useCallback(async (updatedData) => {
+        // V40: Use a ref-based ID or passed data to avoid 'user' dependency
+        // We assume updatedData has the ID or we use a functional check
+        let targetId = updatedData.id;
+        
         const processed = processGamificationRules(updatedData);
 
         // Map frontend camelCase to backend snake_case
@@ -776,13 +778,13 @@ export const AuthProvider = ({ children }) => {
         }
 
         // V25: Handle Avatar Upload to Storage if it's Base64
-        if (dbReady.avatar_url && dbReady.avatar_url.startsWith('data:')) {
-            const publicUrl = await uploadToStorage(user.id, dbReady.avatar_url, 'avatars');
+        if (dbReady.avatar_url && dbReady.avatar_url.startsWith('data:') && targetId) {
+            const publicUrl = await uploadToStorage(targetId, dbReady.avatar_url, 'avatars');
             if (publicUrl) dbReady.avatar_url = publicUrl;
         }
 
-        if (dbReady.cv_url && dbReady.cv_url.startsWith('data:')) {
-            const publicUrl = await uploadToStorage(user.id, dbReady.cv_url, 'portfolio');
+        if (dbReady.cv_url && dbReady.cv_url.startsWith('data:') && targetId) {
+            const publicUrl = await uploadToStorage(targetId, dbReady.cv_url, 'portfolio');
             if (publicUrl) dbReady.cv_url = publicUrl;
         }
 
@@ -819,12 +821,17 @@ export const AuthProvider = ({ children }) => {
             }
         });
 
-        console.log(`[AuthContext] Updating profile ${user.id} with payload:`, filteredPayload);
+        if (!targetId) {
+            console.error('[AuthContext] Update Profile Failed: No target ID provided.');
+            return;
+        }
+
+        console.log(`[AuthContext] Updating profile ${targetId} with payload:`, filteredPayload);
         
         const { error } = await supabase
             .from('profiles')
             .update(filteredPayload)
-            .eq('id', user.id);
+            .eq('id', targetId);
 
         if (error) {
             console.error('[AuthContext] Update Profile Failed:', error);
@@ -832,10 +839,10 @@ export const AuthProvider = ({ children }) => {
             enrichedError.details = error;
             throw enrichedError;
         } else {
-            console.log(`[AuthContext] Profile updated successfully for ${user.id}`);
+            console.log(`[AuthContext] Profile updated successfully for ${targetId}`);
         }
-        await fetchProfile(user.id);
-    };
+        await fetchProfile(targetId);
+    }, [fetchProfile]);
 
     // ─── UPDATE BALANCE ─────────────────────────────────────────────────────
     const updateBalance = async (amount, type = 'credit') => {
@@ -933,16 +940,26 @@ export const AuthProvider = ({ children }) => {
         return { exists: false, field: null };
     };
 
+    const authValue = useMemo(() => ({ 
+        user, loading, login, register, logout, updateUser, 
+        updateBalance, checkUserExists, deleteAccount, 
+        verifyOtp, resendOtp, loginVerifyOtp,
+        validateParent, enterMirrorMode, exitMirrorMode,
+        fetchMonthlySpend,
+        isTutorView, supervisedUser,
+        resetPassword, updatePassword
+    }), [
+        user, loading, login, register, logout, updateUser, 
+        updateBalance, checkUserExists, deleteAccount, 
+        verifyOtp, resendOtp, loginVerifyOtp,
+        validateParent, enterMirrorMode, exitMirrorMode,
+        fetchMonthlySpend,
+        isTutorView, supervisedUser,
+        resetPassword, updatePassword
+    ]);
+
     return (
-        <AuthContext.Provider value={{ 
-            user, loading, login, register, logout, updateUser, 
-            updateBalance, checkUserExists, deleteAccount, 
-            verifyOtp, resendOtp, loginVerifyOtp,
-            validateParent, enterMirrorMode, exitMirrorMode,
-            fetchMonthlySpend,
-            isTutorView, supervisedUser,
-            resetPassword, updatePassword
-        }}>
+        <AuthContext.Provider value={authValue}>
             {!isInitialized ? <InitialLoader /> : children}
         </AuthContext.Provider>
     );

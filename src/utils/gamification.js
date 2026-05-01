@@ -98,7 +98,9 @@ export const processGamificationRules = (user) => {
 
     // 0. Initialize missing fields
     if (!updatedUser.gamification) {
-        updatedUser.gamification = { lastActivity: now };
+        // V40: Use a stable fallback if possible to avoid infinite loops in useEffect
+        updatedUser.gamification = { lastActivity: updatedUser.last_seen ? new Date(updatedUser.last_seen).getTime() : 0 };
+        hasChanges = true;
     }
 
     const g = updatedUser.gamification;
