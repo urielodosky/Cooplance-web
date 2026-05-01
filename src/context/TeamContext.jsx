@@ -184,6 +184,16 @@ export const TeamProvider = ({ children }) => {
         await fetchTeams();
     };
 
+    const applyToTeam = async (teamId, coverLetter) => {
+        await TeamService.applyToCoop(teamId, user.id, coverLetter);
+        await fetchTeams();
+    };
+
+    const handleApplicationResponse = async (teamId, applicantId, accept) => {
+        await TeamService.handleApplication(teamId, applicantId, user.id, accept);
+        await fetchTeams();
+    };
+
     // Helper for UI
     const canCreateTeam = (user) => {
         if (!user) return false;
@@ -231,6 +241,8 @@ export const TeamProvider = ({ children }) => {
         submitEvaluation,
         updateTeam,
         respondToInvite,
+        applyToTeam,
+        handleApplicationResponse,
         canCreateTeam,
         searchUser,
         canPerformAction

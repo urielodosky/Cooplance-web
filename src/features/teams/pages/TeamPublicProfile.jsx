@@ -11,12 +11,17 @@ const TeamPublicProfile = () => {
     const { coopId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { respondToInvite } = useTeams();
+    const { respondToInvite, applyToTeam } = useTeams();
     
     const [team, setTeam] = useState(null);
     const [services, setServices] = useState([]);
     const [reviews, setReviews] = useState([]); // Future implementation
     const [loading, setLoading] = useState(true);
+
+    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    const [coverLetter, setCoverLetter] = useState('');
+    const [isApplyingNow, setIsApplyingNow] = useState(false);
+    const [applyError, setApplyError] = useState('');
 
     useEffect(() => {
         const fetchTeamData = async () => {
@@ -83,9 +88,31 @@ const TeamPublicProfile = () => {
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><div className="loading-spinner"></div></div>;
     if (!team) return <div className="container" style={{ padding: '6rem 2rem', textAlign: 'center' }}><h2 style={{ opacity: 0.5 }}>Coop no encontrada.</h2><button className="btn-secondary" style={{ marginTop: '1rem' }} onClick={() => navigate(-1)}>Volver</button></div>;
 
-    const isPendingMember = (team.members || []).some(m => m.user_id === user?.id && m.status === 'pending');
+    const isMember = (team.members || []).some(m => m.user_id === user?.id && m.status === 'active');
+    const isPendingMember = (team.members || []).some(m => m.user_id === user?.id && m.status === 'pending_invitation');
+    const isApplying = (team.members || []).some(m => m.user_id === user?.id && m.status === 'pending_application');
+    const isRejected = (team.members || []).some(m => m.user_id === user?.id && m.status === 'rejected');
     const activeMembers = (team.members || []).filter(m => m.status === 'active' || m.role === 'owner');
     const rating = team.stats?.avgRating || 0;
+
+    const handleSendApplication = async () => {
+        if (!coverLetter.trim()) {
+            setApplyError('Por favor, escribe una carta de presentación.');
+            return;
+        }
+        setIsApplyingNow(true);
+        setApplyError('');
+        try {
+            await applyToTeam(team.id, coverLetter);
+            setIsApplyModalOpen(false);
+            setCoverLetter('');
+            // Optional: Show success toast
+        } catch (e) {
+            setApplyError(e.message);
+        } finally {
+            setIsApplyingNow(false);
+        }
+    };
 
     const handleInviteResponse = async (accept) => {
         try {
@@ -225,25 +252,85 @@ const TeamPublicProfile = () => {
                     </div>
                 </div>
 
-                {/* Invitation Banner */}
-                {isPendingMember && (
+                {/* Application Section */}
+                {!isMember && !isPendingMember && user?.role === 'freelancer' && (
                     <div style={{ 
-                        marginTop: '3rem', padding: '2rem', 
-                        background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)', 
-                        borderRadius: '24px', border: '1px solid var(--primary)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem'
+                        marginTop: '3rem', padding: '2.5rem', 
+                        background: 'rgba(255, 255, 255, 0.02)', 
+                        borderRadius: '24px', border: '1px solid var(--border)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '2rem',
+                        position: 'relative', overflow: 'hidden'
                     }}>
-                        <div>
-                            <h3 style={{ margin: '0 0 0.3rem 0', color: 'var(--primary)' }}>¡Has sido invitado a unirte!</h3>
-                            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>Forma parte de esta Coop para colaborar en proyectos y servicios conjuntos.</p>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem' }}>¿Quieres unirte a {team.name}?</h3>
+                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                {isApplying 
+                                    ? "Tu solicitud está siendo revisada por los administradores de la Coop." 
+                                    : isRejected 
+                                    ? "Tu solicitud previa fue rechazada. Puedes intentar postularte nuevamente en el futuro." 
+                                    : "Buscamos talento para expandir nuestra oferta de servicios. ¡Postúlate y empieza a colaborar!"}
+                            </p>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.8rem' }}>
-                            <button onClick={() => handleInviteResponse(false)} className="btn-secondary" style={{ padding: '0.7rem 1.5rem', borderRadius: '14px' }}>Rechazar</button>
-                            <button onClick={() => handleInviteResponse(true)} className="btn-primary" style={{ padding: '0.7rem 1.5rem', borderRadius: '14px' }}>Aceptar</button>
-                        </div>
+                        <button 
+                            onClick={() => !isApplying && setIsApplyModalOpen(true)} 
+                            className={isApplying ? "btn-secondary" : "btn-primary"} 
+                            style={{ 
+                                padding: '1rem 2.5rem', 
+                                borderRadius: '16px', 
+                                fontSize: '1rem', 
+                                fontWeight: 800,
+                                opacity: isApplying ? 0.7 : 1,
+                                cursor: isApplying ? 'default' : 'pointer'
+                            }}
+                            disabled={isApplying}
+                        >
+                            {isApplying ? "Solicitud Pendiente" : "Postularse Ahora"}
+                        </button>
                     </div>
                 )}
             </div>
+
+            {/* Application Modal */}
+            {isApplyModalOpen && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, backdropFilter: 'blur(8px)' }} onClick={() => setIsApplyModalOpen(false)}>
+                    <div className="glass animate-in" style={{ width: '90%', maxWidth: '600px', padding: '2.5rem', borderRadius: '32px', background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-glow)' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                            <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🤝</div>
+                            <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Postulación a {team.name}</h2>
+                            <p style={{ color: 'var(--text-secondary)' }}>Cuéntales por qué eres la pieza que falta en su equipo.</p>
+                        </div>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.8rem', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 'bold' }}>Carta de Presentación</label>
+                            <textarea 
+                                value={coverLetter}
+                                onChange={(e) => setCoverLetter(e.target.value)}
+                                placeholder="Me interesa unirme porque tengo experiencia en... y puedo aportar..."
+                                style={{ 
+                                    width: '100%', height: '200px', padding: '1.2rem', 
+                                    borderRadius: '20px', background: 'rgba(0,0,0,0.2)', 
+                                    border: '1px solid var(--border)', color: 'white', 
+                                    fontSize: '1rem', resize: 'none', outline: 'none',
+                                    lineHeight: 1.5
+                                }}
+                            />
+                            {applyError && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.8rem', textAlign: 'center' }}>{applyError}</p>}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button onClick={() => setIsApplyModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '1rem', borderRadius: '16px' }}>Cancelar</button>
+                            <button 
+                                onClick={handleSendApplication} 
+                                className="btn-primary" 
+                                style={{ flex: 1, padding: '1rem', borderRadius: '16px' }}
+                                disabled={isApplyingNow || !coverLetter.trim()}
+                            >
+                                {isApplyingNow ? 'Enviando...' : 'Enviar Postulación'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* TEAM MEMBERS SECTION */}
             <div style={{ marginBottom: '4rem' }}>

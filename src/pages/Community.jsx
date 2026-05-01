@@ -34,7 +34,7 @@ const UserCard = ({ profile, teams = [], navigate }) => {
                     .select('id')
                     .eq('blocker_id', currentUser.id)
                     .eq('blocked_id', profile.id)
-                    .single();
+                    .maybeSingle();
                 setHasBlocked(!!data);
             }
         };

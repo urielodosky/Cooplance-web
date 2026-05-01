@@ -224,12 +224,78 @@ export const addMember = async (coopId, newUserId, actorId, message = "") => {
     return true;
 };
 
+export const applyToCoop = async (coopId, userId, coverLetter) => {
+    // Check if already a member or pending
+    const { data: existing } = await supabase
+        .from('coop_members')
+        .select('*')
+        .eq('coop_id', coopId)
+        .eq('user_id', userId)
+        .maybeSingle();
+    
+    if (existing) {
+        if (existing.status === 'active') throw new Error("Ya eres miembro de esta Coop.");
+        if (existing.status === 'pending_application') throw new Error("Ya has enviado una solicitud a esta Coop.");
+        if (existing.status === 'pending_invitation') throw new Error("Tienes una invitación pendiente de esta Coop.");
+    }
+
+    const { error } = await supabase
+        .from('coop_members')
+        .insert({
+            coop_id: coopId,
+            user_id: userId,
+            role: 'worker',
+            status: 'pending_application',
+            application_message: coverLetter
+        });
+
+    if (error) throw error;
+    return true;
+};
+
+export const handleApplication = async (coopId, applicantId, actorId, accept) => {
+    if (!await canPerformAction(coopId, 'promote', actorId)) {
+        throw new Error("No tienes permisos para gestionar solicitudes.");
+    }
+
+    if (accept) {
+        // Check member limit (5)
+        const { count } = await supabase.from('coop_members').select('*', { count: 'exact', head: true }).eq('coop_id', coopId).eq('status', 'active');
+        if (count >= 5) throw new Error("La Coop ya tiene el límite de 5 miembros activos.");
+
+        const { error } = await supabase
+            .from('coop_members')
+            .update({ status: 'active', joined_at: new Date().toISOString() })
+            .eq('coop_id', coopId)
+            .eq('user_id', applicantId);
+        
+        if (error) throw error;
+    } else {
+        const { error } = await supabase
+            .from('coop_members')
+            .update({ status: 'rejected' })
+            .eq('coop_id', coopId)
+            .eq('user_id', applicantId);
+        
+        if (error) throw error;
+    }
+    return true;
+};
+
 export const respondToInvite = async (coopId, userId, accept) => {
     if (!accept) {
         await supabase.from('coop_members').delete().eq('coop_id', coopId).eq('user_id', userId);
         return;
     }
-    // Acceptance logic shifted to acceptRules in Phase 2
+    
+    // Set to active, but they still need to accept rules in the dashboard to 'activate' features
+    const { error } = await supabase
+        .from('coop_members')
+        .update({ status: 'active', joined_at: new Date().toISOString() })
+        .eq('coop_id', coopId)
+        .eq('user_id', userId);
+    
+    if (error) throw error;
 };
 
 export const updateMemberRole = async (coopId, targetUserId, newRole, actorId) => {

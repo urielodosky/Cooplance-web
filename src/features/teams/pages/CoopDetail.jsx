@@ -14,7 +14,7 @@ const CoopDetail = () => {
     const { coopId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { teams, userTeams, loading, addMemberToTeam, updateMemberRole, leaveTeam, dissolveCoop, updateTeam, acceptRules, updateRules } = useTeams();
+    const { teams, userTeams, loading, addMemberToTeam, updateMemberRole, leaveTeam, dissolveCoop, updateTeam, acceptRules, updateRules, handleApplicationResponse } = useTeams();
     
     const [activeTab, setActiveTab] = useState('info');
     const [showRules, setShowRules] = useState(false);
@@ -528,7 +528,7 @@ const CoopDetail = () => {
                 {activeTab === 'members' && (
                     <div className="glass" style={{ padding: '2rem', borderRadius: '24px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h3 style={{ margin: 0 }}>Equipo de Trabajo ({coop.members?.length || 0})</h3>
+                            <h3 style={{ margin: 0 }}>Equipo de Trabajo ({coop.members?.filter(m => m.status === 'active' || m.role === 'owner').length || 0})</h3>
                             {amIOwner && (
                                 <button 
                                     onClick={() => setIsInviteModalOpen(true)} 
@@ -555,9 +555,42 @@ const CoopDetail = () => {
                                 </button>
                             )}
                         </div>
+
+                        {/* PENDING APPLICATIONS SECTION */}
+                        {amIAdmin && coop.members?.some(m => m.status === 'pending_application') && (
+                            <div style={{ marginBottom: '3rem' }}>
+                                <h4 style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
+                                    Solicitudes de Ingreso ({coop.members.filter(m => m.status === 'pending_application').length})
+                                </h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
+                                    {coop.members.filter(m => m.status === 'pending_application').map(applicant => (
+                                        <div key={applicant.user_id} className="glass" style={{ padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                                                <div style={{ width: '45px', height: '45px', borderRadius: '12px', background: 'var(--bg-card)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                                    {applicant.profile?.avatar_url ? <img src={applicant.profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : applicant.profile?.username?.charAt(0)}
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontWeight: 'bold' }}>{applicant.profile?.username}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Nivel {applicant.profile?.level}</div>
+                                                </div>
+                                            </div>
+                                            <div style={{ background: 'rgba(0,0,0,0.1)', padding: '1rem', borderRadius: '12px', fontSize: '0.85rem', marginBottom: '1rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                                "{applicant.application_message}"
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                                <button onClick={() => handleApplicationResponse(coop.id, applicant.user_id, false)} className="btn-secondary" style={{ flex: 1, padding: '0.6rem', fontSize: '0.8rem' }}>Rechazar</button>
+                                                <button onClick={() => handleApplicationResponse(coop.id, applicant.user_id, true)} className="btn-primary" style={{ flex: 1, padding: '0.6rem', fontSize: '0.8rem' }}>Aceptar</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ height: '1px', background: 'var(--border)', margin: '2rem 0' }}></div>
+                            </div>
+                        )}
                         
                         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
-                            {coop.members?.map((member, idx) => {
+                            {coop.members?.filter(m => m.status !== 'pending_application' && m.status !== 'rejected').map((member, idx) => {
                                 const ratings = member.profile?.reviews?.map(r => r.rating) || [];
                                 const computedRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length) : Number(member.profile?.rating || 0);
 
