@@ -27,18 +27,9 @@ export const AuthProvider = ({ children }) => {
                     return;
                 }
 
-                // V13: Carga instantánea desde caché local
-                const cachedProfile = localStorage.getItem(`cooplance_profile_${session.user.id}`);
-                if (cachedProfile) {
-                    const parsed = JSON.parse(cachedProfile);
-                    // Use a stable value check
-                    if (!user || user.id !== parsed.id || user.is_partial) {
-                        setUser({ ...parsed, is_cached: true });
-                        setLoading(false);
-                    }
-                } else {
-                    setLoading(true);
-                }
+                // V44: STRICT SYNC FIRST - We no longer set user from cache immediately
+                // This prevents ghost sessions. We only use cache as a 'hint' but keep loading=true.
+                setLoading(true);
                 
                 // V14: No bloqueamos el inicio de la App. Sincronizamos en segundo plano.
                 fetchProfile(session.user.id, session.user).catch(err => {
@@ -48,12 +39,14 @@ export const AuthProvider = ({ children }) => {
                 syncInProgress.current = null;
                 setUser(null);
                 setLoading(false);
+                // Clear all caches on logout
+                localStorage.clear(); 
             }
         } catch (err) {
             console.error("[AuthContext] handleSession error:", err);
             setLoading(false);
         }
-    }, [user?.id]); // Added dependency on user.id for stability check
+    }, [user?.id]); 
 
     // ─── Bootstrap ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -175,8 +168,11 @@ export const AuthProvider = ({ children }) => {
 
     // ─── ONLINE STATUS HEARTBEAT (V50) ──────────────────────────────────────
     const isCached = user?.is_cached;
+    const isPartial = user?.is_partial;
+
     useEffect(() => {
-        if (!userId || isCached) return;
+        // V44: Heartbeat is BLOCKED if user is partial or cached (not verified yet)
+        if (!userId || isCached || isPartial) return;
 
         const updateOnlineStatus = async () => {
             try {
@@ -197,7 +193,7 @@ export const AuthProvider = ({ children }) => {
         const interval = setInterval(updateOnlineStatus, 4 * 60 * 1000);
 
         return () => clearInterval(interval);
-    }, [userId, isCached]);
+    }, [userId, isCached, isPartial]);
 
     // ─── FETCH PROFILE ──────────────────────────────────────────────────────
     const fetchProfile = useCallback(async (userId, authUser = null) => {
@@ -244,7 +240,12 @@ export const AuthProvider = ({ children }) => {
                     // V43: If we reach max attempts and NO profile was found, the account is invalid/deleted.
                     if (attempts === maxAttempts - 1) {
                         console.error("[AuthContext] Profile missing in DB. Terminating ghost session.");
-                        logout(); 
+                        // CLEAR ALL to prevent recursion
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        setUser(null);
+                        setLoading(false);
+                        supabase.auth.signOut();
                         return;
                     }
 
@@ -252,39 +253,25 @@ export const AuthProvider = ({ children }) => {
                 } catch (err) {
                     console.error(`[AuthContext] fetchProfile attempt ${attempts + 1} failed:`, err);
                     
-                    // Detect Network/CORS block and fail fast (V1.7)
-                    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-                        console.warn("[AuthContext] Network/CORS block detected. Aborting retries.");
+                    // Detect Network/CORS/520 block and fail fast
+                    if (err.message === 'Failed to fetch' || err.name === 'TypeError' || err.status === 520) {
+                        console.warn("[AuthContext] Network/CORS/520 block detected. Aborting and clearing.");
+                        localStorage.clear();
+                        setUser(null);
+                        setLoading(false);
                         break;
                     }
 
-                    // On last attempt, don't throw, let the fallback logic run
                     if (attempts === maxAttempts - 1) break;
                     attempts++;
                 }
-            }
-
-            console.error("[AuthContext] Sync failed. Staying with cache/fallback.");
-            if (authUser) {
-                setUser(prev => {
-                    if (!prev || prev.is_partial) {
-                        return {
-                            id: authUser.id,
-                            email: authUser.email,
-                            username: authUser.raw_user_meta_data?.username || authUser.email.split('@')[0],
-                            role: authUser.raw_user_meta_data?.role || 'freelancer',
-                            is_partial: true,
-                            sync_error: true 
-                        };
-                    }
-                    return prev;
-                });
             }
         } catch (globalErr) {
             console.error("[AuthContext] fetchProfile critical crash:", globalErr);
         } finally {
             syncInProgress.current = null;
-            setLoading(false);
+            // Only set loading false if we have a user or if we explicitly failed
+            if (!syncInProgress.current) setLoading(false);
         }
     }, []); 
 
