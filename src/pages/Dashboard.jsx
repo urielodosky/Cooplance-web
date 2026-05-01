@@ -1540,7 +1540,6 @@ const Dashboard = () => {
             if (cachedProposals) setMyProposals(JSON.parse(cachedProposals));
 
             try {
-                console.log('[Dashboard] PETICION DISPARADA (loadInitData)');
                 const projects = await getProjectsByClient(userId);
                 const proposals = await getProposalsByUser(userId);
                 const received = await getReceivedProposals(userId);
@@ -1557,7 +1556,6 @@ const Dashboard = () => {
         if (authUserId && authUserRole === 'freelancer' && !isTutorView) {
             const fetchTutorados = async () => {
                 try {
-                    console.log('[Dashboard] PETICION DISPARADA (fetchTutorados)');
                     const { data, error } = await supabase.from('profiles').select('*').eq('parent_id', authUserId);
                     if (error) throw error;
                     if (data) setTutorados(data);
@@ -1592,7 +1590,6 @@ const Dashboard = () => {
             processedG !== userGamificationStr;
 
         if (hasChanges && lastSyncRef.current !== processedG) {
-            console.log("[Dashboard] PETICION DISPARADA (Sync gamification)");
             lastSyncRef.current = processedG;
             hasSyncedGamification.current = true; // Mark as done for this mount
             updateUser(processedUser).catch(err => {
@@ -1623,7 +1620,6 @@ const Dashboard = () => {
             if (allJobsForTracking.length === 0) return;
 
             try {
-                console.log('[Dashboard] PETICION DISPARADA (checkReviews)');
                 const results = await Promise.all(
                     allJobsForTracking.map(async (job) => {
                         const reviewed = await ReviewService.hasUserReviewedJob(job.id, userId);

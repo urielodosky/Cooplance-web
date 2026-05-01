@@ -176,7 +176,6 @@ export const AuthProvider = ({ children }) => {
 
         const updateOnlineStatus = async () => {
             try {
-                console.log('[AuthContext] PETICION DISPARADA (Heartbeat last_seen)');
                 await supabase
                     .from('profiles')
                     .update({ last_seen: new Date().toISOString() })
@@ -206,7 +205,7 @@ export const AuthProvider = ({ children }) => {
         try {
             while (attempts < maxAttempts) {
                 try {
-                    console.log(`[AuthContext] PETICION DISPARADA (fetchProfile) for ${userId} (Attempt ${attempts + 1})...`);
+                    // V44: Normal fetch
                     const { data, error } = await withTimeout(
                         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
                         30000, // V13: Increased to 30s
@@ -842,7 +841,6 @@ export const AuthProvider = ({ children }) => {
             return;
         }
 
-        console.log(`[AuthContext] PETICION DISPARADA (updateUser Profile) for ${targetId}`);
         const { error } = await supabase
             .from('profiles')
             .update(filteredPayload)
