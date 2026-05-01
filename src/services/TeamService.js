@@ -316,6 +316,18 @@ export const dissolveTeam = async (coopId, actorId) => {
     if (!await canPerformAction(coopId, 'dissolve', actorId)) {
         throw new Error("No tienes permisos para disolver la Coop.");
     }
+
+    // Check for active projects
+    const { data: activeProjects } = await supabase
+        .from('team_projects')
+        .select('id')
+        .eq('team_id', coopId)
+        .eq('status', 'active');
+    
+    if (activeProjects && activeProjects.length > 0) {
+        throw new Error("No puedes disolver la Coop mientras haya trabajos activos en curso. Termina o cancela los proyectos primero.");
+    }
+
     const { error } = await supabase.from('coops').delete().eq('id', coopId);
     if (error) throw error;
 };

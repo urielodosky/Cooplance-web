@@ -45,6 +45,14 @@ const CoopDetail = () => {
     const [reassignmentData, setReassignmentData] = useState(null);
     const [isExpelling, setIsExpelling] = useState(false);
 
+    // New States for Modals
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDissolveModalOpen, setIsDissolveModalOpen] = useState(false);
+    const [editData, setEditData] = useState({ name: '', description: '', logo: '' });
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [isDissolving, setIsDissolving] = useState(false);
+    const [dissolveError, setDissolveError] = useState('');
+
     const handleChangeRole = async (member, newRole) => {
         try {
             await updateMemberRole(coop.id, member.user_id, newRole);
@@ -141,6 +149,41 @@ const CoopDetail = () => {
         }
         setSelectedJobId(jobId);
         setIsAssignmentModalOpen(true);
+    };
+
+    const handleOpenEdit = () => {
+        setEditData({
+            name: coop.name,
+            description: coop.description || '',
+            logo: coop.avatar_url || ''
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editData.name.trim()) return;
+        setIsSavingEdit(true);
+        try {
+            await updateTeam(coop.id, editData);
+            setIsEditModalOpen(false);
+        } catch (err) {
+            console.error("Error al actualizar coop:", err);
+        } finally {
+            setIsSavingEdit(false);
+        }
+    };
+
+    const handleDissolve = async () => {
+        setIsDissolving(true);
+        setDissolveError('');
+        try {
+            await dissolveCoop(coop.id);
+            navigate('/my-coops');
+        } catch (err) {
+            setDissolveError(err.message || "Error al disolver la Coop");
+        } finally {
+            setIsDissolving(false);
+        }
     };
 
     const handleSearchUser = async (e) => {
@@ -842,7 +885,21 @@ const CoopDetail = () => {
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
                                     Para mantener la estabilidad de la Coop, solo se permiten 2 cambios estructurales (nombre, categorías o estatuto) cada 30 días.
                                 </p>
-                                <button className="btn-secondary" disabled={coop.config_changes_left <= 0}>
+                                <button 
+                                    className="btn-secondary" 
+                                    disabled={coop.config_changes_left <= 0}
+                                    onClick={handleOpenEdit}
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '1rem', 
+                                        borderRadius: '14px', 
+                                        background: 'rgba(59, 130, 246, 0.1)', 
+                                        color: '#3b82f6', 
+                                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                                        fontWeight: '700',
+                                        cursor: coop.config_changes_left > 0 ? 'pointer' : 'not-allowed'
+                                    }}
+                                >
                                     Modificar Perfil
                                 </button>
                             </div>
@@ -855,12 +912,16 @@ const CoopDetail = () => {
                                     </p>
                                     <button 
                                         className="btn-secondary" 
-                                        style={{ borderColor: '#ef4444', color: '#ef4444' }}
-                                        onClick={() => {
-                                            if (window.confirm("¿Estás seguro de que deseas DISOLVER esta Coop definitivamente?")) {
-                                                dissolveCoop(coop.id).then(() => navigate('/my-coops'));
-                                            }
+                                        style={{ 
+                                            borderColor: '#ef4444', 
+                                            color: '#ef4444', 
+                                            width: '100%', 
+                                            padding: '1rem', 
+                                            borderRadius: '14px',
+                                            background: 'rgba(239, 68, 68, 0.05)',
+                                            fontWeight: '700'
                                         }}
+                                        onClick={() => setIsDissolveModalOpen(true)}
                                     >
                                         Disolver Agencia
                                     </button>
@@ -1017,6 +1078,85 @@ const CoopDetail = () => {
                                 }}
                             >
                                 {isInviting ? 'Enviando...' : 'Enviar Invitación'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Profile Modal */}
+            {isEditModalOpen && (
+                <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, backdropFilter: 'blur(8px)' }}>
+                    <div className="modal-content glass" style={{ width: '500px', padding: '2.5rem', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+                        <h3 style={{ marginTop: 0, fontSize: '1.5rem', marginBottom: '1.5rem' }}>Modificar Perfil de la Coop</h3>
+                        
+                        <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
+                            <div style={{ flex: '0 0 100px' }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Logo URL</label>
+                                <div style={{ width: '100px', height: '100px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {editData.logo ? <img src={editData.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: '2rem' }}>🏢</span>}
+                                </div>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Nombre de la Agencia</label>
+                                <input 
+                                    type="text" 
+                                    value={editData.name}
+                                    onChange={(e) => setEditData({...editData, name: e.target.value})}
+                                    style={{ width: '100%', padding: '1rem', borderRadius: '14px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', marginBottom: '1rem' }}
+                                />
+                                <input 
+                                    type="text" 
+                                    placeholder="Pegar URL del nuevo logo..."
+                                    value={editData.logo}
+                                    onChange={(e) => setEditData({...editData, logo: e.target.value})}
+                                    style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', fontSize: '0.85rem' }}
+                                />
+                            </div>
+                        </div>
+
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Descripción de la Agencia</label>
+                        <textarea 
+                            value={editData.description}
+                            onChange={(e) => setEditData({...editData, description: e.target.value})}
+                            style={{ width: '100%', height: '120px', padding: '1rem', borderRadius: '14px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: 'white', fontSize: '0.9rem', marginBottom: '2rem', resize: 'none' }}
+                        />
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button onClick={() => setIsEditModalOpen(false)} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>Cancelar</button>
+                            <button onClick={handleSaveEdit} className="btn-primary" style={{ flex: 1, padding: '1rem' }} disabled={isSavingEdit || !editData.name.trim()}>
+                                {isSavingEdit ? 'Guardando...' : 'Guardar Cambios'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Dissolve Modal */}
+            {isDissolveModalOpen && (
+                <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1400, backdropFilter: 'blur(10px)' }}>
+                    <div className="modal-content glass" style={{ width: '450px', padding: '2.5rem', borderRadius: '32px', border: '1px solid rgba(239, 68, 68, 0.2)', boxShadow: '0 20px 60px rgba(239, 68, 68, 0.1)' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto', color: '#ef4444' }}>
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            </div>
+                            <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#ef4444' }}>¿Disolver Agencia?</h3>
+                        </div>
+                        
+                        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '2rem' }}>
+                            Esta acción es <strong>permanente</strong> y borrará toda la información de la Coop, canales de chat y membresías. No se puede deshacer.
+                        </p>
+
+                        {dissolveError && (
+                            <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', padding: '1rem', borderRadius: '12px', fontSize: '0.85rem', marginBottom: '1.5rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                ⚠️ {dissolveError}
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button onClick={() => { setIsDissolveModalOpen(false); setDissolveError(''); }} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>Cancelar</button>
+                            <button onClick={handleDissolve} className="btn-primary" style={{ flex: 1, padding: '1rem', background: '#ef4444', border: 'none' }} disabled={isDissolving}>
+                                {isDissolving ? 'Disolviendo...' : 'Sí, Disolver'}
                             </button>
                         </div>
                     </div>
